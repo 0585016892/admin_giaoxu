@@ -25,8 +25,6 @@ import {
   UserOutlined,
   FileTextOutlined,
   CalendarOutlined,
-  EyeOutlined,
-  BarChartOutlined,
   CompassOutlined,
   TrophyOutlined,
   DownloadOutlined,
@@ -34,7 +32,6 @@ import {
   HomeOutlined,
   PrinterOutlined,
   ArrowRightOutlined,
-  HddOutlined,
   ReloadOutlined,
   GlobalOutlined,
   ExportOutlined,
@@ -70,7 +67,7 @@ import {
   exportReportFile,
 } from "../api/reportApi";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 // Bảng màu thiết kế Tôn Nghiêm (Sacred Palette)

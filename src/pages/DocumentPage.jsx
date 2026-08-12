@@ -44,7 +44,6 @@ import {
   StarFilled,
   FullscreenOutlined,
   FolderOpenOutlined,
-  ThunderboltOutlined,
 } from "@ant-design/icons";
 
 import {

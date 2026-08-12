@@ -10,7 +10,6 @@ import {
   Table,
   Tag,
   Spin,
-  Tabs,
   Badge,
 } from "antd";
 
@@ -22,12 +21,7 @@ import {
   CompassOutlined,
   LineChartOutlined,
   DesktopOutlined,
-  MobileOutlined,
-  AppleOutlined,
-  WindowsOutlined,
   ClockCircleOutlined,
-  AppstoreOutlined,
-  TableOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -93,7 +87,6 @@ const PIE_COLORS = [
 const VisitorAnalytics = () => {
   // Bảng màu Truyền Thống & Tôn Nghiêm (Option 1)
   const primaryNavy = "#1B365D"; // Xanh Đêm Navy
-  const deepNavy = "#0F1F38"; // Navy Đậm
   const accentGold = "#D4AF37"; // Vàng Đồng Ánh Kim
   const textDark = "#1E293B";
   const softBg = "#FAFAFA";

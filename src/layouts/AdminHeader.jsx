@@ -25,7 +25,6 @@ import {
   CalendarOutlined,
   HistoryOutlined,
   CheckCircleOutlined,
-  CompassOutlined,
 } from "@ant-design/icons";
 import { useUser } from "../context/UserContext";
 import socket from "../socket/socket";

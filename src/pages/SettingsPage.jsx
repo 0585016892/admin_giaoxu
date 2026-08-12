@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Form,
   Input,
@@ -10,7 +10,6 @@ import {
   Card,
   Select,
   Typography,
-  Space,
   message,
   ConfigProvider,
   Divider,
@@ -28,8 +27,6 @@ import {
   YoutubeOutlined,
   MailOutlined,
   PhoneOutlined,
-  EnvironmentOutlined,
-  CheckCircleOutlined,
 } from "@ant-design/icons";
 
 import { getSettings, updateSettings } from "../api/settings.api";
@@ -48,7 +45,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       setFetchLoading(true);
       const res = await getSettings();
@@ -69,11 +66,11 @@ export default function Settings() {
     } finally {
       setFetchLoading(false);
     }
-  };
+  }, [form]);
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [loadSettings]);
 
   const onFinish = async (values) => {
     try {

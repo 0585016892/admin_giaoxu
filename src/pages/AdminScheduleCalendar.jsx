@@ -30,8 +30,6 @@ import {
   EditOutlined,
   HomeOutlined,
   CompassOutlined,
-  CalendarOutlined,
-  ClockCircleOutlined,
   BookOutlined,
 } from "@ant-design/icons";
 import viVN from "antd/lib/locale/vi_VN";
@@ -104,7 +102,7 @@ const AdminScheduleCalendar = () => {
       }
     };
     initChurches();
-  }, []);
+  }, [fetchChurches]);
 
   // Hàm load lịch
   const loadWeek = useCallback(async () => {

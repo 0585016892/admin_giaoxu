@@ -21,7 +21,6 @@ import {
   IdcardOutlined,
   CalendarOutlined,
   LockOutlined,
-  ExclamationCircleFilled,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 

@@ -29,7 +29,6 @@ import {
   CloudUploadOutlined,
   CompassOutlined,
   ReloadOutlined,
-  EyeOutlined,
 } from "@ant-design/icons";
 import {
   getSlides,

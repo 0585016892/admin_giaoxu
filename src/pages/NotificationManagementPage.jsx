@@ -31,7 +31,6 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   CheckCircleOutlined,
-  WarningOutlined,
   ClockCircleOutlined,
   NotificationOutlined,
   PlusOutlined,
@@ -45,8 +44,6 @@ import {
   PictureOutlined,
   BookOutlined,
   TeamOutlined,
-  LockOutlined,
-  SettingOutlined,
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 

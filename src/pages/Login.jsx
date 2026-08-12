@@ -13,7 +13,6 @@ import {
   UserOutlined,
   LockOutlined,
   ArrowRightOutlined,
-  SafetyCertificateOutlined,
   LoadingOutlined,
   CompassOutlined,
   BankOutlined,

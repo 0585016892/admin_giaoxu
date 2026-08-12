@@ -8,7 +8,6 @@ import {
   Form,
   Input,
   Select,
-  Switch,
   Tag,
   Row,
   Col,
@@ -22,12 +21,9 @@ import {
   DownloadOutlined,
   CompassOutlined,
   EditOutlined,
-  QrcodeOutlined,
-  SafetyCertificateOutlined,
   FileExcelOutlined,
   TeamOutlined,
   FileZipOutlined,
-  CheckCircleOutlined,
 } from "@ant-design/icons";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -74,8 +70,8 @@ const CertificatePage = () => {
 
   // Mẫu văn bằng được chọn (marriage | baptism | confirmation)
   const [certType, setCertType] = useState("marriage");
-  const [showSignature, setShowSignature] = useState(true);
-  const [showQRCode, setShowQRCode] = useState(true);
+  const [showSignature] = useState(true);
+  const [showQRCode] = useState(true);
 
   // Danh sách học viên in hàng loạt (Nếu import Excel)
   const [studentsList, setStudentsList] = useState([]);

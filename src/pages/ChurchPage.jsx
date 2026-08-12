@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Table,
   Input,
@@ -117,7 +117,7 @@ const ChurchPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []); // Bọc mảng rỗng []
+  }, [fetchChurches]); // Bọc mảng rỗng []
 
   useEffect(() => {
     loadData();

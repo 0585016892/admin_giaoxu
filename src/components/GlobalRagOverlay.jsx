@@ -1,10 +1,6 @@
 import React from "react";
 import { Progress, Typography, Space, Tag, Card } from "antd";
-import {
-  RobotOutlined,
-  SyncOutlined,
-  ThunderboltOutlined,
-} from "@ant-design/icons";
+import { RobotOutlined } from "@ant-design/icons";
 import { useRag } from "../context/RagContext";
 
 const { Text } = Typography;
@@ -63,12 +59,7 @@ export default function GlobalRagOverlay() {
             alignItems: "center",
           }}
         >
-          <Text
-            type="secondary"
-            style={{ fontSize: 12 }}
-            ellipsis
-            style={{ maxWidth: 300 }}
-          >
+          <Text type="secondary" style={{ fontSize: 12 }} ellipsis>
             {statusText || "Đang xử lý..."}
           </Text>
           <Text strong style={{ fontSize: 12, color: accentGold }}>

@@ -4,7 +4,6 @@ import {
   Input,
   Button,
   Space,
-  Switch,
   message,
   Modal,
   Form,
@@ -14,11 +13,9 @@ import {
   Select,
   Row,
   Col,
-  Avatar,
   Tag,
   Divider,
   Tooltip,
-  Badge,
   ConfigProvider,
   Drawer,
   Descriptions,
@@ -31,13 +28,8 @@ import {
   EditOutlined,
   DeleteOutlined,
   HomeOutlined,
-  PhoneOutlined,
-  MailOutlined,
   UserOutlined,
   SearchOutlined,
-  EnvironmentOutlined,
-  GlobalOutlined,
-  InfoCircleOutlined,
   CompassOutlined,
   ReloadOutlined,
   EyeOutlined,
@@ -272,8 +264,8 @@ export default function ParishionerManagement() {
 
   const loadData = useCallback(
     async (
-      page = pagination.current,
-      pageSize = pagination.pageSize,
+      page,
+      pageSize,
       search = searchKeyword,
       status = statusFilter,
       churchId = churchFilter,
@@ -281,8 +273,8 @@ export default function ParishionerManagement() {
       try {
         setLoading(true);
         const params = {
-          page,
-          limit: pageSize,
+          page: page ?? pagination.current,
+          limit: pageSize ?? pagination.pageSize,
           ...(search && { keyword: search.trim() }),
           ...(status !== "all" && { status }),
           ...(churchId && churchId !== "all" && { churches_id: churchId }),
@@ -292,8 +284,8 @@ export default function ParishionerManagement() {
         setParishioners(res.data?.data || []);
         setPagination((prev) => ({
           ...prev,
-          current: page,
-          pageSize,
+          current: page ?? prev.current,
+          pageSize: pageSize ?? prev.pageSize,
           total: res.data?.total || 0,
         }));
       } catch (error) {
@@ -302,20 +294,13 @@ export default function ParishionerManagement() {
         setLoading(false);
       }
     },
-    [
-      pagination.current,
-      pagination.pageSize,
-      searchKeyword,
-      statusFilter,
-      churchFilter,
-    ],
+    [searchKeyword, statusFilter, churchFilter, pagination],
   );
 
   useEffect(() => {
     loadData(1);
     loadChurches();
-  }, [statusFilter, churchFilter]);
-
+  }, [statusFilter, churchFilter, loadData]);
   const handleTableChange = (newPagination) => {
     loadData(
       newPagination.current,
