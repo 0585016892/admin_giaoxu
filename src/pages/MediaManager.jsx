@@ -59,8 +59,9 @@ import { useUser } from "../context/UserContext";
 const { Title, Text } = Typography;
 
 /* =====================================================
-   STYLE SYSTEM & PALETTE (Đồng bộ theo Ảnh Reference)
+   STYLE SYSTEM
 ===================================================== */
+
 const NAVY_DARK = "#1B2A4A";
 const GOLD_ACCENT = "#D4AF37";
 const GOLD_LIGHT_BG = "#FFFDF0";
@@ -70,7 +71,10 @@ const TEXT_MUTED = "#6B7280";
 
 const CATEGORY_OPTIONS = ["Bài giảng", "Thánh ca", "Giáo lý", "Phụng vụ"];
 
-/* BỘ BADGE TRẠNG THÁI MỚI - SOFT & MODERN PILL DESIGN */
+/* =====================================================
+   STATUS
+===================================================== */
+
 const STATUS_STYLES = {
   published: {
     label: "Đã xuất bản",
@@ -79,6 +83,7 @@ const STATUS_STYLES = {
     border: "#A7F3D0",
     dot: "#10B981",
   },
+
   active: {
     label: "Hoạt động",
     bg: "#EFF6FF",
@@ -86,6 +91,7 @@ const STATUS_STYLES = {
     border: "#BFDBFE",
     dot: "#3B82F6",
   },
+
   draft: {
     label: "Bản nháp",
     bg: "#FFFBEB",
@@ -93,6 +99,7 @@ const STATUS_STYLES = {
     border: "#FDE68A",
     dot: "#F59E0B",
   },
+
   hidden: {
     label: "Đã ẩn",
     bg: "#F3F4F6",
@@ -102,8 +109,13 @@ const STATUS_STYLES = {
   },
 };
 
+/* =====================================================
+   STATUS BADGE
+===================================================== */
+
 const RenderStatusBadge = ({ status }) => {
   const cfg = STATUS_STYLES[status] || STATUS_STYLES.draft;
+
   return (
     <div
       style={{
@@ -111,11 +123,11 @@ const RenderStatusBadge = ({ status }) => {
         alignItems: "center",
         gap: 6,
         padding: "4px 12px",
-        borderRadius: "20px",
+        borderRadius: 20,
         backgroundColor: cfg.bg,
         color: cfg.color,
         border: `1px solid ${cfg.border}`,
-        fontSize: "12px",
+        fontSize: 12,
         fontWeight: 600,
         whiteSpace: "nowrap",
       }}
@@ -128,6 +140,7 @@ const RenderStatusBadge = ({ status }) => {
           backgroundColor: cfg.dot,
         }}
       />
+
       {cfg.label}
     </div>
   );
@@ -136,51 +149,70 @@ const RenderStatusBadge = ({ status }) => {
 /* =====================================================
    HELPERS
 ===================================================== */
+
 const formatFileSize = (bytes) => {
-  if (!bytes || Number(bytes) === 0) return "---";
+  if (!bytes || Number(bytes) === 0) {
+    return "---";
+  }
+
   const size = Number(bytes);
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
+
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  if (size < 1024 * 1024 * 1024) {
+    return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  }
+
   return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
 };
 
-const formatDate = (date) => {
-  if (!date) return "---";
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return "---";
-  return d.toLocaleDateString("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 const formatDuration = (seconds) => {
-  if (!seconds || Number(seconds) === 0) return "---";
+  if (!seconds || Number(seconds) === 0) {
+    return "---";
+  }
+
   const sec = Number(seconds);
   const mins = Math.floor(sec / 60);
   const remainingSecs = Math.floor(sec % 60);
+
   return `${mins}:${remainingSecs < 10 ? "0" : ""}${remainingSecs}`;
 };
 
+/* =====================================================
+   COMPONENT
+===================================================== */
+
 export default function MediaManager() {
   const { user } = useUser();
+
   const URL = process.env.REACT_APP_API_URL || "";
+
   const canManage = ["admin", "priest"].includes(user?.role);
 
-  /* STATES */
+  /* =====================================================
+     STATES
+  ===================================================== */
+
   const [mediaList, setMediaList] = useState([]);
+
   const [loading, setLoading] = useState(false);
+
   const [submitLoading, setSubmitLoading] = useState(false);
+
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  /* FILTER STATES */
   const [activeTab, setActiveTab] = useState("all");
+
   const [searchKeyword, setSearchKeyword] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("all");
+
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   const [pagination, setPagination] = useState({
@@ -190,14 +222,31 @@ export default function MediaManager() {
   });
 
   const [modalOpen, setModalOpen] = useState(false);
+
   const [previewOpen, setPreviewOpen] = useState(false);
+
   const [previewMedia, setPreviewMedia] = useState(null);
+
   const [editing, setEditing] = useState(null);
 
   const [form] = Form.useForm();
+
   const watchedType = Form.useWatch("type", form);
 
-  /* API LOAD DATA */
+  /* =====================================================
+     PAGINATION VALUES
+     
+     Tách ra để ESLint không cảnh báo dependency
+  ===================================================== */
+
+  const currentPage = pagination.current;
+
+  const currentPageSize = pagination.pageSize;
+
+  /* =====================================================
+     LOAD DATA
+  ===================================================== */
+
   const loadData = useCallback(
     async ({
       page = 1,
@@ -209,11 +258,21 @@ export default function MediaManager() {
     } = {}) => {
       try {
         setLoading(true);
+
         let res;
-        const params = { page, limit: pageSize, status };
+
+        const params = {
+          page,
+          limit: pageSize,
+          status,
+        };
 
         if (keyword && keyword.trim() !== "") {
-          res = await searchMedia({ query: keyword, keyword, ...params });
+          res = await searchMedia({
+            query: keyword,
+            keyword,
+            ...params,
+          });
         } else if (category && category !== "all") {
           res = await getMediaByCategory(category, params);
         } else if (tab === "audio") {
@@ -221,15 +280,22 @@ export default function MediaManager() {
         } else if (tab === "video") {
           res = await getVideos(params);
         } else {
-          res = await getMedia({ ...params, type: "all", category });
+          res = await getMedia({
+            ...params,
+            type: "all",
+            category,
+          });
         }
 
         const responseData = res?.data?.data || res?.data || {};
+
         const list =
           responseData?.data || responseData?.items || responseData || [];
+
         const total = Number(res?.data?.total ?? responseData?.total ?? 0);
 
         setMediaList(Array.isArray(list) ? list : []);
+
         setPagination((prev) => ({
           ...prev,
           current: page,
@@ -247,34 +313,71 @@ export default function MediaManager() {
     [searchKeyword, activeTab, statusFilter, categoryFilter],
   );
 
+  /* =====================================================
+     INITIAL LOAD
+  ===================================================== */
+
   useEffect(() => {
-    loadData({ page: 1, pageSize: 10 });
+    loadData({
+      page: 1,
+      pageSize: 10,
+    });
   }, [loadData]);
 
-  /* HANDLERS */
-  const handleTabChange = (key) => {
-    setActiveTab(key);
-    loadData({ page: 1, tab: key });
-  };
+  /* =====================================================
+     TAB
+  ===================================================== */
+
+  const handleTabChange = useCallback(
+    (key) => {
+      setActiveTab(key);
+
+      loadData({
+        page: 1,
+        pageSize: currentPageSize,
+        tab: key,
+      });
+    },
+    [loadData, currentPageSize],
+  );
+
+  /* =====================================================
+     SEARCH
+  ===================================================== */
 
   const handleSearch = useCallback(() => {
-    loadData({ page: 1 });
-  }, [loadData]);
+    loadData({
+      page: 1,
+      pageSize: currentPageSize,
+    });
+  }, [loadData, currentPageSize]);
+
+  /* =====================================================
+     RESET
+  ===================================================== */
 
   const handleReset = useCallback(() => {
     setSearchKeyword("");
+
     setActiveTab("all");
+
     setStatusFilter("all");
+
     setCategoryFilter("all");
+
     loadData({
       page: 1,
-      pageSize: pagination.pageSize,
+      pageSize: 10,
       keyword: "",
       tab: "all",
       status: "all",
       category: "all",
     });
-  }, [loadData, pagination.pageSize]);
+  }, [loadData]);
+
+  /* =====================================================
+     TABLE PAGINATION
+  ===================================================== */
 
   const handleTableChange = useCallback(
     (newPagination) => {
@@ -286,16 +389,32 @@ export default function MediaManager() {
     [loadData],
   );
 
+  /* =====================================================
+     CREATE
+  ===================================================== */
+
   const handleCreate = useCallback(() => {
     setEditing(null);
+
     form.resetFields();
-    form.setFieldsValue({ type: "audio", status: "active", category: "" });
+
+    form.setFieldsValue({
+      type: "audio",
+      status: "active",
+      category: "",
+    });
+
     setModalOpen(true);
   }, [form]);
+
+  /* =====================================================
+     EDIT
+  ===================================================== */
 
   const handleEdit = useCallback(
     (record) => {
       setEditing(record);
+
       form.setFieldsValue({
         title: record.title,
         author: record.author,
@@ -304,58 +423,104 @@ export default function MediaManager() {
         category: record.category,
         status: record.status || "active",
       });
+
       setModalOpen(true);
     },
     [form],
   );
 
+  /* =====================================================
+     CLOSE MODAL
+  ===================================================== */
+
   const handleCloseModal = useCallback(() => {
-    if (submitLoading) return;
+    if (submitLoading) {
+      return;
+    }
+
     setModalOpen(false);
+
     setEditing(null);
+
     form.resetFields();
   }, [submitLoading, form]);
+
+  /* =====================================================
+     SUBMIT
+  ===================================================== */
 
   const handleSubmit = useCallback(async () => {
     try {
       const values = await form.validateFields();
+
       setSubmitLoading(true);
 
       const formData = new FormData();
+
       formData.append("title", values.title);
+
       formData.append("author", values.author || "");
+
       formData.append("description", values.description || "");
+
       formData.append("type", values.type);
+
       formData.append("category", values.category || "");
+
       formData.append("status", values.status);
+
+      /* MEDIA FILE */
 
       if (values.mediaFile?.fileList?.length) {
         const file = values.mediaFile.fileList[0]?.originFileObj;
-        if (file) formData.append(values.type, file);
+
+        if (file) {
+          formData.append(values.type, file);
+        }
       }
+
+      /* THUMBNAIL */
 
       if (values.thumbnail?.fileList?.length) {
         const thumbnail = values.thumbnail.fileList[0]?.originFileObj;
-        if (thumbnail) formData.append("thumbnail", thumbnail);
+
+        if (thumbnail) {
+          formData.append("thumbnail", thumbnail);
+        }
       }
+
+      /* UPDATE */
 
       if (editing) {
         await updateMedia(editing.id, formData);
+
         message.success("Cập nhật media thành công");
       } else {
+
+      /* CREATE */
         if (!values.mediaFile?.fileList?.length) {
           message.warning("Vui lòng chọn file Audio hoặc Video");
+
           setSubmitLoading(false);
+
           return;
         }
+
         await createMedia(formData);
+
         message.success("Thêm media thành công");
       }
 
       handleCloseModal();
+
+      /*
+       * Sau khi thêm / sửa:
+       * reload trang 1
+       */
+
       await loadData({
-        page: editing ? pagination.current : 1,
-        pageSize: pagination.pageSize,
+        page: 1,
+        pageSize: 10,
       });
     } catch (error) {
       if (error?.errorFields) {
@@ -366,24 +531,34 @@ export default function MediaManager() {
     } finally {
       setSubmitLoading(false);
     }
-  }, [
-    form,
-    editing,
-    handleCloseModal,
-    loadData,
-    pagination.current,
-    pagination.pageSize,
-  ]);
+  }, [form, editing, handleCloseModal, loadData]);
+
+  /* =====================================================
+     DELETE
+  ===================================================== */
 
   const handleDelete = useCallback(
     async (id) => {
       try {
         setLoading(true);
+
         await deleteMedia(id);
+
         message.success("Đã xóa media thành công");
-        const shouldPrevious = mediaList.length === 1 && pagination.current > 1;
+
+        /*
+         * Nếu trang hiện tại chỉ còn 1 item
+         * và đang ở trang > 1
+         * → quay về trang trước.
+         */
+
+        const shouldPrevious = mediaList.length === 1 && currentPage > 1;
+
+        const targetPage = shouldPrevious ? currentPage - 1 : currentPage;
+
         await loadData({
-          page: shouldPrevious ? pagination.current - 1 : pagination.current,
+          page: targetPage,
+          pageSize: currentPageSize,
         });
       } catch (error) {
         message.error(error?.response?.data?.message || "Không thể xóa media");
@@ -391,16 +566,23 @@ export default function MediaManager() {
         setLoading(false);
       }
     },
-    [mediaList.length, pagination.current, loadData],
+    [mediaList.length, currentPage, currentPageSize, loadData],
   );
+
+  /* =====================================================
+     PREVIEW
+  ===================================================== */
 
   const handlePreview = useCallback(async (record) => {
     try {
       setPreviewLoading(true);
+
       setPreviewOpen(true);
 
       const detailRes = await getMediaById(record.id);
+
       const detailedData = detailRes?.data?.data || detailRes?.data || record;
+
       setPreviewMedia(detailedData);
 
       await increaseMediaView(record.id);
@@ -408,7 +590,10 @@ export default function MediaManager() {
       setMediaList((prevList) =>
         prevList.map((item) =>
           item.id === record.id
-            ? { ...item, views: Number(item.views || 0) + 1 }
+            ? {
+                ...item,
+                views: Number(item.views || 0) + 1,
+              }
             : item,
         ),
       );
@@ -419,49 +604,110 @@ export default function MediaManager() {
     }
   }, []);
 
+  /* =====================================================
+     CHANGE STATUS
+  ===================================================== */
+
   const handleChangeStatus = useCallback(
     async (id, status) => {
+      const previousStatus = mediaList.find((item) => item.id === id)?.status;
+
       try {
+        /*
+         * Optimistic UI
+         */
+
         setMediaList((prevList) =>
-          prevList.map((item) => (item.id === id ? { ...item, status } : item)),
+          prevList.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  status,
+                }
+              : item,
+          ),
         );
+
         await changeMediaStatus(id, status);
+
         message.success("Cập nhật trạng thái thành công");
       } catch (error) {
+        /*
+         * Rollback nếu API lỗi
+         */
+
+        setMediaList((prevList) =>
+          prevList.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  status: previousStatus,
+                }
+              : item,
+          ),
+        );
+
         message.error(
           error?.response?.data?.message || "Lỗi khi cập nhật trạng thái",
         );
-        loadData({ page: pagination.current, pageSize: pagination.pageSize });
       }
     },
-    [loadData, pagination.current, pagination.pageSize],
+    [mediaList],
   );
 
-  const handleCopyLink = (record) => {
-    const fileUrl = record.file_url?.startsWith("http")
-      ? record.file_url
-      : `${URL}${record.file_url}`;
-    navigator.clipboard.writeText(fileUrl);
-    message.success("Đã sao chép liên kết!");
-  };
+  /* =====================================================
+     COPY LINK
+  ===================================================== */
 
-  /* COLUMNS DEFINITION */
+  const handleCopyLink = useCallback(
+    async (record) => {
+      const fileUrl = record.file_url?.startsWith("http")
+        ? record.file_url
+        : `${URL}${record.file_url || ""}`;
+
+      try {
+        await navigator.clipboard.writeText(fileUrl);
+
+        message.success("Đã sao chép liên kết!");
+      } catch (error) {
+        message.error("Không thể sao chép liên kết");
+      }
+    },
+    [URL],
+  );
+
+  /* =====================================================
+     COLUMNS
+  ===================================================== */
+
   const columns = useMemo(
     () => [
+      /* STT */
+
       {
         title: "STT",
         width: 60,
         align: "center",
+
         render: (_, __, index) => (
-          <Text style={{ color: TEXT_MUTED, fontWeight: 600 }}>
-            {(pagination.current - 1) * pagination.pageSize + index + 1}
+          <Text
+            style={{
+              color: TEXT_MUTED,
+              fontWeight: 600,
+            }}
+          >
+            {(currentPage - 1) * currentPageSize + index + 1}
           </Text>
         ),
       },
+
+      /* PREVIEW */
+
       {
         title: "Xem trước",
         width: 80,
         align: "center",
+
         render: (_, record) => {
           const imgSrc = record.thumbnail_url
             ? record.thumbnail_url.startsWith("http")
@@ -469,18 +715,22 @@ export default function MediaManager() {
               : `${URL}${record.thumbnail_url}`
             : null;
 
-          return imgSrc ? (
-            <Image
-              width={54}
-              height={38}
-              src={imgSrc}
-              style={{
-                objectFit: "cover",
-                borderRadius: "6px",
-                border: "1px solid #E5E7EB",
-              }}
-            />
-          ) : (
+          if (imgSrc) {
+            return (
+              <Image
+                width={54}
+                height={38}
+                src={imgSrc}
+                style={{
+                  objectFit: "cover",
+                  borderRadius: 6,
+                  border: "1px solid #E5E7EB",
+                }}
+              />
+            );
+          }
+
+          return (
             <div
               style={{
                 width: 54,
@@ -504,10 +754,14 @@ export default function MediaManager() {
           );
         },
       },
+
+      /* TITLE */
+
       {
         title: "Tên Media & Tác giả",
         dataIndex: "title",
         key: "title",
+
         render: (title, record) => (
           <div>
             <Text
@@ -521,8 +775,20 @@ export default function MediaManager() {
             >
               {title}
             </Text>
-            <Space size={4} style={{ color: TEXT_MUTED, fontSize: 12 }}>
-              <UserOutlined style={{ fontSize: 11 }} />
+
+            <Space
+              size={4}
+              style={{
+                color: TEXT_MUTED,
+                fontSize: 12,
+              }}
+            >
+              <UserOutlined
+                style={{
+                  fontSize: 11,
+                }}
+              />
+
               <span>
                 {record.author || record.uploader_name || "Chưa rõ tác giả"}
               </span>
@@ -530,18 +796,22 @@ export default function MediaManager() {
           </div>
         ),
       },
+
+      /* CATEGORY */
+
       {
         title: "Chuyên Mục",
         dataIndex: "category",
         width: 140,
+
         render: (category) =>
           category ? (
             <span
               style={{
                 padding: "4px 10px",
-                borderRadius: "6px",
+                borderRadius: 6,
                 background: "#F3F4F6",
-                fontSize: "12px",
+                fontSize: 12,
                 color: "#374151",
                 fontWeight: 500,
               }}
@@ -549,31 +819,57 @@ export default function MediaManager() {
               {category}
             </span>
           ) : (
-            <Text style={{ color: "#D1D5DB" }}>---</Text>
+            <Text
+              style={{
+                color: "#D1D5DB",
+              }}
+            >
+              ---
+            </Text>
           ),
       },
+
+      /* FILE INFO */
+
       {
         title: "Thông Số Tệp",
         dataIndex: "file_size",
         width: 130,
+
         render: (size, record) => (
           <Space direction="vertical" size={0}>
-            <Text style={{ color: "#1F2937", fontSize: 12, fontWeight: 500 }}>
+            <Text
+              style={{
+                color: "#1F2937",
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
               {formatFileSize(size)}
             </Text>
+
             {record.duration > 0 && (
-              <Text style={{ color: TEXT_MUTED, fontSize: 11 }}>
+              <Text
+                style={{
+                  color: TEXT_MUTED,
+                  fontSize: 11,
+                }}
+              >
                 <ClockCircleOutlined /> {formatDuration(record.duration)}
               </Text>
             )}
           </Space>
         ),
       },
+
+      /* STATUS */
+
       {
         title: "Trạng Thái",
         dataIndex: "status",
         width: 160,
         align: "center",
+
         render: (status, record) =>
           canManage ? (
             <Select
@@ -584,7 +880,10 @@ export default function MediaManager() {
                 borderRadius: 20,
                 padding: 0,
               }}
-              dropdownStyle={{ borderRadius: 10, padding: 4 }}
+              dropdownStyle={{
+                borderRadius: 10,
+                padding: 4,
+              }}
               onChange={(newStatus) => handleChangeStatus(record.id, newStatus)}
             >
               {Object.keys(STATUS_STYLES).map((key) => (
@@ -597,18 +896,24 @@ export default function MediaManager() {
             <RenderStatusBadge status={status} />
           ),
       },
+
+      /* ACTION */
+
       {
         title: "Thao tác",
         width: 130,
         fixed: "right",
         align: "center",
+
         render: (_, record) => (
           <Space size={2}>
             <Tooltip title="Xem trước">
               <Button
                 type="text"
                 shape="circle"
-                style={{ color: NAVY_DARK }}
+                style={{
+                  color: NAVY_DARK,
+                }}
                 icon={<EyeOutlined />}
                 onClick={() => handlePreview(record)}
               />
@@ -618,7 +923,9 @@ export default function MediaManager() {
               <Button
                 type="text"
                 shape="circle"
-                style={{ color: TEXT_MUTED }}
+                style={{
+                  color: TEXT_MUTED,
+                }}
                 icon={<CopyOutlined />}
                 onClick={() => handleCopyLink(record)}
               />
@@ -630,7 +937,9 @@ export default function MediaManager() {
                   <Button
                     type="text"
                     shape="circle"
-                    style={{ color: NAVY_DARK }}
+                    style={{
+                      color: NAVY_DARK,
+                    }}
                     icon={<EditOutlined />}
                     onClick={() => handleEdit(record)}
                   />
@@ -638,9 +947,12 @@ export default function MediaManager() {
 
                 <Popconfirm
                   title="Xóa tệp media này?"
+                  description="Hành động này không thể hoàn tác."
                   okText="Xóa"
                   cancelText="Hủy"
-                  okButtonProps={{ danger: true }}
+                  okButtonProps={{
+                    danger: true,
+                  }}
                   onConfirm={() => handleDelete(record.id)}
                 >
                   <Tooltip title="Xóa">
@@ -659,16 +971,21 @@ export default function MediaManager() {
       },
     ],
     [
-      pagination.current,
-      pagination.pageSize,
+      currentPage,
+      currentPageSize,
       canManage,
+      URL,
       handlePreview,
+      handleCopyLink,
       handleEdit,
       handleDelete,
       handleChangeStatus,
-      URL,
     ],
   );
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
 
   return (
     <ConfigProvider
@@ -688,33 +1005,43 @@ export default function MediaManager() {
           padding: "28px 36px",
         }}
       >
-        <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          {/* HEADER SECTION (Chuẩn 100% Ảnh Tham Khảo) */}
-          <div style={{ marginBottom: 24 }}>
-            <Row justify="space-between" align="bottom">
+        <div
+          style={{
+            maxWidth: 1320,
+            margin: "0 auto",
+          }}
+        >
+          {/* =====================================================
+             HEADER
+          ===================================================== */}
+
+          <div
+            style={{
+              marginBottom: 24,
+            }}
+          >
+            <Row justify="space-between" align="bottom" gutter={[20, 20]}>
               <Col>
-                {/* Gold Outline Pill Badge */}
                 <div
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 6,
                     padding: "4px 14px",
-                    borderRadius: "50px",
+                    borderRadius: 50,
                     border: `1px solid ${GOLD_BORDER}`,
                     backgroundColor: GOLD_LIGHT_BG,
                     color: "#A17C00",
-                    fontSize: "12px",
+                    fontSize: 12,
                     fontWeight: 700,
                     letterSpacing: "0.5px",
                     marginBottom: 10,
                   }}
                 >
-                  <CompassOutlined /> HỆ THỐNG LƯU TRỮ VÀ QUẢN LÝ TÀI NGUYÊN
-                  TRUYỀN THÔNG
+                  <CompassOutlined />
+                  HỆ THỐNG LƯU TRỮ VÀ QUẢN LÝ TÀI NGUYÊN TRUYỀN THÔNG
                 </div>
 
-                {/* Big Heading Serif Style */}
                 <Title
                   level={1}
                   style={{
@@ -723,16 +1050,17 @@ export default function MediaManager() {
                     fontFamily: "'Playfair Display', Georgia, serif",
                     fontWeight: 800,
                     letterSpacing: "1px",
-                    fontSize: "32px",
-                    lineHeight: "1.1",
+                    fontSize: 32,
+                    lineHeight: 1.1,
                   }}
                 >
                   KHO MEDIA
                 </Title>
+
                 <Text
                   style={{
                     color: TEXT_MUTED,
-                    fontSize: "14px",
+                    fontSize: 14,
                     marginTop: 4,
                     display: "block",
                   }}
@@ -742,7 +1070,6 @@ export default function MediaManager() {
                 </Text>
               </Col>
 
-              {/* Action Buttons Right Top */}
               <Col>
                 <Space size={12}>
                   <Button
@@ -750,13 +1077,13 @@ export default function MediaManager() {
                     icon={<ReloadOutlined />}
                     onClick={handleReset}
                     style={{
-                      borderRadius: "10px",
+                      borderRadius: 10,
                       borderColor: "#D1D5DB",
                       fontWeight: 600,
                       color: "#374151",
-                      height: "42px",
-                      paddingLeft: "18px",
-                      paddingRight: "18px",
+                      height: 42,
+                      paddingLeft: 18,
+                      paddingRight: 18,
                     }}
                   >
                     Làm mới
@@ -771,12 +1098,12 @@ export default function MediaManager() {
                       style={{
                         backgroundColor: NAVY_DARK,
                         borderColor: NAVY_DARK,
-                        borderRadius: "10px",
+                        borderRadius: 10,
                         fontWeight: 600,
-                        height: "42px",
-                        paddingLeft: "20px",
-                        paddingRight: "20px",
-                        boxShadow: "0 4px 12px rgba(27, 42, 74, 0.2)",
+                        height: 42,
+                        paddingLeft: 20,
+                        paddingRight: 20,
+                        boxShadow: "0 4px 12px rgba(27,42,74,0.2)",
                       }}
                     >
                       Soạn Nội Dung Mới
@@ -787,43 +1114,63 @@ export default function MediaManager() {
             </Row>
           </div>
 
-          {/* FILTER TOOLBAR CARD */}
+          {/* =====================================================
+             FILTER
+          ===================================================== */}
+
           <Card
             bordered={false}
             style={{
-              borderRadius: "16px",
+              borderRadius: 16,
               boxShadow:
                 "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
               marginBottom: 20,
             }}
-            bodyStyle={{ padding: "16px 20px" }}
+            bodyStyle={{
+              padding: "16px 20px",
+            }}
           >
             <Row gutter={[12, 12]} align="middle">
               <Col xs={24} md={10}>
                 <Input
                   size="large"
                   placeholder="Tìm tiêu đề / trích dẫn Lời Chúa..."
-                  prefix={<SearchOutlined style={{ color: "#9CA3AF" }} />}
+                  prefix={
+                    <SearchOutlined
+                      style={{
+                        color: "#9CA3AF",
+                      }}
+                    />
+                  }
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                   onPressEnter={handleSearch}
                   allowClear
-                  style={{ borderRadius: "10px" }}
+                  style={{
+                    borderRadius: 10,
+                  }}
                 />
               </Col>
 
               <Col xs={12} md={7}>
                 <Select
                   size="large"
-                  style={{ width: "100%" }}
+                  style={{
+                    width: "100%",
+                  }}
                   value={categoryFilter}
                   onChange={(val) => {
                     setCategoryFilter(val);
-                    loadData({ page: 1, category: val });
+
+                    loadData({
+                      page: 1,
+                      pageSize: currentPageSize,
+                      category: val,
+                    });
                   }}
-                  className="custom-select-rounded"
                 >
                   <Select.Option value="all">Tất cả chuyên mục</Select.Option>
+
                   {CATEGORY_OPTIONS.map((cat) => (
                     <Select.Option key={cat} value={cat}>
                       {cat}
@@ -835,14 +1182,22 @@ export default function MediaManager() {
               <Col xs={12} md={7}>
                 <Select
                   size="large"
-                  style={{ width: "100%" }}
+                  style={{
+                    width: "100%",
+                  }}
                   value={statusFilter}
                   onChange={(val) => {
                     setStatusFilter(val);
-                    loadData({ page: 1, status: val });
+
+                    loadData({
+                      page: 1,
+                      pageSize: currentPageSize,
+                      status: val,
+                    });
                   }}
                 >
                   <Select.Option value="all">Tất cả trạng thái</Select.Option>
+
                   {Object.keys(STATUS_STYLES).map((key) => (
                     <Select.Option key={key} value={key}>
                       {STATUS_STYLES[key].label}
@@ -853,25 +1208,41 @@ export default function MediaManager() {
             </Row>
           </Card>
 
-          {/* TABLE CONTAINER CARD */}
+          {/* =====================================================
+             TABLE
+          ===================================================== */}
+
           <Card
             bordered={false}
             style={{
-              borderRadius: "16px",
+              borderRadius: 16,
               boxShadow:
                 "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
             }}
-            bodyStyle={{ padding: "20px" }}
+            bodyStyle={{
+              padding: 20,
+            }}
           >
             <Tabs
               activeKey={activeTab}
               onChange={handleTabChange}
               items={[
-                { key: "all", label: "Tất cả tệp" },
-                { key: "audio", label: "🎵 Audio / Thánh Ca" },
-                { key: "video", label: "🎬 Video / Bài Giảng" },
+                {
+                  key: "all",
+                  label: "Tất cả tệp",
+                },
+                {
+                  key: "audio",
+                  label: "🎵 Audio / Thánh Ca",
+                },
+                {
+                  key: "video",
+                  label: "🎬 Video / Bài Giảng",
+                },
               ]}
-              style={{ marginBottom: 12 }}
+              style={{
+                marginBottom: 12,
+              }}
             />
 
             <Spin spinning={loading}>
@@ -879,10 +1250,12 @@ export default function MediaManager() {
                 rowKey="id"
                 columns={columns}
                 dataSource={mediaList}
-                scroll={{ x: 900 }}
+                scroll={{
+                  x: 900,
+                }}
                 pagination={{
-                  current: pagination.current,
-                  pageSize: pagination.pageSize,
+                  current: currentPage,
+                  pageSize: currentPageSize,
                   total: pagination.total,
                   showSizeChanger: true,
                   pageSizeOptions: ["10", "20", "50"],
@@ -899,8 +1272,8 @@ export default function MediaManager() {
                           color: "#334155",
                           fontWeight: 700,
                           borderBottom: "1px solid #E2E8F0",
-                          paddingTop: "14px",
-                          paddingBottom: "14px",
+                          paddingTop: 14,
+                          paddingBottom: 14,
                         }}
                       />
                     ),
@@ -911,10 +1284,19 @@ export default function MediaManager() {
           </Card>
         </div>
 
-        {/* MODAL EDIT / CREATE */}
+        {/* =====================================================
+           CREATE / EDIT MODAL
+        ===================================================== */}
+
         <Modal
           title={
-            <Text strong style={{ fontSize: 17, color: NAVY_DARK }}>
+            <Text
+              strong
+              style={{
+                fontSize: 17,
+                color: NAVY_DARK,
+              }}
+            >
               {editing ? "Chỉnh sửa nội dung Media" : "Soạn tệp Media mới"}
             </Text>
           }
@@ -928,19 +1310,35 @@ export default function MediaManager() {
           okText={editing ? "Lưu thay đổi" : "Thêm mới"}
           cancelText="Hủy bỏ"
           okButtonProps={{
-            style: { backgroundColor: NAVY_DARK, borderRadius: 8 },
+            style: {
+              backgroundColor: NAVY_DARK,
+              borderRadius: 8,
+            },
           }}
         >
-          <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+          <Form
+            form={form}
+            layout="vertical"
+            style={{
+              marginTop: 16,
+            }}
+          >
             <Form.Item
               name="title"
               label="Tiêu đề media"
-              rules={[{ required: true, message: "Vui lòng điền tiêu đề" }]}
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng điền tiêu đề",
+                },
+              ]}
             >
               <Input
                 size="large"
                 placeholder="Nhập tên bài hát, trích dẫn..."
-                style={{ borderRadius: 8 }}
+                style={{
+                  borderRadius: 8,
+                }}
               />
             </Form.Item>
 
@@ -950,16 +1348,21 @@ export default function MediaManager() {
                   <Input
                     size="large"
                     placeholder="Linh mục, Ca đoàn..."
-                    style={{ borderRadius: 8 }}
+                    style={{
+                      borderRadius: 8,
+                    }}
                   />
                 </Form.Item>
               </Col>
+
               <Col span={12}>
                 <Form.Item name="category" label="Chuyên mục">
                   <Select
                     size="large"
                     placeholder="Chọn chuyên mục"
-                    style={{ borderRadius: 8 }}
+                    style={{
+                      borderRadius: 8,
+                    }}
                   >
                     {CATEGORY_OPTIONS.map((cat) => (
                       <Select.Option key={cat} value={cat}>
@@ -976,29 +1379,47 @@ export default function MediaManager() {
                 <Form.Item
                   name="type"
                   label="Định dạng tệp"
-                  rules={[{ required: true }]}
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng chọn định dạng",
+                    },
+                  ]}
                 >
                   <Select
                     size="large"
                     disabled={!!editing}
-                    style={{ borderRadius: 8 }}
+                    style={{
+                      borderRadius: 8,
+                    }}
                   >
                     <Select.Option value="audio">
                       🎵 Audio (Âm thanh)
                     </Select.Option>
+
                     <Select.Option value="video">
                       🎬 Video (Hình ảnh)
                     </Select.Option>
                   </Select>
                 </Form.Item>
               </Col>
+
               <Col span={12}>
                 <Form.Item
                   name="status"
                   label="Trạng thái"
-                  initialValue="active"
+                  rules={[
+                    {
+                      required: true,
+                    },
+                  ]}
                 >
-                  <Select size="large" style={{ borderRadius: 8 }}>
+                  <Select
+                    size="large"
+                    style={{
+                      borderRadius: 8,
+                    }}
+                  >
                     {Object.keys(STATUS_STYLES).map((key) => (
                       <Select.Option key={key} value={key}>
                         {STATUS_STYLES[key].label}
@@ -1013,19 +1434,35 @@ export default function MediaManager() {
               <Input.TextArea
                 rows={3}
                 placeholder="Nội dung lời nhắn hoặc tóm tắt bài giảng..."
-                style={{ borderRadius: 8 }}
+                style={{
+                  borderRadius: 8,
+                }}
               />
             </Form.Item>
 
-            <Divider style={{ margin: "12px 0" }} />
+            <Divider
+              style={{
+                margin: "12px 0",
+              }}
+            />
 
             <Form.Item
               name="mediaFile"
               label={`Chọn tệp ${watchedType === "video" ? "Video" : "Audio"}`}
-              rules={[{ required: !editing, message: "Vui lòng chọn tệp" }]}
+              rules={[
+                {
+                  required: !editing,
+                  message: "Vui lòng chọn tệp",
+                },
+              ]}
             >
               <Upload maxCount={1} beforeUpload={() => false}>
-                <Button icon={<UploadOutlined />} style={{ borderRadius: 8 }}>
+                <Button
+                  icon={<UploadOutlined />}
+                  style={{
+                    borderRadius: 8,
+                  }}
+                >
                   Tải lên từ thiết bị
                 </Button>
               </Upload>
@@ -1033,7 +1470,12 @@ export default function MediaManager() {
 
             <Form.Item name="thumbnail" label="Ảnh Thumbnail (Tùy chọn)">
               <Upload maxCount={1} beforeUpload={() => false} accept="image/*">
-                <Button icon={<PictureOutlined />} style={{ borderRadius: 8 }}>
+                <Button
+                  icon={<PictureOutlined />}
+                  style={{
+                    borderRadius: 8,
+                  }}
+                >
                   Chọn ảnh đại diện
                 </Button>
               </Upload>
@@ -1041,7 +1483,10 @@ export default function MediaManager() {
           </Form>
         </Modal>
 
-        {/* MODAL PREVIEW PLAYER */}
+        {/* =====================================================
+           PREVIEW MODAL
+        ===================================================== */}
+
         <Modal
           open={previewOpen}
           footer={null}
@@ -1055,7 +1500,11 @@ export default function MediaManager() {
         >
           <Spin spinning={previewLoading}>
             {previewMedia && (
-              <div style={{ paddingTop: 10 }}>
+              <div
+                style={{
+                  paddingTop: 10,
+                }}
+              >
                 <div
                   style={{
                     background: NAVY_DARK,
@@ -1070,10 +1519,14 @@ export default function MediaManager() {
                     <div>
                       <Title
                         level={4}
-                        style={{ color: "#FFF", margin: "0 0 4px" }}
+                        style={{
+                          color: "#FFF",
+                          margin: "0 0 4px",
+                        }}
                       >
                         {previewMedia.title}
                       </Title>
+
                       <Text
                         style={{
                           color: "#9CA3AF",
@@ -1083,14 +1536,17 @@ export default function MediaManager() {
                       >
                         {previewMedia.author || "Chưa có thông tin tác giả"}
                       </Text>
+
                       <audio
                         controls
                         autoPlay
-                        style={{ width: "100%", borderRadius: 8 }}
+                        style={{
+                          width: "100%",
+                        }}
                         src={
                           previewMedia.file_url?.startsWith("http")
                             ? previewMedia.file_url
-                            : `${URL}${previewMedia.file_url}`
+                            : `${URL}${previewMedia.file_url || ""}`
                         }
                       />
                     </div>
@@ -1107,9 +1563,10 @@ export default function MediaManager() {
                         src={
                           previewMedia.file_url?.startsWith("http")
                             ? previewMedia.file_url
-                            : `${URL}${previewMedia.file_url}`
+                            : `${URL}${previewMedia.file_url || ""}`
                         }
                       />
+
                       <Title
                         level={4}
                         style={{
@@ -1124,21 +1581,19 @@ export default function MediaManager() {
                   )}
                 </div>
 
-                <Descriptions
-                  size="small"
-                  column={2}
-                  bordered
-                  style={{ borderRadius: 8 }}
-                >
+                <Descriptions size="small" column={2} bordered>
                   <Descriptions.Item label="Chuyên mục">
                     {previewMedia.category || "---"}
                   </Descriptions.Item>
+
                   <Descriptions.Item label="Lượt xem">
                     {previewMedia.views || 0}
                   </Descriptions.Item>
+
                   <Descriptions.Item label="Kích thước">
                     {formatFileSize(previewMedia.file_size)}
                   </Descriptions.Item>
+
                   <Descriptions.Item label="Trạng thái">
                     <RenderStatusBadge status={previewMedia.status} />
                   </Descriptions.Item>
