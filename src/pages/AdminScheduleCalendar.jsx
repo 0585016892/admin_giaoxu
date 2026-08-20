@@ -40,7 +40,6 @@ import { useChurch } from "../hooks/useChurch";
 
 dayjs.locale("vi");
 const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
 
 // Bảng màu thiết kế Tôn Nghiêm (Editorial Sacred Palette)
 const primaryNavy = "#1B365D"; // Xanh Đêm Navy
@@ -89,38 +88,68 @@ const AdminScheduleCalendar = () => {
 
   // Load danh sách giáo xứ (Chỉ chạy 1 lần)
   useEffect(() => {
+    let mounted = true;
+
     const initChurches = async () => {
       try {
         const res = await fetchChurches();
-        const data = res?.data || [];
-        setChurches(data);
-        if (data.length > 0) {
-          setCurrentChurchId(data[0].id);
+
+        console.log("🔥 API CHURCH:", res);
+
+        const data = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
+
+        const normalizedChurches = data.map((church) => ({
+          ...church,
+          id: Number(church.id),
+        }));
+
+        if (!mounted) return;
+
+        setChurches(normalizedChurches);
+
+        if (normalizedChurches.length > 0) {
+          setCurrentChurchId(normalizedChurches[0].id);
         }
       } catch (err) {
+        console.error("❌ Lỗi lấy danh sách giáo xứ:", err);
         message.error("Không lấy được danh sách giáo xứ");
       }
     };
-    initChurches();
-  }, [fetchChurches]);
 
+    initChurches();
+
+    return () => {
+      mounted = false;
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Hàm load lịch
   const loadWeek = useCallback(async () => {
     if (!currentChurchId) return;
+
     try {
       const res = await fetchWeek({
         week_start: dayjs().startOf("week").format("YYYY-MM-DD"),
         church_id: currentChurchId,
       });
-      setEvents(res.events || []);
-    } catch (e) {
-      console.error("Lỗi load lịch:", e);
-    }
-  }, [currentChurchId, fetchWeek]);
 
+      setEvents(res?.events || []);
+    } catch (e) {
+      console.error("❌ Lỗi load lịch:", e);
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentChurchId]);
   useEffect(() => {
+    if (!currentChurchId) return;
+
     loadWeek();
-  }, [loadWeek]);
+  }, [currentChurchId, loadWeek]);
 
   const disabledDate = (current) => current && current < dayjs().startOf("day");
 
@@ -254,20 +283,23 @@ const AdminScheduleCalendar = () => {
               <Space wrap size="middle">
                 {/* SELECT CHỌN GIÁO XỨ */}
                 <Select
-                  value={currentChurchId}
-                  onChange={(val) => setCurrentChurchId(val)}
+                  value={currentChurchId ?? undefined}
+                  onChange={(value) => {
+                    console.log("🏠 Chọn giáo xứ:", value);
+                    setCurrentChurchId(Number(value));
+                  }}
                   style={{ width: 260 }}
                   placeholder="Chọn giáo xứ / giáo họ"
+                  allowClear={false}
                   suffixIcon={<HomeOutlined style={{ color: accentGold }} />}
                   className="custom-select-church"
                 >
-                  {churches.map((c) => (
-                    <Option key={c.id} value={c.id}>
-                      {c.name}
-                    </Option>
+                  {churches.map((church) => (
+                    <Select.Option key={church.id} value={church.id}>
+                      {church.name}
+                    </Select.Option>
                   ))}
                 </Select>
-
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}

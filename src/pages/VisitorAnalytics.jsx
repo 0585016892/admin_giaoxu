@@ -157,6 +157,7 @@ const VisitorAnalytics = () => {
   // Trang Top 1 dẫn đầu
   const topOnePage = stats.topPages?.[0] || { page_url: "/", total: 0 };
   const topOneName = getFriendlyPageName(topOnePage.page_url);
+  console.log(stats);
 
   // Cột cho bảng Top Pages
   const columnsTopPages = [
@@ -285,7 +286,17 @@ const VisitorAnalytics = () => {
       align: "right",
       render: (time) => (
         <Text type="secondary" style={{ fontSize: 12 }}>
-          {time ? new Date(time).toLocaleTimeString("vi-VN") : "—"}
+          {time
+            ? new Date(time).toLocaleString("vi-VN", {
+                timeZone: "Asia/Ho_Chi_Minh",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })
+            : "—"}
         </Text>
       ),
     },

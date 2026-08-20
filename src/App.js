@@ -26,6 +26,8 @@ import DocumentsPage from "./pages/DocumentPage";
 import NotificationManagementPage from "./pages/NotificationManagementPage";
 import ReportDashboard from "./pages/ReportDashboard";
 import SacramentPage from "./pages/SacramentPage";
+import MediaManager from "./pages/MediaManager";
+import ContactPage from "./pages/ContactPage";
 import AdminGuard from "./components/AdminGuard";
 export default function App() {
   return (
@@ -76,6 +78,8 @@ export default function App() {
                       path="/lessons"
                       element={<LessonQuestionManager />}
                     />
+                    <Route path="media-library" element={<MediaManager />} />
+                    <Route path="feedbacks" element={<ContactPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AdminLayout>
