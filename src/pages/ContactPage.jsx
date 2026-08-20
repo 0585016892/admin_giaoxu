@@ -130,14 +130,22 @@ const ContactPage = () => {
   // LOAD CONTACTS & CONFIG
   // =====================================================
   const loadContacts = useCallback(
-    async (page = pagination.current, limit = pagination.pageSize) => {
+    async (page = 1, limit = 10) => {
       try {
         setLoading(true);
-        const result = await getContacts({ page, limit, search, status });
+
+        const result = await getContacts({
+          page,
+          limit,
+          search,
+          status,
+        });
 
         if (result?.success) {
           const list = result.data || [];
+
           setContacts(list);
+
           setPagination({
             current: result.pagination?.page || page,
             pageSize: result.pagination?.limit || limit,
@@ -145,10 +153,12 @@ const ContactPage = () => {
           });
 
           const unreads = list.filter((item) => item.status === "new").length;
+
           setUnreadCount(unreads);
         }
       } catch (error) {
         console.error(error);
+
         message.error(
           error.response?.data?.message || "Không thể tải danh sách liên hệ",
         );
@@ -156,43 +166,41 @@ const ContactPage = () => {
         setLoading(false);
       }
     },
-    [pagination.current, pagination.pageSize, search, status],
+    [search, status],
   );
 
-  const loadAutoResponderConfig = async () => {
-    try {
-      setLoadingConfig(true);
-      const res = await getAutoResponderConfig();
-      console.log("Auto Responder Config:", res);
-      if (res?.success && res.data) {
-        const configData = {
-          enabled: res.data.is_enabled,
-          subject: res.data.subject,
-          template: res.data.template,
-        };
-        autoResponderForm.setFieldsValue(configData);
-        setPreviewData(configData);
+  useEffect(() => {
+    const loadAutoResponderConfig = async () => {
+      try {
+        setLoadingConfig(true);
+        const res = await getAutoResponderConfig();
+        if (res?.success && res.data) {
+          const configData = {
+            enabled: res.data.is_enabled,
+            subject: res.data.subject,
+            template: res.data.template,
+          };
+          autoResponderForm.setFieldsValue(configData);
+          setPreviewData(configData);
+        }
+      } catch (error) {
+        console.error(error);
+        message.error(
+          error.response?.data?.message ||
+            "Không thể lấy cấu hình tự động trả lời",
+        );
+      } finally {
+        setLoadingConfig(false);
       }
-    } catch (error) {
-      console.error(error);
-      message.error(
-        error.response?.data?.message ||
-          "Không thể lấy cấu hình tự động trả lời",
-      );
-    } finally {
-      setLoadingConfig(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    loadContacts(1, pagination.pageSize);
-  }, [status]);
-
-  useEffect(() => {
     if (activeTab === "auto-responder") {
       loadAutoResponderConfig();
     }
-  }, [activeTab]);
+  }, [activeTab, autoResponderForm]);
+  useEffect(() => {
+    loadContacts(1, pagination.pageSize);
+  }, [loadContacts, pagination.pageSize]);
 
   // =====================================================
   // ACTIONS - CONTACTS
