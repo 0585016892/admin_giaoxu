@@ -45,6 +45,7 @@ import {
   BookOutlined,
   TeamOutlined,
   SafetyCertificateOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -56,6 +57,7 @@ import {
   markAllNotificationsAsRead,
   markNotificationAsRead,
   deleteNotification,
+  deleteAllNotifications, // <-- Nhớ khai báo/export hàm này trong file notificationApi.js
 } from "../api/notificationApi";
 
 const { Content } = Layout;
@@ -251,6 +253,10 @@ const NotificationPage = () => {
       await deleteNotification(id);
       message.success("Đã xóa thông báo!");
       setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setStats((prev) => ({
+        ...prev,
+        total: Math.max(0, prev.total - 1),
+      }));
       if (selectedNoti?.id === id) setSelectedNoti(null);
     } catch (err) {
       console.error("Lỗi xóa thông báo:", err);
@@ -258,7 +264,37 @@ const NotificationPage = () => {
     }
   };
 
-  // 6. TẠO THÔNG BÁO MỚI (ADMIN)
+  // 6. XÓA TẤT CẢ THÔNG BÁO
+  const handleDeleteAll = () => {
+    Modal.confirm({
+      title: "Xác nhận xóa toàn bộ thông báo?",
+      icon: <ExclamationCircleOutlined style={{ color: "#ff4d4f" }} />,
+      content:
+        "Thao tác này sẽ xóa vĩnh viễn tất cả thông báo hiện có và không thể khôi phục.",
+      okText: "Xóa toàn bộ",
+      okType: "danger",
+      cancelText: "Hủy",
+      onOk: async () => {
+        try {
+          setActionLoading(true);
+          await deleteAllNotifications();
+          setNotifications([]);
+          setStats({ total: 0, unread: 0, today: 0 });
+          setSelectedNoti(null);
+          message.success("Đã xóa toàn bộ thông báo thành công!");
+        } catch (err) {
+          console.error("Lỗi xóa tất cả thông báo:", err);
+          message.error(
+            err?.response?.data?.message || "Không thể xóa tất cả thông báo!",
+          );
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
+
+  // 7. TẠO THÔNG BÁO MỚI (ADMIN)
   const handleCreateNotification = async (values) => {
     try {
       setSubmitting(true);
@@ -318,7 +354,7 @@ const NotificationPage = () => {
     });
   }, [notifications, keyword, statusFilter, typeFilter]);
 
-  // 2. HELPER RENDER ICON TỰ ĐỘNG CHO TOÀN BỘ 22 TYPES
+  // HELPER RENDER ICON TỰ ĐỘNG CHO TOÀN BỘ TYPES
   const renderIcon = (type, relatedType) => {
     const t = (type || relatedType || "").toUpperCase();
 
@@ -510,7 +546,7 @@ const NotificationPage = () => {
             <Card bordered={false} className="noti-action-card">
               <Row gutter={[16, 16]} align="middle">
                 {/* 1. Tìm kiếm theo từ khóa */}
-                <Col xs={24} md={8}>
+                <Col xs={24} md={7}>
                   <Search
                     placeholder="Tìm theo tiêu đề, nội dung..."
                     allowClear
@@ -520,7 +556,7 @@ const NotificationPage = () => {
                 </Col>
 
                 {/* 2. Lọc loại thông báo (Type) */}
-                <Col xs={24} sm={12} md={6}>
+                <Col xs={24} sm={12} md={5}>
                   <Select
                     style={{ width: "100%" }}
                     value={typeFilter}
@@ -529,8 +565,8 @@ const NotificationPage = () => {
                   />
                 </Col>
 
-                {/* 3. Phân loại trạng thái đọc */}
-                <Col xs={24} sm={12} md={10} style={{ textAlign: "right" }}>
+                {/* 3. Phân loại trạng thái đọc & Nút Thao tác hàng loạt */}
+                <Col xs={24} sm={12} md={12} style={{ textAlign: "right" }}>
                   <Space wrap justify="end">
                     <Segmented
                       value={statusFilter}
@@ -554,6 +590,18 @@ const NotificationPage = () => {
                       style={{ color: primaryNavy, fontWeight: 600 }}
                     >
                       Đã đọc tất cả
+                    </Button>
+
+                    <Button
+                      type="link"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={handleDeleteAll}
+                      loading={actionLoading}
+                      disabled={notifications.length === 0}
+                      style={{ fontWeight: 600 }}
+                    >
+                      Xóa tất cả
                     </Button>
                   </Space>
                 </Col>
@@ -800,7 +848,6 @@ const NotificationPage = () => {
                       name="type"
                       initialValue="CREATE_EVENT"
                     >
-                      {/* Đầy đủ 22 lựa chọn tạo mới */}
                       <Select
                         options={Object.keys(TYPE_MAP).map((key) => ({
                           value: key,
@@ -969,76 +1016,6 @@ const NotificationPage = () => {
             font-weight: 700;
             letter-spacing: 1px;
             color: #64748b;
-          }
-
-          /* Action Card */
-          .noti-action-card {
-            border-radius: 16px !important;
-            border: 1px solid rgba(212, 175, 55, 0.25) !important;
-            background: #ffffff !important;
-            box-shadow: 0 4px 16px rgba(27, 54, 93, 0.04) !important;
-            margin-bottom: 24px;
-            padding: 4px;
-          }
-
-          /* List Card */
-          .noti-list-card {
-            border-radius: 20px !important;
-            border: 1px solid rgba(212, 175, 55, 0.25) !important;
-            background: #ffffff !important;
-            box-shadow: 0 6px 20px rgba(27, 54, 93, 0.05) !important;
-            overflow: hidden;
-          }
-
-          .noti-item {
-            padding: 20px 24px !important;
-            transition: all 0.25s ease;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(27, 54, 93, 0.06) !important;
-          }
-
-          .noti-item:hover {
-            background: rgba(212, 175, 55, 0.06);
-          }
-
-          .noti-item.unread {
-            background: rgba(27, 54, 93, 0.02);
-            border-left: 4px solid ${accentGold};
-          }
-
-          .noti-item.read {
-            opacity: 0.85;
-          }
-
-          .noti-item-title {
-            font-size: 15px;
-            color: ${primaryNavy};
-          }
-
-          .noti-item-title.unread-text {
-            font-weight: 700;
-          }
-
-          .noti-type-tag {
-            background: rgba(212, 175, 55, 0.15) !important;
-            border: 1px solid ${accentGold} !important;
-            color: ${primaryNavy} !important;
-            font-size: 11px;
-            border-radius: 10px;
-            font-weight: 600;
-          }
-
-          .modal-noti-body {
-            background: ${softBg};
-            padding: 16px;
-            border-radius: 12px;
-            border-left: 4px solid ${accentGold};
-            margin-top: 12px;
-          }
-
-          @media (max-width: 576px) {
-            .noti-page-wrapper { padding: 40px 12px; }
-            .noti-item { padding: 16px !important; }
           }
         `,
           }}

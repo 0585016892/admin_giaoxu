@@ -39,3 +39,8 @@ export const markNotificationAsRead = (id) => {
 export const deleteNotification = (id) => {
   return axiosClient.delete(`/notifications/${id}`);
 };
+
+// XÓA TẤT CẢ THÔNG BÁO (HÀM MỚI THÊM)
+export const deleteAllNotifications = () => {
+  return axiosClient.delete("/notifications/delete-all");
+};

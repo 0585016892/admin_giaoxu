@@ -114,7 +114,15 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="dashboard-loading-screen">
+      <div
+        className="dashboard-loading-screen"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          height: "100%",
+          justifyContent: "center",
+        }}
+      >
         <Space direction="vertical" align="center" size="middle">
           <Spin size="large" />
           <Text style={{ color: primaryNavy, fontWeight: 600 }}>
