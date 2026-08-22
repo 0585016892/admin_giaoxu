@@ -90,6 +90,10 @@ const EventAdmin = () => {
   const [form] = Form.useForm();
   const API_URL = process.env.REACT_APP_API_URL;
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
+  const [previewTitle, setPreviewTitle] = useState("");
+
   // FETCH DATA
   const fetchEvents = useCallback(async () => {
     try {
@@ -190,7 +194,30 @@ const EventAdmin = () => {
       setSubmitting(false);
     }
   };
+  const getBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
+      reader.readAsDataURL(file);
+
+      reader.onload = () => resolve(reader.result);
+
+      reader.onerror = (error) => reject(error);
+    });
+
+  const handlePreview = async (file) => {
+    if (!file.url && !file.preview) {
+      file.preview = await getBase64(file.originFileObj || file);
+    }
+
+    setPreviewImage(file.url || file.preview || file.thumbUrl);
+
+    setPreviewOpen(true);
+
+    setPreviewTitle(
+      file.name || file.url?.substring(file.url.lastIndexOf("/") + 1),
+    );
+  };
   // TABLE COLUMNS
   const columns = [
     {
@@ -695,8 +722,20 @@ const EventAdmin = () => {
                   <Dragger
                     listType="picture-card"
                     fileList={fileList}
+                    multiple
+                    accept="image/*"
                     beforeUpload={(file) => {
-                      setFileList((prev) => [...prev, file]);
+                      setFileList((prev) => [
+                        ...prev,
+                        {
+                          uid: file.uid,
+                          name: file.name,
+                          status: "done",
+                          originFileObj: file,
+                          url: URL.createObjectURL(file),
+                        },
+                      ]);
+
                       return false;
                     }}
                     onRemove={(file) =>
@@ -704,13 +743,18 @@ const EventAdmin = () => {
                         prev.filter((f) => f.uid !== file.uid),
                       )
                     }
+                    onPreview={handlePreview}
                     className="custom-dragger-uploader"
                   >
                     <p className="ant-upload-drag-icon">
                       <PictureOutlined
-                        style={{ color: accentGold, fontSize: 32 }}
+                        style={{
+                          color: accentGold,
+                          fontSize: 32,
+                        }}
                       />
                     </p>
+
                     <p
                       style={{
                         fontSize: 12,
@@ -719,7 +763,7 @@ const EventAdmin = () => {
                         margin: "4px 0 2px",
                       }}
                     >
-                      Kéo thả ảnh đại diện bài viết vào đây
+                      Kéo thả hoặc chọn nhiều ảnh bài viết
                     </p>
                   </Dragger>
 
@@ -785,7 +829,23 @@ const EventAdmin = () => {
             </Row>
           </Form>
         </Modal>
-
+        <Modal
+          open={previewOpen}
+          title={previewTitle}
+          footer={null}
+          onCancel={() => setPreviewOpen(false)}
+          width={900}
+        >
+          <img
+            alt={previewTitle}
+            style={{
+              width: "100%",
+              maxHeight: "75vh",
+              objectFit: "contain",
+            }}
+            src={previewImage}
+          />
+        </Modal>
         {/* DRAWER: XEM TRƯỚC BÀI VIẾT */}
         <Drawer
           title={

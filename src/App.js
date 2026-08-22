@@ -29,6 +29,8 @@ import SacramentPage from "./pages/SacramentPage";
 import MediaManager from "./pages/MediaManager";
 import ContactPage from "./pages/ContactPage";
 import AdminGuard from "./components/AdminGuard";
+import StudentsPage from "./pages/StudentsPage";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -80,6 +82,10 @@ export default function App() {
                     />
                     <Route path="media-library" element={<MediaManager />} />
                     <Route path="feedbacks" element={<ContactPage />} />
+                    <Route
+                      path="/marriage-students"
+                      element={<StudentsPage />}
+                    />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AdminLayout>
