@@ -1035,6 +1035,7 @@ export default function AdminManager() {
                       <Option value="media_manager">
                         Quản lý truyền thông
                       </Option>
+                      <Option value="catechist">Giáo lý viên</Option>
                     </Select>
                   </Form.Item>
                 </Col>

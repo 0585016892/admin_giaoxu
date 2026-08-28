@@ -13,3 +13,12 @@ export const getDashboard = async () => {
     throw error;
   }
 };
+export const getDashboardCate = async () => {
+  try {
+    const response = await axios.get("/dashboard/dashboard-cate");
+    return response.data;
+  } catch (error) {
+    console.error("Dashboard API error:", error);
+    throw error;
+  }
+};

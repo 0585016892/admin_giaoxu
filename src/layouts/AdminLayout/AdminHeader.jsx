@@ -26,13 +26,13 @@ import {
   HistoryOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
-import { useUser } from "../context/UserContext";
-import socket from "../socket/socket";
+import { useUser } from "../../context/UserContext";
+import socket from "../../socket/socket";
 import {
   getNotificationsToday,
   markAllNotificationsAsRead,
-} from "../api/notificationApi";
-import HelpModal from "../components/HelpModal";
+} from "../../api/notificationApi";
+import HelpModal from "../../components/HelpModal";
 
 const { Header } = Layout;
 const { Text } = Typography;

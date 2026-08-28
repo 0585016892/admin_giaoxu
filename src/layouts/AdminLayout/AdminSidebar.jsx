@@ -20,7 +20,7 @@ import {
   FolderOpenOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useUser } from "../context/UserContext";
+import { useUser } from "../../context/UserContext";
 
 const { Sider } = Layout;
 const { Text, Title } = Typography;
@@ -122,11 +122,15 @@ export default function AdminSidebar({ collapsed }) {
           children: [
             {
               key: "/lessons",
-              label: "Giáo lý Dự tòng & Hôn nhân",
+              label: "Ngân hàng bài học & câu hỏi",
             },
             {
               key: "/marriage-students",
               label: "Danh sách học viên",
+            },
+            {
+              key: "/catechist-management",
+              label: "Danh sách giáo lý viên",
             },
             {
               key: "/exam-prayer",
@@ -150,6 +154,10 @@ export default function AdminSidebar({ collapsed }) {
             {
               key: "/readings",
               label: "Bài đọc & Tin Mừng",
+            },
+            {
+              key: "/dailyverse",
+              label: "Lời chúa",
             },
             {
               key: "/servers",

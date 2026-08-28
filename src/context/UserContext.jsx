@@ -30,6 +30,7 @@ export function UserProvider({ children }) {
     localStorage.setItem("token", token);
 
     const payload = JSON.parse(atob(token.split(".")[1]));
+
     console.log("Decoded JWT payload:", payload);
     setUser({
       id: payload.id,
