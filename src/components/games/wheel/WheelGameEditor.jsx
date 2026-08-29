@@ -35,6 +35,12 @@ import {
   PlayCircle,
   FileCheck,
   Dice5,
+  Eye,
+  Clock,
+  Repeat,
+  Zap,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 import { createGame, updateGame, getGameFileUrl } from "../../../api/gameApi";
@@ -43,7 +49,7 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 /* =========================================================
-   DEFAULT DATA
+   DEFAULT ITEMS
 ========================================================= */
 
 const DEFAULT_ITEMS = [
@@ -77,6 +83,10 @@ const DEFAULT_ITEMS = [
   },
 ];
 
+/* =========================================================
+   COLOR LIST
+========================================================= */
+
 const COLOR_LIST = [
   "#6C4BFF",
   "#1677FF",
@@ -91,7 +101,7 @@ const COLOR_LIST = [
 ];
 
 /* =========================================================
-   DEFAULT CONFIG
+   DEFAULT BACKGROUND
 ========================================================= */
 
 const DEFAULT_BACKGROUND = {
@@ -99,12 +109,20 @@ const DEFAULT_BACKGROUND = {
   image: null,
 };
 
+/* =========================================================
+   DEFAULT THEME
+========================================================= */
+
 const DEFAULT_THEME = {
   primary: "#6C4BFF",
   secondary: "#FFD54F",
   font: "Baloo 2",
   borderRadius: 20,
 };
+
+/* =========================================================
+   DEFAULT SETTINGS
+========================================================= */
 
 const DEFAULT_SETTINGS = {
   timeLimit: 60,
@@ -117,6 +135,10 @@ const DEFAULT_SETTINGS = {
   allowSkip: false,
 };
 
+/* =========================================================
+   DEFAULT WHEEL
+========================================================= */
+
 const DEFAULT_WHEEL = {
   items: DEFAULT_ITEMS,
   wheelColor: "#6C4BFF",
@@ -128,6 +150,30 @@ const DEFAULT_WHEEL = {
 };
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+const cloneItems = (items) => {
+  return items.map((item) => ({
+    ...item,
+  }));
+};
+
+const normalizeBoolean = (value, fallback = false) => {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  return Boolean(value);
+};
+
+const normalizeNumber = (value, fallback = 0) => {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : fallback;
+};
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
@@ -136,33 +182,59 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
   const [loading, setLoading] = useState(false);
 
-  /* =========================================================
-     WHEEL STATE
-  ========================================================= */
+  /* =======================================================
+     WHEEL
+  ======================================================= */
 
-  const [items, setItems] = useState(DEFAULT_ITEMS);
+  const [items, setItems] = useState(cloneItems(DEFAULT_ITEMS));
 
   const [wheelColor, setWheelColor] = useState(DEFAULT_WHEEL.wheelColor);
 
   const [pointerColor, setPointerColor] = useState(DEFAULT_WHEEL.pointerColor);
 
-  /* =========================================================
-     PREVIEW STATE
-  ========================================================= */
+  /* =======================================================
+     THEME
+  ======================================================= */
+
+  const [primaryColor, setPrimaryColor] = useState(DEFAULT_THEME.primary);
+
+  const [secondaryColor, setSecondaryColor] = useState(DEFAULT_THEME.secondary);
+
+  const [fontFamily, setFontFamily] = useState(DEFAULT_THEME.font);
+
+  const [borderRadius, setBorderRadius] = useState(DEFAULT_THEME.borderRadius);
+
+  /* =======================================================
+     BACKGROUND
+  ======================================================= */
+
+  const [backgroundColor, setBackgroundColor] = useState(
+    DEFAULT_BACKGROUND.color,
+  );
+
+  /* =======================================================
+     PREVIEW
+  ======================================================= */
 
   const [isSpinning, setIsSpinning] = useState(false);
 
   const [rotationDegree, setRotationDegree] = useState(0);
 
-  /* =========================================================
+  const [previewResult, setPreviewResult] = useState(null);
+
+  /* =======================================================
      FILE STATE
-  ========================================================= */
+  ======================================================= */
 
   const [thumbnail, setThumbnail] = useState(null);
 
   const [background, setBackground] = useState(null);
 
   const [backgroundMusic, setBackgroundMusic] = useState(null);
+
+  const [correctSound, setCorrectSound] = useState(null);
+
+  const [wrongSound, setWrongSound] = useState(null);
 
   const [spinSound, setSpinSound] = useState(null);
 
@@ -171,7 +243,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   const isEdit = Boolean(game);
 
   /* =========================================================
-     LOAD GAME DATA
+     LOAD GAME
   ========================================================= */
 
   useEffect(() => {
@@ -179,120 +251,212 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       form.setFieldsValue({
         name: "",
         description: "",
+
+        ...DEFAULT_SETTINGS,
+
         timeLimit: DEFAULT_SETTINGS.timeLimit,
+
         spinsPerPlayer: DEFAULT_WHEEL.spinsPerPlayer,
+
         autoSpin: DEFAULT_WHEEL.autoSpin,
+
         showResult: DEFAULT_WHEEL.showResult,
+
         allowReplay: DEFAULT_WHEEL.allowReplay,
       });
 
-      setItems(DEFAULT_ITEMS);
+      setItems(cloneItems(DEFAULT_ITEMS));
+
       setWheelColor(DEFAULT_WHEEL.wheelColor);
+
       setPointerColor(DEFAULT_WHEEL.pointerColor);
 
+      setPrimaryColor(DEFAULT_THEME.primary);
+
+      setSecondaryColor(DEFAULT_THEME.secondary);
+
+      setFontFamily(DEFAULT_THEME.font);
+
+      setBorderRadius(DEFAULT_THEME.borderRadius);
+
+      setBackgroundColor(DEFAULT_BACKGROUND.color);
+
       setThumbnail(null);
+
       setBackground(null);
+
       setBackgroundMusic(null);
+
+      setCorrectSound(null);
+
+      setWrongSound(null);
+
       setSpinSound(null);
+
       setWinSound(null);
 
       return;
     }
 
-    /* =======================================================
-       BASIC
-    ======================================================= */
-
     const settings = game?.settings || {};
+
     const wheel = game?.wheel || {};
+
     const theme = game?.theme || {};
+
     const gameBackground = game?.background || {};
+
     const media = game?.media || {};
+
+    /* =====================================================
+       BASIC
+    ===================================================== */
 
     form.setFieldsValue({
       name: game?.name || "",
 
       description: game?.description || "",
 
-      timeLimit:
-        settings?.timeLimit !== undefined
-          ? Number(settings.timeLimit)
-          : DEFAULT_SETTINGS.timeLimit,
+      timeLimit: normalizeNumber(
+        settings?.timeLimit,
+        DEFAULT_SETTINGS.timeLimit,
+      ),
 
-      spinsPerPlayer:
-        wheel?.spinsPerPlayer !== undefined
-          ? Number(wheel.spinsPerPlayer)
-          : DEFAULT_WHEEL.spinsPerPlayer,
+      shuffleQuestions: normalizeBoolean(
+        settings?.shuffleQuestions,
+        DEFAULT_SETTINGS.shuffleQuestions,
+      ),
 
-      autoSpin:
-        wheel?.autoSpin !== undefined
-          ? Boolean(wheel.autoSpin)
-          : DEFAULT_WHEEL.autoSpin,
+      shuffleAnswers: normalizeBoolean(
+        settings?.shuffleAnswers,
+        DEFAULT_SETTINGS.shuffleAnswers,
+      ),
 
-      showResult:
-        wheel?.showResult !== undefined
-          ? Boolean(wheel.showResult)
-          : DEFAULT_WHEEL.showResult,
+      showScore: normalizeBoolean(
+        settings?.showScore,
+        DEFAULT_SETTINGS.showScore,
+      ),
 
-      allowReplay:
-        wheel?.allowReplay !== undefined
-          ? Boolean(wheel.allowReplay)
-          : DEFAULT_WHEEL.allowReplay,
+      showTimer: normalizeBoolean(
+        settings?.showTimer,
+        DEFAULT_SETTINGS.showTimer,
+      ),
+
+      showProgress: normalizeBoolean(
+        settings?.showProgress,
+        DEFAULT_SETTINGS.showProgress,
+      ),
+
+      allowHint: normalizeBoolean(
+        settings?.allowHint,
+        DEFAULT_SETTINGS.allowHint,
+      ),
+
+      allowSkip: normalizeBoolean(
+        settings?.allowSkip,
+        DEFAULT_SETTINGS.allowSkip,
+      ),
+
+      spinsPerPlayer: normalizeNumber(
+        wheel?.spinsPerPlayer,
+        DEFAULT_WHEEL.spinsPerPlayer,
+      ),
+
+      autoSpin: normalizeBoolean(wheel?.autoSpin, DEFAULT_WHEEL.autoSpin),
+
+      showResult: normalizeBoolean(wheel?.showResult, DEFAULT_WHEEL.showResult),
+
+      allowReplay: normalizeBoolean(
+        wheel?.allowReplay,
+        DEFAULT_WHEEL.allowReplay,
+      ),
     });
 
-    /* =======================================================
-       WHEEL ITEMS
-    ======================================================= */
+    /* =====================================================
+       ITEMS
+    ===================================================== */
 
     if (Array.isArray(wheel?.items) && wheel.items.length > 0) {
-      setItems(
-        wheel.items.map((item, index) => ({
-          id: item?.id ?? index + 1,
+      const loadedItems = wheel.items.map((item, index) => ({
+        id: item?.id ?? index + 1,
 
-          label: item?.label || "",
+        label: item?.label || "",
 
-          value: item?.value || "",
+        value: item?.value || "",
 
-          color: item?.color || COLOR_LIST[index % COLOR_LIST.length],
+        color: item?.color || COLOR_LIST[index % COLOR_LIST.length],
 
-          probability: Number(item?.probability) || 0,
-        })),
-      );
+        probability: normalizeNumber(item?.probability, 0),
+      }));
+
+      setItems(loadedItems);
     } else {
-      setItems(DEFAULT_ITEMS);
+      /*
+       * Game 10 hiện tại wheel.items = [].
+       *
+       * Cho editor một bộ item mặc định để giáo viên
+       * có thể bắt đầu cấu hình.
+       */
+      setItems(cloneItems(DEFAULT_ITEMS));
     }
 
-    /* =======================================================
+    /* =====================================================
+       WHEEL COLORS
+    ===================================================== */
+
+    const loadedWheelColor =
+      wheel?.wheelColor || theme?.primary || DEFAULT_WHEEL.wheelColor;
+
+    const loadedPointerColor =
+      wheel?.pointerColor || theme?.secondary || DEFAULT_WHEEL.pointerColor;
+
+    setWheelColor(loadedWheelColor);
+
+    setPointerColor(loadedPointerColor);
+
+    /* =====================================================
        THEME
-    ======================================================= */
+    ===================================================== */
 
-    setWheelColor(wheel?.wheelColor || theme?.primary || DEFAULT_THEME.primary);
+    setPrimaryColor(theme?.primary || DEFAULT_THEME.primary);
 
-    setPointerColor(
-      wheel?.pointerColor || theme?.secondary || DEFAULT_THEME.secondary,
+    setSecondaryColor(theme?.secondary || DEFAULT_THEME.secondary);
+
+    setFontFamily(theme?.font || DEFAULT_THEME.font);
+
+    setBorderRadius(
+      normalizeNumber(theme?.borderRadius, DEFAULT_THEME.borderRadius),
     );
 
-    /* =======================================================
+    /* =====================================================
+       BACKGROUND
+    ===================================================== */
+
+    setBackgroundColor(gameBackground?.color || DEFAULT_BACKGROUND.color);
+
+    /* =====================================================
        FILE STATE
-    ======================================================= */
-
-    /*
-      Không set URL vào state File.
-
-      File state chỉ dùng cho file mới được upload.
-      File cũ sẽ lấy từ game.thumbnail,
-      game.background.image,
-      game.media.backgroundMusic...
-    */
+    ===================================================== */
 
     setThumbnail(null);
+
     setBackground(null);
+
     setBackgroundMusic(null);
+
+    setCorrectSound(null);
+
+    setWrongSound(null);
+
     setSpinSound(null);
+
     setWinSound(null);
 
     console.log("EDIT WHEEL GAME:", {
       game,
+      settings,
+      wheel,
+      theme,
       background: gameBackground,
       media,
     });
@@ -304,7 +468,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
   const totalProbability = useMemo(() => {
     return items.reduce(
-      (total, item) => total + Number(item?.probability || 0),
+      (total, item) => total + normalizeNumber(item?.probability, 0),
       0,
     );
   }, [items]);
@@ -312,13 +476,13 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   const isProbabilityValid = Math.abs(totalProbability - 100) < 0.01;
 
   /* =========================================================
-     ITEM FUNCTIONS
+     ADD ITEM
   ========================================================= */
 
   const addItem = () => {
     const maxId =
       items.length > 0
-        ? Math.max(...items.map((item) => Number(item?.id) || 0))
+        ? Math.max(...items.map((item) => normalizeNumber(item?.id, 0)))
         : 0;
 
     const newId = maxId + 1;
@@ -337,6 +501,10 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     ]);
   };
 
+  /* =========================================================
+     UPDATE ITEM
+  ========================================================= */
+
   const updateItem = (id, field, value) => {
     setItems((prev) =>
       prev.map((item) =>
@@ -350,6 +518,10 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     );
   };
 
+  /* =========================================================
+     REMOVE ITEM
+  ========================================================= */
+
   const removeItem = (id) => {
     if (items.length <= 2) {
       message.warning("Vòng quay phải có ít nhất 2 ô");
@@ -361,11 +533,13 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   };
 
   /* =========================================================
-     AUTO DISTRIBUTE
+     DISTRIBUTE PROBABILITY
   ========================================================= */
 
   const autoDistributeProbability = () => {
-    if (items.length < 1) return;
+    if (!items.length) {
+      return;
+    }
 
     const base = Math.floor(100 / items.length);
 
@@ -379,7 +553,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       })),
     );
 
-    message.success("Đã tự động chia tỷ lệ");
+    message.success("Đã tự động chia tỷ lệ 100%");
   };
 
   /* =========================================================
@@ -393,7 +567,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   };
 
   /* =========================================================
-     PREVIEW SPIN
+     TEST SPIN
   ========================================================= */
 
   const handleTestSpin = () => {
@@ -401,14 +575,49 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       return;
     }
 
+    if (!isProbabilityValid) {
+      message.warning("Hãy chỉnh tổng tỷ lệ về 100% trước khi quay thử");
+
+      return;
+    }
+
+    setPreviewResult(null);
+
     setIsSpinning(true);
 
-    const randomSpin = 1800 + Math.floor(Math.random() * 360);
+    const random = Math.random() * 360;
+
+    const randomSpin = 1800 + random;
 
     setRotationDegree((prev) => prev + randomSpin);
 
+    /*
+     * Chọn kết quả theo probability.
+     */
+
+    const randomProbability = Math.random() * 100;
+
+    let cumulative = 0;
+
+    let selected = items[items.length - 1];
+
+    for (const item of items) {
+      cumulative += Number(item.probability) || 0;
+
+      if (randomProbability <= cumulative) {
+        selected = item;
+        break;
+      }
+    }
+
     setTimeout(() => {
       setIsSpinning(false);
+
+      setPreviewResult(selected);
+
+      message.success(
+        `Kết quả: ${selected?.label || selected?.value || "Phần thưởng"}`,
+      );
     }, 3500);
   };
 
@@ -420,9 +629,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     try {
       const values = await form.validateFields();
 
-      /* =====================================================
+      /* ===================================================
          VALIDATE ITEMS
-      ===================================================== */
+      =================================================== */
 
       if (items.length < 2) {
         message.error("Vòng quay phải có ít nhất 2 ô");
@@ -462,9 +671,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       setLoading(true);
 
-      /* =====================================================
-         WHEEL DATA
-      ===================================================== */
+      /* ===================================================
+         WHEEL
+      =================================================== */
 
       const wheelData = {
         items: items.map((item, index) => ({
@@ -483,7 +692,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
         pointerColor: pointerColor || DEFAULT_WHEEL.pointerColor,
 
-        spinsPerPlayer: Number(values?.spinsPerPlayer || 1),
+        spinsPerPlayer: Number(
+          values?.spinsPerPlayer || DEFAULT_WHEEL.spinsPerPlayer,
+        ),
 
         autoSpin: Boolean(values?.autoSpin),
 
@@ -492,101 +703,79 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         allowReplay: Boolean(values?.allowReplay),
       };
 
-      /* =====================================================
+      /* ===================================================
          SETTINGS
-      ===================================================== */
+      =================================================== */
 
       const settings = {
-        timeLimit: Number(values?.timeLimit || 60),
+        timeLimit: Number(values?.timeLimit || DEFAULT_SETTINGS.timeLimit),
 
-        shuffleQuestions: false,
+        shuffleQuestions: Boolean(values?.shuffleQuestions),
 
-        shuffleAnswers: false,
+        shuffleAnswers: Boolean(values?.shuffleAnswers),
 
-        showScore: true,
+        showScore: Boolean(values?.showScore),
 
-        showTimer: true,
+        showTimer: Boolean(values?.showTimer),
 
-        showProgress: false,
+        showProgress: Boolean(values?.showProgress),
 
-        allowHint: false,
+        allowHint: Boolean(values?.allowHint),
 
-        allowSkip: false,
+        allowSkip: Boolean(values?.allowSkip),
       };
 
-      /* =====================================================
+      /* ===================================================
          BACKGROUND
-         
-         QUAN TRỌNG:
-         Chỉ có MỘT key background.
-      ===================================================== */
+      =================================================== */
 
       const backgroundConfig = {
-        color: DEFAULT_BACKGROUND.color,
+        color:
+          backgroundColor ||
+          game?.background?.color ||
+          DEFAULT_BACKGROUND.color,
 
-        /*
-          Nếu upload file mới:
-          background sẽ là File.
-
-          Nếu không upload:
-          giữ image cũ từ game.background.image.
-        */
         image: background || game?.background?.image || null,
       };
 
-      /* =====================================================
+      /* ===================================================
          MEDIA
-      ===================================================== */
+      =================================================== */
 
       const media = {
-        /*
-          Nếu upload file mới thì dùng File.
-          Nếu không thì giữ file cũ.
-        */
-
         backgroundMusic:
           backgroundMusic || game?.media?.backgroundMusic || null,
 
-        correctSound: game?.media?.correctSound || null,
+        correctSound: correctSound || game?.media?.correctSound || null,
 
-        wrongSound: game?.media?.wrongSound || null,
+        wrongSound: wrongSound || game?.media?.wrongSound || null,
+
+        spinSound: spinSound || game?.media?.spinSound || null,
+
+        winSound: winSound || game?.media?.winSound || null,
       };
 
-      /*
-        spinSound / winSound:
-        Nếu backend của bạn đang dùng:
-          spinSound
-          winSound
-
-        thì thêm vào media.
-      */
-
-      if (spinSound || game?.media?.spinSound) {
-        media.spinSound = spinSound || game?.media?.spinSound || null;
-      }
-
-      if (winSound || game?.media?.winSound) {
-        media.winSound = winSound || game?.media?.winSound || null;
-      }
-
-      /* =====================================================
+      /* ===================================================
          THEME
-      ===================================================== */
+      =================================================== */
 
       const theme = {
-        primary: wheelColor || DEFAULT_THEME.primary,
+        primary: primaryColor || wheelColor || DEFAULT_THEME.primary,
 
-        secondary: pointerColor || DEFAULT_THEME.secondary,
+        secondary: secondaryColor || pointerColor || DEFAULT_THEME.secondary,
 
-        font: game?.theme?.font || DEFAULT_THEME.font,
+        font: fontFamily || game?.theme?.font || DEFAULT_THEME.font,
 
-        borderRadius:
-          Number(game?.theme?.borderRadius) || DEFAULT_THEME.borderRadius,
+        borderRadius: Number(
+          borderRadius ||
+            game?.theme?.borderRadius ||
+            DEFAULT_THEME.borderRadius,
+        ),
       };
 
-      /* =====================================================
+      /* ===================================================
          GAME DATA
-      ===================================================== */
+      =================================================== */
 
       const gameData = {
         teacher_id: teacherId || game?.teacher_id || null,
@@ -597,44 +786,54 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
         type: "wheel",
 
-        /* BACKGROUND DUY NHẤT */
+        /* BACKGROUND */
+
         background: backgroundConfig,
 
         /* THEME */
+
         theme,
 
         /* SETTINGS */
+
         settings,
 
         /* MEDIA */
+
         media,
 
-        /* QUESTIONS */
+        /* OTHER GAME DATA */
+
         questions: [],
 
-        /* OTHER GAME DATA */
         pairs: [],
 
         cards: [],
 
-        crossword: {},
+        crossword: game?.crossword || {},
 
-        sorting: {},
+        sorting: game?.sorting || {},
 
-        dragDrop: {},
+        dragDrop: game?.dragDrop || {},
 
         /* WHEEL */
+
         wheel: wheelData,
 
         /* THUMBNAIL */
+
         thumbnail: thumbnail || game?.thumbnail || null,
       };
 
+      console.log("====================================");
+
       console.log("WHEEL GAME DATA:", gameData);
 
-      /* =====================================================
+      console.log("====================================");
+
+      /* ===================================================
          CREATE / UPDATE
-      ===================================================== */
+      =================================================== */
 
       const result = isEdit
         ? await updateGame(game.id, gameData)
@@ -645,7 +844,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       }
 
       message.success(
-        isEdit ? "Cập nhật vòng quay thành công" : "Tạo vòng quay thành công",
+        isEdit
+          ? "Cập nhật vòng quay thành công 🎉"
+          : "Tạo vòng quay thành công 🎉",
       );
 
       onSuccess?.(result?.data);
@@ -669,7 +870,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       return null;
     }
 
-    const size = 280;
+    const size = 300;
 
     const segment = 360 / items.length;
 
@@ -679,15 +880,49 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           position: "relative",
           width: size,
           height: size,
-          margin: "24px auto",
+          margin: "30px auto",
         }}
       >
-        {/* WHEEL */}
+        {/* ================================================
+            POINTER
+        ================================================= */}
+
+        <div
+          style={{
+            position: "absolute",
+
+            top: -8,
+
+            left: "50%",
+
+            transform: "translateX(-50%)",
+
+            width: 0,
+
+            height: 0,
+
+            borderLeft: "18px solid transparent",
+
+            borderRight: "18px solid transparent",
+
+            borderTop: `40px solid ${pointerColor}`,
+
+            zIndex: 20,
+
+            filter: "drop-shadow(0 4px 5px rgba(0,0,0,.25))",
+          }}
+        />
+
+        {/* ================================================
+            WHEEL
+        ================================================= */}
 
         <div
           style={{
             width: size,
+
             height: size,
+
             borderRadius: "50%",
 
             background: `conic-gradient(
@@ -703,7 +938,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
             border: `8px solid ${wheelColor}`,
 
-            boxShadow: "0 12px 32px rgba(108,75,255,0.18)",
+            boxShadow: "0 14px 40px rgba(0,0,0,.16)",
 
             position: "relative",
 
@@ -716,6 +951,10 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             overflow: "hidden",
           }}
         >
+          {/* ============================================
+              LABELS
+          ============================================ */}
+
           {items.map((item, index) => {
             const angle = index * segment + segment / 2;
 
@@ -729,33 +968,35 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                   top: "50%",
 
+                  width: 90,
+
+                  marginLeft: -45,
+
+                  textAlign: "center",
+
                   transform: `
                       rotate(${angle}deg)
-                      translateY(-98px)
+                      translateY(-105px)
                       rotate(-${angle}deg)
                     `,
 
                   transformOrigin: "center",
 
-                  width: 86,
-
-                  marginLeft: -43,
-
-                  textAlign: "center",
-
                   color: "#ffffff",
 
-                  fontWeight: 700,
+                  fontWeight: 800,
 
-                  fontSize: 11,
+                  fontSize: 12,
 
-                  textShadow: "0 1px 3px rgba(0,0,0,0.45)",
-
-                  whiteSpace: "nowrap",
+                  textShadow: "0 2px 4px rgba(0,0,0,.5)",
 
                   overflow: "hidden",
 
                   textOverflow: "ellipsis",
+
+                  whiteSpace: "nowrap",
+
+                  pointerEvents: "none",
                 }}
               >
                 {item.label}
@@ -764,50 +1005,24 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           })}
         </div>
 
-        {/* POINTER */}
-
-        <div
-          style={{
-            position: "absolute",
-
-            top: -12,
-
-            left: "50%",
-
-            transform: "translateX(-50%)",
-
-            width: 0,
-
-            height: 0,
-
-            borderLeft: "16px solid transparent",
-
-            borderRight: "16px solid transparent",
-
-            borderTop: `34px solid ${pointerColor}`,
-
-            zIndex: 5,
-
-            filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.3))",
-          }}
-        />
-
-        {/* CENTER BUTTON */}
+        {/* ================================================
+            CENTER
+        ================================================= */}
 
         <div
           onClick={handleTestSpin}
           style={{
             position: "absolute",
 
-            width: 62,
+            width: 68,
 
-            height: 62,
+            height: 68,
 
             borderRadius: "50%",
 
             background: "#ffffff",
 
-            border: `5px solid ${wheelColor}`,
+            border: `6px solid ${wheelColor}`,
 
             left: "50%",
 
@@ -821,14 +1036,14 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
             justifyContent: "center",
 
-            boxShadow: "0 5px 16px rgba(0,0,0,0.18)",
+            boxShadow: "0 6px 20px rgba(0,0,0,.22)",
 
             cursor: isSpinning ? "not-allowed" : "pointer",
 
-            zIndex: 10,
+            zIndex: 30,
           }}
         >
-          <RotateCw size={24} color={wheelColor} />
+          <RotateCw size={28} color={wheelColor} />
         </div>
       </div>
     );
@@ -846,15 +1061,15 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         style={{
           border: "1px dashed #d9d9d9",
 
-          borderRadius: 12,
+          borderRadius: 14,
 
-          padding: 14,
+          padding: 16,
 
           background: "#fafafa",
 
           textAlign: "center",
 
-          minHeight: 130,
+          minHeight: 140,
 
           display: "flex",
 
@@ -870,14 +1085,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         >
           {icon}
 
-          <Text
-            strong
-            style={{
-              fontSize: 13,
-            }}
-          >
-            {title}
-          </Text>
+          <Text strong>{title}</Text>
         </Space>
 
         <Upload
@@ -889,7 +1097,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           <Button
             size="small"
             style={{
-              borderRadius: 8,
+              borderRadius: 9,
             }}
           >
             {file ? "Đổi file" : "Chọn tệp"}
@@ -928,11 +1136,13 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   return (
     <div
       style={{
-        background: "#F8F9FC",
-
         minHeight: "100vh",
 
         padding: 24,
+
+        background: backgroundColor || "#F8F9FC",
+
+        fontFamily: fontFamily || "Baloo 2, sans-serif",
       }}
     >
       {/* =====================================================
@@ -957,7 +1167,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
           borderRadius: 18,
 
-          boxShadow: "0 2px 12px rgba(0,0,0,0.03)",
+          boxShadow: "0 3px 15px rgba(0,0,0,.05)",
         }}
       >
         <Space size={16}>
@@ -976,18 +1186,14 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               level={4}
               style={{
                 margin: 0,
-                fontWeight: 700,
+
+                fontWeight: 800,
               }}
             >
               🎡 {isEdit ? "Chỉnh sửa vòng quay" : "Tạo vòng quay mới"}
             </Title>
 
-            <Text
-              type="secondary"
-              style={{
-                fontSize: 13,
-              }}
-            >
+            <Text type="secondary">
               Tạo trò chơi vòng quay tương tác cho học sinh
             </Text>
           </div>
@@ -1002,13 +1208,15 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           style={{
             borderRadius: 12,
 
-            background: "#6C4BFF",
+            background: primaryColor,
 
-            fontWeight: 600,
+            borderColor: primaryColor,
+
+            fontWeight: 700,
 
             padding: "0 28px",
 
-            boxShadow: "0 4px 12px rgba(108,75,255,0.25)",
+            boxShadow: `0 5px 15px ${primaryColor}45`,
           }}
         >
           {isEdit ? "Lưu thay đổi" : "Hoàn tất & Tạo"}
@@ -1022,7 +1230,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           ================================================= */}
 
           <Col xs={24} lg={15}>
-            {/* BASIC */}
+            {/* =================================================
+                BASIC
+            ================================================= */}
 
             <Card
               bordered={false}
@@ -1035,13 +1245,11 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                 level={5}
                 style={{
                   display: "flex",
-
                   alignItems: "center",
-
                   gap: 8,
                 }}
               >
-                <Settings size={18} color="#6C4BFF" />
+                <Settings size={18} color={primaryColor} />
                 Thông tin cơ bản
               </Title>
 
@@ -1051,7 +1259,6 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                 rules={[
                   {
                     required: true,
-
                     message: "Vui lòng nhập tên trò chơi",
                   },
                 ]}
@@ -1076,7 +1283,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               </Form.Item>
             </Card>
 
-            {/* ITEMS */}
+            {/* =================================================
+                ITEMS
+            ================================================= */}
 
             <Card
               bordered={false}
@@ -1086,7 +1295,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               }}
               title={
                 <Space>
-                  <Trophy size={18} color="#6C4BFF" />
+                  <Trophy size={18} color={primaryColor} />
                   Cấu hình ô vòng quay
                 </Space>
               }
@@ -1110,7 +1319,10 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     onClick={addItem}
                     style={{
                       borderRadius: 10,
-                      background: "#6C4BFF",
+
+                      background: primaryColor,
+
+                      borderColor: primaryColor,
                     }}
                   >
                     Thêm ô
@@ -1118,7 +1330,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                 </Space>
               }
             >
-              {/* PROBABILITY */}
+              {/* =================================================
+                  PROBABILITY
+              ================================================= */}
 
               <div
                 style={{
@@ -1170,12 +1384,14 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                 <Progress
                   type="circle"
                   percent={Math.min(totalProbability, 100)}
-                  width={45}
+                  width={48}
                   strokeColor={isProbabilityValid ? "#52c41a" : "#ff4d4f"}
                 />
               </div>
 
-              {/* LIST */}
+              {/* =================================================
+                  ITEMS LIST
+              ================================================= */}
 
               <div
                 style={{
@@ -1185,7 +1401,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                   gap: 12,
 
-                  maxHeight: 500,
+                  maxHeight: 550,
 
                   overflowY: "auto",
 
@@ -1209,9 +1425,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                       <Col xs={4} sm={2}>
                         <div
                           style={{
-                            width: 30,
+                            width: 32,
 
-                            height: 30,
+                            height: 32,
 
                             borderRadius: "50%",
 
@@ -1225,7 +1441,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                             justifyContent: "center",
 
-                            fontWeight: 700,
+                            fontWeight: 800,
                           }}
                         >
                           {index + 1}
@@ -1302,7 +1518,9 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               </div>
             </Card>
 
-            {/* SETTINGS */}
+            {/* =================================================
+                SETTINGS
+            ================================================= */}
 
             <Card
               bordered={false}
@@ -1338,30 +1556,140 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   </Form.Item>
                 </Col>
 
+                {/* AUTO SPIN */}
+
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="autoSpin"
-                    label="Tự động quay"
+                    label={
+                      <Space>
+                        <Zap size={14} />
+                        Tự động quay
+                      </Space>
+                    }
                     valuePropName="checked"
                   >
                     <Switch />
                   </Form.Item>
                 </Col>
+
+                {/* RESULT */}
 
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="showResult"
-                    label="Hiển thị kết quả"
+                    label={
+                      <Space>
+                        <Eye size={14} />
+                        Hiển thị kết quả
+                      </Space>
+                    }
                     valuePropName="checked"
                   >
                     <Switch />
                   </Form.Item>
                 </Col>
 
+                {/* REPLAY */}
+
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="allowReplay"
-                    label="Cho phép quay lại"
+                    label={
+                      <Space>
+                        <Repeat size={14} />
+                        Cho phép quay lại
+                      </Space>
+                    }
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+
+                {/* SCORE */}
+
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name="showScore"
+                    label="Hiển thị điểm"
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+
+                {/* TIMER */}
+
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name="showTimer"
+                    label={
+                      <Space>
+                        <Clock size={14} />
+                        Hiển thị thời gian
+                      </Space>
+                    }
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+
+                {/* PROGRESS */}
+
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name="showProgress"
+                    label="Hiển thị tiến trình"
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+
+                {/* HINT */}
+
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name="allowHint"
+                    label="Cho phép gợi ý"
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+
+                {/* SKIP */}
+
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name="allowSkip"
+                    label="Cho phép bỏ qua"
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+
+                {/* SHUFFLE QUESTIONS */}
+
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name="shuffleQuestions"
+                    label="Trộn câu hỏi"
+                    valuePropName="checked"
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+
+                {/* SHUFFLE ANSWERS */}
+
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name="shuffleAnswers"
+                    label="Trộn đáp án"
                     valuePropName="checked"
                   >
                     <Switch />
@@ -1370,7 +1698,172 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               </Row>
             </Card>
 
-            {/* MEDIA */}
+            {/* =================================================
+                THEME
+            ================================================= */}
+
+            <Card
+              bordered={false}
+              style={{
+                borderRadius: 18,
+                marginBottom: 20,
+              }}
+            >
+              <Title
+                level={5}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Palette size={18} color={primaryColor} />
+                Giao diện
+              </Title>
+
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12}>
+                  <div
+                    style={{
+                      padding: 14,
+
+                      border: "1px solid #f0f0f0",
+
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+
+                        marginBottom: 8,
+                      }}
+                    >
+                      Màu chính
+                    </Text>
+
+                    <ColorPicker
+                      value={primaryColor}
+                      onChange={(color) => {
+                        const value = color.toHexString();
+
+                        setPrimaryColor(value);
+
+                        setWheelColor(value);
+                      }}
+                      showText
+                    />
+                  </div>
+                </Col>
+
+                <Col xs={24} sm={12}>
+                  <div
+                    style={{
+                      padding: 14,
+
+                      border: "1px solid #f0f0f0",
+
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+
+                        marginBottom: 8,
+                      }}
+                    >
+                      Màu phụ
+                    </Text>
+
+                    <ColorPicker
+                      value={secondaryColor}
+                      onChange={(color) => {
+                        const value = color.toHexString();
+
+                        setSecondaryColor(value);
+
+                        setPointerColor(value);
+                      }}
+                      showText
+                    />
+                  </div>
+                </Col>
+
+                <Col xs={24} sm={12}>
+                  <div
+                    style={{
+                      padding: 14,
+
+                      border: "1px solid #f0f0f0",
+
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+
+                        marginBottom: 8,
+                      }}
+                    >
+                      Bo góc
+                    </Text>
+
+                    <InputNumber
+                      min={0}
+                      max={50}
+                      value={borderRadius}
+                      onChange={(value) =>
+                        setBorderRadius(value ?? DEFAULT_THEME.borderRadius)
+                      }
+                      addonAfter="px"
+                      style={{
+                        width: "100%",
+                      }}
+                    />
+                  </div>
+                </Col>
+
+                <Col xs={24} sm={12}>
+                  <div
+                    style={{
+                      padding: 14,
+
+                      border: "1px solid #f0f0f0",
+
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+
+                        marginBottom: 8,
+                      }}
+                    >
+                      Màu nền
+                    </Text>
+
+                    <ColorPicker
+                      value={backgroundColor}
+                      onChange={(color) =>
+                        setBackgroundColor(color.toHexString())
+                      }
+                      showText
+                    />
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+
+            {/* =================================================
+                MEDIA
+            ================================================= */}
 
             <Card
               bordered={false}
@@ -1416,6 +1909,28 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                 <Col xs={24} sm={8}>
                   <FileUpload
+                    title="Âm thanh đúng"
+                    icon={<CheckCircle2 size={17} />}
+                    accept="audio/*"
+                    file={correctSound}
+                    setter={setCorrectSound}
+                    existing={game?.media?.correctSound}
+                  />
+                </Col>
+
+                <Col xs={24} sm={8}>
+                  <FileUpload
+                    title="Âm thanh sai"
+                    icon={<XCircle size={17} />}
+                    accept="audio/*"
+                    file={wrongSound}
+                    setter={setWrongSound}
+                    existing={game?.media?.wrongSound}
+                  />
+                </Col>
+
+                <Col xs={24} sm={12}>
+                  <FileUpload
                     title="Âm thanh quay"
                     icon={<Volume2 size={17} />}
                     accept="audio/*"
@@ -1425,7 +1940,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   />
                 </Col>
 
-                <Col xs={24} sm={8}>
+                <Col xs={24} sm={12}>
                   <FileUpload
                     title="Âm thanh trúng thưởng"
                     icon={<Trophy size={17} />}
@@ -1456,7 +1971,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                 style={{
                   borderRadius: 18,
 
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+                  boxShadow: "0 5px 24px rgba(0,0,0,.05)",
                 }}
               >
                 <div
@@ -1469,7 +1984,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   }}
                 >
                   <Space>
-                    <Sparkles size={18} color="#6C4BFF" />
+                    <Sparkles size={18} color={primaryColor} />
 
                     <Text strong>Xem trước</Text>
                   </Space>
@@ -1487,13 +2002,21 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                 <Divider />
 
+                {/* =================================================
+                    WHEEL
+                ================================================= */}
+
                 <div
                   style={{
-                    background: "#F4F0FF",
+                    background: `linear-gradient(
+                        145deg,
+                        ${primaryColor}18,
+                        ${secondaryColor}25
+                      )`,
 
-                    borderRadius: 18,
+                    borderRadius: 20,
 
-                    padding: "20px 10px",
+                    padding: "24px 10px",
 
                     textAlign: "center",
 
@@ -1510,11 +2033,152 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   >
                     Bấm vào giữa vòng quay để thử
                   </Text>
+
+                  {/* =================================================
+                      RESULT
+                  ================================================= */}
+
+                  {previewResult && !isSpinning && (
+                    <div
+                      style={{
+                        marginTop: 20,
+
+                        padding: "14px 18px",
+
+                        borderRadius: 14,
+
+                        background: "#ffffff",
+
+                        border: `2px solid ${primaryColor}`,
+
+                        boxShadow: `0 5px 18px ${primaryColor}25`,
+                      }}
+                    >
+                      <Text
+                        type="secondary"
+                        style={{
+                          display: "block",
+
+                          fontSize: 12,
+                        }}
+                      >
+                        🎉 Kết quả
+                      </Text>
+
+                      <Text
+                        strong
+                        style={{
+                          display: "block",
+
+                          marginTop: 4,
+
+                          fontSize: 18,
+
+                          color: primaryColor,
+                        }}
+                      >
+                        {previewResult.label}
+                      </Text>
+
+                      {previewResult.value && (
+                        <Tag
+                          color="gold"
+                          style={{
+                            marginTop: 8,
+                            borderRadius: 8,
+                          }}
+                        >
+                          {previewResult.value}
+                        </Tag>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <Divider />
 
-                {/* COLORS */}
+                {/* =================================================
+                    SUMMARY
+                ================================================= */}
+
+                <Title
+                  level={5}
+                  style={{
+                    fontSize: 14,
+                  }}
+                >
+                  📊 Thông tin vòng quay
+                </Title>
+
+                <Row gutter={[10, 10]}>
+                  <Col span={12}>
+                    <div
+                      style={{
+                        padding: 12,
+
+                        background: "#fafafa",
+
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Text
+                        type="secondary"
+                        style={{
+                          display: "block",
+                          fontSize: 11,
+                        }}
+                      >
+                        Số ô
+                      </Text>
+
+                      <Text
+                        strong
+                        style={{
+                          fontSize: 18,
+                        }}
+                      >
+                        {items.length}
+                      </Text>
+                    </div>
+                  </Col>
+
+                  <Col span={12}>
+                    <div
+                      style={{
+                        padding: 12,
+
+                        background: "#fafafa",
+
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Text
+                        type="secondary"
+                        style={{
+                          display: "block",
+                          fontSize: 11,
+                        }}
+                      >
+                        Số lượt
+                      </Text>
+
+                      <Text
+                        strong
+                        style={{
+                          fontSize: 18,
+                        }}
+                      >
+                        {form.getFieldValue("spinsPerPlayer") || 1}
+                      </Text>
+                    </div>
+                  </Col>
+                </Row>
+
+                <Divider />
+
+                {/* =================================================
+                    COLORS
+                ================================================= */}
 
                 <Title
                   level={5}
@@ -1528,7 +2192,7 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     gap: 6,
                   }}
                 >
-                  <Palette size={16} color="#6C4BFF" />
+                  <Palette size={16} color={primaryColor} />
                   Tùy chỉnh màu sắc
                 </Title>
 
@@ -1553,12 +2217,18 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                           marginBottom: 8,
                         }}
                       >
-                        Màu viền
+                        Màu vòng
                       </Text>
 
                       <ColorPicker
                         value={wheelColor}
-                        onChange={(color) => setWheelColor(color.toHexString())}
+                        onChange={(color) => {
+                          const value = color.toHexString();
+
+                          setWheelColor(value);
+
+                          setPrimaryColor(value);
+                        }}
                         showText
                       />
                     </div>
@@ -1589,9 +2259,13 @@ const WheelGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                       <ColorPicker
                         value={pointerColor}
-                        onChange={(color) =>
-                          setPointerColor(color.toHexString())
-                        }
+                        onChange={(color) => {
+                          const value = color.toHexString();
+
+                          setPointerColor(value);
+
+                          setSecondaryColor(value);
+                        }}
                         showText
                       />
                     </div>

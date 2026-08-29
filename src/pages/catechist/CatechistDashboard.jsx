@@ -17,6 +17,7 @@ import {
   Spin,
   Empty,
   message,
+  ConfigProvider,
 } from "antd";
 import {
   PlusOutlined,
@@ -25,7 +26,7 @@ import {
   RiseOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
-import { Gamepad2, Sparkles } from "lucide-react";
+import { Gamepad2, Sparkles, Heart, Trophy } from "lucide-react";
 
 import { getDashboardCate } from "../../api/dashboardApi";
 import dailyVerseApi from "../../api/dailyVerseApi";
@@ -64,9 +65,6 @@ export default function CatechistDashboard() {
       setError(false);
 
       const response = await getDashboardCate();
-
-      console.log("📊 Dashboard Catechist:", response);
-
       const data = response?.data?.data || response?.data || response || null;
 
       if (!data) {
@@ -77,7 +75,6 @@ export default function CatechistDashboard() {
     } catch (err) {
       console.error("❌ Lỗi lấy dashboard:", err);
       setError(true);
-
       message.error(
         err?.response?.data?.message || "Không thể tải dữ liệu dashboard",
       );
@@ -89,11 +86,11 @@ export default function CatechistDashboard() {
   useEffect(() => {
     fetchDashboard();
   }, []);
+
   useEffect(() => {
     const fetchDailyVerse = async () => {
       try {
         const res = await dailyVerseApi.getRandom();
-
         if (res.data?.success) {
           setDailyVerse(res.data.data);
         }
@@ -104,7 +101,16 @@ export default function CatechistDashboard() {
 
     fetchDailyVerse();
   }, []);
-  console.log(dailyVerse);
+
+  // Card pastel base style
+  const chibiCardStyle = {
+    borderRadius: 24,
+    border: "2px solid #FFF0F5",
+    boxShadow: "0 10px 25px rgba(255, 107, 139, 0.06)",
+    background: "#FFFFFF",
+    overflow: "hidden",
+    transition: "all 0.3s ease",
+  };
 
   // =====================================================
   // LOADING
@@ -117,12 +123,16 @@ export default function CatechistDashboard() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          background: "linear-gradient(135deg, #FFF0F5 0%, #F3E8FF 100%)",
+          borderRadius: 24,
+          padding: 24,
         }}
       >
         <Flex vertical align="center" gap={16}>
           <Spin size="large" />
-
-          <Text type="secondary">Đang tải dữ liệu dashboard...</Text>
+          <Text style={{ fontWeight: 700, color: "#FF6B8B" }}>
+            Đang tải dữ liệu đáng yêu cho bạn... ✨
+          </Text>
         </Flex>
       </div>
     );
@@ -144,87 +154,52 @@ export default function CatechistDashboard() {
         <Card
           bordered={false}
           style={{
-            borderRadius: 20,
+            ...chibiCardStyle,
             textAlign: "center",
             maxWidth: 450,
             width: "100%",
+            padding: 20,
           }}
         >
-          <Empty description="Không thể tải dữ liệu dashboard" />
-
+          <Empty description="Chưa tải được dữ liệu rồi!" />
           <Button
             type="primary"
             icon={<ReloadOutlined />}
             onClick={fetchDashboard}
             style={{
               marginTop: 16,
-              borderRadius: 10,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%)",
+              border: "none",
+              fontWeight: 700,
+              height: 40,
             }}
           >
-            Thử lại
+            Thử lại nhé
           </Button>
         </Card>
       </div>
     );
   }
 
-  // =====================================================
   // DATA
-  // =====================================================
-
   const metrics = dashboard?.top_metrics || {};
-
   const totalStudents = metrics?.total_students?.value ?? 0;
-
   const studentCompare = metrics?.total_students?.compare_last_month_pct ?? 0;
-
   const totalClasses = metrics?.classes?.total ?? 0;
-
   const activeClasses = metrics?.classes?.active ?? 0;
-
   const totalLessons = metrics?.lessons?.total ?? 0;
-
   const newLessons = metrics?.lessons?.new_this_month ?? 0;
-
   const completionRate = metrics?.completion_rate?.value_pct ?? 0;
-
   const completionCompare =
     metrics?.completion_rate?.compare_last_month_pct ?? 0;
 
-  // =====================================================
-  // WEEKLY PROGRESS
-  // =====================================================
-
   const weeklyProgress = dashboard?.weekly_progress?.chart_data || [];
 
-  // =====================================================
-  // QUIZ
-  // =====================================================
-
   const quizMetrics = dashboard?.quiz_metrics || {};
-
   const correctPct = quizMetrics?.correct_pct ?? 0;
-
   const wrongPct = quizMetrics?.wrong_pct ?? 0;
-
   const uncompletedPct = quizMetrics?.uncompleted_pct ?? 0;
-
-  // =====================================================
-  // CARD STYLE
-  // =====================================================
-
-  const cardStyle = {
-    borderRadius: 20,
-    border: "1px solid #f1f5f9",
-    boxShadow:
-      "0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02)",
-    background: "#ffffff",
-    overflow: "hidden",
-  };
-
-  // =====================================================
-  // STUDENTS SUPPORT MOCK
-  // =====================================================
 
   const studentsSupportData = [
     {
@@ -232,7 +207,8 @@ export default function CatechistDashboard() {
       name: "Maria An",
       class: "Lớp 3A - Ấu Nhi",
       status: "Cần hỗ trợ",
-      color: "error",
+      color: "#FF6B8B",
+      bg: "#FFF0F5",
       note: "Chưa hoàn thành 2 bài trắc nghiệm",
     },
     {
@@ -240,7 +216,8 @@ export default function CatechistDashboard() {
       name: "Giuse Minh",
       class: "Lớp 4B - Thiếu Nhi",
       status: "Đang tiến bộ",
-      color: "warning",
+      color: "#F59E0B",
+      bg: "#FEF3C7",
       note: "Điểm trắc nghiệm tăng 15%",
     },
     {
@@ -248,7 +225,8 @@ export default function CatechistDashboard() {
       name: "Têrêsa Hân",
       class: "Lớp 5A - Nghĩa Sĩ",
       status: "Cần hỗ trợ",
-      color: "error",
+      color: "#FF6B8B",
+      bg: "#FFF0F5",
       note: "Vắng mặt 2 buổi học gần nhất",
     },
     {
@@ -256,1053 +234,933 @@ export default function CatechistDashboard() {
       name: "Phêrô Khang",
       class: "Lớp 4A - Thiếu Nhi",
       status: "Xuất sắc",
-      color: "success",
+      color: "#10B981",
+      bg: "#D1FAE5",
       note: "Đạt điểm tối đa bài kiểm tra",
     },
   ];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-        padding: "8px 4px",
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#FF6B8B",
+          fontFamily: "'Quicksand', 'Be Vietnam Pro', sans-serif",
+          borderRadius: 20,
+        },
       }}
     >
-      {/* =====================================================
-          1. TOP METRICS
-      ====================================================== */}
-
-      <Row gutter={[20, 20]}>
-        {/* Tổng học sinh */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={cardStyle} bodyStyle={{ padding: 20 }}>
-            <Flex align="center" gap={16}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 16,
-                  background: "#eff6ff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <img
-                  src={IMAGES.statStudents}
-                  alt="Total Students"
-                  style={{
-                    width: 50,
-                    height: 50,
-                    objectFit: "contain",
-                  }}
-                />
-              </div>
-
-              <Flex
-                vertical
-                justify="center"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  Tổng học sinh
-                </Text>
-
-                <Title
-                  level={2}
-                  style={{
-                    margin: "2px 0 4px",
-                    color: "#0f172a",
-                    fontWeight: 700,
-                  }}
-                >
-                  {totalStudents}
-                </Title>
-
-                <Flex align="center" gap={4}>
-                  <Tag
-                    color="success"
-                    style={{
-                      borderRadius: 12,
-                      margin: 0,
-                      padding: "0 6px",
-                      fontSize: 11,
-                    }}
-                  >
-                    <RiseOutlined /> +{studentCompare}%
-                  </Tag>
-
-                  <Text
-                    type="secondary"
-                    style={{
-                      fontSize: 11,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    vs tháng trước
-                  </Text>
-                </Flex>
-              </Flex>
-            </Flex>
-          </Card>
-        </Col>
-
-        {/* Số lớp */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={cardStyle} bodyStyle={{ padding: 20 }}>
-            <Flex align="center" gap={16}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 16,
-                  background: "#f0fdf4",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <img
-                  src={IMAGES.statClasses}
-                  alt="Active Classes"
-                  style={{
-                    width: 50,
-                    height: 50,
-                    objectFit: "contain",
-                  }}
-                />
-              </div>
-
-              <Flex
-                vertical
-                justify="center"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  Số lớp phụ trách
-                </Text>
-
-                <Title
-                  level={2}
-                  style={{
-                    margin: "2px 0 4px",
-                    color: "#0f172a",
-                    fontWeight: 700,
-                  }}
-                >
-                  {String(totalClasses).padStart(2, "0")}
-                </Title>
-
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 12,
-                  }}
-                >
-                  <span
-                    style={{
-                      color: "#16a34a",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {activeClasses} lớp
-                  </span>{" "}
-                  đang hoạt động
-                </Text>
-              </Flex>
-            </Flex>
-          </Card>
-        </Col>
-
-        {/* Bài học */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={cardStyle} bodyStyle={{ padding: 20 }}>
-            <Flex align="center" gap={16}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 16,
-                  background: "#faf5ff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <img
-                  src={IMAGES.statLessons}
-                  alt="Created Lessons"
-                  style={{
-                    width: 50,
-                    height: 50,
-                    objectFit: "contain",
-                  }}
-                />
-              </div>
-
-              <Flex
-                vertical
-                justify="center"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  Bài học đã soạn
-                </Text>
-
-                <Title
-                  level={2}
-                  style={{
-                    margin: "2px 0 4px",
-                    color: "#0f172a",
-                    fontWeight: 700,
-                  }}
-                >
-                  {totalLessons}
-                </Title>
-
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 12,
-                  }}
-                >
-                  <span
-                    style={{
-                      color: "#9333ea",
-                      fontWeight: 600,
-                    }}
-                  >
-                    +{newLessons} bài mới
-                  </span>{" "}
-                  tháng này
-                </Text>
-              </Flex>
-            </Flex>
-          </Card>
-        </Col>
-
-        {/* Tỷ lệ hoàn thành */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={cardStyle} bodyStyle={{ padding: 20 }}>
-            <Flex align="center" gap={16}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 16,
-                  background: "#fffbeb",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <img
-                  src={IMAGES.statAchievements}
-                  alt="Completion Rate"
-                  style={{
-                    width: 50,
-                    height: 50,
-                    objectFit: "contain",
-                  }}
-                />
-              </div>
-
-              <Flex
-                vertical
-                justify="center"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  Tỷ lệ hoàn thành
-                </Text>
-
-                <Title
-                  level={2}
-                  style={{
-                    margin: "2px 0 4px",
-                    color: "#0f172a",
-                    fontWeight: 700,
-                  }}
-                >
-                  {completionRate}%
-                </Title>
-
-                <Flex align="center" gap={4}>
-                  <Tag
-                    color="warning"
-                    style={{
-                      borderRadius: 12,
-                      margin: 0,
-                      padding: "0 6px",
-                      fontSize: 11,
-                    }}
-                  >
-                    <RiseOutlined /> +{completionCompare}%
-                  </Tag>
-
-                  <Text
-                    type="secondary"
-                    style={{
-                      fontSize: 11,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    vs tháng trước
-                  </Text>
-                </Flex>
-              </Flex>
-            </Flex>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* =====================================================
-          2. CHART + QUIZ + WORD OF GOD
-      ====================================================== */}
-
-      <Row gutter={[20, 20]}>
-        {/* Biểu đồ */}
-        <Col xs={24} lg={10}>
-          <Card
-            title={
-              <Flex align="center" gap={8}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 24,
+          padding: "4px",
+        }}
+      >
+        {/* =====================================================
+            1. TOP METRICS
+        ====================================================== */}
+        <Row gutter={[20, 20]}>
+          {/* Tổng học sinh */}
+          <Col xs={24} sm={12} lg={6}>
+            <Card
+              bordered={false}
+              style={{
+                ...chibiCardStyle,
+                background: "linear-gradient(135deg, #FFFFFF 0%, #FFF0F5 100%)",
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Flex align="center" gap={16}>
                 <div
                   style={{
-                    width: 4,
-                    height: 16,
-                    background: "#2563eb",
-                    borderRadius: 2,
-                  }}
-                />
-
-                <Title
-                  level={5}
-                  style={{
-                    margin: 0,
-                    fontWeight: 700,
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    background: "#FFE4E6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    border: "2px solid #FECDD3",
                   }}
                 >
-                  Tiến độ học tập tuần này
-                </Title>
+                  <img
+                    src={IMAGES.statStudents}
+                    alt="Total Students"
+                    style={{
+                      width: 48,
+                      height: 48,
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
+
+                <Flex
+                  vertical
+                  justify="center"
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  <Text
+                    style={{ fontSize: 13, fontWeight: 700, color: "#881337" }}
+                  >
+                    Tổng học sinh
+                  </Text>
+                  <Title
+                    level={2}
+                    style={{
+                      margin: "2px 0 4px",
+                      color: "#FF6B8B",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {totalStudents}
+                  </Title>
+
+                  <Flex align="center" gap={4}>
+                    <Tag
+                      style={{
+                        borderRadius: 12,
+                        margin: 0,
+                        padding: "2px 8px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#10B981",
+                        background: "#D1FAE5",
+                        border: "none",
+                      }}
+                    >
+                      <RiseOutlined /> +{studentCompare}%
+                    </Tag>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: "#9CA3AF",
+                        fontWeight: 600,
+                      }}
+                    >
+                      vs tháng trước
+                    </Text>
+                  </Flex>
+                </Flex>
               </Flex>
-            }
-            extra={
-              <Segmented
-                options={["Tuần", "Tháng"]}
-                value={timeRange}
-                onChange={setTimeRange}
-                style={{
-                  background: "#f8fafc",
-                  padding: 3,
-                }}
-              />
-            }
-            bordered={false}
-            style={cardStyle}
-            bodyStyle={{ padding: 24 }}
-          >
-            <div
+            </Card>
+          </Col>
+
+          {/* Số lớp */}
+          <Col xs={24} sm={12} lg={6}>
+            <Card
+              bordered={false}
               style={{
-                height: 200,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
+                ...chibiCardStyle,
+                background: "linear-gradient(135deg, #FFFFFF 0%, #ECFDF5 100%)",
               }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Flex align="center" gap={16}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    background: "#D1FAE5",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    border: "2px solid #A7F3D0",
+                  }}
+                >
+                  <img
+                    src={IMAGES.statClasses}
+                    alt="Active Classes"
+                    style={{
+                      width: 48,
+                      height: 48,
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
+
+                <Flex
+                  vertical
+                  justify="center"
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  <Text
+                    style={{ fontSize: 13, fontWeight: 700, color: "#065F46" }}
+                  >
+                    Lớp phụ trách
+                  </Text>
+                  <Title
+                    level={2}
+                    style={{
+                      margin: "2px 0 4px",
+                      color: "#10B981",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {String(totalClasses).padStart(1, "0")}
+                  </Title>
+                  <Text
+                    style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}
+                  >
+                    <span style={{ color: "#059669", fontWeight: 700 }}>
+                      {activeClasses} lớp
+                    </span>{" "}
+                    hoạt động 🌟
+                  </Text>
+                </Flex>
+              </Flex>
+            </Card>
+          </Col>
+
+          {/* Bài học */}
+          <Col xs={24} sm={12} lg={6}>
+            <Card
+              bordered={false}
+              style={{
+                ...chibiCardStyle,
+                background: "linear-gradient(135deg, #FFFFFF 0%, #F3E8FF 100%)",
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Flex align="center" gap={16}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    background: "#E9D5FF",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    border: "2px solid #DDD6FE",
+                  }}
+                >
+                  <img
+                    src={IMAGES.statLessons}
+                    alt="Created Lessons"
+                    style={{
+                      width: 48,
+                      height: 48,
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
+
+                <Flex
+                  vertical
+                  justify="center"
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  <Text
+                    style={{ fontSize: 13, fontWeight: 700, color: "#581C87" }}
+                  >
+                    Bài học đã soạn
+                  </Text>
+                  <Title
+                    level={2}
+                    style={{
+                      margin: "2px 0 4px",
+                      color: "#9333EA",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {totalLessons}
+                  </Title>
+                  <Text
+                    style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}
+                  >
+                    <span style={{ color: "#7E22CE", fontWeight: 700 }}>
+                      +{newLessons} bài mới
+                    </span>{" "}
+                    tháng này ✨
+                  </Text>
+                </Flex>
+              </Flex>
+            </Card>
+          </Col>
+
+          {/* Tỷ lệ hoàn thành */}
+          <Col xs={24} sm={12} lg={6}>
+            <Card
+              bordered={false}
+              style={{
+                ...chibiCardStyle,
+                background: "linear-gradient(135deg, #FFFFFF 0%, #FEF3C7 100%)",
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Flex align="center" gap={16}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    background: "#FDE68A",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    border: "2px solid #FCD34D",
+                  }}
+                >
+                  <img
+                    src={IMAGES.statAchievements}
+                    alt="Completion Rate"
+                    style={{
+                      width: 48,
+                      height: 48,
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
+
+                <Flex
+                  vertical
+                  justify="center"
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  <Text
+                    style={{ fontSize: 13, fontWeight: 700, color: "#78350F" }}
+                  >
+                    Tỷ lệ hoàn thành
+                  </Text>
+                  <Title
+                    level={2}
+                    style={{
+                      margin: "2px 0 4px",
+                      color: "#D97706",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {completionRate}%
+                  </Title>
+                  <Flex align="center" gap={4}>
+                    <Tag
+                      style={{
+                        borderRadius: 12,
+                        margin: 0,
+                        padding: "2px 8px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#D97706",
+                        background: "#FEF3C7",
+                        border: "none",
+                      }}
+                    >
+                      <RiseOutlined /> +{completionCompare}%
+                    </Tag>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: "#9CA3AF",
+                        fontWeight: 600,
+                      }}
+                    >
+                      vs tháng trước
+                    </Text>
+                  </Flex>
+                </Flex>
+              </Flex>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* =====================================================
+            2. CHART + QUIZ + WORD OF GOD
+        ====================================================== */}
+        <Row gutter={[20, 20]}>
+          {/* Biểu đồ */}
+          <Col xs={24} lg={10}>
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <Sparkles size={18} color="#3B82F6" />
+                  <Title
+                    level={5}
+                    style={{ margin: 0, fontWeight: 800, color: "#1E3A8A" }}
+                  >
+                    Tiến độ học tập tuần này
+                  </Title>
+                </Flex>
+              }
+              extra={
+                <Segmented
+                  options={["Tuần", "Tháng"]}
+                  value={timeRange}
+                  onChange={setTimeRange}
+                  style={{
+                    background: "#EFF6FF",
+                    padding: 3,
+                    borderRadius: 14,
+                    fontWeight: 700,
+                  }}
+                />
+              }
+              bordered={false}
+              style={chibiCardStyle}
+              bodyStyle={{ padding: 24 }}
             >
               <div
                 style={{
-                  height: 160,
+                  height: 200,
                   display: "flex",
-                  alignItems: "flex-end",
+                  flexDirection: "column",
                   justifyContent: "space-between",
-                  padding: "0 10px",
-                  borderBottom: "1px dashed #e2e8f0",
-                  position: "relative",
                 }}
               >
-                {weeklyProgress.length > 0 ? (
-                  weeklyProgress.map((item, index) => {
-                    const value = Math.min(
-                      100,
-                      Math.max(0, Number(item?.value || 0)),
-                    );
+                <div
+                  style={{
+                    height: 160,
+                    display: "flex",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                    padding: "0 10px",
+                    borderBottom: "2px dashed #BFDBFE",
+                    position: "relative",
+                  }}
+                >
+                  {weeklyProgress.length > 0 ? (
+                    weeklyProgress.map((item, index) => {
+                      const value = Math.min(
+                        100,
+                        Math.max(0, Number(item?.value || 0)),
+                      );
 
-                    return (
-                      <Flex
-                        vertical
-                        align="center"
-                        key={`${item?.day}-${index}`}
+                      return (
+                        <Flex
+                          vertical
+                          align="center"
+                          key={`${item?.day}-${index}`}
+                          style={{
+                            height: "100%",
+                            justifyContent: "flex-end",
+                            width: "11%",
+                          }}
+                        >
+                          <Tooltip title={`${item?.day}: ${value}%`}>
+                            <div
+                              style={{
+                                width: "100%",
+                                maxWidth: 22,
+                                height: `${value}%`,
+                                minHeight: value > 0 ? 6 : 0,
+                                background:
+                                  item?.day === "CN"
+                                    ? "linear-gradient(180deg, #FF6B8B 0%, #FF85A1 100%)"
+                                    : "linear-gradient(180deg, #60A5FA 0%, #93C5FD 100%)",
+                                borderRadius: "10px 10px 4px 4px",
+                                transition: "all 0.3s ease",
+                                cursor: "pointer",
+                                boxShadow: "0 4px 10px rgba(96, 165, 250, 0.2)",
+                              }}
+                            />
+                          </Tooltip>
+                        </Flex>
+                      );
+                    })
+                  ) : (
+                    <Flex
+                      style={{ width: "100%", height: "100%" }}
+                      align="center"
+                      justify="center"
+                    >
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="Chưa có dữ liệu"
+                      />
+                    </Flex>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "8px 10px 0",
+                    fontSize: 12,
+                    color: "#64748B",
+                    fontWeight: 700,
+                  }}
+                >
+                  {weeklyProgress.map((item, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        color: item?.day === "CN" ? "#FF6B8B" : "#64748B",
+                        fontWeight: item?.day === "CN" ? 800 : 700,
+                      }}
+                    >
+                      {item?.day}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </Col>
+
+          {/* Kết quả quiz */}
+          <Col xs={24} lg={7}>
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <Trophy size={18} color="#10B981" />
+                  <Title
+                    level={5}
+                    style={{ margin: 0, fontWeight: 800, color: "#065F46" }}
+                  >
+                    Kết quả trắc nghiệm
+                  </Title>
+                </Flex>
+              }
+              bordered={false}
+              style={chibiCardStyle}
+              bodyStyle={{ padding: 24 }}
+            >
+              <Flex
+                vertical
+                justify="center"
+                align="center"
+                gap={20}
+                style={{ height: 200 }}
+              >
+                <Progress
+                  type="dashboard"
+                  percent={correctPct}
+                  format={(percent) => (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
                         style={{
-                          height: "100%",
-                          justifyContent: "flex-end",
-                          width: "11%",
+                          fontSize: 26,
+                          fontWeight: 800,
+                          color: "#10B981",
                         }}
                       >
-                        <Tooltip title={`${item?.day}: ${value}%`}>
-                          <div
-                            style={{
-                              width: "100%",
-                              maxWidth: 24,
-                              height: `${value}%`,
-                              minHeight: value > 0 ? 4 : 0,
-                              background:
-                                item?.day === "CN"
-                                  ? "linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%)"
-                                  : "#e2e8f0",
-                              borderRadius: "6px 6px 0 0",
-                              transition: "all 0.3s ease",
-                              cursor: "pointer",
-                            }}
-                          />
-                        </Tooltip>
-                      </Flex>
-                    );
-                  })
-                ) : (
-                  <Flex
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                    }}
-                    align="center"
-                    justify="center"
-                  >
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="Chưa có dữ liệu"
-                    />
-                  </Flex>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "8px 10px 0",
-                  fontSize: 12,
-                  color: "#64748b",
-                  fontWeight: 600,
-                }}
-              >
-                {weeklyProgress.map((item, index) => (
-                  <span
-                    key={index}
-                    style={{
-                      color: item?.day === "CN" ? "#2563eb" : "#64748b",
-                      fontWeight: item?.day === "CN" ? 700 : 600,
-                    }}
-                  >
-                    {item?.day}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Card>
-        </Col>
-
-        {/* Kết quả quiz */}
-        <Col xs={24} lg={7}>
-          <Card
-            title={
-              <Flex align="center" gap={8}>
-                <div
-                  style={{
-                    width: 4,
-                    height: 16,
-                    background: "#10b981",
-                    borderRadius: 2,
+                        {percent}%
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "#6B7280",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Chính xác
+                      </span>
+                    </div>
+                  )}
+                  strokeColor={{
+                    "0%": "#10B981",
+                    "100%": "#34D399",
                   }}
+                  trailColor="#E5E7EB"
+                  size={135}
+                  strokeWidth={10}
                 />
 
-                <Title
-                  level={5}
+                <Flex
+                  justify="space-between"
                   style={{
-                    margin: 0,
-                    fontWeight: 700,
+                    width: "100%",
+                    background: "#F0FDF4",
+                    padding: "10px 14px",
+                    borderRadius: 16,
+                    border: "1.5px solid #DCFCE7",
                   }}
                 >
-                  Kết quả trắc nghiệm
-                </Title>
+                  <Badge
+                    color="#10B981"
+                    text={
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: "#065F46",
+                        }}
+                      >
+                        Đúng {correctPct}%
+                      </Text>
+                    }
+                  />
+                  <Badge
+                    color="#FF6B8B"
+                    text={
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: "#9F1239",
+                        }}
+                      >
+                        Sai {wrongPct}%
+                      </Text>
+                    }
+                  />
+                  <Badge
+                    color="#F59E0B"
+                    text={
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: "#92400E",
+                        }}
+                      >
+                        Chưa {uncompletedPct}%
+                      </Text>
+                    }
+                  />
+                </Flex>
               </Flex>
-            }
-            bordered={false}
-            style={cardStyle}
-            bodyStyle={{ padding: 24 }}
-          >
-            <Flex
-              vertical
-              justify="center"
-              align="center"
-              gap={20}
+            </Card>
+          </Col>
+
+          {/* Lời Chúa */}
+          <Col xs={24} lg={7}>
+            <Card
+              bordered={false}
               style={{
-                height: 200,
+                ...chibiCardStyle,
+                background: "linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%)",
+                border: "2px solid #FDE68A",
+                position: "relative",
               }}
+              bodyStyle={{ padding: 24, height: "100%" }}
             >
-              <Progress
-                type="dashboard"
-                percent={correctPct}
-                format={(percent) => (
-                  <div
+              <Flex
+                vertical
+                justify="space-between"
+                style={{ height: 200, position: "relative", zIndex: 1 }}
+              >
+                <div>
+                  <Flex align="center" justify="space-between">
+                    <Tag
+                      style={{
+                        borderRadius: 14,
+                        fontWeight: 800,
+                        padding: "3px 12px",
+                        margin: 0,
+                        background: "#F59E0B",
+                        color: "#FFFFFF",
+                        border: "none",
+                        boxShadow: "0 4px 10px rgba(245, 158, 11, 0.3)",
+                      }}
+                    >
+                      <Sparkles
+                        size={13}
+                        style={{ marginRight: 4, display: "inline" }}
+                      />
+                      LỜI CHÚA HÔM NAY
+                    </Tag>
+                    <Heart size={20} fill="#FF6B8B" color="#FF6B8B" />
+                  </Flex>
+
+                  <Paragraph
                     style={{
+                      marginTop: 16,
+                      color: "#78350F",
+                      fontWeight: 700,
+                      fontSize: 13.5,
+                      lineHeight: 1.6,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    "
+                    {dailyVerse?.verse_text || "Đang tải Lời Chúa ngọt ngào..."}
+                    "
+                  </Paragraph>
+                </div>
+
+                <Flex align="center" justify="flex-end">
+                  <Text
+                    strong
+                    style={{
+                      color: "#D97706",
+                      fontSize: 12.5,
+                      fontWeight: 800,
+                    }}
+                  >
+                    – {dailyVerse?.reference || "Tân Ước"} –
+                  </Text>
+                </Flex>
+              </Flex>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* =====================================================
+            3. QUICK ACTION + STUDENTS
+        ====================================================== */}
+        <Row gutter={[20, 20]}>
+          {/* Thao tác nhanh */}
+          <Col xs={24} lg={8}>
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <Sparkles size={18} color="#FF6B8B" />
+                  <Title
+                    level={5}
+                    style={{ margin: 0, fontWeight: 800, color: "#881337" }}
+                  >
+                    Thao tác nhanh
+                  </Title>
+                </Flex>
+              }
+              bordered={false}
+              style={{ ...chibiCardStyle, height: "100%" }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Row gutter={[12, 12]}>
+                {/* Soạn bài */}
+                <Col span={12}>
+                  <Button
+                    type="text"
+                    onClick={() => navigate("/catechist/lessons")}
+                    style={{
+                      height: 92,
+                      width: "100%",
+                      borderRadius: 20,
+                      background: "#FFF0F5",
+                      color: "#FF6B8B",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      border: "1.5px solid #FBCFE8",
+                      fontWeight: 800,
+                      transition: "all 0.25s ease",
                     }}
                   >
-                    <span
+                    <div
                       style={{
-                        fontSize: 24,
-                        fontWeight: 800,
-                        color: "#0f172a",
+                        background: "#FF6B8B",
+                        color: "#fff",
+                        padding: 8,
+                        borderRadius: 12,
+                        display: "flex",
+                        boxShadow: "0 4px 10px rgba(255, 107, 139, 0.3)",
                       }}
                     >
-                      {percent}%
-                    </span>
+                      <PlusOutlined style={{ fontSize: 16 }} />
+                    </div>
+                    <span style={{ fontSize: 12 }}>Bài học</span>
+                  </Button>
+                </Col>
 
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: "#64748b",
-                        fontWeight: 500,
-                      }}
-                    >
-                      Chính xác
-                    </span>
-                  </div>
-                )}
-                strokeColor={{
-                  "0%": "#10b981",
-                  "100%": "#059669",
-                }}
-                trailColor="#f1f5f9"
-                size={140}
-                strokeWidth={10}
-              />
-
-              <Flex
-                justify="space-between"
-                style={{
-                  width: "100%",
-                  background: "#f8fafc",
-                  padding: "10px 16px",
-                  borderRadius: 12,
-                }}
-              >
-                <Badge
-                  color="#10b981"
-                  text={
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      Đúng {correctPct}%
-                    </Text>
-                  }
-                />
-
-                <Badge
-                  color="#ef4444"
-                  text={
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      Sai {wrongPct}%
-                    </Text>
-                  }
-                />
-
-                <Badge
-                  color="#f59e0b"
-                  text={
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      Chưa làm {uncompletedPct}%
-                    </Text>
-                  }
-                />
-              </Flex>
-            </Flex>
-          </Card>
-        </Col>
-
-        {/* Lời Chúa */}
-        <Col xs={24} lg={7}>
-          <Card
-            bordered={false}
-            style={{
-              ...cardStyle,
-              backgroundImage: `url(${IMAGES.wordOfGodBg})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-              position: "relative",
-              overflow: "hidden",
-            }}
-            bodyStyle={{
-              padding: 24,
-              height: "100%",
-            }}
-          >
-            <Flex
-              vertical
-              justify="space-between"
-              style={{
-                height: 200,
-                position: "relative",
-                zIndex: 1,
-              }}
-            >
-              <div>
-                <Flex align="center" justify="space-between">
-                  <Tag
-                    color="warning"
+                {/* Học sinh */}
+                <Col span={12}>
+                  <Button
+                    type="text"
+                    onClick={() => navigate("/catechist/students")}
                     style={{
-                      borderRadius: 12,
-                      fontWeight: 700,
-                      padding: "2px 10px",
-                      margin: 0,
-                      boxShadow: "0 2px 6px rgba(217, 119, 6, 0.15)",
+                      height: 92,
+                      width: "100%",
+                      borderRadius: 20,
+                      background: "#ECFDF5",
+                      color: "#059669",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      border: "1.5px solid #A7F3D0",
+                      fontWeight: 800,
+                      transition: "all 0.25s ease",
                     }}
                   >
-                    <Sparkles
-                      size={12}
+                    <div
                       style={{
-                        marginRight: 4,
-                        display: "inline",
+                        background: "#10B981",
+                        color: "#fff",
+                        padding: 8,
+                        borderRadius: 12,
+                        display: "flex",
+                        boxShadow: "0 4px 10px rgba(16, 185, 129, 0.3)",
                       }}
-                    />
-                    LỜI CHÚA HÔM NAY
-                  </Tag>
+                    >
+                      <QuestionOutlined style={{ fontSize: 16 }} />
+                    </div>
+                    <span style={{ fontSize: 12 }}>Học sinh</span>
+                  </Button>
+                </Col>
 
-                  <Text
+                {/* Game */}
+                <Col span={12}>
+                  <Button
+                    type="text"
+                    onClick={() => navigate("/catechist/games")}
                     style={{
-                      fontSize: 20,
-                      color: "#d97706",
+                      height: 92,
+                      width: "100%",
+                      borderRadius: 20,
+                      background: "#F3E8FF",
+                      color: "#7E22CE",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      border: "1.5px solid #DDD6FE",
+                      fontWeight: 800,
+                      transition: "all 0.25s ease",
                     }}
                   >
-                    ✝
-                  </Text>
+                    <div
+                      style={{
+                        background: "#9333EA",
+                        color: "#fff",
+                        padding: 8,
+                        borderRadius: 12,
+                        display: "flex",
+                        boxShadow: "0 4px 10px rgba(147, 51, 234, 0.3)",
+                      }}
+                    >
+                      <Gamepad2 size={16} />
+                    </div>
+                    <span style={{ fontSize: 12 }}>Tạo trò chơi</span>
+                  </Button>
+                </Col>
+
+                {/* Bảng thành tích */}
+                <Col span={12}>
+                  <Button
+                    type="text"
+                    onClick={() => navigate("/catechist/leaderboard")}
+                    style={{
+                      height: 92,
+                      width: "100%",
+                      borderRadius: 20,
+                      background: "#FEF3C7",
+                      color: "#D97706",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      border: "1.5px solid #FDE68A",
+                      fontWeight: 800,
+                      transition: "all 0.25s ease",
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: "#F59E0B",
+                        color: "#fff",
+                        padding: 8,
+                        borderRadius: 12,
+                        display: "flex",
+                        boxShadow: "0 4px 10px rgba(245, 158, 11, 0.3)",
+                      }}
+                    >
+                      <SendOutlined style={{ fontSize: 16 }} />
+                    </div>
+                    <span style={{ fontSize: 12 }}>Thành tích</span>
+                  </Button>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+
+          {/* Học sinh cần quan tâm */}
+          <Col xs={24} lg={16}>
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <Heart size={18} fill="#FF6B8B" color="#FF6B8B" />
+                  <Title
+                    level={5}
+                    style={{ margin: 0, fontWeight: 800, color: "#881337" }}
+                  >
+                    Học sinh cần quan tâm
+                  </Title>
                 </Flex>
-
-                <Paragraph
-                  style={{
-                    marginTop: 16,
-                    color: "#78350f",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    fontStyle: "italic",
-                  }}
-                >
-                  "{dailyVerse?.verse_text || "Đang tải Lời Chúa..."}"
-                </Paragraph>
-              </div>
-
-              <Flex align="center" justify="space-between">
-                <Text
-                  strong
-                  style={{
-                    color: "#b45309",
-                    fontSize: 13,
-                  }}
-                >
-                  – {dailyVerse?.reference || ""} –
-                </Text>
-              </Flex>
-            </Flex>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* =====================================================
-          3. QUICK ACTION + STUDENTS
-      ====================================================== */}
-
-      <Row gutter={[20, 20]}>
-        {/* Thao tác nhanh */}
-        <Col xs={24} lg={8}>
-          <Card
-            title={
-              <Flex align="center" gap={8}>
-                <div
-                  style={{
-                    width: 4,
-                    height: 16,
-                    background: "#f97316",
-                    borderRadius: 2,
-                  }}
-                />
-
-                <Title
-                  level={5}
-                  style={{
-                    margin: 0,
-                    fontWeight: 700,
-                  }}
-                >
-                  Thao tác nhanh
-                </Title>
-              </Flex>
-            }
-            bordered={false}
-            style={{
-              ...cardStyle,
-              height: "100%",
-            }}
-            bodyStyle={{ padding: 20 }}
-          >
-            <Row gutter={[12, 12]}>
-              {/* Soạn bài */}
-              <Col span={12}>
-                <Button
-                  type="text"
-                  onClick={() => navigate("/catechist/lessons")}
-                  style={{
-                    height: 90,
-                    width: "100%",
-                    borderRadius: 16,
-                    background: "#eff6ff",
-                    color: "#1d4ed8",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    border: "1px solid #dbeafe",
-                  }}
-                >
-                  <div
+              }
+              bordered={false}
+              style={{ ...chibiCardStyle, height: "100%" }}
+              bodyStyle={{ padding: "12px 20px" }}
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={studentsSupportData}
+                renderItem={(item) => (
+                  <List.Item
                     style={{
-                      background: "#2563eb",
-                      color: "#fff",
-                      padding: 8,
-                      borderRadius: 10,
-                      display: "flex",
+                      padding: "12px 14px",
+                      borderRadius: 18,
+                      marginBottom: 8,
+                      background: "#FAFAFA",
+                      border: "1px solid #F3F4F6",
                     }}
                   >
-                    <PlusOutlined style={{ fontSize: 16 }} />
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Bài học
-                  </span>
-                </Button>
-              </Col>
-
-              {/* Tạo câu hỏi */}
-              <Col span={12}>
-                <Button
-                  type="text"
-                  onClick={() => navigate("/catechist/students")}
-                  style={{
-                    height: 90,
-                    width: "100%",
-                    borderRadius: 16,
-                    background: "#ecfdf5",
-                    color: "#047857",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    border: "1px solid #a7f3d0",
-                  }}
-                >
-                  <div
-                    style={{
-                      background: "#10b981",
-                      color: "#fff",
-                      padding: 8,
-                      borderRadius: 10,
-                      display: "flex",
-                    }}
-                  >
-                    <QuestionOutlined style={{ fontSize: 16 }} />
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Học sinh
-                  </span>
-                </Button>
-              </Col>
-
-              {/* Game */}
-              <Col span={12}>
-                <Button
-                  type="text"
-                  onClick={() => navigate("/catechist/games")}
-                  style={{
-                    height: 90,
-                    width: "100%",
-                    borderRadius: 16,
-                    background: "#faf5ff",
-                    color: "#6b21a8",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    border: "1px solid #e9d5ff",
-                  }}
-                >
-                  <div
-                    style={{
-                      background: "#9333ea",
-                      color: "#fff",
-                      padding: 8,
-                      borderRadius: 10,
-                      display: "flex",
-                    }}
-                  >
-                    <Gamepad2 size={16} />
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Tạo trò chơi
-                  </span>
-                </Button>
-              </Col>
-
-              {/* Giao bài */}
-              <Col span={12}>
-                <Button
-                  type="text"
-                  onClick={() => navigate("/catechist/classes")}
-                  style={{
-                    height: 90,
-                    width: "100%",
-                    borderRadius: 16,
-                    background: "#fff7ed",
-                    color: "#c2410c",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    border: "1px solid #ffedd5",
-                  }}
-                >
-                  <div
-                    style={{
-                      background: "#f97316",
-                      color: "#fff",
-                      padding: 8,
-                      borderRadius: 10,
-                      display: "flex",
-                    }}
-                  >
-                    <SendOutlined style={{ fontSize: 16 }} />
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Lớp học
-                  </span>
-                </Button>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-
-        {/* Học sinh */}
-        <Col xs={24} lg={16}>
-          <Card
-            title={
-              <Flex align="center" gap={8}>
-                <div
-                  style={{
-                    width: 4,
-                    height: 16,
-                    background: "#ef4444",
-                    borderRadius: 2,
-                  }}
-                />
-
-                <Title
-                  level={5}
-                  style={{
-                    margin: 0,
-                    fontWeight: 700,
-                  }}
-                >
-                  Theo dõi học sinh
-                </Title>
-              </Flex>
-            }
-            extra={
-              <Button
-                type="link"
-                style={{
-                  padding: 0,
-                  color: "#2563eb",
-                  fontWeight: 600,
-                }}
-              >
-                Xem danh sách lớp
-              </Button>
-            }
-            bordered={false}
-            style={cardStyle}
-            bodyStyle={{
-              padding: "8px 20px",
-            }}
-          >
-            <List
-              itemLayout="horizontal"
-              dataSource={studentsSupportData}
-              renderItem={(student) => (
-                <List.Item
-                  style={{
-                    padding: "12px 0",
-                    borderBottom: "1px solid #f8fafc",
-                  }}
-                  actions={[
-                    <Button
-                      key="remind"
-                      type="default"
-                      size="small"
-                      style={{
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                    >
-                      Nhắc nhở
-                    </Button>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`}
-                        style={{
-                          backgroundColor: "#f1f5f9",
-                          width: 40,
-                          height: 40,
-                        }}
-                      />
-                    }
-                    title={
-                      <Flex align="center" gap={8}>
-                        <Text
-                          strong
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar
                           style={{
-                            fontSize: 14,
+                            backgroundColor: "#FFE4E6",
+                            color: "#FF6B8B",
+                            fontWeight: 800,
+                            border: "1.5px solid #FBCFE8",
                           }}
                         >
-                          {student.name}
-                        </Text>
-
-                        <Tag
-                          color={student.color}
-                          style={{
-                            borderRadius: 10,
-                            fontSize: 11,
-                            border: "none",
-                          }}
-                        >
-                          {student.status}
-                        </Tag>
-                      </Flex>
-                    }
-                    description={
-                      <Flex gap={12} align="center">
+                          {item.name.charAt(0)}
+                        </Avatar>
+                      }
+                      title={
+                        <Flex align="center" gap={8}>
+                          <Text
+                            style={{
+                              fontWeight: 800,
+                              fontSize: 14,
+                              color: "#374151",
+                            }}
+                          >
+                            {item.name}
+                          </Text>
+                          <Tag
+                            style={{
+                              borderRadius: 12,
+                              margin: 0,
+                              fontWeight: 700,
+                              fontSize: 11,
+                              color: item.color,
+                              background: item.bg,
+                              border: "none",
+                            }}
+                          >
+                            {item.status}
+                          </Tag>
+                        </Flex>
+                      }
+                      description={
                         <Text
-                          type="secondary"
                           style={{
                             fontSize: 12,
+                            color: "#6B7280",
+                            fontWeight: 600,
                           }}
                         >
-                          {student.class}
+                          {item.class} • {item.note}
                         </Text>
-
-                        <Text
-                          type="secondary"
-                          style={{
-                            fontSize: 12,
-                          }}
-                        >
-                          • {student.note}
-                        </Text>
-                      </Flex>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
-    </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    </ConfigProvider>
   );
 }

@@ -1,12 +1,14 @@
 import React from "react";
-import { Modal, Button, Space, Typography, Tag } from "antd";
-import { CloseOutlined } from "@ant-design/icons";
+import { Modal, Space, Typography, Tag } from "antd";
+import { CloseOutlined, HeartFilled } from "@ant-design/icons";
+import AppButton from "./AppButton";
 
 const { Text, Title } = Typography;
 
 const AppFormModal = ({
   open,
   loading = false,
+  confirmLoading = false,
   editing = false,
   width = 680,
   title,
@@ -17,20 +19,33 @@ const AppFormModal = ({
   children,
   onCancel,
   onSubmit,
-  createText = "Tạo mới",
-  editText = "Lưu thay đổi",
+  onOk,
+  okText,
+  cancelText = "Hủy",
+  createText = "Tạo mới ✨",
+  editText = "Lưu thay đổi 💖",
   destroyOnClose = true,
   maskClosable = true,
   form,
+  className = "",
+  ...props
 }) => {
-  const finalTitle = editing
-    ? editTitle || title || "Chỉnh sửa"
-    : createTitle || title || "Tạo mới";
+  const isSubmitting = loading || confirmLoading;
 
-  const finalButtonText = editing ? editText : createText;
+  const resolveTitle = () => {
+    if (editing) return editTitle || title || "Chỉnh Sửa Thông Tin";
+    return createTitle || title || "Thêm Mới Dữ Liệu";
+  };
+
+  const finalTitle = resolveTitle();
+  const finalOkText = okText || (editing ? editText : createText);
 
   const handleSubmit = () => {
-    if (loading) return;
+    if (isSubmitting) return;
+    if (onOk) {
+      onOk();
+      return;
+    }
     if (form) {
       form.submit();
       return;
@@ -39,7 +54,7 @@ const AppFormModal = ({
   };
 
   const handleCancel = () => {
-    if (loading) return;
+    if (isSubmitting) return;
     onCancel?.();
   };
 
@@ -49,185 +64,194 @@ const AppFormModal = ({
       width={width}
       centered
       destroyOnClose={destroyOnClose}
-      maskClosable={!loading && maskClosable}
-      closable={!loading}
+      maskClosable={!isSubmitting && maskClosable}
+      closable={!isSubmitting}
       onCancel={handleCancel}
+      className={`chibi-pastel-modal ${className}`}
       closeIcon={
-        <div className="modal-close-btn">
-          <CloseOutlined style={{ fontSize: 13 }} />
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#FF6B8B",
+            backgroundColor: "#FFE4E6",
+            border: "1.5px solid #FFD1D9",
+            transition: "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            cursor: "pointer",
+          }}
+          className="chibi-close-hover"
+        >
+          <CloseOutlined style={{ fontSize: 13, fontWeight: "bold" }} />
         </div>
       }
       styles={{
         content: {
-          borderRadius: 20,
+          borderRadius: 28,
           padding: 0,
-          boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.07)",
-          border: "1px solid #EAECF0",
+          boxShadow: "0 20px 40px rgba(255, 182, 193, 0.25)",
+          border: "2px solid #FFE4E6",
           overflow: "hidden",
           background: "#FFFFFF",
         },
         header: {
           marginBottom: 0,
-          padding: "20px 24px 16px",
-          borderBottom: "1px solid #F2F4F7",
+          padding: "20px 26px 16px",
+          borderBottom: "1.5px dashed #FFE4E6",
+          backgroundColor: "#FFF9FA",
         },
         body: {
-          padding: "20px 24px",
-          maxHeight: "calc(80vh - 150px)",
+          padding: "24px 26px",
+          maxHeight: "calc(80vh - 140px)",
           overflowY: "auto",
+          backgroundColor: "#FFFFFF",
         },
         footer: {
           marginTop: 0,
-          padding: "16px 24px",
-          borderTop: "1px solid #F2F4F7",
+          padding: "16px 26px",
+          borderTop: "1.5px dashed #FFE4E6",
+          backgroundColor: "#FFF9FA",
           display: "flex",
           justifyContent: "flex-end",
           alignItems: "center",
-          gap: 10,
+          gap: 12,
         },
       }}
       footer={[
-        <Button
+        <AppButton
           key="cancel"
-          disabled={loading}
+          disabled={isSubmitting}
           onClick={handleCancel}
+          variant="secondary"
+          size="middle"
           style={{
-            borderRadius: 10,
-            height: 38,
-            padding: "0 18px",
-            borderColor: "#D0D5DD",
-            color: "#344054",
-            fontWeight: 500,
-            fontSize: 14,
-            boxShadow: "none",
+            borderRadius: 20,
+            background: "#F1F5F9",
+            color: "#64748B",
+            fontWeight: 700,
+            border: "none",
           }}
         >
-          Hủy
-        </Button>,
+          {cancelText}
+        </AppButton>,
 
-        <Button
+        <AppButton
           key="submit"
           type="primary"
-          loading={loading}
+          loading={isSubmitting}
           onClick={handleSubmit}
+          size="middle"
           style={{
-            backgroundColor: "#0F172A",
-            borderColor: "#0F172A",
-            borderRadius: 10,
-            height: 38,
-            padding: "0 20px",
-            fontWeight: 500,
-            fontSize: 14,
-            boxShadow: "0 1px 2px rgba(16, 24, 40, 0.05)",
+            borderRadius: 20,
+            background: "linear-gradient(135deg, #FF6B8B 0%, #FF8E9E 100%)",
+            borderColor: "transparent",
+            color: "#FFFFFF",
+            fontWeight: 800,
+            boxShadow: "0 6px 16px rgba(255, 107, 139, 0.3)",
           }}
         >
-          {finalButtonText}
-        </Button>,
+          {finalOkText}
+        </AppButton>,
       ]}
       title={
-        <Space align="start" size={12}>
-          {icon && (
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                backgroundColor: "#F8FAFC",
-                color: "#0F172A",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                flexShrink: 0,
-                border: "1px solid #E2E8F0",
-              }}
-            >
-              {icon}
-            </div>
-          )}
-
-          <div style={{ marginTop: icon ? 1 : 0 }}>
-            <Space align="center" size={8}>
-              <Title
-                level={5}
+        typeof finalTitle !== "string" ? (
+          finalTitle
+        ) : (
+          <Space align="start" size={14}>
+            {icon ? (
+              <div
                 style={{
-                  margin: 0,
-                  color: "#101828",
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: "24px",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 16,
+                  backgroundColor: "#FFE4E6",
+                  color: "#FF6B8B",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 22,
+                  flexShrink: 0,
+                  border: "1.5px solid #FFC0CB",
+                  boxShadow: "0 4px 10px rgba(255, 182, 193, 0.3)",
                 }}
               >
-                {finalTitle}
-              </Title>
-
-              <Tag
-                bordered={false}
+                {icon}
+              </div>
+            ) : (
+              <div
                 style={{
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontWeight: 500,
-                  padding: "0 8px",
-                  margin: 0,
-                  backgroundColor: editing ? "#FFFAEB" : "#EFF8FF",
-                  color: editing ? "#B54708" : "#175CD3",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 16,
+                  backgroundColor: "#FFE4E6",
+                  color: "#FF6B8B",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20,
+                  flexShrink: 0,
                 }}
               >
-                {editing ? "Chỉnh sửa" : "Tạo mới"}
-              </Tag>
-            </Space>
-
-            {subtitle && (
-              <Text
-                style={{
-                  display: "block",
-                  marginTop: 2,
-                  fontSize: 13,
-                  color: "#667085",
-                  fontWeight: 400,
-                  lineHeight: "18px",
-                }}
-              >
-                {subtitle}
-              </Text>
+                <HeartFilled />
+              </div>
             )}
-          </div>
-        </Space>
+
+            <div style={{ marginTop: 2 }}>
+              <Space align="center" size={8}>
+                <Title
+                  level={5}
+                  style={{
+                    margin: 0,
+                    color: "#334155",
+                    fontSize: 17,
+                    fontWeight: 800,
+                    lineHeight: "24px",
+                    fontFamily: "'Quicksand', sans-serif",
+                  }}
+                >
+                  {finalTitle}
+                </Title>
+
+                <Tag
+                  bordered={false}
+                  style={{
+                    borderRadius: 14,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: "2px 10px",
+                    margin: 0,
+                    backgroundColor: editing ? "#FEF3C7" : "#E0F2FE",
+                    color: editing ? "#D97706" : "#0284C7",
+                    border: editing ? "1px solid #FDE68A" : "1px solid #BAE6FD",
+                  }}
+                >
+                  {editing ? "🌸 Chỉnh sửa" : "✨ Tạo mới"}
+                </Tag>
+              </Space>
+
+              {subtitle && (
+                <Text
+                  style={{
+                    display: "block",
+                    marginTop: 3,
+                    fontSize: 13,
+                    color: "#94A3B8",
+                    fontWeight: 600,
+                    lineHeight: "18px",
+                  }}
+                >
+                  {subtitle}
+                </Text>
+              )}
+            </div>
+          </Space>
+        )
       }
+      {...props}
     >
-      <style>{`
-        /* Smooth Custom Scrollbar */
-        .ant-modal-body::-webkit-scrollbar {
-          width: 5px;
-        }
-        .ant-modal-body::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .ant-modal-body::-webkit-scrollbar-thumb {
-          background: #EAECF0;
-          border-radius: 10px;
-        }
-        .ant-modal-body::-webkit-scrollbar-thumb:hover {
-          background: #D0D5DD;
-        }
-
-        /* Nút Close tối giản */
-        .modal-close-btn {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #667085;
-          transition: all 0.15s ease;
-        }
-        .modal-close-btn:hover {
-          background-color: #F2F4F7;
-          color: #101828;
-        }
-      `}</style>
-
       {children}
     </Modal>
   );

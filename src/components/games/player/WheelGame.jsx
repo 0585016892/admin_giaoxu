@@ -5,30 +5,26 @@ import React, {
   useRef,
   useState,
 } from "react";
-
 import {
+  Alert,
   Button,
-  Modal,
-  Typography,
-  Space,
-  Table,
+  Card,
+  Col,
   Progress,
-  Tooltip,
+  Row,
+  Space,
+  Tag,
+  Typography,
+  message,
 } from "antd";
-
 import {
-  RotateCw,
-  ArrowLeft,
-  Volume2,
-  VolumeX,
-  Gift,
-  PartyPopper,
-  Sparkles,
-  Clock3,
-  Trophy,
-  Star,
-  Zap,
-} from "lucide-react";
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ReloadOutlined,
+  StarFilled,
+  TrophyFilled,
+} from "@ant-design/icons";
+import { RotateCw, Sparkles, Volume2, VolumeX } from "lucide-react";
 
 import { getGameFileUrl } from "../../../api/gameApi";
 
@@ -41,1033 +37,1785 @@ const { Title, Text } = Typography;
 const DEFAULT_ITEMS = [
   {
     id: 1,
-    label: "Tràng hạt",
-    value: "10 điểm",
-    color: "#6C5CE7",
+    label: "10 điểm",
+    value: "10",
+    color: "#6C4BFF",
     probability: 25,
   },
   {
     id: 2,
-    label: "Sách Kinh",
-    value: "20 điểm",
-    color: "#00CEC9",
+    label: "20 điểm",
+    value: "20",
+    color: "#1677FF",
     probability: 25,
   },
   {
     id: 3,
-    label: "Bút Viết",
-    value: "30 điểm",
-    color: "#FF7675",
+    label: "30 điểm",
+    value: "30",
+    color: "#13C2C2",
     probability: 25,
   },
   {
     id: 4,
-    label: "Tượng Thánh",
-    value: "50 điểm",
-    color: "#FDCB6E",
+    label: "50 điểm",
+    value: "50",
+    color: "#FF7A45",
     probability: 25,
   },
+];
+
+const COLOR_LIST = [
+  "#6C4BFF",
+  "#1677FF",
+  "#13C2C2",
+  "#52C41A",
+  "#FAAD14",
+  "#FF7A45",
+  "#F5222D",
+  "#EB2F96",
+  "#722ED1",
+  "#1890FF",
 ];
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-const getFileUrl = (file) => {
-  if (!file || typeof file !== "string") return null;
-  if (
-    file.startsWith("http://") ||
-    file.startsWith("https://") ||
-    file.startsWith("blob:")
-  ) {
-    return file;
-  }
-  try {
-    const url = getGameFileUrl(file);
-    if (url) return url;
-  } catch (error) {
-    console.warn("getGameFileUrl error:", error);
-  }
-  const apiUrl =
-    process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "";
-  if (!apiUrl) return file;
-  return `${apiUrl.replace(/\/$/, "")}/${file.replace(/^\//, "")}`;
+const normalizeNumber = (value, fallback = 0) => {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : fallback;
 };
 
-const parsePoints = (value) => {
-  if (value === null || value === undefined) return 0;
-  const match = String(value).match(/-?\d+(?:[.,]\d+)?/);
-  if (!match) return 0;
-  return Number(match[0].replace(",", ".")) || 0;
+const normalizeBoolean = (value, fallback = false) => {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  return Boolean(value);
+};
+
+const getFileUrl = (file) => {
+  if (!file) {
+    return null;
+  }
+
+  if (typeof file === "string") {
+    try {
+      return getGameFileUrl(file);
+    } catch {
+      return file;
+    }
+  }
+
+  if (file?.url) {
+    return file.url;
+  }
+
+  if (file?.path) {
+    try {
+      return getGameFileUrl(file.path);
+    } catch {
+      return file.path;
+    }
+  }
+
+  if (file?.response?.url) {
+    return file.response.url;
+  }
+
+  return null;
 };
 
 /* =========================================================
    COMPONENT
 ========================================================= */
 
-const WheelGame = ({ game, onExit }) => {
-  const canvasRef = useRef(null);
+const WheelGame = ({ game, onComplete, onBack }) => {
+  /* =======================================================
+     RAW GAME DATA
+  ======================================================= */
 
-  const backgroundAudioRef = useRef(null);
-  const spinAudioRef = useRef(null);
-  const correctAudioRef = useRef(null);
-  const wrongAudioRef = useRef(null);
-
-  const timerRef = useRef(null);
-  const spinTimerRef = useRef(null);
-  const autoSpinExecutedRef = useRef(false);
-
-  /* CONFIG DATA */
-  const theme = game?.theme || {};
   const settings = game?.settings || {};
-  const wheelConfig = game?.wheel || {};
-  const backgroundConfig = game?.background || {};
-  const media = game?.media || {};
+  const wheel = game?.wheel || {};
+  const theme = game?.theme || {};
 
-  const primaryColor = theme.primary || "#6C5CE7";
-  const secondaryColor = theme.secondary || "#FFEAA7";
-  const fontStyle = theme.font || "Baloo 2";
+  /* =======================================================
+     NORMALIZED CONFIG
+  ======================================================= */
+
+  const primaryColor = theme?.primary || wheel?.wheelColor || "#6C4BFF";
+
+  const secondaryColor = theme?.secondary || wheel?.pointerColor || "#FFD54F";
+
+  const fontFamily = theme?.font || "Baloo 2, sans-serif";
+
+  const borderRadius = normalizeNumber(theme?.borderRadius, 20);
+
+  const timeLimit = normalizeNumber(settings?.timeLimit, 60);
+
+  const spinsPerPlayer = Math.max(1, normalizeNumber(wheel?.spinsPerPlayer, 1));
+
+  const autoSpin = normalizeBoolean(wheel?.autoSpin, false);
+
+  const showResult = normalizeBoolean(wheel?.showResult, true);
+
+  const allowReplay = normalizeBoolean(wheel?.allowReplay, false);
+
+  const showScore = normalizeBoolean(settings?.showScore, true);
+
+  const showTimer = normalizeBoolean(settings?.showTimer, true);
+
+  /* =======================================================
+     BACKGROUND
+     
+     Đưa background vào useMemo để tránh warning
+     react-hooks/exhaustive-deps.
+  ======================================================= */
+
+  const background = useMemo(() => {
+    return game?.background || {};
+  }, [game?.background]);
+
+  const backgroundImage = useMemo(() => {
+    return getFileUrl(background?.image);
+  }, [background?.image]);
+
+  /* =======================================================
+     ITEMS
+     
+     Game #10 hiện tại:
+     
+     wheel.items: []
+     
+     => dùng DEFAULT_ITEMS để game vẫn có thể chơi.
+  ======================================================= */
 
   const items = useMemo(() => {
-    if (Array.isArray(wheelConfig?.items) && wheelConfig.items.length >= 2) {
-      return wheelConfig.items.map((item, index) => ({
-        id: item?.id ?? index + 1,
-        label: item?.label || `Phần thưởng ${index + 1}`,
-        value: item?.value || "",
-        color: item?.color || primaryColor,
-        probability: Number(item?.probability || 0),
+    const rawItems = Array.isArray(wheel?.items) ? wheel.items : [];
+
+    if (rawItems.length === 0) {
+      return DEFAULT_ITEMS.map((item) => ({
+        ...item,
       }));
     }
-    return DEFAULT_ITEMS;
-  }, [wheelConfig?.items, primaryColor]);
 
-  const spinsPerPlayer = Math.max(1, Number(wheelConfig?.spinsPerPlayer ?? 1));
-  const timeLimit = Math.max(0, Number(settings?.timeLimit ?? 60));
-  const showResult =
-    wheelConfig?.showResult !== undefined
-      ? Boolean(wheelConfig.showResult)
-      : true;
-  const autoSpin = Boolean(wheelConfig?.autoSpin);
-  const showScore =
-    settings?.showScore !== undefined ? Boolean(settings.showScore) : true;
-  const showTimer =
-    settings?.showTimer !== undefined ? Boolean(settings.showTimer) : true;
+    return rawItems.map((item, index) => ({
+      id: item?.id ?? index + 1,
 
-  const backgroundImageUrl = getFileUrl(backgroundConfig?.image);
-  const backgroundMusicUrl = getFileUrl(media?.backgroundMusic);
-  const spinSoundUrl = getFileUrl(media?.spinSound);
-  const correctSoundUrl = getFileUrl(media?.correctSound);
-  const wrongSoundUrl = getFileUrl(media?.wrongSound);
+      label: String(item?.label || "").trim() || `Phần thưởng ${index + 1}`,
 
-  /* STATES */
-  const [spinning, setSpinning] = useState(false);
-  const [wonItem, setWonItem] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [score, setScore] = useState(0);
-  const [spinsLeft, setSpinsLeft] = useState(spinsPerPlayer);
-  const [isMuted, setIsMuted] = useState(false);
-  const [rotationDegree, setRotationDegree] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(timeLimit);
-  const [wheelSize, setWheelSize] = useState(360);
+      value:
+        item?.value !== undefined && item?.value !== null
+          ? String(item.value)
+          : "",
 
-  /* RESPONSIVE SIZE */
-  useEffect(() => {
-    const updateWheelSize = () => {
-      const width = window.innerWidth;
-      if (width <= 480) setWheelSize(260);
-      else if (width <= 768) setWheelSize(310);
-      else if (width <= 1100) setWheelSize(340);
-      else setWheelSize(380);
-    };
-    updateWheelSize();
-    window.addEventListener("resize", updateWheelSize);
-    return () => window.removeEventListener("resize", updateWheelSize);
-  }, []);
+      color: item?.color || COLOR_LIST[index % COLOR_LIST.length],
 
-  /* AUDIO CREATION */
-  const createAudio = useCallback(
-    (url, options = {}) => {
-      if (!url) return null;
-      try {
-        const audio = new Audio(url);
-        audio.preload = "auto";
-        if (options.loop) audio.loop = true;
-        if (options.volume !== undefined) audio.volume = options.volume;
-        audio.muted = isMuted;
-        return audio;
-      } catch (error) {
-        console.warn("Audio error:", error);
-        return null;
-      }
-    },
-    [isMuted],
-  );
+      probability: Math.max(0, normalizeNumber(item?.probability, 0)),
+    }));
+  }, [wheel?.items]);
 
-  useEffect(() => {
-    if (!backgroundMusicUrl) return;
-    const audio = createAudio(backgroundMusicUrl, { loop: true, volume: 0.25 });
-    if (!audio) return;
-    backgroundAudioRef.current = audio;
-    audio.play().catch(() => {});
-    return () => {
-      audio.pause();
-      audio.currentTime = 0;
-      backgroundAudioRef.current = null;
-    };
-  }, [backgroundMusicUrl, createAudio]);
+  /* =======================================================
+     TOTAL PROBABILITY
+     
+     Không tạo biến thừa.
+  ======================================================= */
 
-  useEffect(() => {
-    [backgroundAudioRef, spinAudioRef, correctAudioRef, wrongAudioRef].forEach(
-      (ref) => {
-        if (ref.current) ref.current.muted = isMuted;
-      },
-    );
-  }, [isMuted]);
-
-  const playSound = useCallback(
-    (type) => {
-      if (isMuted) return;
-      let audio;
-      if (type === "spin") {
-        if (!spinAudioRef.current)
-          spinAudioRef.current = createAudio(spinSoundUrl, { volume: 0.55 });
-        audio = spinAudioRef.current;
-      } else if (type === "correct") {
-        if (!correctAudioRef.current)
-          correctAudioRef.current = createAudio(correctSoundUrl, {
-            volume: 0.8,
-          });
-        audio = correctAudioRef.current;
-      } else if (type === "wrong") {
-        if (!wrongAudioRef.current)
-          wrongAudioRef.current = createAudio(wrongSoundUrl, { volume: 0.8 });
-        audio = wrongAudioRef.current;
-      }
-      if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(() => {});
-      }
-    },
-    [isMuted, spinSoundUrl, correctSoundUrl, wrongSoundUrl, createAudio],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
-      [
-        backgroundAudioRef,
-        spinAudioRef,
-        correctAudioRef,
-        wrongAudioRef,
-      ].forEach((ref) => {
-        if (ref.current) {
-          ref.current.pause();
-          ref.current = null;
-        }
-      });
-    };
-  }, []);
-
-  /* TIMER */
-  useEffect(() => {
-    if (!showTimer || timeLimit <= 0 || remainingTime <= 0 || isModalOpen)
-      return;
-    timerRef.current = setInterval(() => {
-      setRemainingTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [showTimer, timeLimit, remainingTime, isModalOpen]);
-
-  /* DRAW CANVAS */
-  const drawWheel = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || items.length < 2) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const size = wheelSize;
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width = `${size}px`;
-    canvas.style.height = `${size}px`;
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    const centerX = size / 2;
-    const centerY = size / 2;
-    const radius = size / 2 - size * 0.05;
-    const numberOfSlots = items.length;
-    const arcSize = (2 * Math.PI) / numberOfSlots;
-
-    ctx.clearRect(0, 0, size, size);
-
-    /* SEGMENTS */
-    items.forEach((item, index) => {
-      const startAngle = index * arcSize;
-      const endAngle = startAngle + arcSize;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-      ctx.closePath();
-
-      // Shadow & Fill
-      ctx.fillStyle =
-        item.color || (index % 2 === 0 ? primaryColor : "#FFFFFF");
-      ctx.fill();
-
-      // Inner divider line
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.lineWidth = Math.max(2, size * 0.008);
-      ctx.stroke();
-      ctx.restore();
-    });
-
-    /* TEXT & LABELS */
-    items.forEach((item, index) => {
-      const angle = index * arcSize + arcSize / 2;
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(angle);
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-
-      const labelSize = Math.max(12, Math.min(16, size * 0.042));
-      const valueSize = Math.max(10, Math.min(13, size * 0.032));
-
-      ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
-      ctx.shadowBlur = 4;
-
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = `800 ${labelSize}px "${fontStyle}", sans-serif`;
-
-      let label = String(item.label || "");
-      const maxLength = items.length >= 8 ? 10 : 15;
-      if (label.length > maxLength) {
-        label = label.substring(0, maxLength - 1) + "…";
-      }
-
-      ctx.fillText(label, radius - size * 0.08, -size * 0.016);
-
-      ctx.fillStyle = "#FFEAA7";
-      ctx.font = `700 ${valueSize}px "${fontStyle}", sans-serif`;
-      ctx.fillText(
-        String(item.value || ""),
-        radius - size * 0.08,
-        size * 0.045,
-      );
-
-      ctx.restore();
-    });
-
-    /* LIGHT BULBS AROUND WHEEL EDGE */
-    const numBulbs = Math.max(12, items.length * 2);
-    for (let i = 0; i < numBulbs; i++) {
-      const bulbAngle = (i * (2 * Math.PI)) / numBulbs;
-      const bulbRadius = radius - size * 0.02;
-      const bx = centerX + bulbRadius * Math.cos(bulbAngle);
-      const by = centerY + bulbRadius * Math.sin(bulbAngle);
-
-      ctx.beginPath();
-      ctx.arc(bx, by, size * 0.012, 0, 2 * Math.PI);
-      ctx.fillStyle = i % 2 === 0 ? "#FFEAA7" : "#FFFFFF";
-      ctx.shadowColor = "#FFEAA7";
-      ctx.shadowBlur = 6;
-      ctx.fill();
-    }
-  }, [items, wheelSize, primaryColor, fontStyle]);
-
-  useEffect(() => {
-    drawWheel();
-  }, [drawWheel]);
-
-  /* RANDOM SELECTION BY PROBABILITY */
-  const getRandomIndexByProbability = useCallback(() => {
-    const total = items.reduce(
-      (sum, item) => sum + Number(item.probability || 0),
+  const totalProbability = useMemo(() => {
+    return items.reduce(
+      (total, item) => total + normalizeNumber(item?.probability, 0),
       0,
     );
-    if (total <= 0) return Math.floor(Math.random() * items.length);
-
-    let random = Math.random() * total;
-    for (let i = 0; i < items.length; i++) {
-      const prob = Number(items[i].probability || 0);
-      if (random < prob) return i;
-      random -= prob;
-    }
-    return items.length - 1;
   }, [items]);
 
-  /* SPIN LOGIC */
+  /* =======================================================
+     STATE
+  ======================================================= */
+
+  const [rotation, setRotation] = useState(0);
+
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const [showResultModal, setShowResultModal] = useState(false);
+
+  const [score, setScore] = useState(0);
+
+  const [spinCount, setSpinCount] = useState(0);
+
+  const [timeLeft, setTimeLeft] = useState(timeLimit);
+
+  const [finished, setFinished] = useState(false);
+
+  const [audioEnabled, setAudioEnabled] = useState(true);
+
+  const [autoStarted, setAutoStarted] = useState(false);
+
+  const spinTimeoutRef = useRef(null);
+
+  const autoSpinTimeoutRef = useRef(null);
+
+  /* =======================================================
+     CLEANUP
+  ======================================================= */
+
+  useEffect(() => {
+    return () => {
+      if (spinTimeoutRef.current) {
+        clearTimeout(spinTimeoutRef.current);
+      }
+
+      if (autoSpinTimeoutRef.current) {
+        clearTimeout(autoSpinTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  /* =======================================================
+     FORMAT TIME
+  ======================================================= */
+
+  const formatTime = useCallback((seconds) => {
+    const safeSeconds = Math.max(0, Number(seconds) || 0);
+
+    const minutes = Math.floor(safeSeconds / 60);
+
+    const secs = safeSeconds % 60;
+
+    return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(
+      2,
+      "0",
+    )}`;
+  }, []);
+
+  /* =======================================================
+     SELECT RANDOM ITEM BY PROBABILITY
+  ======================================================= */
+
+  const selectWeightedItem = useCallback(() => {
+    if (!items.length) {
+      return null;
+    }
+
+    const validItems = items.filter(
+      (item) => normalizeNumber(item?.probability, 0) > 0,
+    );
+
+    if (!validItems.length) {
+      return items[Math.floor(Math.random() * items.length)];
+    }
+
+    const total = validItems.reduce(
+      (sum, item) => sum + normalizeNumber(item?.probability, 0),
+      0,
+    );
+
+    if (total <= 0) {
+      return validItems[Math.floor(Math.random() * validItems.length)];
+    }
+
+    let random = Math.random() * total;
+
+    for (const item of validItems) {
+      random -= normalizeNumber(item?.probability, 0);
+
+      if (random <= 0) {
+        return item;
+      }
+    }
+
+    return validItems[validItems.length - 1];
+  }, [items]);
+
+  /* =======================================================
+     GET ITEM INDEX
+  ======================================================= */
+
+  const getItemIndex = useCallback(
+    (item) => {
+      if (!item) {
+        return 0;
+      }
+
+      const index = items.findIndex((current) => current.id === item.id);
+
+      return index >= 0 ? index : 0;
+    },
+    [items],
+  );
+
+  /* =======================================================
+     CALCULATE ROTATION
+     
+     Pointer nằm ở phía trên.
+     
+     Vị trí giữa mỗi segment:
+     
+       0 độ = phía trên
+  ======================================================= */
+
+  const calculateTargetRotation = useCallback(
+    (itemIndex) => {
+      const segment = 360 / items.length;
+
+      const centerAngle = itemIndex * segment + segment / 2;
+
+      const targetAngle = 360 - centerAngle;
+
+      const currentRotation = rotation;
+
+      const currentNormalized = ((currentRotation % 360) + 360) % 360;
+
+      const targetNormalized = ((targetAngle % 360) + 360) % 360;
+
+      let difference = targetNormalized - currentNormalized;
+
+      if (difference < 0) {
+        difference += 360;
+      }
+
+      const extraRounds = 5 + Math.floor(Math.random() * 3);
+
+      return currentRotation + extraRounds * 360 + difference;
+    },
+    [items.length, rotation],
+  );
+
+  /* =======================================================
+     PLAY SOUND
+     
+     Data media có thể là:
+     
+     - string
+     - object
+     - uid object
+  ======================================================= */
+
+  const playSound = useCallback(
+    (file) => {
+      if (!audioEnabled || !file) {
+        return;
+      }
+
+      const url = getFileUrl(file);
+
+      if (!url) {
+        return;
+      }
+
+      try {
+        const audio = new Audio(url);
+
+        audio.volume = 0.7;
+
+        audio.play().catch(() => {});
+      } catch {
+        // Không làm crash game nếu browser chặn audio.
+      }
+    },
+    [audioEnabled],
+  );
+
+  /* =======================================================
+     COMPLETE
+  ======================================================= */
+
+  const completeGame = useCallback(
+    (resultItem, finalScore) => {
+      if (typeof onComplete !== "function") {
+        return;
+      }
+
+      onComplete({
+        score: finalScore,
+
+        totalScore: finalScore,
+
+        spinCount: spinCount + 1,
+
+        result: resultItem,
+
+        item: resultItem,
+
+        gameId: game?.id,
+      });
+    },
+    [game?.id, onComplete, spinCount],
+  );
+
+  /* =======================================================
+     SPIN
+  ======================================================= */
+  const backgroundMusic = game?.media?.backgroundMusic || null;
   const handleSpin = useCallback(() => {
-    if (
-      spinning ||
-      spinsLeft <= 0 ||
-      (showTimer && timeLimit > 0 && remainingTime <= 0) ||
-      items.length < 2
-    ) {
+    if (isSpinning) {
       return;
     }
 
-    if (
-      backgroundAudioRef.current &&
-      backgroundAudioRef.current.paused &&
-      !isMuted
-    ) {
-      backgroundAudioRef.current.play().catch(() => {});
+    if (finished) {
+      return;
     }
 
-    setSpinning(true);
-    setSpinsLeft((prev) => Math.max(0, prev - 1));
-    setIsModalOpen(false);
-    setWonItem(null);
+    if (items.length < 2) {
+      message.warning("Vòng quay cần ít nhất 2 phần thưởng.");
+      return;
+    }
 
-    const selectedIndex = getRandomIndexByProbability();
-    const selectedItem = items[selectedIndex];
-    const numberOfSlots = items.length;
-    const arcDegrees = 360 / numberOfSlots;
-    const selectedCenter = selectedIndex * arcDegrees + arcDegrees / 2;
-    const extraRounds = 360 * (5 + Math.floor(Math.random() * 3));
-    const targetRotation =
-      rotationDegree + extraRounds + (360 - selectedCenter);
+    if (spinCount >= spinsPerPlayer) {
+      message.info("Bạn đã hết lượt quay.");
+      return;
+    }
 
-    setRotationDegree(targetRotation);
-    playSound("spin");
+    const resultItem = selectWeightedItem();
 
-    spinTimerRef.current = setTimeout(() => {
-      setSpinning(false);
-      setWonItem(selectedItem);
+    if (!resultItem) {
+      message.error("Không có phần thưởng hợp lệ.");
+      return;
+    }
 
-      const points = parsePoints(selectedItem?.value);
-      if (points > 0) setScore((prev) => prev + points);
+    const itemIndex = getItemIndex(resultItem);
+    const targetRotation = calculateTargetRotation(itemIndex);
 
-      if (showResult) setIsModalOpen(true);
-      playSound(points > 0 ? "correct" : "wrong");
-    }, 4800);
+    setSelectedItem(null);
+    setShowResultModal(false);
+    setIsSpinning(true);
+    setRotation(targetRotation);
+
+    // Âm thanh quay
+    playSound(backgroundMusic);
+
+    spinTimeoutRef.current = setTimeout(() => {
+      setIsSpinning(false);
+      setSelectedItem(resultItem);
+
+      setSpinCount((previous) => previous + 1);
+
+      const numericValue = Number(
+        String(resultItem?.value || "").replace(/[^0-9.-]/g, ""),
+      );
+
+      const gainedScore = Number.isFinite(numericValue) ? numericValue : 0;
+
+      setScore((previousScore) => {
+        const nextScore = previousScore + gainedScore;
+
+        if (showResult) {
+          setShowResultModal(true);
+        }
+
+        message.success(`🎉 Chúc mừng! ${resultItem.label}`);
+
+        return nextScore;
+      });
+
+      if (spinCount + 1 >= spinsPerPlayer && !allowReplay) {
+        setFinished(true);
+      }
+
+      if (spinCount + 1 >= spinsPerPlayer) {
+        completeGame(resultItem, score + gainedScore);
+      }
+    }, 3600);
   }, [
-    spinning,
-    spinsLeft,
-    showTimer,
-    timeLimit,
-    remainingTime,
-    items,
-    rotationDegree,
-    showResult,
-    isMuted,
-    getRandomIndexByProbability,
+    allowReplay,
+    backgroundMusic,
+    calculateTargetRotation,
+    completeGame,
+    finished,
+    getItemIndex,
+    isSpinning,
+    items.length,
     playSound,
+    score,
+    selectWeightedItem,
+    showResult,
+    spinCount,
+    spinsPerPlayer,
   ]);
 
-  /* AUTO SPIN */
+  /* =======================================================
+     TIMER
+  ======================================================= */
+
   useEffect(() => {
-    if (!autoSpin || autoSpinExecutedRef.current) return;
-    autoSpinExecutedRef.current = true;
-    const timeout = setTimeout(() => handleSpin(), 1000);
-    return () => clearTimeout(timeout);
-  }, [autoSpin, handleSpin]);
+    if (!showTimer) {
+      return undefined;
+    }
 
-  const toggleMute = () => setIsMuted((prev) => !prev);
+    if (finished) {
+      return undefined;
+    }
 
-  /* REWARD TABLE COLUMNS */
-  const rewardColumns = useMemo(
-    () => [
-      {
-        title: "",
-        dataIndex: "color",
-        key: "color",
-        width: 36,
-        render: (color) => (
-          <div
-            style={{
-              width: 16,
-              height: 16,
-              borderRadius: "50%",
-              background: color,
-              border: "2px solid #fff",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            }}
-          />
-        ),
-      },
-      {
-        title: "Phần thưởng",
-        dataIndex: "label",
-        key: "label",
-        render: (text) => (
-          <Text
-            strong
-            style={{ color: "#2D3436", fontSize: 13, fontWeight: 700 }}
-          >
-            {text}
-          </Text>
-        ),
-      },
-      {
-        title: "Giá trị",
-        dataIndex: "value",
-        key: "value",
-        align: "right",
-        render: (value) => (
-          <span
-            style={{
-              padding: "3px 10px",
-              borderRadius: 20,
-              background: "rgba(108, 92, 231, 0.1)",
-              color: primaryColor,
-              fontSize: 12,
-              fontWeight: 800,
-            }}
-          >
-            {value || "-"}
-          </span>
-        ),
-      },
-    ],
-    [primaryColor],
-  );
+    if (timeLeft <= 0) {
+      setFinished(true);
 
-  const pageBackground = backgroundImageUrl
-    ? {
-        backgroundImage: `linear-gradient(to bottom, rgba(15, 12, 41, 0.4), rgba(48, 43, 99, 0.6)), url("${backgroundImageUrl}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+      message.warning("⏰ Hết thời gian!");
+
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((previous) => Math.max(0, previous - 1));
+    }, 1000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [finished, showTimer, timeLeft]);
+
+  /* =======================================================
+     AUTO SPIN
+  ======================================================= */
+
+  useEffect(() => {
+    if (!autoSpin) {
+      return undefined;
+    }
+
+    if (autoStarted) {
+      return undefined;
+    }
+
+    if (finished) {
+      return undefined;
+    }
+
+    if (isSpinning) {
+      return undefined;
+    }
+
+    if (spinCount > 0) {
+      return undefined;
+    }
+
+    autoSpinTimeoutRef.current = setTimeout(() => {
+      setAutoStarted(true);
+
+      handleSpin();
+    }, 800);
+
+    return () => {
+      if (autoSpinTimeoutRef.current) {
+        clearTimeout(autoSpinTimeoutRef.current);
       }
-    : {
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      };
+    };
+  }, [autoSpin, autoStarted, finished, handleSpin, isSpinning, spinCount]);
 
-  const timePercent =
-    timeLimit > 0
-      ? Math.max(0, Math.min(100, (remainingTime / timeLimit) * 100))
-      : 100;
-  const spinDisabled =
-    spinning ||
-    spinsLeft <= 0 ||
-    (showTimer && timeLimit > 0 && remainingTime <= 0);
+  /* =======================================================
+     REPLAY
+  ======================================================= */
+
+  const handleReplay = useCallback(() => {
+    if (!allowReplay) {
+      return;
+    }
+
+    setFinished(false);
+
+    setSelectedItem(null);
+
+    setShowResultModal(false);
+
+    setSpinCount(0);
+
+    setScore(0);
+
+    setTimeLeft(timeLimit);
+
+    setAutoStarted(false);
+
+    message.info("🔄 Đã bắt đầu lại vòng quay.");
+  }, [allowReplay, timeLimit]);
+
+  /* =======================================================
+     RESET
+  ======================================================= */
+
+  const handleReset = useCallback(() => {
+    if (isSpinning) {
+      return;
+    }
+
+    setRotation(0);
+
+    setSelectedItem(null);
+
+    setShowResultModal(false);
+
+    setSpinCount(0);
+
+    setScore(0);
+
+    setFinished(false);
+
+    setTimeLeft(timeLimit);
+
+    setAutoStarted(false);
+  }, [isSpinning, timeLimit]);
+
+  /* =======================================================
+     WHEEL CSS
+  ======================================================= */
+
+  const wheelGradient = useMemo(() => {
+    if (!items.length) {
+      return primaryColor;
+    }
+
+    const segment = 360 / items.length;
+
+    return `conic-gradient(${items
+      .map((item, index) => {
+        const start = index * segment;
+
+        const end = (index + 1) * segment;
+
+        return `${item.color} ${start}deg ${end}deg`;
+      })
+      .join(", ")})`;
+  }, [items, primaryColor]);
+
+  /* =======================================================
+     WHEEL SIZE
+  ======================================================= */
+
+  const wheelSize = 440;
+
+  /* =======================================================
+     RENDER WHEEL LABEL
+  ======================================================= */
+
+  const renderWheelLabels = () => {
+    const segment = 360 / items.length;
+
+    return items.map((item, index) => {
+      const angle = index * segment + segment / 2;
+
+      return (
+        <div
+          key={item.id}
+          style={{
+            position: "absolute",
+
+            left: "50%",
+
+            top: "50%",
+
+            width: 110,
+
+            marginLeft: -55,
+
+            transform: `
+              rotate(${angle}deg)
+              translateY(-165px)
+              rotate(-${angle}deg)
+            `,
+
+            textAlign: "center",
+
+            color: "#ffffff",
+
+            fontWeight: 900,
+
+            fontSize: 15,
+
+            lineHeight: 1.15,
+
+            textShadow: "0 2px 4px rgba(0,0,0,.45)",
+
+            overflow: "hidden",
+
+            textOverflow: "ellipsis",
+
+            whiteSpace: "nowrap",
+
+            pointerEvents: "none",
+          }}
+        >
+          {item.label}
+        </div>
+      );
+    });
+  };
+
+  /* =======================================================
+     EMPTY GAME
+  ======================================================= */
+
+  if (!game) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+
+          display: "flex",
+
+          alignItems: "center",
+
+          justifyContent: "center",
+
+          background: "#F8F9FC",
+
+          padding: 24,
+
+          fontFamily,
+        }}
+      >
+        <Card
+          style={{
+            borderRadius,
+
+            maxWidth: 500,
+
+            width: "100%",
+          }}
+        >
+          <Alert
+            type="warning"
+            showIcon
+            message="Không tìm thấy trò chơi"
+            description="Dữ liệu game không tồn tại."
+          />
+        </Card>
+      </div>
+    );
+  }
+
+  /* =======================================================
+     MAIN
+  ======================================================= */
 
   return (
     <div
-      className="wheel-game-container"
       style={{
-        height: "85vh",
-        minHeight: 600,
-        width: "100%",
-        ...pageBackground,
-        fontFamily: `"${fontStyle}", sans-serif`,
-        padding: "16px 20px",
+        minHeight: "100vh",
+
+        padding: 24,
+
+        fontFamily,
+
+        backgroundColor: background?.color || "#F8F9FC",
+
+        backgroundImage: backgroundImage ? `url("${backgroundImage}")` : "none",
+
+        backgroundSize: "cover",
+
+        backgroundPosition: "center",
+
+        backgroundAttachment: "fixed",
+
         boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        position: "relative",
       }}
     >
-      {/* Dynamic CSS Styling for animations & custom rules */}
-      <style>{`
-        @keyframes pulse-btn {
-          0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(255, 234, 167, 0.7); }
-          70% { transform: translate(-50%, -50%) scale(1.06); box-shadow: 0 0 0 14px rgba(255, 234, 167, 0); }
-          100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(255, 234, 167, 0); }
-        }
-        @keyframes float-star {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-10px) rotate(12deg); }
-        }
-        .spin-icon-anim {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .stat-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(8px);
-          border-radius: 30px;
-          font-weight: 800;
-          color: #2D3436;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-          border: 1px solid rgba(255,255,255,0.6);
-        }
-        .stat-badge.danger {
-          background: #FF7675;
-          color: #FFF;
-        }
-        .sound-btn {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          border: none;
-          background: rgba(255,255,255,0.85);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          color: #2D3436;
-          transition: all 0.2s ease;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        }
-        .sound-btn:hover {
-          transform: scale(1.08);
-          background: #FFF;
-        }
-        .main-btn {
-          transition: all 0.15s ease-in-out;
-        }
-        .main-btn:not(:disabled):active {
-          transform: translateY(3px) !important;
-          box-shadow: none !important;
-        }
-      `}</style>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-      {/* BACKGROUND DECORATIONS */}
-      <div
+      <Card
+        bordered={false}
         style={{
-          position: "absolute",
-          top: 40,
-          left: 30,
-          color: "#FFEAA7",
-          opacity: 0.8,
-          animation: "float-star 3s ease-in-out infinite",
-          pointerEvents: "none",
+          maxWidth: 1250,
+
+          margin: "0 auto 20px",
+
+          borderRadius,
+
+          boxShadow: "0 10px 35px rgba(108,75,255,.12)",
+
+          border: `2px solid ${primaryColor}18`,
         }}
       >
-        <Sparkles size={28} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 40,
-          right: 30,
-          color: "#FFEAA7",
-          opacity: 0.7,
-          animation: "float-star 4s ease-in-out infinite 1s",
-          pointerEvents: "none",
-        }}
-      >
-        <Star size={32} />
-      </div>
+        <Row justify="space-between" align="middle" gutter={[16, 16]}>
+          <Col xs={24} md={16}>
+            <Space direction="vertical" size={2}>
+              <Text
+                style={{
+                  color: secondaryColor,
 
-      {/* HEADER BAR */}
-      <div
-        style={{
-          width: "100%",
-          height: 64,
-          background: "rgba(255, 255, 255, 0.82)",
-          backdropFilter: "blur(12px)",
-          borderRadius: 20,
-          display: "grid",
-          gridTemplateColumns: "140px 1fr auto",
-          alignItems: "center",
-          padding: "0 16px",
-          boxSizing: "border-box",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
-          border: "1px solid rgba(255, 255, 255, 0.5)",
-          zIndex: 10,
-        }}
-      >
-        <div>
-          <Button
-            type="text"
-            icon={<ArrowLeft size={18} />}
-            onClick={onExit}
-            style={{
-              height: 40,
-              borderRadius: 12,
-              fontWeight: 800,
-              color: "#2D3436",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            Thoát
-          </Button>
-        </div>
+                  fontWeight: 900,
 
-        <div style={{ textAlign: "center" }}>
-          <Title
-            level={4}
-            style={{
-              margin: 0,
-              color: "#2D3436",
-              fontSize: "clamp(18px, 2.2vw, 24px)",
-              fontWeight: 900,
-              letterSpacing: -0.3,
-            }}
-          >
-            {game?.name || "VÒNG QUAY MAY MẮN"}
-          </Title>
-        </div>
+                  letterSpacing: 1,
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {showTimer && timeLimit > 0 && (
+                  textTransform: "uppercase",
+                }}
+              >
+                ✨ Game Giáo Lý
+              </Text>
+
+              <Title
+                level={2}
+                style={{
+                  margin: 0,
+
+                  color: primaryColor,
+
+                  fontWeight: 900,
+                }}
+              >
+                🎡 {game?.name || "Vòng quay may mắn"}
+              </Title>
+
+              {game?.description && (
+                <Text type="secondary">{game.description}</Text>
+              )}
+            </Space>
+          </Col>
+
+          <Col xs={24} md={8}>
             <div
-              className={`stat-badge ${remainingTime <= 10 ? "danger" : ""}`}
+              style={{
+                display: "flex",
+
+                justifyContent: "flex-end",
+
+                flexWrap: "wrap",
+
+                gap: 8,
+              }}
             >
-              <Clock3 size={16} />
-              <span>{remainingTime}s</span>
-            </div>
-          )}
+              {showScore && (
+                <Tag
+                  icon={<StarFilled />}
+                  color="gold"
+                  style={{
+                    borderRadius: 12,
 
-          {showScore && (
-            <div className="stat-badge" style={{ color: "#E17055" }}>
-              <Trophy size={16} />
-              <span>{score} điểm</span>
-            </div>
-          )}
+                    padding: "7px 12px",
 
-          <Tooltip title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}>
-            <button type="button" onClick={toggleMute} className="sound-btn">
-              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
-          </Tooltip>
-        </div>
+                    fontSize: 14,
+
+                    fontWeight: 800,
+                  }}
+                >
+                  {score} điểm
+                </Tag>
+              )}
+
+              {showTimer && (
+                <Tag
+                  icon={<ClockCircleOutlined />}
+                  color={timeLeft <= 10 ? "red" : "purple"}
+                  style={{
+                    borderRadius: 12,
+
+                    padding: "7px 12px",
+
+                    fontSize: 14,
+
+                    fontWeight: 800,
+                  }}
+                >
+                  {formatTime(timeLeft)}
+                </Tag>
+              )}
+
+              <Tag
+                color="blue"
+                style={{
+                  borderRadius: 12,
+
+                  padding: "7px 12px",
+
+                  fontSize: 14,
+
+                  fontWeight: 800,
+                }}
+              >
+                🎯 {Math.max(0, spinsPerPlayer - spinCount)} lượt
+              </Tag>
+            </div>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
+
+      <div
+        style={{
+          maxWidth: 1250,
+
+          margin: "0 auto",
+        }}
+      >
+        <Row gutter={[20, 20]} align="stretch">
+          {/* =================================================
+              LEFT
+          ================================================= */}
+
+          <Col xs={24} lg={15}>
+            <Card
+              bordered={false}
+              style={{
+                height: "100%",
+
+                borderRadius,
+
+                boxShadow: "0 10px 35px rgba(0,0,0,.06)",
+              }}
+            >
+              {/* TITLE */}
+
+              <div
+                style={{
+                  display: "flex",
+
+                  justifyContent: "space-between",
+
+                  alignItems: "center",
+
+                  gap: 10,
+
+                  flexWrap: "wrap",
+                }}
+              >
+                <Space>
+                  <Sparkles size={22} color={primaryColor} />
+
+                  <Title
+                    level={4}
+                    style={{
+                      margin: 0,
+
+                      color: primaryColor,
+
+                      fontWeight: 900,
+                    }}
+                  >
+                    Vòng quay may mắn
+                  </Title>
+                </Space>
+
+                <Button
+                  type="text"
+                  onClick={() => setAudioEnabled((previous) => !previous)}
+                  icon={
+                    audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />
+                  }
+                >
+                  {audioEnabled ? "Âm thanh" : "Tắt âm"}
+                </Button>
+              </div>
+
+              {/* WHEEL AREA */}
+
+              <div
+                style={{
+                  marginTop: 20,
+
+                  minHeight: 560,
+
+                  display: "flex",
+
+                  justifyContent: "center",
+
+                  alignItems: "center",
+
+                  overflow: "hidden",
+
+                  borderRadius,
+
+                  background: `radial-gradient(circle at center, ${primaryColor}10 0%, rgba(255,255,255,.75) 70%)`,
+                }}
+              >
+                <div
+                  style={{
+                    position: "relative",
+
+                    width: wheelSize,
+
+                    height: wheelSize,
+
+                    maxWidth: "90vw",
+
+                    maxHeight: "90vw",
+
+                    aspectRatio: "1 / 1",
+                  }}
+                >
+                  {/* POINTER */}
+
+                  <div
+                    style={{
+                      position: "absolute",
+
+                      top: -5,
+
+                      left: "50%",
+
+                      transform: "translateX(-50%)",
+
+                      zIndex: 20,
+
+                      width: 0,
+
+                      height: 0,
+
+                      borderLeft: "22px solid transparent",
+
+                      borderRight: "22px solid transparent",
+
+                      borderTop: `48px solid ${secondaryColor}`,
+
+                      filter: "drop-shadow(0 4px 5px rgba(0,0,0,.3))",
+                    }}
+                  />
+
+                  {/* OUTER RING */}
+
+                  <div
+                    style={{
+                      position: "absolute",
+
+                      inset: 0,
+
+                      borderRadius: "50%",
+
+                      background: primaryColor,
+
+                      padding: 10,
+
+                      boxSizing: "border-box",
+
+                      boxShadow: "0 18px 45px rgba(0,0,0,.2)",
+                    }}
+                  >
+                    {/* WHEEL */}
+
+                    <div
+                      style={{
+                        width: "100%",
+
+                        height: "100%",
+
+                        borderRadius: "50%",
+
+                        background: wheelGradient,
+
+                        position: "relative",
+
+                        overflow: "hidden",
+
+                        transform: `rotate(${rotation}deg)`,
+
+                        transition: isSpinning
+                          ? "transform 3.6s cubic-bezier(.12,.82,.18,1)"
+                          : "none",
+                      }}
+                    >
+                      {renderWheelLabels()}
+
+                      {/* CENTER */}
+
+                      <div
+                        style={{
+                          position: "absolute",
+
+                          left: "50%",
+
+                          top: "50%",
+
+                          width: 82,
+
+                          height: 82,
+
+                          transform: "translate(-50%, -50%)",
+
+                          borderRadius: "50%",
+
+                          background: "#ffffff",
+
+                          border: `7px solid ${primaryColor}`,
+
+                          display: "flex",
+
+                          alignItems: "center",
+
+                          justifyContent: "center",
+
+                          boxShadow: "0 6px 20px rgba(0,0,0,.2)",
+
+                          zIndex: 15,
+
+                          cursor:
+                            isSpinning || finished ? "not-allowed" : "pointer",
+                        }}
+                        onClick={handleSpin}
+                      >
+                        <RotateCw size={32} color={primaryColor} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SPIN BUTTON */}
+
+              <div
+                style={{
+                  textAlign: "center",
+
+                  marginTop: 20,
+                }}
+              >
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<RotateCw size={20} />}
+                  loading={isSpinning}
+                  disabled={
+                    isSpinning || finished || spinCount >= spinsPerPlayer
+                  }
+                  onClick={handleSpin}
+                  style={{
+                    height: 52,
+
+                    padding: "0 35px",
+
+                    borderRadius: 16,
+
+                    background: primaryColor,
+
+                    borderColor: primaryColor,
+
+                    fontSize: 17,
+
+                    fontWeight: 900,
+
+                    boxShadow: `0 8px 22px ${primaryColor}55`,
+                  }}
+                >
+                  {isSpinning
+                    ? "Đang quay..."
+                    : finished
+                      ? "Đã hết lượt"
+                      : "QUAY NGAY 🎡"}
+                </Button>
+              </div>
+
+              {/* RESULT */}
+
+              {showResult && selectedItem && !showResultModal && (
+                <Alert
+                  type="success"
+                  showIcon
+                  icon={<TrophyFilled />}
+                  message="🎉 Kết quả"
+                  description={<strong>{selectedItem.label}</strong>}
+                  style={{
+                    marginTop: 20,
+
+                    borderRadius: 16,
+                  }}
+                />
+              )}
+
+              {/* FINISHED */}
+
+              {finished && (
+                <Alert
+                  type="info"
+                  showIcon
+                  icon={<CheckCircleOutlined />}
+                  message="🎊 Bạn đã hoàn thành!"
+                  description={`Tổng điểm: ${score}`}
+                  style={{
+                    marginTop: 20,
+
+                    borderRadius: 16,
+                  }}
+                />
+              )}
+
+              {/* ACTIONS */}
+
+              <div
+                style={{
+                  marginTop: 20,
+
+                  display: "flex",
+
+                  justifyContent: "space-between",
+
+                  alignItems: "center",
+
+                  gap: 10,
+
+                  flexWrap: "wrap",
+                }}
+              >
+                <Space wrap>
+                  <Tag
+                    color="purple"
+                    style={{
+                      borderRadius: 10,
+
+                      padding: "5px 10px",
+                    }}
+                  >
+                    Lượt đã quay: {spinCount}/{spinsPerPlayer}
+                  </Tag>
+
+                  {totalProbability > 0 && (
+                    <Tag
+                      color={
+                        Math.abs(totalProbability - 100) < 0.01
+                          ? "green"
+                          : "orange"
+                      }
+                      style={{
+                        borderRadius: 10,
+                      }}
+                    >
+                      Tỷ lệ: {totalProbability}%
+                    </Tag>
+                  )}
+                </Space>
+
+                <Space>
+                  {allowReplay && finished && (
+                    <Button
+                      icon={<ReloadOutlined />}
+                      onClick={handleReplay}
+                      style={{
+                        borderRadius: 10,
+                      }}
+                    >
+                      Chơi lại
+                    </Button>
+                  )}
+
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={handleReset}
+                    disabled={isSpinning}
+                    style={{
+                      borderRadius: 10,
+                    }}
+                  >
+                    Đặt lại
+                  </Button>
+
+                  {onBack && (
+                    <Button
+                      onClick={onBack}
+                      style={{
+                        borderRadius: 10,
+                      }}
+                    >
+                      Thoát
+                    </Button>
+                  )}
+                </Space>
+              </div>
+            </Card>
+          </Col>
+
+          {/* =================================================
+              RIGHT
+          ================================================= */}
+
+          <Col xs={24} lg={9}>
+            <Space
+              direction="vertical"
+              size={20}
+              style={{
+                width: "100%",
+              }}
+            >
+              {/* RESULT CARD */}
+
+              <Card
+                bordered={false}
+                style={{
+                  borderRadius,
+
+                  boxShadow: "0 10px 30px rgba(0,0,0,.06)",
+                }}
+              >
+                <Title
+                  level={5}
+                  style={{
+                    color: primaryColor,
+
+                    marginTop: 0,
+                  }}
+                >
+                  🏆 Kết quả gần nhất
+                </Title>
+
+                {selectedItem ? (
+                  <div
+                    style={{
+                      padding: 20,
+
+                      borderRadius: 18,
+
+                      textAlign: "center",
+
+                      background: `${selectedItem.color}18`,
+
+                      border: `2px solid ${selectedItem.color}55`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 70,
+
+                        height: 70,
+
+                        margin: "0 auto 12px",
+
+                        borderRadius: "50%",
+
+                        background: selectedItem.color,
+
+                        display: "flex",
+
+                        alignItems: "center",
+
+                        justifyContent: "center",
+
+                        color: "#fff",
+
+                        fontSize: 25,
+
+                        fontWeight: 900,
+
+                        boxShadow: `0 8px 20px ${selectedItem.color}55`,
+                      }}
+                    >
+                      🎁
+                    </div>
+
+                    <Text type="secondary">Bạn nhận được</Text>
+
+                    <Title
+                      level={3}
+                      style={{
+                        margin: "5px 0",
+
+                        color: selectedItem.color,
+                      }}
+                    >
+                      {selectedItem.label}
+                    </Title>
+
+                    {selectedItem.value && (
+                      <Tag
+                        color="gold"
+                        style={{
+                          borderRadius: 10,
+
+                          fontSize: 14,
+
+                          padding: "5px 12px",
+                        }}
+                      >
+                        {selectedItem.value}
+                      </Tag>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: 30,
+
+                      textAlign: "center",
+
+                      background: "#F8F9FC",
+
+                      borderRadius: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 45,
+
+                        marginBottom: 10,
+                      }}
+                    >
+                      🎡
+                    </div>
+
+                    <Text type="secondary">
+                      Hãy quay vòng quay để nhận phần thưởng
+                    </Text>
+                  </div>
+                )}
+              </Card>
+
+              {/* SCORE */}
+
+              {showScore && (
+                <Card
+                  bordered={false}
+                  style={{
+                    borderRadius,
+
+                    boxShadow: "0 10px 30px rgba(0,0,0,.06)",
+                  }}
+                >
+                  <Title
+                    level={5}
+                    style={{
+                      marginTop: 0,
+
+                      color: primaryColor,
+                    }}
+                  >
+                    ⭐ Điểm số
+                  </Title>
+
+                  <div
+                    style={{
+                      textAlign: "center",
+
+                      padding: 10,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 46,
+
+                        fontWeight: 900,
+
+                        color: primaryColor,
+                      }}
+                    >
+                      {score}
+                    </div>
+
+                    <Text type="secondary">điểm</Text>
+                  </div>
+                </Card>
+              )}
+
+              {/* PROGRESS */}
+
+              <Card
+                bordered={false}
+                style={{
+                  borderRadius,
+
+                  boxShadow: "0 10px 30px rgba(0,0,0,.06)",
+                }}
+              >
+                <Title
+                  level={5}
+                  style={{
+                    marginTop: 0,
+
+                    color: primaryColor,
+                  }}
+                >
+                  🎯 Tiến trình
+                </Title>
+
+                <Progress
+                  percent={Math.round(
+                    Math.min(100, (spinCount / spinsPerPlayer) * 100),
+                  )}
+                  strokeColor={primaryColor}
+                  format={() => `${spinCount}/${spinsPerPlayer}`}
+                />
+
+                <Text
+                  type="secondary"
+                  style={{
+                    display: "block",
+
+                    marginTop: 8,
+                  }}
+                >
+                  Mỗi người có <strong>{spinsPerPlayer}</strong> lượt quay.
+                </Text>
+              </Card>
+
+              {/* ITEMS */}
+
+              <Card
+                bordered={false}
+                style={{
+                  borderRadius,
+
+                  boxShadow: "0 10px 30px rgba(0,0,0,.06)",
+                }}
+              >
+                <Title
+                  level={5}
+                  style={{
+                    marginTop: 0,
+
+                    color: primaryColor,
+                  }}
+                >
+                  🎁 Phần thưởng
+                </Title>
+
+                <div
+                  style={{
+                    display: "flex",
+
+                    flexDirection: "column",
+
+                    gap: 9,
+
+                    maxHeight: 350,
+
+                    overflowY: "auto",
+                  }}
+                >
+                  {items.map((item, index) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: "flex",
+
+                        alignItems: "center",
+
+                        gap: 10,
+
+                        padding: 10,
+
+                        borderRadius: 12,
+
+                        background:
+                          selectedItem?.id === item.id
+                            ? `${item.color}18`
+                            : "#F8F9FC",
+
+                        border:
+                          selectedItem?.id === item.id
+                            ? `2px solid ${item.color}`
+                            : "1px solid #edf0f5",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 32,
+
+                          height: 32,
+
+                          borderRadius: "50%",
+
+                          flexShrink: 0,
+
+                          background: item.color,
+
+                          color: "#ffffff",
+
+                          display: "flex",
+
+                          alignItems: "center",
+
+                          justifyContent: "center",
+
+                          fontWeight: 900,
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+
+                      <div
+                        style={{
+                          flex: 1,
+
+                          minWidth: 0,
+                        }}
+                      >
+                        <Text
+                          strong
+                          style={{
+                            display: "block",
+
+                            overflow: "hidden",
+
+                            textOverflow: "ellipsis",
+
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.label}
+                        </Text>
+
+                        {item.value && (
+                          <Text
+                            type="secondary"
+                            style={{
+                              fontSize: 12,
+                            }}
+                          >
+                            {item.value}
+                          </Text>
+                        )}
+                      </div>
+
+                      <Tag
+                        color="blue"
+                        style={{
+                          margin: 0,
+
+                          borderRadius: 8,
+
+                          flexShrink: 0,
+                        }}
+                      >
+                        {item.probability}%
+                      </Tag>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </Space>
+          </Col>
+        </Row>
       </div>
 
-      {/* TIMER PROGRESS */}
-      {showTimer && timeLimit > 0 && (
-        <div style={{ width: "100%", marginTop: 8 }}>
-          <Progress
-            percent={timePercent}
-            showInfo={false}
-            strokeColor={remainingTime <= 10 ? "#FF7675" : secondaryColor}
-            trailColor="rgba(255, 255, 255, 0.25)"
-            size="small"
-          />
+      {/* =====================================================
+          RESULT OVERLAY
+      ===================================================== */}
+
+      {showResult && showResultModal && selectedItem && (
+        <div
+          style={{
+            position: "fixed",
+
+            inset: 0,
+
+            zIndex: 9999,
+
+            background: "rgba(15,23,42,.62)",
+
+            display: "flex",
+
+            alignItems: "center",
+
+            justifyContent: "center",
+
+            padding: 20,
+          }}
+          onClick={() => setShowResultModal(false)}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "min(500px, 100%)",
+
+              background: "#ffffff",
+
+              borderRadius: 28,
+
+              padding: 35,
+
+              textAlign: "center",
+
+              boxShadow: "0 30px 80px rgba(0,0,0,.3)",
+
+              animation: "wheelResultPop .35s ease",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 60,
+
+                marginBottom: 8,
+              }}
+            >
+              🎉
+            </div>
+
+            <Text
+              style={{
+                color: secondaryColor,
+
+                fontWeight: 900,
+
+                textTransform: "uppercase",
+
+                letterSpacing: 1,
+              }}
+            >
+              Chúc mừng bạn!
+            </Text>
+
+            <Title
+              level={2}
+              style={{
+                color: selectedItem.color,
+
+                margin: "10px 0",
+              }}
+            >
+              {selectedItem.label}
+            </Title>
+
+            {selectedItem.value && (
+              <Tag
+                color="gold"
+                style={{
+                  fontSize: 17,
+
+                  padding: "7px 16px",
+
+                  borderRadius: 12,
+                }}
+              >
+                🎁 {selectedItem.value}
+              </Tag>
+            )}
+
+            <div
+              style={{
+                marginTop: 25,
+              }}
+            >
+              <Button
+                type="primary"
+                size="large"
+                onClick={() => setShowResultModal(false)}
+                style={{
+                  borderRadius: 14,
+
+                  background: primaryColor,
+
+                  borderColor: primaryColor,
+
+                  padding: "0 35px",
+
+                  fontWeight: 800,
+                }}
+              >
+                Tuyệt vời! 🎊
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* MAIN GAME BODY */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          width: "100%",
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1.6fr) minmax(320px, 0.8fr)",
-          gap: 18,
-          marginTop: 12,
-        }}
-      >
-        {/* LEFT PANEL: WHEEL DISPLAY */}
-        <div
-          style={{
-            background: "rgba(255, 255, 255, 0.85)",
-            backdropFilter: "blur(16px)",
-            borderRadius: 24,
-            border: "1px solid rgba(255, 255, 255, 0.7)",
-            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.15)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            padding: "16px 24px",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* BADGE */}
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "5px 16px",
-              background: "linear-gradient(135deg, #6C5CE7 0%, #a29bfe 100%)",
-              borderRadius: 20,
-              color: "#FFF",
-              fontWeight: 800,
-              fontSize: 12,
-              letterSpacing: 0.5,
-              marginBottom: 10,
-              boxShadow: "0 4px 12px rgba(108, 92, 231, 0.3)",
-            }}
-          >
-            <Zap size={14} /> QUAY LÀ TRÚNG
-          </div>
+      {/* =====================================================
+          ANIMATION
+      ===================================================== */}
 
-          {/* WHEEL DISPLAY CONTAINER */}
-          <div
-            style={{
-              position: "relative",
-              width: wheelSize,
-              height: wheelSize,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "10px 0",
-            }}
-          >
-            {/* POINTER */}
-            <div
-              style={{
-                position: "absolute",
-                top: -12,
-                left: "50%",
-                transform: "translateX(-50%)",
-                zIndex: 35,
-                width: 0,
-                height: 0,
-                borderLeft: "16px solid transparent",
-                borderRight: "16px solid transparent",
-                borderTop: `32px solid ${secondaryColor}`,
-                filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.3))",
-              }}
-            />
+      <style>
+        {`
+          @keyframes wheelResultPop {
+            0% {
+              opacity: 0;
+              transform: scale(.75);
+            }
 
-            {/* ROTATING CANVAS CONTAINER */}
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                borderRadius: "50%",
-                transform: `rotate(${rotationDegree}deg)`,
-                transition: spinning
-                  ? "transform 4.8s cubic-bezier(0.15, 0.85, 0.15, 1)"
-                  : "none",
-                boxShadow:
-                  "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 0 0 8px rgba(255,255,255,0.8)",
-                border: `6px solid ${primaryColor}`,
-                overflow: "hidden",
-                boxSizing: "border-box",
-              }}
-            >
-              <canvas ref={canvasRef} />
-            </div>
-
-            {/* CENTER BUTTON */}
-            <button
-              type="button"
-              onClick={handleSpin}
-              disabled={spinDisabled}
-              style={{
-                width: Math.max(56, wheelSize * 0.17),
-                height: Math.max(56, wheelSize * 0.17),
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, #FFFFFF, ${secondaryColor})`,
-                border: `4px solid ${primaryColor}`,
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                position: "absolute",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
-                cursor: spinDisabled ? "not-allowed" : "pointer",
-                zIndex: 40,
-                padding: 0,
-                animation:
-                  !spinDisabled && !spinning ? "pulse-btn 2s infinite" : "none",
-              }}
-            >
-              <RotateCw
-                size={Math.max(22, wheelSize * 0.07)}
-                color={primaryColor}
-                className={spinning ? "spin-icon-anim" : ""}
-              />
-            </button>
-          </div>
-
-          {/* MAIN ACTION BUTTON */}
-          <Button
-            type="primary"
-            onClick={handleSpin}
-            disabled={spinDisabled}
-            className="main-btn"
-            style={{
-              height: 48,
-              minWidth: 220,
-              borderRadius: 24,
-              border: "none",
-              background: spinDisabled
-                ? "#B2BEC3"
-                : `linear-gradient(135deg, ${primaryColor} 0%, #a29bfe 100%)`,
-              fontSize: 16,
-              fontWeight: 900,
-              boxShadow: spinDisabled
-                ? "none"
-                : "0 8px 20px rgba(108, 92, 231, 0.4)",
-              marginTop: 10,
-            }}
-          >
-            <Space size={8}>
-              <RotateCw
-                size={18}
-                className={spinning ? "spin-icon-anim" : ""}
-              />
-              {spinning
-                ? "ĐANG QUAY..."
-                : spinsLeft > 0
-                  ? "BẮT ĐẦU QUAY"
-                  : "HẾT LƯỢT QUAY"}
-            </Space>
-          </Button>
-
-          {/* SPINS REMAINING INFO */}
-          <div style={{ marginTop: 8 }}>
-            <Text
-              type="secondary"
-              style={{ fontWeight: 700, fontSize: 13, color: "#636E72" }}
-            >
-              Còn lại:{" "}
-              <span style={{ color: primaryColor, fontWeight: 900 }}>
-                {spinsLeft}
-              </span>{" "}
-              lượt quay
-            </Text>
-          </div>
-        </div>
-
-        {/* RIGHT PANEL: REWARD LIST & STATS */}
-        <div
-          style={{
-            background: "rgba(255, 255, 255, 0.85)",
-            backdropFilter: "blur(16px)",
-            borderRadius: 24,
-            border: "1px solid rgba(255, 255, 255, 0.7)",
-            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.15)",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            boxSizing: "border-box",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 14,
-            }}
-          >
-            <Gift size={20} color={primaryColor} />
-            <Title
-              level={5}
-              style={{ margin: 0, color: "#2D3436", fontWeight: 800 }}
-            >
-              Danh sách phần thưởng
-            </Title>
-          </div>
-
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            <Table
-              dataSource={items}
-              columns={rewardColumns}
-              rowKey="id"
-              pagination={false}
-              size="small"
-              bordered={false}
-              style={{ background: "transparent" }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* WINNER MODAL */}
-      <Modal
-        open={isModalOpen}
-        footer={null}
-        onCancel={() => setIsModalOpen(false)}
-        centered
-        width={360}
-        bodyStyle={{
-          padding: "28px 20px",
-          textAlign: "center",
-          borderRadius: 24,
-        }}
-      >
-        <div
-          style={{
-            width: 70,
-            height: 70,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #FFEAA7, #FDCB6E)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 16px auto",
-            boxShadow: "0 8px 20px rgba(253, 203, 110, 0.4)",
-          }}
-        >
-          <PartyPopper size={36} color="#D63031" />
-        </div>
-
-        <Title
-          level={3}
-          style={{ margin: 0, color: "#2D3436", fontWeight: 900 }}
-        >
-          Xin chúc mừng!
-        </Title>
-
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#636E72",
-            display: "block",
-            marginTop: 6,
-          }}
-        >
-          Bạn đã quay trúng phần thưởng:
-        </Text>
-
-        <div
-          style={{
-            margin: "18px 0",
-            padding: "12px 16px",
-            borderRadius: 16,
-            background: "rgba(108, 92, 231, 0.08)",
-            border: `1px dashed ${primaryColor}`,
-          }}
-        >
-          <div style={{ fontSize: 18, fontWeight: 900, color: primaryColor }}>
-            {wonItem?.label}
-          </div>
-          {wonItem?.value && (
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#E17055",
-                marginTop: 2,
-              }}
-            >
-              +{wonItem?.value}
-            </div>
-          )}
-        </div>
-
-        <Button
-          type="primary"
-          block
-          onClick={() => setIsModalOpen(false)}
-          style={{
-            height: 44,
-            borderRadius: 14,
-            background: `linear-gradient(135deg, ${primaryColor}, #a29bfe)`,
-            fontWeight: 800,
-            fontSize: 15,
-            border: "none",
-            boxShadow: "0 6px 16px rgba(108, 92, 231, 0.3)",
-          }}
-        >
-          Nhận phần thưởng
-        </Button>
-      </Modal>
+            100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

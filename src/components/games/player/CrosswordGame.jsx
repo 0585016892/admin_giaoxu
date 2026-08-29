@@ -1,11 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Alert,
   Button,
   Card,
   Col,
-  Empty,
-  Input,
+  Divider,
+  Modal,
   Progress,
   Row,
   Space,
@@ -15,42 +21,25 @@ import {
 } from "antd";
 import {
   ArrowLeftOutlined,
+  CheckCircleFilled,
   CheckCircleOutlined,
-  ClockCircleOutlined,
+  ClockCircleFilled,
+  CloseCircleFilled,
+  HeartFilled,
+  PauseCircleOutlined,
+  PlayCircleOutlined,
+  QuestionCircleOutlined,
   ReloadOutlined,
-  TrophyOutlined,
-  BulbOutlined,
-  SmileOutlined,
-  StarOutlined,
-  SendOutlined,
-  KeyOutlined,
-  FireOutlined,
+  RightOutlined,
+  StarFilled,
+  TrophyFilled,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-// =========================================================
-// PREMIUM GAME UI COLOR PALETTE
-// =========================================================
-
-const DEFAULT_COLORS = {
-  primary: "#7C3AED", // Vivid Purple
-  secondary: "#FF6B8B", // Coral Neon Pink
-  accent: "#06B6D4", // Electric Cyan
-  yellow: "#F59E0B", // Warm Gold
-  text: "#1E1B4B", // Deep Indigo Text
-  subText: "#64748B", // Cool Gray Text
-  bg: "#F1F5F9", // Slate Light Neutral BG
-  cardBg: "#FFFFFF",
-  border: "#E2E8F0",
-  success: "#10B981", // Emerald Green
-  danger: "#EF4444", // Rose Red
-  warning: "#F59E0B", // Amber Yellow
-};
-
-// =========================================================
-// HELPER FUNCTIONS
-// =========================================================
+/* =========================================================
+   HELPERS
+========================================================= */
 
 const normalizeAnswer = (value = "") => {
   return String(value)
@@ -58,1199 +47,2139 @@ const normalizeAnswer = (value = "") => {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d")
     .replace(/Đ/g, "D")
-    .replace(/[^a-zA-Z0-9]/g, "")
+    .replace(/[^a-zA-Z]/g, "")
     .toUpperCase();
 };
 
-const getWordId = (item, index) => {
-  return String(item?.id ?? item?.number ?? index + 1);
+const getWordAnswer = (word) => {
+  return normalizeAnswer(word?.answer || word?.word || "");
 };
 
-const formatTime = (seconds = 0) => {
-  const safeSeconds = Math.max(Number(seconds) || 0, 0);
-  const minutes = Math.floor(safeSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const remainSeconds = (safeSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${remainSeconds}`;
+const getWordDisplay = (word) => {
+  return word?.answerDisplay || word?.answer || word?.word || "";
 };
 
-// =========================================================
-// MAIN COMPONENT
-// =========================================================
+const getWordId = (word, index) => {
+  return word?.id ?? `word-${index}`;
+};
 
-const CrosswordGame = ({ game, onExit }) => {
-  const settings = game?.settings || {};
-  const showTimer = settings.showTimer !== false;
-  const showScore = settings.showScore !== false;
-  const allowHint = settings.allowHint !== false;
-  const allowRetry = settings.allowRetry !== false;
-  const timeLimit = Math.max(Number(settings.timeLimit) || 60, 1);
+const clamp = (value, min, max) => {
+  return Math.max(min, Math.min(max, value));
+};
 
-  const COLORS = useMemo(() => {
-    return {
-      ...DEFAULT_COLORS,
-      primary:
-        game?.theme?.primary ||
-        game?.theme?.primaryColor ||
-        DEFAULT_COLORS.primary,
-      secondary:
-        game?.theme?.secondary ||
-        game?.theme?.secondaryColor ||
-        DEFAULT_COLORS.secondary,
-      bg:
-        game?.background?.color || game?.theme?.background || DEFAULT_COLORS.bg,
-    };
-  }, [game]);
+/* =========================================================
+   COMPONENT
+========================================================= */
+
+const CrosswordGame = ({ game, onComplete, onBack }) => {
+  /* =======================================================
+     DATA
+  ======================================================= */
 
   const crossword = useMemo(() => game?.crossword || {}, [game]);
+  const settings = game?.settings || {};
+  const theme = game?.theme || {};
+  const background = game?.background || {};
+  const media = game?.media || {};
+
+  const primaryColor = theme.primary || "#FF5C8A";
+  const secondaryColor = theme.secondary || "#FFB703";
+  const borderRadius = Number(theme.borderRadius) || 20;
+  const fontFamily = theme.font || "Be Vietnam Pro";
+
+  const allowHint = Boolean(settings.allowHint);
+  const allowSkip = Boolean(settings.allowSkip);
+  const showProgress = Boolean(settings.showProgress);
+  const showScore = Boolean(settings.showScore);
+  const showTimer = Boolean(settings.showTimer);
+  // const shuffleAnswers = Boolean(settings.shuffleAnswers);
+  const shuffleQuestions = Boolean(settings.shuffleQuestions);
+
+  const timeLimit = Math.max(1, Number(settings.timeLimit) || 60);
+
+  /* =======================================================
+     WORDS
+
+     QUAN TRỌNG:
+     Không tự tính lại row / col.
+     Dùng chính xác dữ liệu backend.
+
+     Ví dụ:
+       ADAM
+       row = 0
+       col = -3
+       answerIndex = 3
+
+     => chữ M nằm ở:
+       col + answerIndex
+       = -3 + 3
+       = 0
+  ======================================================= */
 
   const words = useMemo(() => {
-    const source = Array.isArray(crossword.words)
-      ? crossword.words
-      : Array.isArray(crossword.questions)
-        ? crossword.questions
-        : [];
+    const rawWords = Array.isArray(crossword.words) ? crossword.words : [];
+    const result = rawWords
+      .map((word, index) => {
+        const answer = getWordAnswer(word);
 
-    return source
-      .map((item, index) => {
-        const answer = item?.answer || item?.word || item?.answerDisplay || "";
+        const row = Number(word?.row);
+        const col = Number(word?.col);
+
+        let answerIndex = Number(word?.answerIndex);
+
+        if (!Number.isFinite(answerIndex)) {
+          answerIndex = 0;
+        }
+
         return {
-          ...item,
-          id: getWordId(item, index),
-          number: Number(item?.number) || index + 1,
+          ...word,
+
+          id: getWordId(word, index),
+
+          number: Number.isFinite(Number(word?.number))
+            ? Number(word.number)
+            : index + 1,
+
           answer,
-          answerDisplay:
-            item?.answerDisplay || item?.answer || item?.word || "",
-          question:
-            item?.question ||
-            item?.clue ||
-            `Câu hỏi số ${Number(item?.number) || index + 1}`,
-          points: Number(item?.points) || 10,
-          direction:
-            String(item?.direction || "horizontal").toLowerCase() === "vertical"
-              ? "vertical"
-              : "horizontal",
-          row: Math.max(Number(item?.row ?? index) || 0, 0),
-          col: Math.max(Number(item?.col ?? 0) || 0, 0),
-          answerIndex: Math.max(Number(item?.answerIndex ?? 0) || 0, 0),
+
+          displayAnswer: getWordDisplay(word),
+
+          row: Number.isFinite(row) ? row : 0,
+
+          col: Number.isFinite(col) ? col : 0,
+
+          answerIndex: clamp(answerIndex, 0, Math.max(0, answer.length - 1)),
+
+          points: Number.isFinite(Number(word?.points))
+            ? Number(word.points)
+            : 10,
+
+          direction: word?.direction === "vertical" ? "vertical" : "horizontal",
         };
       })
-      .filter((item) => normalizeAnswer(item.answer));
-  }, [crossword]);
+      .filter((word) => word.answer.length > 0);
 
-  const verticalAnswer = useMemo(() => {
-    return normalizeAnswer(
-      crossword.verticalAnswer ||
-        crossword.verticalAnswerDisplay ||
-        crossword.keyword ||
-        "",
-    );
-  }, [crossword]);
+    const sorted = [...result].sort((a, b) => a.number - b.number);
 
-  const verticalAnswerDisplay =
-    crossword.verticalAnswerDisplay ||
-    crossword.verticalAnswer ||
-    crossword.keyword ||
-    "";
+    if (shuffleQuestions) {
+      return [...sorted].sort(() => Math.random() - 0.5);
+    }
 
-  const gridSize = useMemo(() => {
-    let maxRow = 0;
-    let maxCol = 0;
+    return sorted;
+  }, [crossword, shuffleQuestions]);
 
-    words.forEach((item) => {
-      const answer = normalizeAnswer(item.answer);
-      if (!answer) return;
-      const row = item.row;
-      const col = item.col;
+  /* =======================================================
+     STATE
+  ======================================================= */
 
-      if (item.direction === "vertical") {
-        maxRow = Math.max(maxRow, row + answer.length - 1);
-        maxCol = Math.max(maxCol, col);
-      } else {
-        maxRow = Math.max(maxRow, row);
-        maxCol = Math.max(maxCol, col + answer.length - 1);
-      }
-    });
+  const [selectedWordId, setSelectedWordId] = useState(null);
 
-    const savedRows = Math.max(Number(crossword.rows) || 0, 1);
-    const savedCols = Math.max(Number(crossword.cols) || 0, 1);
-
-    return {
-      rows: Math.max(savedRows, maxRow + 1, 1),
-      cols: Math.max(savedCols, maxCol + 1, 1),
-    };
-  }, [words, crossword]);
-
-  const rows = gridSize.rows;
-  const cols = gridSize.cols;
-
-  // Game States
   const [answers, setAnswers] = useState({});
-  const [completed, setCompleted] = useState({});
-  const [revealed, setRevealed] = useState({});
+
+  const [correctWords, setCorrectWords] = useState({});
+
+  const [wrongWords, setWrongWords] = useState({});
+
+  const [revealedWords, setRevealedWords] = useState({});
+
+  const [skippedWords, setSkippedWords] = useState({});
+
   const [score, setScore] = useState(0);
+
   const [timeLeft, setTimeLeft] = useState(timeLimit);
-  const [gameOver, setGameOver] = useState(false);
-  const [finalAnswer, setFinalAnswer] = useState("");
-  const [finalCompleted, setFinalCompleted] = useState(false);
-  const [finalWrong, setFinalWrong] = useState(false);
 
-  const resetState = () => {
-    setAnswers({});
-    setCompleted({});
-    setRevealed({});
-    setScore(0);
-    setTimeLeft(timeLimit);
-    setGameOver(false);
-    setFinalAnswer("");
-    setFinalCompleted(false);
-    setFinalWrong(false);
-  };
+  const [gameStarted, setGameStarted] = useState(false);
 
-  useEffect(() => {
-    resetState();
-  }, [game?.id, timeLimit]);
+  const [gameFinished, setGameFinished] = useState(false);
 
-  const grid = useMemo(() => {
-    const result = Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => ({
-        active: false,
-        letters: {},
-        wordIds: [],
-        numbers: [],
-      })),
-    );
+  const [isPaused, setIsPaused] = useState(false);
 
-    words.forEach((item, wordIndex) => {
-      const word = normalizeAnswer(item.answer);
-      if (!word) return;
+  const [showFinishModal, setShowFinishModal] = useState(false);
 
-      const wordId = getWordId(item, wordIndex);
+  const [completedOnce, setCompletedOnce] = useState(false);
 
-      word.split("").forEach((letter, letterIndex) => {
-        const currentRow =
-          item.direction === "vertical" ? item.row + letterIndex : item.row;
-        const currentCol =
-          item.direction === "horizontal" ? item.col + letterIndex : item.col;
+  const completedCallbackRef = useRef(false);
 
-        if (
-          currentRow < 0 ||
-          currentRow >= rows ||
-          currentCol < 0 ||
-          currentCol >= cols
-        ) {
-          return;
-        }
+  /* =======================================================
+     AUDIO
+  ======================================================= */
 
-        const cell = result[currentRow][currentCol];
-        cell.active = true;
-        cell.letters[wordId] = letter;
-
-        if (!cell.wordIds.includes(wordId)) cell.wordIds.push(wordId);
-        if (letterIndex === 0 && !cell.numbers.includes(Number(item.number))) {
-          cell.numbers.push(Number(item.number));
-        }
-      });
-    });
-
-    return result;
-  }, [words, rows, cols]);
+  const correctAudioRef = useRef(null);
+  const wrongAudioRef = useRef(null);
+  const backgroundAudioRef = useRef(null);
 
   useEffect(() => {
-    if (!showTimer || gameOver || finalCompleted) return;
+    if (media.correctSound) {
+      correctAudioRef.current = new Audio(media.correctSound);
+    }
+
+    if (media.wrongSound) {
+      wrongAudioRef.current = new Audio(media.wrongSound);
+    }
+
+    if (media.backgroundMusic) {
+      backgroundAudioRef.current = new Audio(media.backgroundMusic);
+
+      backgroundAudioRef.current.loop = true;
+      backgroundAudioRef.current.volume = 0.25;
+    }
+
+    return () => {
+      if (backgroundAudioRef.current) {
+        backgroundAudioRef.current.pause();
+        backgroundAudioRef.current.currentTime = 0;
+      }
+    };
+  }, [media.correctSound, media.wrongSound, media.backgroundMusic]);
+
+  const playCorrectSound = useCallback(() => {
+    if (!correctAudioRef.current) return;
+
+    try {
+      correctAudioRef.current.currentTime = 0;
+      correctAudioRef.current.play().catch(() => {});
+    } catch {}
+  }, []);
+
+  const playWrongSound = useCallback(() => {
+    if (!wrongAudioRef.current) return;
+
+    try {
+      wrongAudioRef.current.currentTime = 0;
+      wrongAudioRef.current.play().catch(() => {});
+    } catch {}
+  }, []);
+
+  const startBackgroundMusic = useCallback(() => {
+    if (!backgroundAudioRef.current) return;
+
+    backgroundAudioRef.current.play().catch(() => {});
+  }, []);
+
+  /* =======================================================
+     START
+  ======================================================= */
+
+  useEffect(() => {
+    if (!words.length) return;
+
+    if (selectedWordId === null) {
+      setSelectedWordId(words[0].id);
+    }
+  }, [words, selectedWordId]);
+
+  useEffect(() => {
+    if (!gameStarted) return;
+
+    startBackgroundMusic();
+  }, [gameStarted, startBackgroundMusic]);
+
+  /* =======================================================
+     TIMER
+  ======================================================= */
+
+  useEffect(() => {
+    if (!showTimer) return;
+    if (!gameStarted) return;
+    if (gameFinished) return;
+    if (isPaused) return;
 
     if (timeLeft <= 0) {
-      setGameOver(true);
-      message.warning("⏰ Hết giờ rồi bạn ơi!");
+      setGameFinished(true);
+      setShowFinishModal(true);
+
+      message.warning("Hết thời gian! ⏰");
+
       return;
     }
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => Math.max(prev - 1, 0));
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          return 0;
+        }
+
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [showTimer, gameOver, finalCompleted, timeLeft]);
+  }, [showTimer, gameStarted, gameFinished, isPaused, timeLeft]);
 
-  const completedCount = useMemo(() => {
-    return words.filter((item, index) => completed[getWordId(item, index)])
-      .length;
-  }, [words, completed]);
+  /* =======================================================
+     FINISH GAME
+  ======================================================= */
 
-  const revealedCount = useMemo(() => {
-    return words.filter((item, index) => revealed[getWordId(item, index)])
-      .length;
-  }, [words, revealed]);
+  const finishGame = useCallback(
+    (reason = "completed") => {
+      if (completedCallbackRef.current) return;
 
-  const allWordsCompleted = words.length > 0 && completedCount === words.length;
+      completedCallbackRef.current = true;
 
-  const handleAnswerChange = (wordId, value) => {
-    if (gameOver || finalCompleted || completed[wordId] || revealed[wordId])
-      return;
-    setAnswers((prev) => ({ ...prev, [wordId]: value }));
+      setGameFinished(true);
+      setCompletedOnce(true);
+      setShowFinishModal(true);
+
+      if (typeof onComplete === "function") {
+        onComplete({
+          gameId: game?.id,
+
+          score,
+
+          totalQuestions: words.length,
+
+          completedQuestions: Object.keys(correctWords).length,
+
+          timeLeft,
+
+          reason,
+        });
+      }
+    },
+    [game?.id, score, words.length, correctWords, timeLeft, onComplete],
+  );
+
+  /* =======================================================
+     AUTO FINISH
+  ======================================================= */
+
+  useEffect(() => {
+    if (!words.length) return;
+    if (gameFinished) return;
+
+    const solvedCount = Object.keys(correctWords).length;
+
+    const skippedCount = Object.keys(skippedWords).length;
+
+    const totalDone = solvedCount + skippedCount;
+
+    if (totalDone >= words.length) {
+      finishGame("completed");
+    }
+  }, [correctWords, skippedWords, words.length, gameFinished, finishGame]);
+
+  /* =======================================================
+     SELECT WORD
+  ======================================================= */
+
+  const selectWord = (word) => {
+    if (!word) return;
+
+    setSelectedWordId(word.id);
   };
 
-  const checkAnswer = (item, index) => {
-    const wordId = getWordId(item, index);
-    if (gameOver || finalCompleted || completed[wordId] || revealed[wordId])
-      return;
+  /* =======================================================
+     UPDATE ANSWER
+  ======================================================= */
 
-    const input = normalizeAnswer(answers[wordId] || "");
-    const correct = normalizeAnswer(item.answer);
+  const updateAnswer = (word, value) => {
+    if (!word) return;
 
-    if (!input) {
-      message.warning(`Câu ${item.number}: Vui lòng nhập câu trả lời! ✨`);
-      return;
-    }
-
-    if (input === correct) {
-      setCompleted((prev) => ({ ...prev, [wordId]: true }));
-      setScore((prev) => prev + Number(item.points || 10));
-      message.success(`🎉 Câu ${item.number}: Chính xác! ✨`);
+    if (
+      correctWords[word.id] ||
+      skippedWords[word.id] ||
+      revealedWords[word.id]
+    ) {
       return;
     }
 
-    message.error(`❌ Câu ${item.number}: Chưa đúng, hãy thử lại!`);
-  };
-
-  const revealAnswer = (item, index) => {
-    if (!allowHint) {
-      message.warning("Trò chơi này không bật chế độ gợi ý! 🔒");
-      return;
-    }
-
-    const wordId = getWordId(item, index);
-    if (gameOver || finalCompleted || completed[wordId] || revealed[wordId])
-      return;
-
-    setRevealed((prev) => ({ ...prev, [wordId]: true }));
     setAnswers((prev) => ({
       ...prev,
-      [wordId]: item.answerDisplay || item.answer || item.word || "",
+      [word.id]: value,
     }));
 
-    message.info(`💡 Đã mở đáp án câu ${item.number}!`);
+    setWrongWords((prev) => {
+      if (!prev[word.id]) return prev;
+
+      const next = { ...prev };
+      delete next[word.id];
+
+      return next;
+    });
   };
 
-  const checkFinalAnswer = () => {
-    if (gameOver || finalCompleted) return;
+  /* =======================================================
+     CHECK ANSWER
+  ======================================================= */
 
-    if (!verticalAnswer) {
-      message.warning("Game chưa được thiết lập từ khóa bí mật!");
+  const submitAnswer = useCallback(
+    (word) => {
+      if (!word) return;
+
+      if (gameFinished) return;
+
+      if (correctWords[word.id]) return;
+
+      const input = answers[word.id] || "";
+
+      if (!input.trim()) {
+        message.warning("Hãy nhập đáp án nhé!");
+        return;
+      }
+
+      const userAnswer = normalizeAnswer(input);
+      const correctAnswer = word.answer;
+
+      if (userAnswer === correctAnswer) {
+        setCorrectWords((prev) => ({
+          ...prev,
+          [word.id]: true,
+        }));
+
+        setWrongWords((prev) => {
+          const next = { ...prev };
+          delete next[word.id];
+          return next;
+        });
+
+        setScore((prev) => prev + word.points);
+
+        playCorrectSound();
+
+        message.success(
+          `Câu ${word.number} chính xác! 🎉 +${word.points} điểm`,
+        );
+
+        const currentIndex = words.findIndex((item) => item.id === word.id);
+
+        const nextWord = words
+          .slice(currentIndex + 1)
+          .find((item) => !correctWords[item.id] && !skippedWords[item.id]);
+
+        if (nextWord) {
+          setTimeout(() => {
+            setSelectedWordId(nextWord.id);
+          }, 350);
+        }
+      } else {
+        setWrongWords((prev) => ({
+          ...prev,
+          [word.id]: true,
+        }));
+
+        playWrongSound();
+
+        message.error(`Câu ${word.number} chưa đúng. Thử lại nhé!`);
+      }
+    },
+    [
+      gameFinished,
+      correctWords,
+      answers,
+      words,
+      skippedWords,
+      playCorrectSound,
+      playWrongSound,
+    ],
+  );
+  /* =======================================================
+     HINT
+  ======================================================= */
+
+  const revealAnswer = (word) => {
+    if (!allowHint) {
+      message.info("Game này không bật gợi ý.");
       return;
     }
 
-    const input = normalizeAnswer(finalAnswer);
+    if (correctWords[word.id]) return;
+    if (gameFinished) return;
 
-    if (!input) {
-      message.warning("Vui lòng nhập từ khóa bí mật! 🗝️");
-      return;
-    }
+    setRevealedWords((prev) => ({
+      ...prev,
+      [word.id]: true,
+    }));
 
-    if (input === verticalAnswer) {
-      setFinalCompleted(true);
-      setFinalWrong(false);
-      setScore((prev) => prev + 50);
-      message.success(
-        "🎉 CHÚC MỪNG! Bạn đã giải mã thành công từ khóa bí mật! ⭐",
-      );
-      return;
-    }
+    setAnswers((prev) => ({
+      ...prev,
+      [word.id]: word.displayAnswer,
+    }));
 
-    setFinalWrong(true);
-    message.error("❌ Từ khóa chưa chính xác, hãy suy luận lại nhé!");
+    message.info(`Đáp án câu ${word.number}: ${word.displayAnswer}`);
   };
+
+  /* =======================================================
+     SKIP
+  ======================================================= */
+
+  const skipQuestion = (word) => {
+    if (!allowSkip) {
+      message.info("Game này không cho phép bỏ qua câu.");
+      return;
+    }
+
+    if (correctWords[word.id]) return;
+    if (gameFinished) return;
+
+    setSkippedWords((prev) => ({
+      ...prev,
+      [word.id]: true,
+    }));
+
+    setSelectedWordId(null);
+
+    message.info(`Đã bỏ qua câu ${word.number}.`);
+
+    const currentIndex = words.findIndex((item) => item.id === word.id);
+
+    const nextWord = words
+      .slice(currentIndex + 1)
+      .find((item) => !correctWords[item.id] && !skippedWords[item.id]);
+
+    if (nextWord) {
+      setTimeout(() => {
+        setSelectedWordId(nextWord.id);
+      }, 200);
+    }
+  };
+
+  /* =======================================================
+     KEYBOARD
+  ======================================================= */
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (!selectedWordId) return;
+      if (gameFinished) return;
+      if (isPaused) return;
+
+      const word = words.find((item) => item.id === selectedWordId);
+
+      if (!word) return;
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitAnswer(word);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedWordId, words, gameFinished, isPaused, submitAnswer]);
+  /* =======================================================
+     GRID
+     
+     Đây là phần QUAN TRỌNG NHẤT.
+
+     Không dùng:
+       row = index
+       col = index
+
+     Mà dùng:
+       word.row
+       word.col
+       word.direction
+
+     Và:
+       answerIndex
+
+     Ví dụ ADAM:
+       col = -3
+       answerIndex = 3
+
+     M => -3 + 3 = 0
+
+     Vì vậy chữ M nằm đúng cột 0.
+  ======================================================= */
+
+  const gridData = useMemo(() => {
+    if (!words.length) {
+      return {
+        grid: [],
+        rows: 0,
+        cols: 0,
+        offsetRow: 0,
+        offsetCol: 0,
+        verticalColumn: null,
+      };
+    }
+
+    const placements = [];
+
+    let minRow = Infinity;
+    let minCol = Infinity;
+    let maxRow = -Infinity;
+    let maxCol = -Infinity;
+
+    words.forEach((word) => {
+      const answer = word.answer;
+
+      if (!answer) return;
+
+      const row = word.row;
+      const col = word.col;
+
+      const direction = word.direction;
+
+      let endRow = row;
+      let endCol = col;
+
+      if (direction === "vertical") {
+        endRow = row + answer.length - 1;
+      } else {
+        endCol = col + answer.length - 1;
+      }
+
+      minRow = Math.min(minRow, row);
+      minCol = Math.min(minCol, col);
+      maxRow = Math.max(maxRow, endRow);
+      maxCol = Math.max(maxCol, endCol);
+
+      placements.push({
+        word,
+        row,
+        col,
+        direction,
+      });
+    });
+
+    if (!placements.length) {
+      return {
+        grid: [],
+        rows: 0,
+        cols: 0,
+        offsetRow: 0,
+        offsetCol: 0,
+        verticalColumn: null,
+      };
+    }
+
+    /*
+      Backend có rows=9, cols=13.
+      Tuy nhiên row/col có thể bắt đầu từ số âm.
+      Vì vậy ta offset toàn bộ grid.
+    */
+
+    const backendRows = Number(crossword.rows) || 0;
+
+    const backendCols = Number(crossword.cols) || 0;
+
+    const usedRows = maxRow - minRow + 1;
+
+    const usedCols = maxCol - minCol + 1;
+
+    const rows = Math.max(backendRows, usedRows);
+
+    const cols = Math.max(backendCols, usedCols);
+
+    const offsetRow = -minRow;
+    const offsetCol = -minCol;
+
+    const grid = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => ({
+        active: false,
+
+        letter: "",
+
+        wordIds: [],
+
+        wordNumbers: [],
+
+        startNumbers: [],
+      })),
+    );
+
+    placements.forEach(({ word, row, col, direction }) => {
+      const answer = word.answer;
+
+      for (let i = 0; i < answer.length; i++) {
+        const actualRow = direction === "vertical" ? row + i : row;
+
+        const actualCol = direction === "horizontal" ? col + i : col;
+
+        const gridRow = actualRow + offsetRow;
+
+        const gridCol = actualCol + offsetCol;
+
+        if (gridRow < 0 || gridRow >= rows || gridCol < 0 || gridCol >= cols) {
+          continue;
+        }
+
+        const current = grid[gridRow][gridCol];
+
+        const letter = answer[i];
+
+        grid[gridRow][gridCol] = {
+          ...current,
+
+          active: true,
+
+          letter: current.letter || letter,
+
+          wordIds: [...new Set([...current.wordIds, word.id])],
+
+          wordNumbers: [...new Set([...current.wordNumbers, word.number])],
+
+          startNumbers:
+            i === 0
+              ? [...new Set([...current.startNumbers, word.number])]
+              : current.startNumbers,
+        };
+      }
+    });
+
+    /*
+      Tìm cột chứa chữ cái hàng dọc.
+      Chính xác dựa trên:
+        col + answerIndex
+
+      Không đoán bằng số thứ tự câu.
+    */
+
+    const verticalCandidates = words
+      .map((word) => {
+        if (!Number.isFinite(word.answerIndex)) {
+          return null;
+        }
+
+        if (word.answerIndex < 0 || word.answerIndex >= word.answer.length) {
+          return null;
+        }
+
+        if (word.direction === "vertical") {
+          return null;
+        }
+
+        const actualCol = word.col + word.answerIndex;
+
+        return actualCol;
+      })
+      .filter((value) => value !== null);
+
+    let verticalColumn = null;
+
+    if (verticalCandidates.length) {
+      const counter = {};
+
+      verticalCandidates.forEach((col) => {
+        counter[col] = (counter[col] || 0) + 1;
+      });
+
+      const mostCommon = Object.entries(counter).sort(
+        (a, b) => Number(b[1]) - Number(a[1]),
+      )[0];
+
+      if (mostCommon) {
+        verticalColumn = Number(mostCommon[0]) + offsetCol;
+      }
+    }
+
+    return {
+      grid,
+      rows,
+      cols,
+      offsetRow,
+      offsetCol,
+      verticalColumn,
+      placements,
+    };
+  }, [words, crossword.rows, crossword.cols]);
+
+  /* =======================================================
+     CURRENT WORD
+  ======================================================= */
+
+  const selectedWord = useMemo(() => {
+    return words.find((word) => word.id === selectedWordId) || null;
+  }, [words, selectedWordId]);
+
+  /* =======================================================
+     PROGRESS
+  ======================================================= */
+
+  const correctCount = Object.keys(correctWords).length;
+
+  const skippedCount = Object.keys(skippedWords).length;
+
+  const answeredCount = correctCount + skippedCount;
+
+  const progressPercent =
+    words.length > 0 ? Math.round((answeredCount / words.length) * 100) : 0;
+
+  /* =======================================================
+     TIMER FORMAT
+  ======================================================= */
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+
+    const secs = seconds % 60;
+
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  /* =======================================================
+     TIMER COLOR
+  ======================================================= */
+
+  const timerDanger = timeLeft <= Math.max(10, Math.floor(timeLimit * 0.15));
+
+  /* =======================================================
+     RESET
+  ======================================================= */
 
   const resetGame = () => {
-    if (!allowRetry) {
-      message.warning("Trò chơi không hỗ trợ chơi lại!");
-      return;
+    setSelectedWordId(words[0]?.id || null);
+
+    setAnswers({});
+    setCorrectWords({});
+    setWrongWords({});
+    setRevealedWords({});
+    setSkippedWords({});
+
+    setScore(0);
+    setTimeLeft(timeLimit);
+
+    setGameStarted(false);
+    setGameFinished(false);
+    setIsPaused(false);
+    setCompletedOnce(false);
+    setShowFinishModal(false);
+
+    completedCallbackRef.current = false;
+
+    if (backgroundAudioRef.current) {
+      backgroundAudioRef.current.pause();
+      backgroundAudioRef.current.currentTime = 0;
     }
-    resetState();
-    message.success("Đã làm mới vòng chơi! Cố lên nhé 🎉");
   };
 
-  if (!game || words.length === 0) {
+  /* =======================================================
+     START / PAUSE
+  ======================================================= */
+
+  const togglePause = () => {
+    if (gameFinished) return;
+
+    setGameStarted(true);
+    setIsPaused((prev) => !prev);
+  };
+
+  /* =======================================================
+     CELL CLICK
+  ======================================================= */
+
+  const handleCellClick = (cell) => {
+    if (!cell?.active) return;
+
+    const word = words.find((item) => cell.wordIds?.includes(item.id));
+
+    if (word) {
+      setSelectedWordId(word.id);
+    }
+  };
+
+  /* =======================================================
+     CELL LETTER
+  ======================================================= */
+
+  /* =======================================================
+     RENDER CELL
+  ======================================================= */
+
+  const renderCell = (cell, rowIndex, colIndex) => {
+    if (!cell.active) {
+      return (
+        <div
+          key={`${rowIndex}-${colIndex}`}
+          style={{
+            width: 48,
+            height: 48,
+            margin: 2,
+            flex: "0 0 auto",
+          }}
+        />
+      );
+    }
+
+    const wordForCell = words.find((word) => cell.wordIds?.includes(word.id));
+
+    const isSelected = wordForCell && selectedWordId === wordForCell.id;
+
+    const isCompleted = cell.wordIds?.some((id) => correctWords[id]);
+
+    const isRevealed = cell.wordIds?.some((id) => revealedWords[id]);
+
+    const isVertical =
+      gridData.verticalColumn !== null && colIndex === gridData.verticalColumn;
+
+    /*
+      Xác định chữ hiện tại.
+    */
+
+    let displayLetter = "";
+
+    if (isCompleted || isRevealed) {
+      const visibleWord = words.find(
+        (word) =>
+          cell.wordIds?.includes(word.id) &&
+          (correctWords[word.id] || revealedWords[word.id]),
+      );
+
+      if (visibleWord) {
+        let charIndex;
+
+        if (visibleWord.direction === "vertical") {
+          charIndex = rowIndex - (visibleWord.row + gridData.offsetRow);
+        } else {
+          charIndex = colIndex - (visibleWord.col + gridData.offsetCol);
+        }
+
+        if (charIndex >= 0 && charIndex < visibleWord.answer.length) {
+          displayLetter = visibleWord.answer[charIndex];
+        }
+      }
+    }
+
+    return (
+      <div
+        key={`${rowIndex}-${colIndex}`}
+        onClick={() => handleCellClick(cell)}
+        style={{
+          position: "relative",
+
+          width: 48,
+          height: 48,
+
+          margin: 2,
+
+          flex: "0 0 auto",
+
+          borderRadius: 10,
+
+          border: isSelected
+            ? `3px solid ${primaryColor}`
+            : isVertical
+              ? `2px solid ${secondaryColor}`
+              : "2px solid #FFD1DC",
+
+          background: isSelected
+            ? "#FFE3EC"
+            : isVertical
+              ? "#FFF5D6"
+              : "#FFFFFF",
+
+          boxShadow: isSelected
+            ? `0 5px 15px ${primaryColor}55`
+            : "0 3px 8px rgba(255,92,138,.10)",
+
+          display: "flex",
+
+          alignItems: "center",
+
+          justifyContent: "center",
+
+          cursor: "pointer",
+
+          transition: "all .18s ease",
+
+          userSelect: "none",
+        }}
+      >
+        {/* START NUMBER */}
+
+        {cell.startNumbers?.length > 0 && (
+          <span
+            style={{
+              position: "absolute",
+
+              top: 3,
+
+              left: 5,
+
+              fontSize: 9,
+
+              fontWeight: 900,
+
+              color: primaryColor,
+
+              lineHeight: 1,
+            }}
+          >
+            {cell.startNumbers[0]}
+          </span>
+        )}
+
+        {/* LETTER */}
+
+        <span
+          style={{
+            fontSize: 21,
+
+            fontWeight: 900,
+
+            color: isVertical ? "#9A6500" : primaryColor,
+
+            lineHeight: 1,
+          }}
+        >
+          {displayLetter}
+        </span>
+
+        {/* CHECK */}
+
+        {isCompleted && (
+          <CheckCircleFilled
+            style={{
+              position: "absolute",
+
+              right: 3,
+
+              bottom: 3,
+
+              fontSize: 10,
+
+              color: "#52C41A",
+            }}
+          />
+        )}
+      </div>
+    );
+  };
+
+  /* =======================================================
+     QUESTION STATUS
+  ======================================================= */
+
+  const getQuestionStatus = (word) => {
+    if (correctWords[word.id]) return "correct";
+
+    if (skippedWords[word.id]) return "skipped";
+
+    if (wrongWords[word.id]) return "wrong";
+
+    if (revealedWords[word.id]) return "revealed";
+
+    return "pending";
+  };
+
+  /* =======================================================
+     QUESTION CARD
+  ======================================================= */
+
+  const renderQuestion = (word) => {
+    const status = getQuestionStatus(word);
+
+    const isSelected = selectedWordId === word.id;
+
+    const value = answers[word.id] || "";
+
+    const disabled =
+      gameFinished ||
+      correctWords[word.id] ||
+      skippedWords[word.id] ||
+      revealedWords[word.id];
+
+    return (
+      <Card
+        key={word.id}
+        size="small"
+        onClick={() => selectWord(word)}
+        style={{
+          marginBottom: 12,
+
+          borderRadius: 16,
+
+          cursor: "pointer",
+
+          border: isSelected
+            ? `2px solid ${primaryColor}`
+            : "2px solid #FFE3E8",
+
+          background:
+            status === "correct"
+              ? "#F6FFED"
+              : status === "wrong"
+                ? "#FFF2F0"
+                : status === "skipped"
+                  ? "#FAFAFA"
+                  : "#FFFFFF",
+
+          boxShadow: isSelected
+            ? `0 6px 18px ${primaryColor}25`
+            : "0 3px 10px rgba(0,0,0,.04)",
+
+          transition: "all .2s",
+        }}
+        bodyStyle={{
+          padding: 14,
+        }}
+      >
+        <Space
+          direction="vertical"
+          size={9}
+          style={{
+            width: "100%",
+          }}
+        >
+          {/* HEADER */}
+
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Space size={6} wrap>
+                <Tag
+                  color={status === "correct" ? "green" : "pink"}
+                  style={{
+                    borderRadius: 9,
+                    fontWeight: 800,
+                    margin: 0,
+                  }}
+                >
+                  Câu {word.number}
+                </Tag>
+
+                {word.requiredLetter && (
+                  <Tag
+                    color="gold"
+                    style={{
+                      borderRadius: 9,
+                      fontWeight: 800,
+                      margin: 0,
+                    }}
+                  >
+                    Chữ: {word.requiredLetter}
+                  </Tag>
+                )}
+
+                <Tag
+                  style={{
+                    borderRadius: 9,
+                    margin: 0,
+                  }}
+                >
+                  {word.direction === "vertical" ? "↓ Dọc" : "→ Ngang"}
+                </Tag>
+              </Space>
+            </Col>
+
+            <Col>
+              {status === "correct" && (
+                <CheckCircleFilled
+                  style={{
+                    color: "#52C41A",
+                    fontSize: 20,
+                  }}
+                />
+              )}
+
+              {status === "wrong" && (
+                <CloseCircleFilled
+                  style={{
+                    color: "#FF4D4F",
+                    fontSize: 20,
+                  }}
+                />
+              )}
+            </Col>
+          </Row>
+
+          {/* QUESTION */}
+
+          <Text
+            strong
+            style={{
+              display: "block",
+              fontSize: 14,
+              lineHeight: 1.55,
+            }}
+          >
+            {word.question || word.clue}
+          </Text>
+
+          {/* ANSWER */}
+
+          <input
+            value={value}
+            disabled={disabled}
+            onFocus={() => selectWord(word)}
+            onChange={(event) => updateAnswer(word, event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                submitAnswer(word);
+              }
+            }}
+            placeholder="Nhập đáp án..."
+            style={{
+              width: "100%",
+
+              height: 42,
+
+              boxSizing: "border-box",
+
+              padding: "0 12px",
+
+              borderRadius: 11,
+
+              border:
+                status === "wrong" ? "2px solid #FF4D4F" : `2px solid #FFE0E7`,
+
+              outline: "none",
+
+              background: disabled ? "#F5F5F5" : "#FFF9FA",
+
+              fontSize: 14,
+
+              fontWeight: 700,
+
+              color: "#333",
+            }}
+          />
+
+          {/* FOOTER */}
+
+          <Row justify="space-between" align="middle" gutter={8}>
+            <Col>
+              <Tag
+                color="orange"
+                style={{
+                  borderRadius: 8,
+                  margin: 0,
+                }}
+              >
+                +{word.points} điểm
+              </Tag>
+            </Col>
+
+            <Col>
+              <Space size={5} wrap>
+                {allowHint && (
+                  <Button
+                    size="small"
+                    icon={<QuestionCircleOutlined />}
+                    disabled={disabled}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      revealAnswer(word);
+                    }}
+                    style={{
+                      borderRadius: 9,
+                    }}
+                  >
+                    Gợi ý
+                  </Button>
+                )}
+
+                {allowSkip && (
+                  <Button
+                    size="small"
+                    icon={<RightOutlined />}
+                    disabled={disabled}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      skipQuestion(word);
+                    }}
+                    style={{
+                      borderRadius: 9,
+                    }}
+                  >
+                    Bỏ qua
+                  </Button>
+                )}
+
+                <Button
+                  size="small"
+                  type="primary"
+                  disabled={disabled}
+                  onClick={(e) => {
+                    e.stopPropagation();
+
+                    if (!gameStarted) {
+                      setGameStarted(true);
+                    }
+
+                    submitAnswer(word);
+                  }}
+                  style={{
+                    background: primaryColor,
+
+                    borderColor: primaryColor,
+
+                    borderRadius: 9,
+
+                    fontWeight: 700,
+                  }}
+                >
+                  Trả lời
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+
+          {/* STATUS */}
+
+          {status === "correct" && (
+            <Alert
+              type="success"
+              showIcon
+              message="Chính xác! 🎉"
+              description={word.displayAnswer}
+              style={{
+                borderRadius: 10,
+              }}
+            />
+          )}
+
+          {status === "skipped" && (
+            <Alert
+              type="info"
+              showIcon
+              message="Đã bỏ qua"
+              description={`Đáp án: ${word.displayAnswer}`}
+              style={{
+                borderRadius: 10,
+              }}
+            />
+          )}
+
+          {status === "revealed" && (
+            <Alert
+              type="warning"
+              showIcon
+              message="Đã sử dụng gợi ý"
+              description={`Đáp án: ${word.displayAnswer}`}
+              style={{
+                borderRadius: 10,
+              }}
+            />
+          )}
+        </Space>
+      </Card>
+    );
+  };
+
+  /* =======================================================
+     EMPTY DATA
+  ======================================================= */
+
+  if (!words.length) {
     return (
       <div
         style={{
-          padding: 40,
-          background: "linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)",
           minHeight: "100vh",
+
           display: "flex",
-          alignItems: "center",
+
           justifyContent: "center",
+
+          alignItems: "center",
+
+          background: background.color || "#F8F9FC",
+
+          fontFamily: fontFamily,
         }}
       >
         <Card
           style={{
-            borderRadius: 28,
-            textAlign: "center",
-            padding: 24,
-            maxWidth: 420,
-            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.3)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255, 255, 255, 0.95)",
+            borderRadius: borderRadius,
           }}
         >
-          <Empty
-            description={<Text strong>Chưa có dữ liệu ô chữ rồi...</Text>}
+          <Alert
+            type="warning"
+            showIcon
+            message="Game chưa có dữ liệu"
+            description="Không tìm thấy crossword.words."
           />
-          <Button
-            size="large"
-            type="primary"
-            shape="round"
-            style={{
-              marginTop: 20,
-              backgroundColor: COLORS.primary,
-              borderColor: COLORS.primary,
-              height: 46,
-              fontWeight: 700,
-              boxShadow: "0 8px 20px rgba(124, 58, 237, 0.3)",
-            }}
-            onClick={onExit}
-          >
-            Quay lại danh sách
-          </Button>
         </Card>
       </div>
     );
   }
 
-  const backgroundImage =
-    game?.background?.image ||
-    (typeof game?.background === "string" ? game.background : null);
+  /* =======================================================
+     BACKGROUND
+  ======================================================= */
+
+  const backgroundStyle = {
+    backgroundColor: background.color || "#F8F9FC",
+
+    ...(background.image
+      ? {
+          backgroundImage: `url("${process.env.REACT_APP_API_URL}/${background.image}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
+        }
+      : {}),
+  };
+
+  /* =======================================================
+     MAIN
+  ======================================================= */
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        padding: "24px 16px",
-        backgroundColor: COLORS.bg,
-        backgroundImage: backgroundImage
-          ? `url(${backgroundImage})`
-          : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-        fontFamily: "'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif",
+
+        padding: "18px 20px 30px",
+
+        boxSizing: "border-box",
+
+        fontFamily: `'${fontFamily}', sans-serif`,
+
+        ...backgroundStyle,
       }}
     >
-      {/* HEADER HUD BAR */}
+      {/* =================================================
+          TOP HEADER
+      ================================================= */}
+
       <Card
         bordered={false}
         style={{
-          maxWidth: 1320,
-          margin: "0 auto 24px",
-          borderRadius: 24,
-          boxShadow: "0 12px 32px rgba(31, 38, 135, 0.08)",
-          background: "rgba(255, 255, 255, 0.92)",
-          backdropFilter: "blur(16px)",
-          border: "1px solid rgba(255, 255, 255, 0.8)",
+          maxWidth: 1500,
+
+          margin: "0 auto 16px",
+
+          borderRadius: borderRadius + 4,
+
+          border: "2px solid #FFE3E8",
+
+          boxShadow: "0 8px 30px rgba(255,92,138,.12)",
+
+          background: "rgba(255,255,255,.94)",
+
+          backdropFilter: "blur(8px)",
         }}
-        bodyStyle={{ padding: "16px 24px" }}
+        bodyStyle={{
+          padding: "16px 20px",
+        }}
       >
-        <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col xs={24} md={14} lg={16}>
-            <Space size={16} align="center">
-              <Button
-                shape="circle"
-                size="large"
-                icon={<ArrowLeftOutlined />}
-                onClick={onExit}
+        <Row justify="space-between" align="middle" gutter={[15, 15]}>
+          {/* TITLE */}
+
+          <Col xs={24} md={12}>
+            <Space direction="vertical" size={2}>
+              <Text
                 style={{
-                  border: `2px solid ${COLORS.border}`,
-                  color: COLORS.text,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-                  fontWeight: 700,
+                  color: secondaryColor,
+
+                  fontWeight: 900,
+
+                  fontSize: 12,
+
+                  textTransform: "uppercase",
+
+                  letterSpacing: 1.2,
                 }}
-              />
-              <div>
-                <Space size={8} wrap>
-                  <Tag
-                    color="purple"
-                    style={{
-                      borderRadius: 10,
-                      padding: "2px 10px",
-                      fontWeight: 800,
-                      fontSize: 11,
-                      border: "none",
-                      backgroundColor: "#F3E8FF",
-                      color: COLORS.primary,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    <FireOutlined /> GAME Ô CHỮ
-                  </Tag>
-                  <Tag
-                    style={{
-                      borderRadius: 10,
-                      padding: "2px 10px",
-                      fontWeight: 700,
-                      fontSize: 11,
-                      border: "none",
-                      backgroundColor: "#E0F2FE",
-                      color: "#0284C7",
-                    }}
-                  >
-                    {gridSize.rows}x{gridSize.cols} GRID
-                  </Tag>
-                </Space>
-                <Title
-                  level={3}
-                  style={{
-                    margin: "2px 0 0",
-                    color: COLORS.text,
-                    fontWeight: 800,
-                    letterSpacing: "-0.5px",
-                  }}
-                >
-                  {game.name || "Ô Chữ Thông Thái"}
-                </Title>
-              </div>
+              >
+                🌸 GAME GIÁO LÝ CHIBI
+              </Text>
+
+              <Title
+                level={2}
+                style={{
+                  margin: 0,
+
+                  color: primaryColor,
+
+                  fontWeight: 900,
+
+                  fontSize: "clamp(22px, 3vw, 30px)",
+                }}
+              >
+                🧩 {game?.name || "Ô chữ"}
+              </Title>
+
+              {game?.description && (
+                <Text type="secondary">{game.description}</Text>
+              )}
             </Space>
           </Col>
 
-          <Col xs={24} md={10} lg={8} style={{ textAlign: "right" }}>
-            <Space
-              size={12}
-              wrap
-              style={{ justifyContent: "flex-end", width: "100%" }}
-            >
+          {/* STATS */}
+
+          <Col>
+            <Space size={8} wrap>
               {showScore && (
-                <div
+                <Tag
+                  icon={<StarFilled />}
+                  color="gold"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
-                    border: "1px solid #F59E0B",
-                    padding: "6px 16px",
-                    borderRadius: 20,
+                    padding: "7px 11px",
+
+                    borderRadius: 11,
+
                     fontWeight: 800,
-                    color: "#92400E",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    boxShadow: "0 4px 12px rgba(245, 158, 11, 0.2)",
+
+                    fontSize: 13,
+
+                    margin: 0,
                   }}
                 >
-                  <TrophyOutlined style={{ fontSize: 18, color: "#D97706" }} />
-                  <span style={{ fontSize: 15 }}>{score} ĐIỂM</span>
-                </div>
+                  {score} điểm
+                </Tag>
               )}
 
               {showTimer && (
-                <div
+                <Tag
+                  icon={<ClockCircleFilled />}
+                  color={timerDanger ? "red" : "pink"}
                   style={{
-                    background:
-                      timeLeft <= 10
-                        ? "linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)"
-                        : "linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)",
-                    border:
-                      timeLeft <= 10
-                        ? "1px solid #EF4444"
-                        : "1px solid #38BDF8",
-                    padding: "6px 16px",
-                    borderRadius: 20,
+                    padding: "7px 11px",
+
+                    borderRadius: 11,
+
                     fontWeight: 800,
-                    color: timeLeft <= 10 ? "#991B1B" : "#075985",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    boxShadow:
-                      timeLeft <= 10
-                        ? "0 4px 12px rgba(239, 68, 68, 0.2)"
-                        : "0 4px 12px rgba(56, 189, 248, 0.2)",
+
+                    fontSize: 13,
+
+                    margin: 0,
                   }}
                 >
-                  <ClockCircleOutlined style={{ fontSize: 18 }} />
-                  <span style={{ fontSize: 15 }}>{formatTime(timeLeft)}</span>
-                </div>
+                  {formatTime(timeLeft)}
+                </Tag>
               )}
 
-              {allowRetry && (
-                <Button
-                  shape="circle"
-                  size="large"
-                  icon={<ReloadOutlined />}
-                  onClick={resetGame}
-                  style={{
-                    borderColor: COLORS.border,
-                    fontWeight: 700,
-                    color: COLORS.text,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-                  }}
-                />
-              )}
+              <Button
+                size="small"
+                icon={
+                  isPaused ? <PlayCircleOutlined /> : <PauseCircleOutlined />
+                }
+                disabled={gameFinished}
+                onClick={togglePause}
+                style={{
+                  borderRadius: 10,
+                }}
+              >
+                {isPaused ? "Tiếp tục" : "Tạm dừng"}
+              </Button>
             </Space>
           </Col>
         </Row>
+
+        {/* PROGRESS */}
+
+        {showProgress && (
+          <>
+            <Divider
+              style={{
+                margin: "14px 0 8px",
+              }}
+            />
+
+            <Progress
+              percent={progressPercent}
+              strokeColor={primaryColor}
+              trailColor="#FFE8EE"
+              format={() => `${answeredCount}/${words.length}`}
+            />
+          </>
+        )}
       </Card>
 
-      {/* MAIN GAME CONTAINER */}
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <Row gutter={[24, 24]}>
-          {/* LEFT COLUMN: GRID BOARD & SECRET KEYWORD */}
-          <Col xs={24} lg={15}>
-            <Space direction="vertical" size={24} style={{ width: "100%" }}>
-              <Card
-                bordered={false}
+      {/* =================================================
+          PAUSED
+      ================================================= */}
+
+      {isPaused && !gameFinished && (
+        <div
+          style={{
+            maxWidth: 1500,
+
+            margin: "0 auto 16px",
+          }}
+        >
+          <Alert
+            type="info"
+            showIcon
+            message="Game đang tạm dừng"
+            description="Nhấn Tiếp tục để chơi tiếp."
+            action={
+              <Button
+                size="small"
+                type="primary"
+                onClick={togglePause}
                 style={{
-                  borderRadius: 28,
-                  boxShadow: "0 12px 32px rgba(0, 0, 0, 0.05)",
-                  background: COLORS.cardBg,
+                  background: primaryColor,
+
+                  borderColor: primaryColor,
+
+                  borderRadius: 9,
                 }}
-                bodyStyle={{ padding: 24 }}
-                title={
-                  <Row
-                    justify="space-between"
-                    align="middle"
-                    style={{ width: "100%" }}
-                  >
-                    <Space align="center" size={10}>
-                      <span style={{ fontSize: 20 }}>🧩</span>
-                      <span
-                        style={{
-                          fontWeight: 800,
-                          fontSize: 18,
-                          color: COLORS.text,
-                        }}
-                      >
-                        Bảng Ô Chữ
-                      </span>
-                    </Space>
-                    <Space size={8}>
-                      <Tag
-                        style={{
-                          borderRadius: 12,
-                          padding: "4px 12px",
-                          backgroundColor: "#ECFDF5",
-                          color: COLORS.success,
-                          fontWeight: 800,
-                          border: "1px solid #A7F3D0",
-                        }}
-                      >
-                        {completedCount}/{words.length} đã hoàn thành
-                      </Tag>
-                      {revealedCount > 0 && (
-                        <Tag
-                          style={{
-                            borderRadius: 12,
-                            padding: "4px 12px",
-                            backgroundColor: "#FFFBEB",
-                            color: COLORS.warning,
-                            fontWeight: 800,
-                            border: "1px solid #FDE68A",
-                          }}
-                        >
-                          {revealedCount} gợi ý
-                        </Tag>
-                      )}
-                    </Space>
-                  </Row>
-                }
               >
-                {finalCompleted && (
-                  <Alert
-                    type="success"
-                    showIcon
-                    icon={
-                      <SmileOutlined
-                        style={{ color: COLORS.success, fontSize: 22 }}
-                      />
-                    }
-                    message={
-                      <span style={{ fontWeight: 800, fontSize: 16 }}>
-                        XUẤT SẮC! BẠN ĐÃ CHIẾN THẮNG 🏆
-                      </span>
-                    }
-                    description={
-                      <div style={{ marginTop: 4, fontSize: 14 }}>
-                        Từ khóa bí mật:{" "}
-                        <span
-                          style={{
-                            fontWeight: 900,
-                            color: COLORS.primary,
-                            fontSize: 18,
-                            letterSpacing: 1,
-                          }}
-                        >
-                          {verticalAnswerDisplay}
-                        </span>
-                        {" • "}Tổng điểm: <strong>{score}</strong>
-                      </div>
-                    }
-                    style={{
-                      marginBottom: 20,
-                      borderRadius: 20,
-                      backgroundColor: "#ECFDF5",
-                      border: "2px solid #6EE7B7",
-                      padding: 16,
-                    }}
-                  />
-                )}
+                Tiếp tục
+              </Button>
+            }
+            style={{
+              borderRadius: 15,
+            }}
+          />
+        </div>
+      )}
 
-                {allWordsCompleted && !finalCompleted && verticalAnswer && (
-                  <Alert
-                    type="info"
-                    showIcon
-                    icon={
-                      <StarOutlined
-                        style={{ color: COLORS.primary, fontSize: 22 }}
-                      />
-                    }
-                    message={
-                      <span style={{ fontWeight: 800, fontSize: 15 }}>
-                        Đã mở khóa tất cả các hàng ngang!
-                      </span>
-                    }
-                    description="Hãy quan sát các ký tự vừa mở và đưa ra dự đoán cho TỪ KHÓA BÍ MẬT bên dưới nhé ✨"
-                    style={{
-                      marginBottom: 20,
-                      borderRadius: 20,
-                      backgroundColor: "#F3E8FF",
-                      border: "2px solid #C084FC",
-                      padding: 16,
-                    }}
-                  />
-                )}
+      {/* =================================================
+          CONTENT
+      ================================================= */}
 
-                {gameOver && (
-                  <Alert
-                    type="warning"
-                    showIcon
-                    message={
-                      <span style={{ fontWeight: 800 }}>HẾT GIỜ RỒI!</span>
-                    }
-                    description="Đừng nản lòng, bấm nút Làm mới để bắt đầu lượt chơi khác nhen 🥳"
-                    style={{
-                      marginBottom: 20,
-                      borderRadius: 20,
-                      backgroundColor: "#FEF3C7",
-                      border: "2px solid #FCD34D",
-                      padding: 16,
-                    }}
-                  />
-                )}
+      <div
+        style={{
+          maxWidth: 1500,
 
-                {showTimer && (
-                  <Progress
-                    percent={Math.max(
-                      0,
-                      Math.min(100, Math.round((timeLeft / timeLimit) * 100)),
-                    )}
-                    showInfo={false}
-                    strokeColor={{
-                      "0%": COLORS.primary,
-                      "100%": timeLeft <= 10 ? COLORS.danger : COLORS.accent,
-                    }}
-                    trailColor="#F1F5F9"
-                    strokeWidth={10}
-                    style={{ marginBottom: 20 }}
-                  />
-                )}
+          margin: "0 auto",
+        }}
+      >
+        <Row gutter={[18, 18]} align="top">
+          {/* =================================================
+              QUESTIONS
+          ================================================= */}
 
-                {/* GAME GRID MATRIX DISPLAY */}
-                <div
-                  style={{
-                    overflowX: "auto",
-                    padding: "28px 16px",
-                    background:
-                      "linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%)",
-                    borderRadius: 24,
-                    border: `2px dashed ${COLORS.border}`,
-                    display: "flex",
-                    justifyContent: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "inline-block",
-                      minWidth: cols * 48,
-                    }}
-                  >
-                    {grid.map((row, rowIndex) => (
-                      <div
-                        key={rowIndex}
-                        style={{ display: "flex", gap: 6, marginBottom: 6 }}
-                      >
-                        {row.map((cell, colIndex) => {
-                          const completedWordId = cell.wordIds.find(
-                            (wordId) => completed[wordId],
-                          );
-                          const revealedWordId = cell.wordIds.find(
-                            (wordId) => revealed[wordId],
-                          );
-
-                          const visibleWordId =
-                            completedWordId || revealedWordId;
-                          const visibleLetter = visibleWordId
-                            ? cell.letters[visibleWordId]
-                            : "";
-
-                          const isCompleted = Boolean(completedWordId);
-                          const isRevealed =
-                            !isCompleted && Boolean(revealedWordId);
-
-                          return (
-                            <div
-                              key={`${rowIndex}-${colIndex}`}
-                              style={{
-                                width: 44,
-                                height: 44,
-                                flex: "0 0 44px",
-                                borderRadius: 14,
-                                border: cell.active
-                                  ? `2px solid ${
-                                      isCompleted
-                                        ? COLORS.success
-                                        : isRevealed
-                                          ? COLORS.warning
-                                          : COLORS.primary
-                                    }`
-                                  : "none",
-                                background: !cell.active
-                                  ? "transparent"
-                                  : isCompleted
-                                    ? "linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)"
-                                    : isRevealed
-                                      ? "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)"
-                                      : "#FFFFFF",
-                                position: "relative",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: cell.active
-                                  ? "0 6px 12px rgba(0, 0, 0, 0.05)"
-                                  : "none",
-                                transition:
-                                  "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                                transform: visibleLetter
-                                  ? "scale(1.05)"
-                                  : "scale(1)",
-                              }}
-                            >
-                              {cell.active && cell.numbers.length > 0 && (
-                                <span
-                                  style={{
-                                    position: "absolute",
-                                    top: 3,
-                                    left: 5,
-                                    fontSize: 10,
-                                    fontWeight: 900,
-                                    color: isCompleted
-                                      ? "#065F46"
-                                      : isRevealed
-                                        ? "#92400E"
-                                        : COLORS.primary,
-                                  }}
-                                >
-                                  {cell.numbers.join(",")}
-                                </span>
-                              )}
-
-                              {cell.active && (
-                                <span
-                                  style={{
-                                    fontSize: 20,
-                                    fontWeight: 900,
-                                    color: visibleLetter
-                                      ? isCompleted
-                                        ? "#065F46"
-                                        : isRevealed
-                                          ? "#92400E"
-                                          : COLORS.text
-                                      : "#CBD5E1",
-                                    textTransform: "uppercase",
-                                  }}
-                                >
-                                  {visibleLetter}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 20,
-                    padding: "12px 18px",
-                    background: "#F8FAFC",
-                    borderRadius: 16,
-                    border: "1px solid #E2E8F0",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
-                  <BulbOutlined
-                    style={{ color: COLORS.yellow, fontSize: 18 }}
-                  />
-                  <Text
-                    style={{
-                      color: COLORS.subText,
-                      fontSize: 13,
-                      fontWeight: 600,
-                    }}
-                  >
-                    Mẹo chơi: Nhập câu trả lời ở danh sách bên phải. Đáp án
-                    chính xác sẽ mở các ô tương ứng trên ô chữ!
-                  </Text>
-                </div>
-              </Card>
-
-              {/* SECRET KEYWORD SECTION */}
-              {verticalAnswer && (
-                <Card
-                  bordered={false}
-                  style={{
-                    borderRadius: 28,
-                    boxShadow: "0 12px 32px rgba(255, 107, 139, 0.12)",
-                    border: `2px solid ${
-                      finalCompleted ? COLORS.success : COLORS.secondary
-                    }`,
-                    background: finalCompleted
-                      ? "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)"
-                      : "linear-gradient(135deg, #FFF5F5 0%, #FFE4E6 100%)",
-                  }}
-                  bodyStyle={{ padding: 24 }}
-                >
-                  <Space
-                    direction="vertical"
-                    size={16}
-                    style={{ width: "100%" }}
-                  >
-                    <Row justify="space-between" align="middle">
-                      <Space align="center" size={10}>
-                        <div
-                          style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 12,
-                            background: finalCompleted
-                              ? COLORS.success
-                              : COLORS.secondary,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#FFF",
-                            fontSize: 18,
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                          }}
-                        >
-                          <KeyOutlined />
-                        </div>
-                        <div>
-                          <Title
-                            level={4}
-                            style={{
-                              margin: 0,
-                              color: COLORS.text,
-                              fontWeight: 800,
-                            }}
-                          >
-                            Từ Khóa Bí Mật 🗝️
-                          </Title>
-                          <Text style={{ color: COLORS.subText, fontSize: 13 }}>
-                            Đoán chính xác từ khóa chìa khóa để nhận điểm thưởng
-                            cực lớn!
-                          </Text>
-                        </div>
-                      </Space>
-                    </Row>
-
-                    <Row gutter={12}>
-                      <Col flex="1">
-                        <Input
-                          size="large"
-                          value={
-                            finalCompleted ? verticalAnswerDisplay : finalAnswer
-                          }
-                          disabled={gameOver || finalCompleted}
-                          onChange={(e) => {
-                            setFinalAnswer(e.target.value);
-                            setFinalWrong(false);
-                          }}
-                          onPressEnter={checkFinalAnswer}
-                          placeholder="Nhập dự đoán từ khóa tại đây..."
-                          style={{
-                            borderRadius: 16,
-                            fontWeight: 800,
-                            letterSpacing: 2,
-                            textTransform: "uppercase",
-                            borderColor: COLORS.secondary,
-                            textAlign: "center",
-                            fontSize: 16,
-                            height: 50,
-                            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)",
-                          }}
-                        />
-                      </Col>
-                      <Col>
-                        <Button
-                          type="primary"
-                          size="large"
-                          disabled={gameOver || finalCompleted}
-                          onClick={checkFinalAnswer}
-                          icon={<SendOutlined />}
-                          style={{
-                            background: COLORS.secondary,
-                            borderColor: COLORS.secondary,
-                            fontWeight: 800,
-                            borderRadius: 16,
-                            height: 50,
-                            paddingLeft: 24,
-                            paddingRight: 24,
-                            boxShadow: "0 6px 16px rgba(255, 107, 139, 0.35)",
-                          }}
-                        >
-                          Giải Mật Mã
-                        </Button>
-                      </Col>
-                    </Row>
-
-                    {finalWrong && (
-                      <Alert
-                        type="error"
-                        showIcon
-                        message="Chưa chính xác!"
-                        description="Quan sát kỹ hơn các chữ cái gợi ý trên hàng dọc rồi thử lại nhen!"
-                        style={{ borderRadius: 14 }}
-                      />
-                    )}
-                  </Space>
-                </Card>
-              )}
-            </Space>
-          </Col>
-
-          {/* RIGHT COLUMN: QUESTIONS & INPUT LIST */}
-          <Col xs={24} lg={9}>
+          <Col xs={24} lg={8}>
             <Card
               bordered={false}
               title={
-                <Row
-                  justify="space-between"
-                  align="middle"
-                  style={{ width: "100%" }}
-                >
-                  <Space align="center" size={10}>
-                    <span style={{ fontSize: 20 }}>📝</span>
-                    <span
-                      style={{
-                        fontWeight: 800,
-                        fontSize: 18,
-                        color: COLORS.text,
-                      }}
-                    >
-                      Danh Sách Câu Hỏi
-                    </span>
-                  </Space>
-                  <Tag
+                <Space>
+                  <QuestionCircleOutlined
                     style={{
-                      borderRadius: 12,
-                      padding: "4px 10px",
-                      backgroundColor: "#F3E8FF",
-                      color: COLORS.primary,
-                      fontWeight: 800,
-                      border: "none",
+                      color: primaryColor,
+                    }}
+                  />
+
+                  <span
+                    style={{
+                      color: primaryColor,
+
+                      fontWeight: 900,
                     }}
                   >
-                    {words.length} Hàng ngang
+                    Câu hỏi
+                  </span>
+
+                  <Tag
+                    color="pink"
+                    style={{
+                      borderRadius: 8,
+                      margin: 0,
+                    }}
+                  >
+                    {words.length}
                   </Tag>
-                </Row>
+                </Space>
               }
               style={{
-                borderRadius: 28,
-                boxShadow: "0 12px 32px rgba(0, 0, 0, 0.05)",
-                background: COLORS.cardBg,
+                borderRadius: borderRadius,
+
+                border: "2px solid #FFE3E8",
+
+                boxShadow: "0 8px 24px rgba(0,0,0,.05)",
+
+                background: "rgba(255,255,255,.95)",
               }}
-              bodyStyle={{ padding: 20 }}
+              bodyStyle={{
+                maxHeight: "calc(100vh - 200px)",
+
+                overflowY: "auto",
+
+                padding: 14,
+              }}
             >
+              {words.map(renderQuestion)}
+            </Card>
+          </Col>
+
+          {/* =================================================
+              CROSSWORD
+          ================================================= */}
+
+          <Col xs={24} lg={16}>
+            <Card
+              bordered={false}
+              title={
+                <Space>
+                  <HeartFilled
+                    style={{
+                      color: primaryColor,
+                    }}
+                  />
+
+                  <span
+                    style={{
+                      color: primaryColor,
+
+                      fontWeight: 900,
+                    }}
+                  >
+                    Bảng ô chữ
+                  </span>
+                </Space>
+              }
+              extra={
+                <Space>
+                  <Tag
+                    color="gold"
+                    style={{
+                      borderRadius: 9,
+
+                      fontWeight: 800,
+
+                      margin: 0,
+                    }}
+                  >
+                    {gridData.rows} × {gridData.cols}
+                  </Tag>
+                </Space>
+              }
+              style={{
+                borderRadius: borderRadius,
+
+                border: "2px solid #FFE3E8",
+
+                boxShadow: "0 8px 24px rgba(0,0,0,.05)",
+
+                background: "rgba(255,255,255,.95)",
+              }}
+              bodyStyle={{
+                padding: "10px 14px 18px",
+              }}
+            >
+              {/* SELECTED QUESTION */}
+
+              {selectedWord && (
+                <div
+                  style={{
+                    marginBottom: 14,
+
+                    padding: "13px 15px",
+
+                    borderRadius: 15,
+
+                    background: `linear-gradient(135deg, ${primaryColor}12, ${secondaryColor}18)`,
+
+                    border: `1px solid ${primaryColor}35`,
+                  }}
+                >
+                  <Row justify="space-between" align="middle" gutter={[10, 10]}>
+                    <Col flex="1">
+                      <Space direction="vertical" size={2}>
+                        <Text
+                          style={{
+                            fontSize: 11,
+
+                            color: primaryColor,
+
+                            fontWeight: 900,
+
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Đang chọn
+                        </Text>
+
+                        <Text
+                          strong
+                          style={{
+                            fontSize: 15,
+
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          Câu {selectedWord.number}:{" "}
+                          {selectedWord.question || selectedWord.clue}
+                        </Text>
+                      </Space>
+                    </Col>
+
+                    <Col>
+                      <Tag
+                        color="pink"
+                        style={{
+                          borderRadius: 9,
+
+                          fontWeight: 800,
+
+                          margin: 0,
+                        }}
+                      >
+                        {selectedWord.direction === "vertical"
+                          ? "↓ Dọc"
+                          : "→ Ngang"}
+                      </Tag>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+
+              {/* GRID */}
+
               <div
                 style={{
-                  maxHeight: "calc(100vh - 220px)",
-                  overflowY: "auto",
-                  paddingRight: 4,
+                  width: "100%",
+
+                  overflow: "auto",
+
+                  padding: "15px 8px 22px",
+
+                  borderRadius: 18,
+
+                  background: "rgba(255,250,252,.75)",
+
+                  boxSizing: "border-box",
                 }}
               >
-                <Space direction="vertical" size={16} style={{ width: "100%" }}>
-                  {words.map((item, index) => {
-                    const wordId = getWordId(item, index);
-                    const isDone = Boolean(completed[wordId]);
-                    const isRevealed = Boolean(revealed[wordId]);
+                <div
+                  style={{
+                    display: "inline-block",
 
-                    return (
-                      <Card
-                        key={wordId}
-                        size="small"
-                        bordered={false}
-                        style={{
-                          borderRadius: 20,
-                          border: `2px solid ${
-                            isDone
-                              ? "#10B981"
-                              : isRevealed
-                                ? "#F59E0B"
-                                : "#E2E8F0"
-                          }`,
-                          background: isDone
-                            ? "#F0FDF4"
-                            : isRevealed
-                              ? "#FFFBEB"
-                              : "#F8FAFC",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
-                          transition: "all 0.2s ease",
-                        }}
-                        bodyStyle={{ padding: 16 }}
-                      >
-                        <Space
-                          direction="vertical"
-                          size={12}
-                          style={{ width: "100%" }}
-                        >
-                          <Row justify="space-between" align="start">
-                            <Space align="start" size={10}>
-                              <div
-                                style={{
-                                  width: 28,
-                                  height: 28,
-                                  borderRadius: 10,
-                                  background: isDone
-                                    ? COLORS.success
-                                    : isRevealed
-                                      ? COLORS.warning
-                                      : COLORS.primary,
-                                  color: "#FFF",
-                                  fontWeight: 800,
-                                  fontSize: 13,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {item.number}
-                              </div>
-                              <Text
-                                strong
-                                style={{
-                                  color: COLORS.text,
-                                  fontSize: 14,
-                                  lineHeight: "20px",
-                                }}
-                              >
-                                {item.question}
-                              </Text>
-                            </Space>
-                            <Tag
-                              style={{
-                                borderRadius: 8,
-                                fontWeight: 800,
-                                border: "none",
-                                backgroundColor: isDone
-                                  ? "#DCFCE7"
-                                  : isRevealed
-                                    ? "#FEF3C7"
-                                    : "#E0E7FF",
-                                color: isDone
-                                  ? "#15803D"
-                                  : isRevealed
-                                    ? "#B45309"
-                                    : COLORS.primary,
-                              }}
-                            >
-                              +{item.points || 10} đ
-                            </Tag>
-                          </Row>
+                    minWidth: "max-content",
 
-                          <Row gutter={8}>
-                            <Col flex="1">
-                              <Input
-                                disabled={
-                                  gameOver ||
-                                  finalCompleted ||
-                                  isDone ||
-                                  isRevealed
-                                }
-                                value={answers[wordId] || ""}
-                                onChange={(e) =>
-                                  handleAnswerChange(wordId, e.target.value)
-                                }
-                                onPressEnter={() => checkAnswer(item, index)}
-                                placeholder="Gõ câu trả lời..."
-                                style={{
-                                  borderRadius: 12,
-                                  fontWeight: 700,
-                                  textTransform: "uppercase",
-                                  height: 40,
-                                  borderColor: isDone
-                                    ? "#A7F3D0"
-                                    : isRevealed
-                                      ? "#FDE68A"
-                                      : "#CBD5E1",
-                                  background:
-                                    isDone || isRevealed
-                                      ? "#FFFFFF"
-                                      : "#FFFFFF",
-                                }}
-                              />
-                            </Col>
-
-                            {!isDone && !isRevealed && (
-                              <Col>
-                                <Space size={4}>
-                                  <Button
-                                    type="primary"
-                                    disabled={gameOver || finalCompleted}
-                                    icon={<CheckCircleOutlined />}
-                                    onClick={() => checkAnswer(item, index)}
-                                    style={{
-                                      borderRadius: 12,
-                                      backgroundColor: COLORS.primary,
-                                      borderColor: COLORS.primary,
-                                      fontWeight: 700,
-                                      height: 40,
-                                      boxShadow:
-                                        "0 4px 10px rgba(124, 58, 237, 0.2)",
-                                    }}
-                                  >
-                                    Nộp
-                                  </Button>
-
-                                  {allowHint && (
-                                    <Button
-                                      disabled={gameOver || finalCompleted}
-                                      icon={<BulbOutlined />}
-                                      onClick={() => revealAnswer(item, index)}
-                                      style={{
-                                        borderRadius: 12,
-                                        borderColor: COLORS.warning,
-                                        color: COLORS.warning,
-                                        fontWeight: 700,
-                                        height: 40,
-                                        backgroundColor: "#FFFBEB",
-                                      }}
-                                    />
-                                  )}
-                                </Space>
-                              </Col>
-                            )}
-                          </Row>
-                        </Space>
-                      </Card>
-                    );
-                  })}
-                </Space>
+                    padding: 8,
+                  }}
+                >
+                  {gridData.grid.map((row, rowIndex) => (
+                    <div
+                      key={rowIndex}
+                      style={{
+                        display: "flex",
+                      }}
+                    >
+                      {row.map((cell, colIndex) =>
+                        renderCell(cell, rowIndex, colIndex),
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* LEGEND */}
+
+              <div
+                style={{
+                  marginTop: 12,
+
+                  display: "flex",
+
+                  justifyContent: "center",
+
+                  flexWrap: "wrap",
+
+                  gap: 8,
+                }}
+              >
+                <Tag
+                  color="pink"
+                  style={{
+                    borderRadius: 8,
+                    margin: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 900,
+                    }}
+                  >
+                    Ô hồng
+                  </span>{" "}
+                  = câu đang chọn
+                </Tag>
+
+                <Tag
+                  color="gold"
+                  style={{
+                    borderRadius: 8,
+                    margin: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 900,
+                    }}
+                  >
+                    Ô vàng
+                  </span>{" "}
+                  = chữ hàng dọc
+                </Tag>
+              </div>
+
+              {/* FINISHED */}
+
+              {gameFinished && (
+                <Alert
+                  type="success"
+                  showIcon
+                  icon={<TrophyFilled />}
+                  message="Hoàn thành trò chơi! 🎉"
+                  description={`Bạn đạt ${score} điểm và hoàn thành ${correctCount}/${words.length} câu.`}
+                  style={{
+                    marginTop: 16,
+
+                    borderRadius: 15,
+                  }}
+                />
+              )}
+
+              {/* BOTTOM */}
+
+              <Divider
+                style={{
+                  margin: "18px 0 14px",
+                }}
+              />
+
+              <Row justify="space-between" align="middle" gutter={[10, 10]}>
+                <Col>
+                  <Space wrap>
+                    <Tag
+                      color="green"
+                      style={{
+                        borderRadius: 9,
+
+                        padding: "4px 9px",
+
+                        margin: 0,
+
+                        fontWeight: 700,
+                      }}
+                    >
+                      <CheckCircleOutlined /> {correctCount} đúng
+                    </Tag>
+
+                    {skippedCount > 0 && (
+                      <Tag
+                        color="default"
+                        style={{
+                          borderRadius: 9,
+
+                          padding: "4px 9px",
+
+                          margin: 0,
+                        }}
+                      >
+                        {skippedCount} bỏ qua
+                      </Tag>
+                    )}
+
+                    {showScore && (
+                      <Tag
+                        color="gold"
+                        style={{
+                          borderRadius: 9,
+
+                          padding: "4px 9px",
+
+                          margin: 0,
+
+                          fontWeight: 800,
+                        }}
+                      >
+                        <StarFilled /> {score}
+                      </Tag>
+                    )}
+                  </Space>
+                </Col>
+
+                <Col>
+                  <Space>
+                    <Button
+                      icon={<ReloadOutlined />}
+                      onClick={resetGame}
+                      style={{
+                        borderRadius: 10,
+                      }}
+                    >
+                      Chơi lại
+                    </Button>
+
+                    {onBack && (
+                      <Button
+                        icon={<ArrowLeftOutlined />}
+                        onClick={onBack}
+                        style={{
+                          borderRadius: 10,
+                        }}
+                      >
+                        Thoát game
+                      </Button>
+                    )}
+                  </Space>
+                </Col>
+              </Row>
             </Card>
           </Col>
         </Row>
       </div>
+
+      {/* =================================================
+          FINISH MODAL
+      ================================================= */}
+
+      <Modal
+        open={showFinishModal}
+        centered
+        closable={!completedOnce}
+        footer={null}
+        onCancel={() => setShowFinishModal(false)}
+        styles={{
+          content: {
+            borderRadius: 24,
+          },
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+
+            padding: "15px 10px 5px",
+          }}
+        >
+          <div
+            style={{
+              width: 80,
+
+              height: 80,
+
+              margin: "0 auto 15px",
+
+              borderRadius: "50%",
+
+              display: "flex",
+
+              alignItems: "center",
+
+              justifyContent: "center",
+
+              background: `${secondaryColor}25`,
+
+              color: secondaryColor,
+
+              fontSize: 42,
+            }}
+          >
+            🏆
+          </div>
+
+          <Title
+            level={3}
+            style={{
+              margin: "0 0 8px",
+
+              color: primaryColor,
+
+              fontWeight: 900,
+            }}
+          >
+            Tuyệt vời! 🎉
+          </Title>
+
+          <Text type="secondary">Bạn đã kết thúc trò chơi.</Text>
+
+          <div
+            style={{
+              display: "flex",
+
+              justifyContent: "center",
+
+              gap: 12,
+
+              margin: "20px 0",
+            }}
+          >
+            {showScore && (
+              <Card
+                size="small"
+                style={{
+                  minWidth: 110,
+
+                  borderRadius: 15,
+
+                  background: "#FFF9E6",
+
+                  border: "1px solid #FFE58F",
+                }}
+              >
+                <StarFilled
+                  style={{
+                    color: secondaryColor,
+
+                    fontSize: 20,
+                  }}
+                />
+
+                <div
+                  style={{
+                    fontSize: 24,
+
+                    fontWeight: 900,
+                  }}
+                >
+                  {score}
+                </div>
+
+                <Text type="secondary">điểm</Text>
+              </Card>
+            )}
+
+            <Card
+              size="small"
+              style={{
+                minWidth: 110,
+
+                borderRadius: 15,
+
+                background: "#F6FFED",
+
+                border: "1px solid #B7EB8F",
+              }}
+            >
+              <CheckCircleFilled
+                style={{
+                  color: "#52C41A",
+
+                  fontSize: 20,
+                }}
+              />
+
+              <div
+                style={{
+                  fontSize: 24,
+
+                  fontWeight: 900,
+                }}
+              >
+                {correctCount}/{words.length}
+              </div>
+
+              <Text type="secondary">đúng</Text>
+            </Card>
+          </div>
+
+          <Space>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                setShowFinishModal(false);
+
+                resetGame();
+              }}
+              style={{
+                borderRadius: 11,
+              }}
+            >
+              Chơi lại
+            </Button>
+
+            {onBack && (
+              <Button
+                type="primary"
+                icon={<ArrowLeftOutlined />}
+                onClick={onBack}
+                style={{
+                  background: primaryColor,
+
+                  borderColor: primaryColor,
+
+                  borderRadius: 11,
+                }}
+              >
+                Thoát game
+              </Button>
+            )}
+          </Space>
+        </div>
+      </Modal>
     </div>
   );
 };

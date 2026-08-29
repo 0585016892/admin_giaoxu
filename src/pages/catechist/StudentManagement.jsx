@@ -42,7 +42,6 @@ import {
   LockOutlined,
   MoreOutlined,
   PlusOutlined,
-  ReloadOutlined,
   SearchOutlined,
   SwapOutlined,
   TeamOutlined,
@@ -59,19 +58,20 @@ import classApi from "../../api/classApi";
 import AppFormModal from "../../components/common/AppFormModal";
 import StudentForm from "../../components/forms/StudentForm";
 import StatCard from "../../components/common/StatCard";
-import AppButton from "../../components/common/AppButton";
 import AppDetailModal from "../../components/common/AppDetailModal";
-const { Title, Text } = Typography;
+import PageHeroHeader from "../../components/common/PageHeroHeader";
+const { Text } = Typography;
 const primaryNavy = "#1B365D";
 
 const EMPTY_VALUE = "-";
 
 /* =====================================================
-   HELPERS
+   HELPERSLớp học*
 ===================================================== */
 
 const getResponseData = (response, keys = []) => {
   const data = response?.data;
+  console.log("data class:::", data);
 
   if (data?.data !== undefined) {
     return data.data;
@@ -356,6 +356,7 @@ export default function StudentManagement() {
         const studentData = getResponseData(studentRes, ["students"]);
 
         const classData = getResponseData(classRes, ["classes"]);
+        console.log("classData:::", classData);
 
         const formattedClasses = Array.isArray(classData)
           ? classData.map((item) => ({
@@ -654,8 +655,6 @@ export default function StudentManagement() {
 
   const buildStudentPayload = (values) => {
     return {
-      code: values.code?.trim() || null,
-
       name: values.name?.trim(),
 
       gender: values.gender || "Khác",
@@ -677,17 +676,13 @@ export default function StudentManagement() {
       parish: values.parish?.trim() || null,
 
       father_name: values.father_name?.trim() || null,
-
       father_phone: values.father_phone?.trim() || null,
 
       mother_name: values.mother_name?.trim() || null,
-
       mother_phone: values.mother_phone?.trim() || null,
 
       guardian_name: values.guardian_name?.trim() || null,
-
       guardian_phone: values.guardian_phone?.trim() || null,
-
       guardian_relationship: values.guardian_relationship?.trim() || null,
 
       baptism_name: values.baptism_name?.trim() || null,
@@ -697,9 +692,7 @@ export default function StudentManagement() {
         : null,
 
       baptism_place: values.baptism_place?.trim() || null,
-
       baptism_parish: values.baptism_parish?.trim() || null,
-
       baptism_certificate_no: values.baptism_certificate_no?.trim() || null,
 
       saint_name: values.saint_name?.trim() || null,
@@ -729,6 +722,9 @@ export default function StudentManagement() {
       note: values.note?.trim() || null,
 
       status: values.status || "active",
+
+      // QUAN TRỌNG
+      class_id: values.class_id || null,
     };
   };
 
@@ -744,63 +740,39 @@ export default function StudentManagement() {
 
       const payload = buildStudentPayload(values);
 
-      let studentId = editingStudent?.id;
-
-      /* ================= CREATE ================= */
+      console.log("========== SAVE STUDENT ==========");
+      console.log("PAYLOAD:", payload);
 
       if (!editingStudent) {
-        const response = await studentApi.create(payload);
+        // ==========================================
+        // CREATE
+        // Backend sẽ:
+        // 1. lấy church_id từ token
+        // 2. kiểm tra class_id thuộc church
+        // 3. tạo student
+        // 4. tạo class_students
+        // ==========================================
 
-        studentId =
-          response?.data?.data?.id || response?.data?.id || response?.id;
+        await studentApi.create(payload);
 
-        if (!studentId) {
-          throw new Error("Không lấy được ID học sinh mới");
-        }
+        message.success("Thêm học sinh thành công!");
       } else {
-        /* ================= UPDATE ================= */
+        // ==========================================
+        // UPDATE
+        // Backend sẽ:
+        // 1. kiểm tra student thuộc church
+        // 2. kiểm tra class_id mới thuộc church
+        // 3. update student
+        // 4. đổi class_students nếu class_id thay đổi
+        // ==========================================
+
         await studentApi.update(editingStudent.id, payload);
+
+        message.success("Cập nhật học sinh thành công!");
       }
-
-      /* ================= CLASS ================= */
-
-      const newClassId = values.class_id || null;
-
-      const oldClassId = editingStudent?.classId || null;
-
-      if (newClassId) {
-        /*
-         * Chuyển lớp
-         */
-        if (oldClassId && String(oldClassId) !== String(newClassId)) {
-          await classStudentApi.update(oldClassId, studentId, {
-            class_id: newClassId,
-            status: "studying",
-          });
-        }
-
-        /*
-         * Chưa có lớp
-         */
-        if (!oldClassId) {
-          await classStudentApi.add({
-            class_id: newClassId,
-            student_id: studentId,
-            status: "studying",
-          });
-        }
-      }
-
-      message.success(
-        editingStudent
-          ? "Cập nhật học sinh thành công!"
-          : "Thêm học sinh thành công!",
-      );
 
       setIsFormModalOpen(false);
-
       setEditingStudent(null);
-
       form.resetFields();
 
       await fetchStudents({
@@ -1610,7 +1582,6 @@ export default function StudentManagement() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#f7f8fc",
         padding: 28,
         fontFamily: "'Be Vietnam Pro', sans-serif",
       }}
@@ -1619,94 +1590,27 @@ export default function StudentManagement() {
           HEADER
       ================================================= */}
 
-      <Row
-        justify="space-between"
-        align="middle"
-        gutter={[16, 16]}
-        style={{
-          marginBottom: 28,
-        }}
-      >
-        <Col>
-          <Space direction="vertical" size={2}>
-            <Title
-              level={2}
-              style={{
-                margin: 0,
-                color: "#1e293b",
-              }}
-            >
-              Quản lý học sinh
-            </Title>
-
-            <Text type="secondary">
-              Quản lý thông tin, lớp học và quá trình giáo lý của học sinh
-            </Text>
-          </Space>
-        </Col>
-
-        <Col>
-          <Space>
-            {selectedRowKeys.length > 0 && (
-              <Popconfirm
-                title={`Xóa ${selectedRowKeys.length} học sinh?`}
-                description="Dữ liệu sau khi xóa không thể khôi phục."
-                okText="Xóa"
-                cancelText="Hủy"
-                okButtonProps={{
-                  danger: true,
-                  loading: bulkDeleting,
-                }}
-                cancelButtonProps={{
-                  disabled: bulkDeleting,
-                }}
-                onConfirm={handleBulkDelete}
-              >
-                <Button
-                  danger
-                  size="large"
-                  icon={<DeleteOutlined />}
-                  loading={bulkDeleting}
-                  disabled={saving || loading}
-                >
-                  {bulkDeleting
-                    ? "Đang xóa..."
-                    : `Xóa (${selectedRowKeys.length})`}
-                </Button>
-              </Popconfirm>
-            )}
-
-            <Button
-              size="large"
-              icon={<ReloadOutlined />}
-              loading={refreshing}
-              disabled={loading || saving || bulkDeleting}
-              onClick={() =>
-                fetchStudents({
-                  silent: true,
-                })
-              }
-              style={{
-                borderRadius: 12,
-                height: 46,
-              }}
-            >
-              Làm mới
-            </Button>
-
-            <AppButton
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              loading={saving && !editingStudent}
-              disabled={loading || saving || bulkDeleting}
-              onClick={handleOpenCreateModal}
-            >
-              {saving && !editingStudent ? "Đang thêm..." : "Thêm học sinh"}
-            </AppButton>
-          </Space>
-        </Col>
-      </Row>
+      <PageHeroHeader
+        icon={<UserOutlined />}
+        badgeText="🌸 QUẢN LÝ HỌC SINH"
+        title="Quản lý học sinh"
+        description="Quản lý thông tin, lớp học và quá trình giáo lý của học sinh"
+        // Bulk Delete Props
+        selectedCount={selectedRowKeys.length}
+        onBulkDelete={handleBulkDelete}
+        bulkDeleting={bulkDeleting}
+        // Refresh Props
+        onRefresh={() => fetchStudents({ silent: true })}
+        refreshLoading={refreshing}
+        // Primary Button Props
+        primaryButtonText={
+          saving && !editingStudent ? "Đang thêm..." : "Thêm học sinh"
+        }
+        primaryButtonIcon={<PlusOutlined />}
+        onPrimaryClick={handleOpenCreateModal}
+        primaryLoading={saving && !editingStudent}
+        primaryDisabled={loading || saving}
+      />
 
       {/* =================================================
           STATISTICS

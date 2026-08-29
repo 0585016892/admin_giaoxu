@@ -128,10 +128,7 @@ export default function AdminSidebar({ collapsed }) {
               key: "/marriage-students",
               label: "Danh sách học viên",
             },
-            {
-              key: "/catechist-management",
-              label: "Danh sách giáo lý viên",
-            },
+
             {
               key: "/exam-prayer",
               label: "Kết quả khảo kinh & thi",

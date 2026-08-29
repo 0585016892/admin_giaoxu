@@ -3,6 +3,7 @@ import {
   getChurches,
   createChurch,
   updateChurch,
+  getChurchById,
   deleteChurch,
   toggleChurchActive,
 } from "../api/churchApi";
@@ -11,7 +12,9 @@ export const useChurch = () => {
   const fetchChurches = useCallback(async (params) => {
     return await getChurches(params);
   }, []);
-
+  const getChurchId = useCallback(async (params) => {
+    return await getChurchById(params);
+  }, []);
   const addChurch = useCallback(async (data) => {
     return await createChurch(data);
   }, []);
@@ -32,6 +35,7 @@ export const useChurch = () => {
     fetchChurches,
     addChurch,
     editChurch,
+    getChurchId,
     removeChurch,
     toggleActive,
   };

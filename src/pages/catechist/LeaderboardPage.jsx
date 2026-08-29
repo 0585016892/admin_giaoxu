@@ -1,12 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { Spin, message } from "antd";
-import { StarFilled, CrownFilled } from "@ant-design/icons";
-import { getResultsLeaderBoard } from "../../api/resultApi";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Button, Empty, Select, Spin, Tag, message } from "antd";
+import {
+  StarFilled,
+  CrownFilled,
+  GlobalOutlined,
+  TeamOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 
-// Assets
-import l1 from "../../assets/images/l1.png"; // Top 1
-import l2 from "../../assets/images/l2.png"; // Top 2
-import l3 from "../../assets/images/l3.png"; // Top 3
+import {
+  getResultsLeaderBoard,
+  getClassLeaderboard,
+} from "../../api/resultApi";
+
+import classApi from "../../api/classApi";
+
+// =========================================================
+// ASSETS
+// =========================================================
+
+import l1 from "../../assets/images/l1.png";
+import l2 from "../../assets/images/l2.png";
+import l3 from "../../assets/images/l3.png";
 import jesusImg from "../../assets/images/jesusImg.png";
 import background from "../../assets/images/background.png";
 import bocau from "../../assets/images/bocau.png";
@@ -18,147 +33,631 @@ const IMAGE_CONFIG = {
   JESUS_CHARACTER: jesusImg,
 };
 
+// =========================================================
+// HELPERS
+// =========================================================
+
+/**
+ * Chuẩn hóa response danh sách
+ *
+ * Có thể xử lý:
+ * [
+ *   ...
+ * ]
+ *
+ * hoặc:
+ * {
+ *   success: true,
+ *   data: [...]
+ * }
+ *
+ * hoặc:
+ * {
+ *   data: {
+ *      data: [...]
+ *   }
+ * }
+ */
+const normalizeListResponse = (response) => {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (Array.isArray(response?.data)) {
+    return response.data;
+  }
+
+  if (Array.isArray(response?.data?.data)) {
+    return response.data.data;
+  }
+
+  if (Array.isArray(response?.results)) {
+    return response.results;
+  }
+
+  if (Array.isArray(response?.classes)) {
+    return response.classes;
+  }
+
+  return [];
+};
+
+/**
+ * Chuẩn hóa leaderboard
+ */
+const normalizeLeaderboardData = (response) => {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (Array.isArray(response?.data)) {
+    return response.data;
+  }
+
+  if (Array.isArray(response?.data?.data)) {
+    return response.data.data;
+  }
+
+  if (Array.isArray(response?.results)) {
+    return response.results;
+  }
+
+  if (Array.isArray(response?.leaderboard)) {
+    return response.leaderboard;
+  }
+
+  return [];
+};
+
+/**
+ * Lấy tên học sinh
+ */
+const getStudentName = (student) => {
+  return (
+    student?.student_name ||
+    student?.name ||
+    student?.full_name ||
+    student?.student?.name ||
+    "Chưa có học sinh"
+  );
+};
+
+/**
+ * Lấy điểm
+ */
+const getStudentScore = (student) => {
+  const score =
+    student?.average_score ??
+    student?.averageScore ??
+    student?.score ??
+    student?.total_score ??
+    student?.average ??
+    0;
+
+  const numericScore = Number(score);
+
+  if (Number.isNaN(numericScore)) {
+    return 0;
+  }
+
+  return numericScore % 1 === 0 ? numericScore : numericScore.toFixed(2);
+};
+
+/**
+ * Lấy rank
+ */
+const getStudentRank = (student, index) => {
+  const rank = Number(student?.rank);
+
+  return Number.isFinite(rank) && rank > 0 ? rank : index + 1;
+};
+
+/**
+ * Lấy ID lớp
+ */
+const getClassId = (item) => {
+  return item?.id ?? item?.class_id ?? item?.classId;
+};
+
+/**
+ * Lấy tên lớp
+ */
+const getClassName = (item) => {
+  return (
+    item?.name ||
+    item?.class_name ||
+    item?.className ||
+    item?.title ||
+    `Lớp ${getClassId(item)}`
+  );
+};
+
+// =========================================================
+// COMPONENT
+// =========================================================
+
 const LeaderboardGame = () => {
+  // =======================================================
+  // STATE
+  // =======================================================
+
   const [loading, setLoading] = useState(true);
+
+  const [classesLoading, setClassesLoading] = useState(false);
+
   const [students, setStudents] = useState([]);
 
-  const loadLeaderboard = async () => {
+  const [classesList, setClassesList] = useState([]);
+
+  /**
+   * all   = toàn giáo xứ
+   * class = theo lớp
+   */
+  const [leaderboardMode, setLeaderboardMode] = useState("all");
+
+  const [selectedClassId, setSelectedClassId] = useState(null);
+
+  const [selectedClassName, setSelectedClassName] = useState("");
+
+  // =======================================================
+  // LOAD CLASSES
+  // =======================================================
+
+  const fetchClasses = useCallback(async () => {
+    try {
+      setClassesLoading(true);
+
+      const response = await classApi.getAll();
+
+      console.log("📚 CLASS API RESPONSE:", response);
+
+      const data = normalizeListResponse(response);
+
+      setClassesList(data);
+    } catch (error) {
+      console.error("❌ GET CLASSES ERROR:", error);
+
+      setClassesList([]);
+
+      message.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Không thể tải danh sách lớp học",
+      );
+    } finally {
+      setClassesLoading(false);
+    }
+  }, []);
+
+  // =======================================================
+  // LOAD GLOBAL LEADERBOARD
+  // =======================================================
+
+  const loadGlobalLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
+
       const response = await getResultsLeaderBoard();
 
-      if (response && response.success) {
-        setStudents(response.data || []);
+      console.log("🏆 GLOBAL LEADERBOARD:", response);
+
+      if (response?.success) {
+        const data = normalizeLeaderboardData(response);
+
+        setStudents(data);
+
+        setLeaderboardMode("all");
+
+        setSelectedClassId(null);
+
+        setSelectedClassName("");
       } else {
+        setStudents([]);
+
         message.error(response?.message || "Không thể lấy bảng thành tích");
       }
     } catch (error) {
-      console.error("LOAD LEADERBOARD ERROR:", error);
+      console.error("❌ LOAD GLOBAL LEADERBOARD ERROR:", error);
+
+      setStudents([]);
+
       message.error(
-        error?.response?.data?.message || "Không thể kết nối máy chủ",
+        error?.response?.data?.message ||
+          error?.message ||
+          "Không thể kết nối máy chủ",
       );
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadLeaderboard();
   }, []);
 
-  const getTopStudent = (rankNum) => {
-    return students.find((s) => Number(s.rank) === rankNum) || null;
-  };
+  // =======================================================
+  // LOAD CLASS LEADERBOARD
+  // =======================================================
+
+  const loadClassLeaderboard = useCallback(
+    async (classId) => {
+      if (!classId) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const response = await getClassLeaderboard(classId);
+
+        console.log(`🏫 CLASS ${classId} LEADERBOARD:`, response);
+
+        if (response?.success) {
+          const data = normalizeLeaderboardData(response);
+
+          setStudents(data);
+
+          setLeaderboardMode("class");
+
+          // -----------------------------------------------
+          // Tìm tên lớp
+          // -----------------------------------------------
+
+          const selectedClass = classesList.find(
+            (item) => String(getClassId(item)) === String(classId),
+          );
+
+          const className = selectedClass
+            ? getClassName(selectedClass)
+            : `Lớp ${classId}`;
+
+          setSelectedClassName(className);
+        } else {
+          setStudents([]);
+
+          message.error(
+            response?.message || "Không thể lấy bảng xếp hạng của lớp",
+          );
+        }
+      } catch (error) {
+        console.error("❌ LOAD CLASS LEADERBOARD ERROR:", error);
+
+        setStudents([]);
+
+        message.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Không thể tải bảng xếp hạng lớp",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [classesList],
+  );
+
+  // =======================================================
+  // INITIAL LOAD
+  // =======================================================
+
+  useEffect(() => {
+    fetchClasses();
+    loadGlobalLeaderboard();
+  }, [fetchClasses, loadGlobalLeaderboard]);
+
+  // =======================================================
+  // CLASS OPTIONS
+  // =======================================================
+
+  const classOptions = useMemo(() => {
+    return classesList
+      .filter((item) => getClassId(item))
+      .map((item) => ({
+        value: getClassId(item),
+        label: getClassName(item),
+      }));
+  }, [classesList]);
+
+  // =======================================================
+  // TOP STUDENTS
+  // =======================================================
+
+  const getTopStudent = useCallback(
+    (rankNumber) => {
+      return (
+        students.find(
+          (student, index) => getStudentRank(student, index) === rankNumber,
+        ) || null
+      );
+    },
+    [students],
+  );
 
   const top1 = getTopStudent(1);
   const top2 = getTopStudent(2);
   const top3 = getTopStudent(3);
 
+  // =======================================================
+  // HANDLE CLASS CHANGE
+  // =======================================================
+
+  const handleClassChange = (classId) => {
+    if (!classId) {
+      loadGlobalLeaderboard();
+      return;
+    }
+
+    setSelectedClassId(classId);
+
+    loadClassLeaderboard(classId);
+  };
+
+  // =======================================================
+  // GLOBAL
+  // =======================================================
+
+  const handleGlobalLeaderboard = () => {
+    loadGlobalLeaderboard();
+  };
+
+  // =======================================================
+  // REFRESH
+  // =======================================================
+
+  const handleRefresh = async () => {
+    try {
+      if (leaderboardMode === "class" && selectedClassId) {
+        await Promise.all([
+          fetchClasses(),
+          loadClassLeaderboard(selectedClassId),
+        ]);
+      } else {
+        await Promise.all([fetchClasses(), loadGlobalLeaderboard()]);
+      }
+    } catch (error) {
+      console.error("REFRESH ERROR:", error);
+    }
+  };
+
+  // =======================================================
+  // TITLE
+  // =======================================================
+
+  // =======================================================
+  // RENDER
+  // =======================================================
+
   return (
     <div
-      className="game-leaderboard-container"
-      style={{ backgroundImage: `url(${IMAGE_CONFIG.BACKGROUND})` }}
+      className="chibi-leaderboard-container"
+      style={{
+        backgroundImage: `url(${IMAGE_CONFIG.BACKGROUND})`,
+      }}
     >
-      {/* CHIM BỒ CÂU TRÁI & PHẢI */}
+      {/* ===================================================
+          DECOR
+      =================================================== */}
+
       <img
         src={IMAGE_CONFIG.DOVE_LEFT}
         alt="Dove Left"
         className="dove-img dove-left"
       />
+
       <img
         src={IMAGE_CONFIG.DOVE_RIGHT}
         alt="Dove Right"
         className="dove-img dove-right"
       />
 
-      {/* HẠT SAO LẤP LÁNH DECOR */}
       <div className="sparkle s1">✨</div>
-      <div className="sparkle s2">⭐</div>
-      <div className="sparkle s3">✨</div>
-      <div className="sparkle s4">⭐</div>
+      <div className="sparkle s2">🌸</div>
+      <div className="sparkle s3">⭐</div>
+      <div className="sparkle s4">💖</div>
+
+      {/* ===================================================
+          HEADER
+      =================================================== */}
+
+      <div className="pastel-header-banner">
+        {/* =================================================
+            FILTER
+        ================================================= */}
+
+        <div className="leaderboard-filter-panel">
+          {/* TOÀN GIÁO XỨ */}
+
+          <Button
+            type={leaderboardMode === "all" ? "primary" : "default"}
+            icon={<GlobalOutlined />}
+            onClick={handleGlobalLeaderboard}
+            loading={loading && leaderboardMode === "all"}
+            className={`leaderboard-mode-btn ${
+              leaderboardMode === "all" ? "active" : ""
+            }`}
+          >
+            Toàn giáo xứ
+          </Button>
+
+          {/* CHỌN LỚP */}
+
+          <Select
+            allowClear
+            showSearch
+            placeholder="🏫 Xem theo lớp"
+            value={selectedClassId}
+            onChange={handleClassChange}
+            options={classOptions}
+            optionFilterProp="label"
+            loading={classesLoading}
+            className="leaderboard-class-select"
+            notFoundContent={
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Chưa có lớp"
+              />
+            }
+            suffixIcon={<TeamOutlined />}
+          />
+
+          {/* CLASS TAG */}
+
+          {leaderboardMode === "class" && selectedClassName && (
+            <Tag className="selected-class-tag">🏫 {selectedClassName}</Tag>
+          )}
+
+          {/* REFRESH */}
+
+          <Button
+            type="text"
+            icon={<ReloadOutlined />}
+            loading={loading}
+            onClick={handleRefresh}
+            className="refresh-btn"
+          >
+            Làm mới
+          </Button>
+        </div>
+      </div>
+
+      {/* ===================================================
+          CONTENT
+      =================================================== */}
 
       {loading ? (
-        <div className="loading-wrapper">
-          <Spin size="large" tip="Đang tải Bảng Xếp Hạng..." />
+        <div className="chibi-loading-card">
+          <Spin size="large" />
+
+          <div className="loading-text">Đang tải Bảng Vàng Chibi...</div>
+        </div>
+      ) : students.length === 0 ? (
+        <div className="chibi-empty-card">
+          <Empty
+            image={<div className="empty-icon">🏆</div>}
+            description={
+              <div>
+                <div className="empty-title">Chưa có thành tích</div>
+
+                <div className="empty-description">
+                  {leaderboardMode === "class"
+                    ? `Lớp ${selectedClassName || "này"} chưa có kết quả.`
+                    : "Chưa có học sinh nào có kết quả trong bảng xếp hạng."}
+                </div>
+              </div>
+            }
+          />
         </div>
       ) : (
         <div className="game-stage">
-          {/* ================= BỤC TOP 2 (BÊN TRÁI) ================= */}
+          {/* =================================================
+              TOP 2
+          ================================================= */}
+
           <div className="podium-column top2-col">
-            <div className="rank-badge badge-top2">HẠNG 2</div>
+            <div className="rank-badge badge-top2">🥈 HẠNG 2</div>
+
             <div className="character-area float-anim-2">
               <img src={l2} alt="Top 2" className="full-stand-img img-top2" />
             </div>
 
             <div className="podium-base base-top2">
-              <div className="podium-shine"></div>
+              <div className="podium-shine" />
+
               <div className="rank-number-text">2</div>
 
-              <div className="name-score-card">
-                <div className="student-name-text">
-                  {top2?.student_name || "Trần Hương Giang"}
-                </div>
-                <div className="score-badge">
-                  <StarFilled style={{ color: "#FFD700", marginRight: 4 }} />
-                  <span>{top2?.average_score ?? 0} đ</span>
+              <div className="chibi-name-card">
+                <div className="student-name-text">{getStudentName(top2)}</div>
+
+                <div className="score-badge badge-mint">
+                  <StarFilled
+                    style={{
+                      color: "#FFB800",
+                      marginRight: 4,
+                    }}
+                  />
+
+                  <span>{getStudentScore(top2)} đ</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ================= BỤC TOP 1 (Ở GIỮA) ================= */}
+          {/* =================================================
+              TOP 1
+          ================================================= */}
+
           <div className="podium-column top1-col">
             <div className="crown-wrapper">
-              <div className="crown-glow-ring"></div>
+              <div className="crown-glow-ring" />
+
               <CrownFilled className="crown-icon" />
             </div>
-            <div className="rank-badge badge-top1">QUÁN QUÂN</div>
+
+            <div className="rank-badge badge-top1">👑 QUÁN QUÂN</div>
 
             <div className="character-area float-anim-1">
-              <div className="winner-glow"></div>
+              <div className="winner-glow" />
+
               <img src={l1} alt="Top 1" className="full-stand-img img-top1" />
             </div>
 
             <div className="podium-base base-top1">
-              <div className="podium-shine"></div>
+              <div className="podium-shine" />
+
               <div className="rank-number-text">1</div>
 
-              <div className="name-score-card">
-                <div className="student-name-text">
-                  {top1?.student_name || "Trần Hoàng Phúc"}
+              <div className="chibi-name-card card-top1">
+                <div className="student-name-text highlight">
+                  {getStudentName(top1)}
                 </div>
-                <div className="score-badge">
-                  <StarFilled style={{ color: "#FFD700", marginRight: 4 }} />
-                  <span>{top1?.average_score ?? 0} đ</span>
+
+                <div className="score-badge badge-gold">
+                  <StarFilled
+                    style={{
+                      color: "#FFD700",
+                      marginRight: 4,
+                    }}
+                  />
+
+                  <span>{getStudentScore(top1)} đ</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ================= BỤC TOP 3 (BÊN PHẢI) ================= */}
+          {/* =================================================
+              TOP 3
+          ================================================= */}
+
           <div className="podium-column top3-col">
-            <div className="rank-badge badge-top3">HẠNG 3</div>
+            <div className="rank-badge badge-top3">🥉 HẠNG 3</div>
+
             <div className="character-area float-anim-3">
               <img src={l3} alt="Top 3" className="full-stand-img img-top3" />
             </div>
 
             <div className="podium-base base-top3">
-              <div className="podium-shine"></div>
+              <div className="podium-shine" />
+
               <div className="rank-number-text">3</div>
 
-              <div className="name-score-card">
-                <div className="student-name-text">
-                  {top3?.student_name || "Chưa có học sinh"}
-                </div>
-                <div className="score-badge">
-                  <StarFilled style={{ color: "#FFD700", marginRight: 4 }} />
-                  <span>{top3?.average_score ?? 0} đ</span>
+              <div className="chibi-name-card">
+                <div className="student-name-text">{getStudentName(top3)}</div>
+
+                <div className="score-badge badge-pink">
+                  <StarFilled
+                    style={{
+                      color: "#FFB800",
+                      marginRight: 4,
+                    }}
+                  />
+
+                  <span>{getStudentScore(top3)} đ</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* NHÂN VẬT CHÚA JESUS BÊN PHẢI */}
+          {/* =================================================
+              JESUS
+          ================================================= */}
+
           <div className="jesus-wrapper">
             <img
               src={IMAGE_CONFIG.JESUS_CHARACTER}
@@ -169,10 +668,14 @@ const LeaderboardGame = () => {
         </div>
       )}
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@800;900&display=swap');
+      {/* =====================================================
+          CSS
+      ===================================================== */}
 
-        .game-leaderboard-container {
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@700;800&display=swap');
+
+        .chibi-leaderboard-container {
           width: 100%;
           min-height: 92vh;
           background-size: cover;
@@ -183,109 +686,341 @@ const LeaderboardGame = () => {
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
-          font-family: 'Nunito', sans-serif;
+          font-family: "Quicksand", sans-serif;
           overflow: hidden;
-          background-color: #f0f4f8;
-          padding-top: 15px;
+          background-color: #fff5f7;
+          padding-top: 18px;
+          box-sizing: border-box;
         }
 
-        /* HEADER & RIBBON */
-        .leaderboard-header {
-          text-align: center;
-          z-index: 5;
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .pastel-header-banner {
+          z-index: 10;
           margin-bottom: 5px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 14px;
+          width: 100%;
         }
 
-        .header-ribbon {
-          background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-          padding: 8px 32px;
-          border-radius: 50px;
-          box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+        .ribbon-pill {
+          background: linear-gradient(
+            135deg,
+            #ff9eaa 0%,
+            #ffd1d9 100%
+          );
+
+          padding: 8px 28px;
+          border-radius: 30px;
+
+          box-shadow:
+            0 8px 20px rgba(255, 158, 170, 0.35);
+
           display: inline-flex;
           align-items: center;
-          gap: 12px;
-          border: 3px solid #FFF;
+          gap: 10px;
+
+          border: 3px solid #ffffff;
         }
 
-        .trophy-icon {
-          color: #FFD700;
-          font-size: 26px;
-          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        .ribbon-trophy-icon {
+          color: #ffd166;
+          font-size: 22px;
+
+          filter:
+            drop-shadow(
+              0 2px 4px rgba(255, 182, 193, 0.6)
+            );
         }
 
-        .header-title {
-          font-family: 'Fredoka', cursive, sans-serif;
-          font-size: 32px;
+        .ribbon-title-text {
+          font-family: "Fredoka", cursive, sans-serif;
+          font-size: 24px;
           font-weight: 700;
-          color: #FFF;
-          margin: 0;
-          letter-spacing: 1px;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          color: #ffffff;
+          letter-spacing: 0.8px;
+
+          text-shadow:
+            0 2px 4px rgba(225, 112, 133, 0.4);
         }
 
-        .header-subtitle {
-          font-size: 15px;
-          font-weight: 800;
-          color: #FFF;
-          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-          margin-top: 6px;
-          letter-spacing: 0.5px;
+        /* =====================================================
+           FILTER
+        ===================================================== */
+
+        .leaderboard-filter-panel {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+
+          padding: 7px;
+
+          background: rgba(255, 255, 255, 0.94);
+
+          border: 2px solid #ffe4e6;
+          border-radius: 22px;
+
+          box-shadow:
+            0 8px 22px rgba(255, 182, 193, 0.18);
+
+          backdrop-filter: blur(12px);
         }
 
-        /* SPARKLE EFFECT */
+        .leaderboard-mode-btn {
+          height: 38px !important;
+          border-radius: 15px !important;
+          font-weight: 700;
+          border-color: #fbcfe8 !important;
+        }
+
+        .leaderboard-mode-btn.active {
+          background: linear-gradient(
+            135deg,
+            #ff6b8b,
+            #f472b6
+          ) !important;
+
+          border-color: #ff6b8b !important;
+          color: #ffffff !important;
+        }
+
+        .leaderboard-class-select {
+          min-width: 190px;
+        }
+
+        .leaderboard-class-select
+          .ant-select-selector {
+          border-radius: 15px !important;
+          border-color: #e9d5ff !important;
+          min-height: 38px !important;
+          display: flex;
+          align-items: center;
+          font-weight: 700;
+        }
+
+        .selected-class-tag {
+          margin: 0 !important;
+          border-radius: 12px !important;
+          padding: 5px 10px !important;
+
+          background: #f3e8ff !important;
+          border-color: #e9d5ff !important;
+
+          color: #9333ea !important;
+          font-weight: 700;
+        }
+
+        .refresh-btn {
+          border-radius: 12px;
+          font-weight: 700;
+          color: #64748b;
+        }
+
+        .refresh-btn:hover {
+          color: #ff6b8b !important;
+          background: #fff1f2 !important;
+        }
+
+        /* =====================================================
+           DECOR
+        ===================================================== */
+
         .sparkle {
           position: absolute;
-          font-size: 20px;
+          font-size: 22px;
           z-index: 2;
           pointer-events: none;
-          animation: sparkleFloat 3s infinite ease-in-out alternate;
+
+          animation:
+            sparkleFloat
+            3s
+            infinite
+            ease-in-out
+            alternate;
         }
-        .s1 { top: 12%; left: 15%; animation-delay: 0s; }
-        .s2 { top: 20%; right: 20%; animation-delay: 0.7s; }
-        .s3 { top: 45%; left: 8%; animation-delay: 1.4s; }
-        .s4 { top: 50%; right: 10%; animation-delay: 0.3s; }
+
+        .s1 {
+          top: 12%;
+          left: 12%;
+        }
+
+        .s2 {
+          top: 18%;
+          right: 15%;
+          animation-delay: 0.6s;
+        }
+
+        .s3 {
+          top: 42%;
+          left: 6%;
+          animation-delay: 1.2s;
+        }
+
+        .s4 {
+          top: 48%;
+          right: 8%;
+          animation-delay: 0.4s;
+        }
 
         @keyframes sparkleFloat {
-          0% { transform: scale(0.7) translateY(0); opacity: 0.3; }
-          100% { transform: scale(1.2) translateY(-15px); opacity: 0.9; }
+          0% {
+            transform:
+              scale(0.8)
+              translateY(0)
+              rotate(0deg);
+            opacity: 0.5;
+          }
+
+          100% {
+            transform:
+              scale(1.2)
+              translateY(-14px)
+              rotate(15deg);
+            opacity: 1;
+          }
         }
 
-        /* CHIM BỒ CÂU */
+        /* =====================================================
+           DOVE
+        ===================================================== */
+
         .dove-img {
           position: absolute;
-          width: 80px;
+          width: 75px;
           z-index: 3;
-          filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
-          animation: floatDove 4s ease-in-out infinite alternate;
+
+          filter:
+            drop-shadow(
+              0 6px 12px rgba(255, 182, 193, 0.3)
+            );
+
+          animation:
+            floatDove
+            4s
+            ease-in-out
+            infinite
+            alternate;
         }
-        .dove-left { top: 40px; left: 5%; }
-        .dove-right { top: 25px; right: 8%; animation-delay: -2s; transform: scaleX(-1); }
+
+        .dove-left {
+          top: 35px;
+          left: 4%;
+        }
+
+        .dove-right {
+          top: 25px;
+          right: 6%;
+          animation-delay: -2s;
+          transform: scaleX(-1);
+        }
 
         @keyframes floatDove {
-          0% { transform: translateY(0px) rotate(0deg); }
-          100% { transform: translateY(-14px) rotate(4deg); }
+          0% {
+            transform:
+              translateY(0px)
+              rotate(0deg);
+          }
+
+          100% {
+            transform:
+              translateY(-12px)
+              rotate(5deg);
+          }
         }
 
-        .loading-wrapper {
+        /* =====================================================
+           LOADING
+        ===================================================== */
+
+        .chibi-loading-card {
           margin: auto;
-          background: rgba(255, 255, 255, 0.95);
-          padding: 30px 50px;
-          border-radius: 24px;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+
+          background:
+            rgba(255, 255, 255, 0.9);
+
+          padding: 24px 40px;
+
+          border-radius: 28px;
+
+          box-shadow:
+            0 12px 30px
+            rgba(255, 182, 193, 0.25);
+
+          border: 2px solid #ffe4e6;
+
+          text-align: center;
         }
 
-        /* STAGE & PODIUMS */
+        .loading-text {
+          margin-top: 12px;
+          color: #ff6b8b;
+          font-weight: 800;
+          font-size: 14px;
+        }
+
+        /* =====================================================
+           EMPTY
+        ===================================================== */
+
+        .chibi-empty-card {
+          margin: auto;
+
+          background:
+            rgba(255, 255, 255, 0.94);
+
+          padding: 45px 70px;
+
+          border-radius: 30px;
+
+          border: 2px solid #ffe4e6;
+
+          box-shadow:
+            0 12px 30px
+            rgba(255, 182, 193, 0.2);
+
+          text-align: center;
+        }
+
+        .empty-icon {
+          font-size: 60px;
+        }
+
+        .empty-title {
+          font-size: 18px;
+          font-weight: 800;
+          color: #4a5568;
+        }
+
+        .empty-description {
+          margin-top: 5px;
+          color: #a093ad;
+          font-size: 13px;
+        }
+
+        /* =====================================================
+           STAGE
+        ===================================================== */
+
         .game-stage {
           display: flex;
           align-items: flex-end;
           justify-content: center;
+
           width: 100%;
-          max-width: 940px;
+          max-width: 900px;
+
           position: relative;
           z-index: 3;
+
           margin-top: auto;
-          margin-bottom: 20px;
-          gap: 16px;
+          margin-bottom: 25px;
+
+          gap: 18px;
         }
 
         .podium-column {
@@ -293,227 +1028,573 @@ const LeaderboardGame = () => {
           flex-direction: column;
           align-items: center;
           position: relative;
-          transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+          transition:
+            transform
+            0.3s
+            cubic-bezier(
+              0.34,
+              1.56,
+              0.64,
+              1
+            );
         }
+
         .podium-column:hover {
           transform: translateY(-8px);
         }
 
-        /* RANK BADGES */
+        /* =====================================================
+           RANK BADGE
+        ===================================================== */
+
         .rank-badge {
           padding: 4px 14px;
-          border-radius: 20px;
-          font-family: 'Fredoka', sans-serif;
+
+          border-radius: 16px;
+
+          font-family:
+            "Fredoka",
+            sans-serif;
+
           font-size: 12px;
           font-weight: 700;
-          color: #FFF;
-          margin-bottom: 6px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.18);
-          letter-spacing: 0.5px;
-          z-index: 6;
-          border: 2px solid rgba(255, 255, 255, 0.8);
-        }
-        .badge-top1 { background: linear-gradient(135deg, #FFD700, #FF8F00); }
-        .badge-top2 { background: linear-gradient(135deg, #4FC3F7, #0288D1); }
-        .badge-top3 { background: linear-gradient(135deg, #FF8A65, #E65100); }
 
-        /* CROWN WRAPPER */
+          color: #ffffff;
+
+          margin-bottom: 8px;
+
+          box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.08);
+
+          z-index: 6;
+
+          border: 2px solid #ffffff;
+        }
+
+        .badge-top1 {
+          background:
+            linear-gradient(
+              135deg,
+              #ffb703 0%,
+              #fb8500 100%
+            );
+        }
+
+        .badge-top2 {
+          background:
+            linear-gradient(
+              135deg,
+              #3a86ff 0%,
+              #00b4d8 100%
+            );
+        }
+
+        .badge-top3 {
+          background:
+            linear-gradient(
+              135deg,
+              #ff006e 0%,
+              #ff595e 100%
+            );
+        }
+
+        /* =====================================================
+           CROWN
+        ===================================================== */
+
         .crown-wrapper {
           position: absolute;
-          top: -62px;
+
+          top: -58px;
+
           z-index: 7;
+
           display: flex;
           align-items: center;
           justify-content: center;
         }
+
         .crown-icon {
-          font-size: 46px;
-          color: #FFD700;
-          filter: drop-shadow(0 4px 10px rgba(255, 215, 0, 0.8));
-          animation: crownFloat 2s infinite alternate ease-in-out;
-        }
-        @keyframes crownFloat {
-          0% { transform: translateY(0) scale(1); }
-          100% { transform: translateY(-6px) scale(1.08); }
+          font-size: 42px;
+
+          color: #ffd166;
+
+          filter:
+            drop-shadow(
+              0 4px 10px
+              rgba(255, 209, 102, 0.8)
+            );
+
+          animation:
+            crownFloat
+            2s
+            infinite
+            alternate
+            ease-in-out;
         }
 
-        /* CHARACTER AREA & ANIMATIONS */
+        @keyframes crownFloat {
+          0% {
+            transform:
+              translateY(0)
+              scale(1);
+          }
+
+          100% {
+            transform:
+              translateY(-6px)
+              scale(1.08);
+          }
+        }
+
+        /* =====================================================
+           CHARACTER
+        ===================================================== */
+
         .character-area {
           position: relative;
+
           display: flex;
           justify-content: center;
           align-items: flex-end;
+
           z-index: 5;
-          margin-bottom: -15px;
+
+          margin-bottom: -12px;
         }
 
-        .float-anim-1 { animation: charFloat 3s ease-in-out infinite alternate; }
-        .float-anim-2 { animation: charFloat 3.4s ease-in-out infinite alternate 0.3s; }
-        .float-anim-3 { animation: charFloat 3.8s ease-in-out infinite alternate 0.6s; }
+        .float-anim-1 {
+          animation:
+            charFloat
+            3s
+            ease-in-out
+            infinite
+            alternate;
+        }
+
+        .float-anim-2 {
+          animation:
+            charFloat
+            3.4s
+            ease-in-out
+            infinite
+            alternate
+            0.3s;
+        }
+
+        .float-anim-3 {
+          animation:
+            charFloat
+            3.8s
+            ease-in-out
+            infinite
+            alternate
+            0.6s;
+        }
 
         @keyframes charFloat {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(-6px); }
+          0% {
+            transform: translateY(0);
+          }
+
+          100% {
+            transform: translateY(-6px);
+          }
         }
 
         .winner-glow {
           position: absolute;
-          width: 180px;
-          height: 180px;
-          background: radial-gradient(circle, rgba(255, 223, 0, 0.5) 0%, rgba(255, 255, 255, 0) 70%);
+
+          width: 170px;
+          height: 170px;
+
+          background:
+            radial-gradient(
+              circle,
+              rgba(255, 224, 138, 0.6) 0%,
+              rgba(255, 255, 255, 0) 70%
+            );
+
           bottom: 10px;
+
           border-radius: 50%;
+
           z-index: -1;
-          animation: pulseGlow 2.5s infinite alternate;
-        }
-        @keyframes pulseGlow {
-          0% { transform: scale(0.85); opacity: 0.5; }
-          100% { transform: scale(1.3); opacity: 1; }
+
+          animation:
+            pulseGlow
+            2.5s
+            infinite
+            alternate;
         }
 
-        /* IMAGES */
+        @keyframes pulseGlow {
+          0% {
+            transform: scale(0.85);
+            opacity: 0.5;
+          }
+
+          100% {
+            transform: scale(1.25);
+            opacity: 1;
+          }
+        }
+
+        /* =====================================================
+           IMAGES
+        ===================================================== */
+
         .full-stand-img {
           object-fit: contain;
-          filter: drop-shadow(0 10px 18px rgba(0,0,0,0.25));
-        }
-        .img-top1 { height: 235px; }
-        .img-top2 { height: 195px; }
-        .img-top3 { height: 175px; }
 
-        /* PODIUM BASES (3D GLOSSY DESIGN) */
+          filter:
+            drop-shadow(
+              0 8px 16px
+              rgba(255, 182, 193, 0.4)
+            );
+        }
+
+        .img-top1 {
+          height: 220px;
+        }
+
+        .img-top2 {
+          height: 185px;
+        }
+
+        .img-top3 {
+          height: 165px;
+        }
+
+        /* =====================================================
+           PODIUM
+        ===================================================== */
+
         .podium-base {
-          border-radius: 24px 24px 16px 16px;
+          border-radius:
+            28px 28px 20px 20px;
+
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 12px 12px;
-          box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+
+          padding: 10px 10px 12px;
+
+          box-shadow:
+            0 14px 28px
+            rgba(255, 182, 193, 0.35);
+
           position: relative;
           overflow: hidden;
         }
 
-        /* Shine overlay effect */
         .podium-shine {
           position: absolute;
+
           top: 0;
           left: 0;
           right: 0;
+
           height: 38%;
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+
+          background:
+            linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.5) 0%,
+              rgba(255, 255, 255, 0) 100%
+            );
+
           pointer-events: none;
-          border-radius: 20px 20px 0 0;
+
+          border-radius:
+            24px 24px 0 0;
         }
 
-        .top1-col { z-index: 5; }
+        .top1-col {
+          z-index: 5;
+        }
+
         .base-top1 {
-          height: 235px;
-          width: 220px;
-          background: linear-gradient(180deg, #FFD54F 0%, #FF8F00 100%);
-          border: 4px solid #FFE082;
+          height: 225px;
+          width: 210px;
+
+          background:
+            linear-gradient(
+              180deg,
+              #ffe89c 0%,
+              #ffc048 100%
+            );
+
+          border: 3.5px solid #fff8d6;
         }
 
-        .top2-col { z-index: 4; }
+        .top2-col {
+          z-index: 4;
+        }
+
         .base-top2 {
-          height: 180px;
-          width: 195px;
-          background: linear-gradient(180deg, #81D4FA 0%, #0288D1 100%);
-          border: 4px solid #E1F5FE;
+          height: 175px;
+          width: 185px;
+
+          background:
+            linear-gradient(
+              180deg,
+              #b5e2fa 0%,
+              #70c1b3 100%
+            );
+
+          border: 3.5px solid #e8f7ff;
         }
 
-        .top3-col { z-index: 4; }
+        .top3-col {
+          z-index: 4;
+        }
+
         .base-top3 {
-          height: 150px;
-          width: 195px;
-          background: linear-gradient(180deg, #FFB74D 0%, #F57C00 100%);
-          border: 4px solid #FFE0B2;
+          height: 145px;
+          width: 185px;
+
+          background:
+            linear-gradient(
+              180deg,
+              #ffcad4 0%,
+              #ff9eaa 100%
+            );
+
+          border: 3.5px solid #fff0f3;
         }
 
-        /* RANK NUMBER INSIDE PODIUM */
+        /* =====================================================
+           RANK NUMBER
+        ===================================================== */
+
         .rank-number-text {
-          font-family: 'Fredoka', cursive, sans-serif;
-          font-size: 72px;
+          font-family:
+            "Fredoka",
+            cursive,
+            sans-serif;
+
+          font-size: 68px;
           font-weight: 700;
-          color: rgba(255, 255, 255, 0.35);
-          text-shadow: 0 2px 6px rgba(0,0,0,0.1);
+
+          color:
+            rgba(255, 255, 255, 0.55);
+
+          text-shadow:
+            0 2px 4px
+            rgba(0, 0, 0, 0.05);
+
           line-height: 1;
+
           margin-top: -2px;
+
           user-select: none;
         }
 
-        /* NAME & SCORE GLASS CARD */
-        .name-score-card {
+        /* =====================================================
+           NAME CARD
+        ===================================================== */
+
+        .chibi-name-card {
           width: 100%;
-          background: rgba(255, 255, 255, 0.92);
-          backdrop-filter: blur(8px);
-          border-radius: 16px;
-          padding: 8px 6px;
+
+          background:
+            rgba(255, 255, 255, 0.95);
+
+          border-radius: 18px;
+
+          padding: 6px 8px;
+
           text-align: center;
-          box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-          border: 1px solid rgba(255, 255, 255, 0.8);
+
+          box-shadow:
+            0 6px 14px
+            rgba(255, 182, 193, 0.2);
+
+          border: 1.5px solid #ffffff;
+
           z-index: 2;
+
+          box-sizing: border-box;
         }
 
         .student-name-text {
-          font-size: 14px;
-          font-weight: 900;
-          color: #2C3E50;
+          font-size: 13px;
+          font-weight: 800;
+
+          color: #4a5568;
+
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+
+          max-width: 100%;
+        }
+
+        .student-name-text.highlight {
+          color: #d97706;
         }
 
         .score-badge {
           display: inline-flex;
           align-items: center;
-          background: #2C3E50;
-          color: #FFF;
-          font-size: 13px;
+
+          font-size: 12px;
           font-weight: 800;
+
           padding: 2px 10px;
+
           border-radius: 12px;
-          margin-top: 4px;
+
+          margin-top: 3px;
         }
 
-        /* CHÚA JESUS CHARACTER */
+        .badge-gold {
+          background: #fef3c7;
+          color: #d97706;
+        }
+
+        .badge-mint {
+          background: #e0f2fe;
+          color: #0284c7;
+        }
+
+        .badge-pink {
+          background: #ffe4e6;
+          color: #e11d48;
+        }
+
+        /* =====================================================
+           JESUS
+        ===================================================== */
+
         .jesus-wrapper {
           position: absolute;
-          right: -18%;
+
+          right: -16%;
           bottom: -10px;
+
           z-index: 6;
+
           pointer-events: none;
-          animation: jesusWave 3s ease-in-out infinite alternate;
+
+          animation:
+            jesusWave
+            3s
+            ease-in-out
+            infinite
+            alternate;
         }
+
         .chibi-jesus-img {
-          height: 310px;
-          filter: drop-shadow(0 12px 24px rgba(0,0,0,0.25));
+          height: 290px;
+
+          filter:
+            drop-shadow(
+              0 10px 20px
+              rgba(255, 182, 193, 0.35)
+            );
         }
 
         @keyframes jesusWave {
-          0% { transform: translateY(0) rotate(0deg); }
-          100% { transform: translateY(-8px) rotate(2deg); }
+          0% {
+            transform:
+              translateY(0)
+              rotate(0deg);
+          }
+
+          100% {
+            transform:
+              translateY(-8px)
+              rotate(2deg);
+          }
         }
 
-        /* RESPONSIVE DESIGN */
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
         @media (max-width: 850px) {
           .game-stage {
             transform: scale(0.85);
             transform-origin: bottom center;
           }
-          .header-title { font-size: 26px; }
-          .jesus-wrapper { right: -60px; }
-          .chibi-jesus-img { height: 250px; }
+
+          .ribbon-title-text {
+            font-size: 20px;
+          }
+
+          .jesus-wrapper {
+            right: -50px;
+          }
+
+          .chibi-jesus-img {
+            height: 230px;
+          }
+
+          .leaderboard-filter-panel {
+            flex-wrap: wrap;
+            max-width: 90vw;
+          }
         }
 
         @media (max-width: 600px) {
+          .chibi-leaderboard-container {
+            min-height: 88vh;
+          }
+
           .game-stage {
             transform: scale(0.68);
             transform-origin: bottom center;
             margin-bottom: 0;
           }
-          .header-title { font-size: 20px; }
-          .jesus-wrapper { right: -70px; }
-          .chibi-jesus-img { height: 210px; }
+
+          .ribbon-title-text {
+            font-size: 17px;
+          }
+
+          .ribbon-pill {
+            padding: 7px 18px;
+            max-width: calc(100vw - 40px);
+            box-sizing: border-box;
+          }
+
+          .leaderboard-filter-panel {
+            width: calc(100vw - 28px);
+            justify-content: center;
+            box-sizing: border-box;
+          }
+
+          .leaderboard-class-select {
+            min-width: 170px;
+          }
+
+          .selected-class-tag {
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .jesus-wrapper {
+            right: -60px;
+          }
+
+          .chibi-jesus-img {
+            height: 190px;
+          }
+
+          .dove-img {
+            width: 50px;
+          }
+
+          .chibi-empty-card {
+            padding: 35px 25px;
+            width: calc(100vw - 40px);
+            box-sizing: border-box;
+          }
         }
       `}</style>
     </div>

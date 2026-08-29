@@ -9,21 +9,18 @@ import {
   ConfigProvider,
   Tooltip,
 } from "antd";
-
 import { useNavigate, useLocation } from "react-router-dom";
-
 import {
   Home,
   Users,
-  BookOpen,
   Gamepad2,
   BarChart3,
   Trophy,
-  BookMarked,
-  Settings,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Sparkles,
+  Heart,
 } from "lucide-react";
 
 import imgSidebar from "../../assets/images/imgSidebar.png";
@@ -43,154 +40,151 @@ export default function CatechistSidebar({
     {
       key: "/catechist",
       label: "Tổng quan",
-      icon: <Home size={18} strokeWidth={2.2} />,
+      icon: <Home size={18} strokeWidth={2.3} />,
     },
     {
       key: "/catechist/classes",
       label: "Lớp học",
-      icon: <Users size={18} strokeWidth={2.2} />,
+      icon: <Users size={18} strokeWidth={2.3} />,
     },
     {
       key: "/catechist/students",
       label: "Học sinh",
-      icon: <Users size={18} strokeWidth={2.2} />,
+      icon: <Users size={18} strokeWidth={2.3} />,
     },
     {
-      key: "/catechist/lessons",
-      label: "Ngân hàng câu hỏi",
-      icon: <BookOpen size={18} strokeWidth={2.2} />,
+      key: "/catechist-management",
+      label: "Danh sách GLV",
+      icon: <Sparkles size={18} strokeWidth={2.3} />,
     },
     {
       key: "/catechist/games",
       label: "Trò chơi tương tác",
-      icon: <Gamepad2 size={18} strokeWidth={2.2} />,
+      icon: <Gamepad2 size={18} strokeWidth={2.3} />,
     },
     {
       key: "/catechist/results",
       label: "Kết quả học tập",
-      icon: <BarChart3 size={18} strokeWidth={2.2} />,
+      icon: <BarChart3 size={18} strokeWidth={2.3} />,
     },
     {
       key: "/catechist/leaderboard",
-      label: "Thành tích",
-      icon: <Trophy size={18} strokeWidth={2.2} />,
-    },
-
-    {
-      key: "/catechist/documents",
-      label: "Tài liệu giáo lý",
-      icon: <BookMarked size={18} strokeWidth={2.2} />,
-    },
-    {
-      key: "/catechist/settings",
-      label: "Cài đặt",
-      icon: <Settings size={18} strokeWidth={2.2} />,
+      label: "Bảng thành tích",
+      icon: <Trophy size={18} strokeWidth={2.3} />,
     },
   ];
 
   return (
-    <Sider
-      collapsible
-      collapsed={collapsed}
-      onCollapse={setCollapsed}
-      trigger={null}
-      width={260}
-      collapsedWidth={80}
-      theme="light"
-      style={{
-        height: "100vh",
-        position: "sticky",
-        top: 0,
-        left: 0,
-        background: "#fff",
-        borderRight: "1px solid #f0f0f0",
-        boxShadow: "4px 0 24px rgba(0,0,0,0.02)",
-        zIndex: 100,
-        transition: "all 0.2s ease",
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#FF6B8B",
+          borderRadius: 18,
+          fontFamily: "'Quicksand', 'Be Vietnam Pro', sans-serif",
+        },
+        components: {
+          Menu: {
+            itemBg: "transparent",
+            itemColor: "#4A5568",
+            itemHoverColor: "#FF6B8B",
+            itemHoverBg: "#FFF0F5",
+
+            itemSelectedColor: "#FF6B8B",
+            itemSelectedBg: "linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%)",
+
+            itemRadius: 18,
+            itemMarginInline: 0,
+            itemPaddingInline: collapsed ? 0 : 16,
+            itemHeight: 46,
+
+            collapsedIconSize: 20,
+          },
+        },
       }}
     >
-      <Flex
-        vertical
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        trigger={null}
+        width={260}
+        collapsedWidth={84}
+        theme="light"
+        className="chibi-sidebar"
         style={{
-          height: "100%",
-          padding: collapsed ? "16px 8px" : "16px 12px",
-          overflowY: "auto",
+          height: "100vh",
+          position: "sticky",
+          top: 0,
+          left: 0,
+          background: "rgba(255, 255, 255, 0.95)",
+          borderRight: "2px solid #FFF0F5",
+          boxShadow: "6px 0 24px rgba(255, 133, 161, 0.08)",
+          zIndex: 99,
+          transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
       >
-        {/* BRAND */}
         <Flex
-          align="center"
-          justify={collapsed ? "center" : "flex-start"}
-          gap={12}
+          vertical
           style={{
-            padding: collapsed ? "8px 0 16px" : "8px 8px 16px",
-            minHeight: 70,
+            height: "100%",
+            padding: collapsed ? "14px 10px" : "14px 14px",
+            overflowY: "auto",
           }}
         >
-          <Avatar
-            size={collapsed ? 42 : 52}
-            src={imgSidebar}
+          {/* BRAND PASTEL */}
+          <div
+            className="sidebar-brand-card"
+            onClick={() => navigate("/catechist")}
             style={{
-              backgroundColor: "#e6f4ff",
-              border: "1px solid #bae0ff",
-              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              gap: 12,
+              padding: collapsed ? "8px 0" : "10px 12px",
+              marginBottom: 12,
+              borderRadius: 22,
+              background: collapsed
+                ? "transparent"
+                : "linear-gradient(135deg, #FFF0F5 0%, #F3E8FF 100%)",
+              border: collapsed ? "none" : "1.5px solid #FBCFE8",
+              cursor: "pointer",
+              transition: "all 0.25s ease",
             }}
-          />
-
-          {!collapsed && (
-            <Flex vertical>
-              <Title
-                level={5}
+          >
+            <div className="avatar-star-container">
+              <Avatar
+                size={collapsed ? 44 : 48}
+                src={imgSidebar}
                 style={{
-                  margin: 0,
-                  color: "#1d4ed8",
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  fontSize: 16,
+                  backgroundColor: "#FFD6E0",
+                  border: "2px solid #FF85A1",
+                  boxShadow: "0 4px 12px rgba(255, 107, 139, 0.25)",
+                  flexShrink: 0,
                 }}
-              >
-                TNTT Anrê Phú Yên
-                <br />
-                Đồng Quan
-              </Title>
+              />
+            </div>
 
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  marginTop: 2,
-                  color: "#64748b",
-                }}
-              >
-                Học – Hiểu – Sống Đạo
-              </Text>
-            </Flex>
-          )}
-        </Flex>
+            {!collapsed && (
+              <Flex vertical>
+                <Flex align="center" gap={4}>
+                  <Title
+                    level={5}
+                    style={{
+                      margin: 0,
+                      color: "#4A4E69",
+                      fontWeight: 700,
+                      lineHeight: 1.2,
+                      fontSize: 14,
+                    }}
+                  >
+                    Thiếu Nhi Thánh Thế
+                  </Title>
+                </Flex>
+              </Flex>
+            )}
+          </div>
 
-        {/* MENU */}
-        <ConfigProvider
-          theme={{
-            components: {
-              Menu: {
-                itemBg: "transparent",
-                itemColor: "#334155",
-                itemHoverColor: "#1d4ed8",
-                itemHoverBg: "#f1f5f9",
-
-                itemSelectedColor: "#fff",
-                itemSelectedBg: "#1d4ed8",
-
-                itemRadius: 14,
-                itemMarginInline: 0,
-                itemPaddingInline: collapsed ? 0 : 16,
-                itemHeight: 44,
-
-                collapsedIconSize: 19,
-              },
-            },
-          }}
-        >
+          {/* MENU */}
           <Menu
             mode="inline"
             inlineCollapsed={collapsed}
@@ -199,89 +193,120 @@ export default function CatechistSidebar({
             onClick={({ key }) => navigate(key)}
             style={{
               border: "none",
-              fontWeight: 600,
-              fontSize: 14,
+              fontWeight: 700,
+              fontSize: 13.5,
               flex: 1,
             }}
           />
-        </ConfigProvider>
 
-        {/* TOGGLE */}
-        <Tooltip
-          title={collapsed ? "Mở rộng sidebar" : "Thu nhỏ sidebar"}
-          placement="right"
-        >
-          <Button
-            type="text"
-            onClick={() => setCollapsed(!collapsed)}
-            icon={
-              collapsed ? (
-                <PanelLeftOpen size={19} />
-              ) : (
-                <PanelLeftClose size={19} />
-              )
-            }
-            style={{
-              height: 44,
-              borderRadius: 14,
-              marginTop: 8,
-              color: "#475569",
-              justifyContent: collapsed ? "center" : "flex-start",
-              paddingLeft: collapsed ? 0 : 16,
-            }}
-            block
-          >
-            {!collapsed && "Thu nhỏ menu"}
-          </Button>
-        </Tooltip>
+          {/* FOOTER ACTIONS */}
+          <Flex vertical gap={6} style={{ marginTop: 8 }}>
+            {/* TOGGLE */}
+            <Tooltip title={collapsed ? "Mở rộng menu" : ""} placement="right">
+              <Button
+                type="text"
+                onClick={() => setCollapsed(!collapsed)}
+                icon={
+                  collapsed ? (
+                    <PanelLeftOpen size={19} color="#FF6B8B" />
+                  ) : (
+                    <PanelLeftClose size={19} color="#FF6B8B" />
+                  )
+                }
+                style={{
+                  height: 42,
+                  borderRadius: 16,
+                  color: "#4A5568",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  background: "#FAF5FF",
+                  border: "1.5px solid #E9D5FF",
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  paddingLeft: collapsed ? 0 : 16,
+                }}
+                block
+              >
+                {!collapsed && "Thu gọn menu"}
+              </Button>
+            </Tooltip>
 
-        {/* LOGOUT */}
-        <Tooltip title={collapsed ? "Đăng xuất" : ""} placement="right">
-          <Button
-            type="text"
-            danger
-            icon={<LogOut size={18} strokeWidth={2.2} />}
-            onClick={onLogout}
-            block
-            style={{
-              height: 44,
-              borderRadius: 14,
-              fontWeight: 600,
-              justifyContent: collapsed ? "center" : "flex-start",
-              paddingLeft: collapsed ? 0 : 16,
-              marginTop: 8,
-            }}
-          >
-            {!collapsed && "Đăng xuất"}
-          </Button>
-        </Tooltip>
-
-        {/* BANNER */}
-        {!collapsed && (
-          <Flex
-            justify="center"
-            align="center"
-            style={{
-              marginTop: 12,
-              borderRadius: 16,
-              overflow: "hidden",
-              width: "100%",
-            }}
-          >
-            <img
-              src={imgSidebar}
-              alt="Illustration Banner"
-              style={{
-                width: "100%",
-                height: "auto",
-                maxHeight: 160,
-                objectFit: "contain",
-                display: "block",
-              }}
-            />
+            {/* LOGOUT */}
+            <Tooltip
+              title={collapsed ? "Tạm biệt / Đăng xuất" : ""}
+              placement="right"
+            >
+              <Button
+                type="text"
+                icon={<LogOut size={18} strokeWidth={2.3} color="#EF4444" />}
+                onClick={onLogout}
+                block
+                style={{
+                  height: 42,
+                  borderRadius: 16,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: "#EF4444",
+                  background: "#FEF2F2",
+                  border: "1.5px solid #FCA5A5",
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  paddingLeft: collapsed ? 0 : 16,
+                }}
+              >
+                {!collapsed && "Tạm biệt / Đăng xuất"}
+              </Button>
+            </Tooltip>
           </Flex>
-        )}
-      </Flex>
-    </Sider>
+
+          {/* BANNER MINI CHIBI */}
+          {!collapsed && (
+            <div
+              style={{
+                marginTop: 12,
+                borderRadius: 20,
+                overflow: "hidden",
+                width: "100%",
+                background: "linear-gradient(135deg, #FFF0F5 0%, #F3E8FF 100%)",
+                border: "1.5px solid #FBCFE8",
+                padding: "8px",
+                textAlign: "center",
+              }}
+            >
+              <img
+                src={imgSidebar}
+                alt="Illustration Banner"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  maxHeight: 110,
+                  objectFit: "contain",
+                  display: "block",
+                  borderRadius: 14,
+                }}
+              />
+            </div>
+          )}
+        </Flex>
+
+        {/* CUSTOM CSS STYLES FOR MENU GLOW & SCROLLBAR */}
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap');
+
+          .chibi-sidebar ::-webkit-scrollbar {
+            width: 4px;
+          }
+          .chibi-sidebar ::-webkit-scrollbar-thumb {
+            background: #FBCFE8;
+            border-radius: 10px;
+          }
+          .chibi-sidebar .ant-menu-item-selected {
+            box-shadow: 0 6px 16px rgba(255, 107, 139, 0.35) !important;
+          }
+          .sidebar-brand-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(255, 107, 139, 0.15);
+          }
+        `}</style>
+      </Sider>
+    </ConfigProvider>
   );
 }

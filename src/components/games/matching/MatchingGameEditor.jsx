@@ -5,7 +5,6 @@ import {
   Card,
   Col,
   ColorPicker,
-  Divider,
   Form,
   Input,
   InputNumber,
@@ -18,6 +17,7 @@ import {
   Tag,
   message,
   Empty,
+  Divider,
 } from "antd";
 
 import {
@@ -27,14 +27,13 @@ import {
   Plus,
   Save,
   Trash2,
-  Link2,
   Settings,
-  Palette,
   FileCheck,
-  CheckCircle2,
-  Sparkles,
   RotateCcw,
   Volume2,
+  Heart,
+  Star,
+  Sparkles,
 } from "lucide-react";
 
 import { createGame, updateGame, getGameFileUrl } from "../../../api/gameApi";
@@ -73,12 +72,6 @@ const DEFAULT_PAIRS = [
 
 /**
  * =========================================================
- * COLORS
- * =========================================================
- */
-
-/**
- * =========================================================
  * COMPONENT
  * =========================================================
  */
@@ -87,7 +80,6 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
-
   const [pairs, setPairs] = useState(DEFAULT_PAIRS);
 
   const [thumbnail, setThumbnail] = useState(null);
@@ -96,8 +88,8 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   const [correctSound, setCorrectSound] = useState(null);
   const [wrongSound, setWrongSound] = useState(null);
 
-  const [primaryColor, setPrimaryColor] = useState("#6C4BFF");
-  const [secondaryColor, setSecondaryColor] = useState("#FFD54F");
+  const [primaryColor, setPrimaryColor] = useState("#FF85A1"); // Hồng Pastel Chibi
+  const [secondaryColor, setSecondaryColor] = useState("#FFD166"); // Vàng kem Pastel
 
   /**
    * Preview selected pair
@@ -118,31 +110,24 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       form.setFieldsValue({
         name: "",
         description: "",
-
         timeLimit: 60,
-
         shuffleQuestions: false,
         shuffleAnswers: true,
-
         showScore: true,
         showTimer: true,
         showProgress: true,
-
         allowHint: false,
         allowSkip: false,
       });
 
       setPairs(DEFAULT_PAIRS);
-
-      setPrimaryColor("#6C4BFF");
-      setSecondaryColor("#FFD54F");
-
+      setPrimaryColor("#FF85A1");
+      setSecondaryColor("#FFD166");
       setThumbnail(null);
       setBackground(null);
       setBackgroundMusic(null);
       setCorrectSound(null);
       setWrongSound(null);
-
       return;
     }
 
@@ -152,32 +137,16 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     form.setFieldsValue({
       name: game.name || "",
       description: game.description || "",
-
       timeLimit: settings.timeLimit ?? 60,
-
       shuffleQuestions: settings.shuffleQuestions ?? false,
-
       shuffleAnswers: settings.shuffleAnswers ?? true,
-
       showScore: settings.showScore !== undefined ? settings.showScore : true,
-
       showTimer: settings.showTimer !== undefined ? settings.showTimer : true,
-
       showProgress:
         settings.showProgress !== undefined ? settings.showProgress : true,
-
       allowHint: settings.allowHint ?? false,
-
       allowSkip: settings.allowSkip ?? false,
     });
-
-    /**
-     * Backend:
-     *
-     * {
-     *   pairs: [...]
-     * }
-     */
 
     if (Array.isArray(game.pairs) && game.pairs.length > 0) {
       setPairs(game.pairs);
@@ -196,7 +165,6 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     setBackgroundMusic(null);
     setCorrectSound(null);
     setWrongSound(null);
-
     setSelectedLeft(null);
     setSelectedRight(null);
   }, [game, form]);
@@ -251,10 +219,8 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   const removePair = (id) => {
     if (pairs.length <= 2) {
       message.warning("Trò chơi ghép đôi cần ít nhất 2 cặp");
-
       return;
     }
-
     setPairs((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -273,7 +239,6 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
   const completionPercent = useMemo(() => {
     if (!pairs.length) return 0;
-
     return Math.round((validPairs.length / pairs.length) * 100);
   }, [pairs.length, validPairs.length]);
 
@@ -285,7 +250,6 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
   const beforeUpload = (setter) => (file) => {
     setter(file);
-
     return false;
   };
 
@@ -299,19 +263,10 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     try {
       const values = await form.validateFields();
 
-      /**
-       * Minimum pairs
-       */
-
       if (pairs.length < 2) {
         message.error("Trò chơi ghép đôi phải có ít nhất 2 cặp");
-
         return;
       }
-
-      /**
-       * Validate pair
-       */
 
       const invalidIndex = pairs.findIndex(
         (item) =>
@@ -320,119 +275,56 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       if (invalidIndex !== -1) {
         message.error(`Cặp số ${invalidIndex + 1} chưa nhập đầy đủ hai bên`);
-
         return;
       }
 
       setLoading(true);
 
-      /**
-       * Normalize pairs
-       */
-
       const normalizedPairs = pairs.map((item, index) => ({
         id: item.id ?? index + 1,
-
         left: String(item.left || "").trim(),
-
         right: String(item.right || "").trim(),
       }));
 
-      /**
-       * SETTINGS
-       */
-
       const settings = {
         timeLimit: Number(values.timeLimit || 60),
-
         shuffleQuestions: Boolean(values.shuffleQuestions),
-
         shuffleAnswers: Boolean(values.shuffleAnswers),
-
         showScore:
           values.showScore !== undefined ? Boolean(values.showScore) : true,
-
         showTimer:
           values.showTimer !== undefined ? Boolean(values.showTimer) : true,
-
         showProgress:
           values.showProgress !== undefined
             ? Boolean(values.showProgress)
             : true,
-
         allowHint: Boolean(values.allowHint),
-
         allowSkip: Boolean(values.allowSkip),
       };
 
-      /**
-       * =====================================================
-       * GAME DATA
-       * =====================================================
-       *
-       * QUAN TRỌNG:
-       *
-       * Backend validateMatching()
-       * đang đọc:
-       *
-       * data.pairs
-       *
-       */
-
       const gameData = {
         name: String(values.name).trim(),
-
         description: String(values.description || "").trim(),
-
         type: "matching",
-
         backgroundConfig: {
-          color: "#F8F9FC",
+          color: "#FFF0F3",
         },
-
         theme: {
           primary: primaryColor,
-
           secondary: secondaryColor,
-
           font: "Baloo 2",
-
-          borderRadius: 20,
+          borderRadius: 24,
         },
-
         settings,
-
         media: {},
-
-        /**
-         * Matching data
-         */
         pairs: normalizedPairs,
-
-        /**
-         * Không dùng questions
-         */
         questions: [],
-
-        /**
-         * Files
-         */
         thumbnail,
-
         background,
-
         backgroundMusic,
-
         correctSound,
-
         wrongSound,
       };
-
-      /**
-       * =====================================================
-       * API
-       * =====================================================
-       */
 
       const result = isEdit
         ? await updateGame(game.id, gameData)
@@ -441,19 +333,16 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       if (result?.success) {
         message.success(
           isEdit
-            ? "Cập nhật trò chơi ghép đôi thành công"
-            : "Tạo trò chơi ghép đôi thành công",
+            ? "Cập nhật trò chơi ghép đôi thành công ✨"
+            : "Tạo trò chơi ghép đôi thành công ✨",
         );
-
         onSuccess?.(result.data);
-
         return;
       }
 
       throw new Error(result?.message || "Không thể lưu trò chơi");
     } catch (error) {
       console.error("MATCHING SAVE ERROR:", error);
-
       if (!error?.errorFields) {
         message.error(error?.message || "Không thể lưu trò chơi ghép đôi");
       }
@@ -479,43 +368,37 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
    * =========================================================
    */
 
-  const FileUpload = ({ title, icon, accept, file, setter, existing }) => {
+  const FileUploadBox = ({ title, icon, accept, file, setter, existing }) => {
     const existingUrl = existing ? getGameFileUrl(existing) : null;
 
     return (
       <div
         style={{
-          border: "1px dashed #d9d9d9",
-
-          borderRadius: 12,
-
-          padding: 14,
-
-          background: "#fafafa",
-
+          border: `2px dashed ${primaryColor}40`,
+          borderRadius: 16,
+          padding: 12,
+          background: "#FFF9FA",
           textAlign: "center",
-
           minHeight: 105,
-
           display: "flex",
-
           flexDirection: "column",
-
           justifyContent: "center",
+          transition: "all 0.3s",
         }}
       >
         <Space
           style={{
-            marginBottom: 8,
-            color: "#475569",
+            marginBottom: 6,
+            color: "#64748B",
+            justifyContent: "center",
           }}
         >
           {icon}
-
           <Text
             strong
             style={{
               fontSize: 13,
+              color: "#475569",
             }}
           >
             {title}
@@ -531,7 +414,11 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           <Button
             size="small"
             style={{
-              borderRadius: 8,
+              borderRadius: 10,
+              background: "#fff",
+              borderColor: primaryColor,
+              color: primaryColor,
+              fontWeight: 600,
             }}
           >
             {file ? "Đổi file khác" : "Chọn tệp"}
@@ -539,23 +426,15 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         </Upload>
 
         {file ? (
-          <div
-            style={{
-              marginTop: 6,
-            }}
-          >
-            <Tag color="purple" icon={<FileCheck size={12} />}>
+          <div style={{ marginTop: 4 }}>
+            <Tag color="pink" icon={<FileCheck size={12} />}>
               {file.name}
             </Tag>
           </div>
         ) : (
           existingUrl && (
-            <div
-              style={{
-                marginTop: 6,
-              }}
-            >
-              <Tag color="blue">Đang có file sẵn</Tag>
+            <div style={{ marginTop: 4 }}>
+              <Tag color="cyan">Đã có tệp</Tag>
             </div>
           )
         )}
@@ -565,13 +444,13 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
   /**
    * =========================================================
-   * PREVIEW
+   * PREVIEW COMPONENT
    * =========================================================
    */
 
   const renderPreview = () => {
     if (!pairs.length) {
-      return <Empty description="Chưa có cặp dữ liệu" />;
+      return <Empty description="Chưa có cặp dữ liệu chibi nào" />;
     }
 
     return (
@@ -579,7 +458,7 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 10,
+          gap: 12,
         }}
       >
         {pairs.map((pair, index) => {
@@ -588,78 +467,64 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               key={pair.id}
               style={{
                 display: "grid",
-
                 gridTemplateColumns: "1fr 40px 1fr",
-
                 gap: 8,
-
                 alignItems: "center",
               }}
             >
               {/* LEFT */}
-
               <Button
                 block
                 onClick={() => setSelectedLeft(pair.id)}
                 style={{
-                  height: 54,
-
-                  borderRadius: 12,
-
+                  height: 56,
+                  borderRadius: 16,
                   textAlign: "left",
-
                   border:
                     selectedLeft === pair.id
                       ? `2px solid ${primaryColor}`
-                      : "1px solid #e2e8f0",
-
+                      : "2px solid #F1F5F9",
                   background:
-                    selectedLeft === pair.id ? `${primaryColor}12` : "#fff",
-
+                    selectedLeft === pair.id ? `${primaryColor}15` : "#fff",
                   boxShadow:
                     selectedLeft === pair.id
-                      ? `0 4px 12px ${primaryColor}20`
-                      : "none",
-
+                      ? `0 6px 16px ${primaryColor}30`
+                      : "0 2px 8px rgba(0,0,0,0.02)",
                   whiteSpace: "normal",
-
                   fontWeight: 600,
-
-                  color: "#1e293b",
+                  color: "#1E293B",
+                  transition: "all 0.2s",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-
-                    gap: 8,
+                    gap: 10,
                   }}
                 >
                   <span
                     style={{
-                      width: 26,
-                      height: 26,
+                      width: 28,
+                      height: 28,
                       borderRadius: "50%",
-                      background: `${primaryColor}15`,
+                      background: `${primaryColor}20`,
                       color: primaryColor,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontSize: 12,
-                      fontWeight: 700,
+                      fontWeight: 800,
                       flexShrink: 0,
                     }}
                   >
                     {index + 1}
                   </span>
-
-                  <span>{pair.left || "Chưa nhập"}</span>
+                  <span>{pair.left || "Chưa nhập..."}</span>
                 </div>
               </Button>
 
               {/* CONNECTOR */}
-
               <div
                 style={{
                   display: "flex",
@@ -667,50 +532,41 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   color: secondaryColor,
                 }}
               >
-                <Link2 size={18} />
+                <Heart size={18} fill={secondaryColor} />
               </div>
 
               {/* RIGHT */}
-
               <Button
                 block
                 onClick={() => setSelectedRight(pair.id)}
                 style={{
-                  height: 54,
-
-                  borderRadius: 12,
-
+                  height: 56,
+                  borderRadius: 16,
                   textAlign: "left",
-
                   border:
                     selectedRight === pair.id
                       ? `2px solid ${secondaryColor}`
-                      : "1px solid #e2e8f0",
-
+                      : "2px solid #F1F5F9",
                   background:
-                    selectedRight === pair.id ? `${secondaryColor}20` : "#fff",
-
+                    selectedRight === pair.id ? `${secondaryColor}25` : "#fff",
                   boxShadow:
                     selectedRight === pair.id
-                      ? `0 4px 12px ${secondaryColor}25`
-                      : "none",
-
+                      ? `0 6px 16px ${secondaryColor}30`
+                      : "0 2px 8px rgba(0,0,0,0.02)",
                   whiteSpace: "normal",
-
                   fontWeight: 600,
-
-                  color: "#1e293b",
+                  color: "#1E293B",
+                  transition: "all 0.2s",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-
                     gap: 8,
                   }}
                 >
-                  <span>{pair.right || "Chưa nhập"}</span>
+                  <span>{pair.right || "Chưa nhập..."}</span>
                 </div>
               </Button>
             </div>
@@ -722,41 +578,31 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
   /**
    * =========================================================
-   * RENDER
+   * RENDER MAIN
    * =========================================================
    */
 
   return (
     <div
       style={{
-        background: "#F8F9FC",
-
+        background: "#FFF5F7",
         minHeight: "100vh",
-
         padding: 24,
+        fontFamily: "'Baloo 2', cursive, sans-serif",
       }}
     >
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-
+      {/* HEADER */}
       <div
         style={{
           display: "flex",
-
           justifyContent: "space-between",
-
           alignItems: "center",
-
           marginBottom: 24,
-
-          background: "#fff",
-
+          background: "#FFFFFF",
           padding: "16px 24px",
-
-          borderRadius: 16,
-
-          boxShadow: "0 2px 12px rgba(0,0,0,0.03)",
+          borderRadius: 24,
+          boxShadow: "0 8px 24px rgba(255, 133, 161, 0.12)",
+          border: "2px solid #FFE3E8",
         }}
       >
         <Space size={16}>
@@ -764,7 +610,10 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             icon={<ArrowLeft size={16} />}
             onClick={onBack}
             style={{
-              borderRadius: 10,
+              borderRadius: 14,
+              borderColor: "#FFE3E8",
+              background: "#FFF9FA",
+              fontWeight: 600,
             }}
           >
             Quay lại
@@ -775,19 +624,20 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               level={4}
               style={{
                 margin: 0,
-                fontWeight: 700,
+                fontWeight: 800,
+                color: "#FF5C8A",
               }}
             >
-              🔗 {isEdit ? "Chỉnh sửa ghép đôi" : "Tạo trò chơi ghép đôi"}
+              🌸{" "}
+              {isEdit ? "Sửa Trò Chơi Ghép Đôi" : "Tạo Trò Chơi Ghép Đôi Chibi"}
             </Title>
-
             <Text
               type="secondary"
               style={{
                 fontSize: 13,
               }}
             >
-              Tạo trò chơi nối các khái niệm, câu hỏi và đáp án cho học sinh
+              Thiết kế trò chơi nối thẻ xinh xắn, sinh động cho lớp học
             </Text>
           </div>
         </Space>
@@ -799,52 +649,41 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           loading={loading}
           onClick={handleSubmit}
           style={{
-            borderRadius: 12,
-
+            borderRadius: 16,
             background: primaryColor,
-
-            fontWeight: 600,
-
-            padding: "0 28px",
-
-            boxShadow: `0 4px 12px ${primaryColor}40`,
+            borderColor: primaryColor,
+            fontWeight: 700,
+            padding: "0 32px",
+            height: 46,
+            boxShadow: `0 6px 16px ${primaryColor}50`,
           }}
         >
-          {isEdit ? "Lưu thay đổi" : "Hoàn tất & Tạo"}
+          {isEdit ? "Lưu thay đổi ✨" : "Hoàn tất & Tạo ✨"}
         </Button>
       </div>
 
       <Form form={form} layout="vertical">
-        <Row gutter={[20, 20]}>
-          {/* =================================================
-              LEFT
-          ================================================= */}
-
-          <Col xs={24} lg={15}>
-            {/* =================================================
-                BASIC
-            ================================================= */}
-
+        <Row gutter={[24, 24]}>
+          {/* LEFT FORM PANEL */}
+          <Col xs={24} lg={14}>
+            {/* BASIC INFO */}
             <Card
               bordered={false}
               style={{
-                borderRadius: 18,
-
-                marginBottom: 20,
-
-                boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+                borderRadius: 24,
+                marginBottom: 24,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.03)",
+                border: "2px solid #FFE3E8",
               }}
             >
               <Title
                 level={5}
                 style={{
                   marginBottom: 16,
-
                   display: "flex",
-
                   alignItems: "center",
-
                   gap: 8,
+                  color: "#FF5C8A",
                 }}
               >
                 <Settings size={18} color={primaryColor} />
@@ -853,7 +692,11 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
               <Form.Item
                 name="name"
-                label={<Text strong>Tên trò chơi</Text>}
+                label={
+                  <Text strong style={{ color: "#475569" }}>
+                    Tên trò chơi
+                  </Text>
+                }
                 rules={[
                   {
                     required: true,
@@ -863,47 +706,51 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               >
                 <Input
                   size="large"
-                  placeholder="Ví dụ: Ghép đôi - Các Bí tích"
+                  placeholder="Ví dụ: Bé tập ghép đôi - Các Bí tích 🎀"
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 14,
+                    borderColor: "#FFE3E8",
+                    background: "#FFF9FA",
                   }}
                 />
               </Form.Item>
 
               <Form.Item
                 name="description"
-                label={<Text strong>Mô tả ngắn</Text>}
+                label={
+                  <Text strong style={{ color: "#475569" }}>
+                    Mô tả ngắn
+                  </Text>
+                }
               >
                 <TextArea
                   rows={2}
-                  placeholder="Nhập mô tả trò chơi..."
+                  placeholder="Nhập mô tả trò chơi cho bé..."
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 14,
+                    borderColor: "#FFE3E8",
+                    background: "#FFF9FA",
                   }}
                 />
               </Form.Item>
             </Card>
 
-            {/* =================================================
-                PAIRS
-            ================================================= */}
-
+            {/* PAIRS SECTION */}
             <Card
               bordered={false}
               style={{
-                borderRadius: 18,
-
-                marginBottom: 20,
-
-                boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+                borderRadius: 24,
+                marginBottom: 24,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.03)",
+                border: "2px solid #FFE3E8",
               }}
               title={
                 <Space>
-                  <Link2 size={18} color={primaryColor} />
-
-                  <span>Các cặp ghép đôi</span>
-
-                  <Tag color="purple">{pairs.length} cặp</Tag>
+                  <Star size={18} color={primaryColor} fill={primaryColor} />
+                  <span style={{ color: "#FF5C8A", fontWeight: 700 }}>
+                    Các cặp nối (Pairs)
+                  </span>
+                  <Tag color="magenta">{pairs.length} cặp</Tag>
                 </Space>
               }
               extra={
@@ -912,37 +759,28 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   icon={<Plus size={15} />}
                   onClick={addPair}
                   style={{
-                    borderRadius: 10,
-
+                    borderRadius: 14,
                     background: primaryColor,
-
-                    fontWeight: 600,
+                    borderColor: primaryColor,
+                    fontWeight: 700,
+                    boxShadow: `0 4px 12px ${primaryColor}40`,
                   }}
                 >
-                  Thêm cặp
+                  Thêm cặp mới
                 </Button>
               }
             >
-              {/* PROGRESS */}
-
               <div
                 style={{
-                  padding: "12px 16px",
-
-                  borderRadius: 12,
-
-                  background: completionPercent === 100 ? "#f6ffed" : "#fff7e6",
-
-                  border: `1px solid ${
-                    completionPercent === 100 ? "#b7eb8f" : "#ffd591"
+                  padding: "14px 18px",
+                  borderRadius: 16,
+                  background: completionPercent === 100 ? "#F0FDF4" : "#FEFCE8",
+                  border: `2px solid ${
+                    completionPercent === 100 ? "#BBF7D0" : "#FEF08A"
                   }`,
-
                   marginBottom: 16,
-
                   display: "flex",
-
                   alignItems: "center",
-
                   justifyContent: "space-between",
                 }}
               >
@@ -950,100 +788,79 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   <Text
                     strong
                     style={{
-                      color: completionPercent === 100 ? "#389e0d" : "#d48806",
+                      color: completionPercent === 100 ? "#15803D" : "#A16207",
                     }}
                   >
-                    {validPairs.length}/{pairs.length} cặp đã hoàn thiện
+                    ✨ {validPairs.length}/{pairs.length} cặp đã sẵn sàng
                   </Text>
-
                   <Text
                     type="secondary"
                     style={{
                       display: "block",
-
                       fontSize: 12,
                     }}
                   >
-                    Mỗi cặp gồm một nội dung bên trái và một nội dung bên phải
+                    Mỗi câu hỏi bên trái sẽ nối với đáp án chính xác bên phải
                   </Text>
                 </div>
-
                 <Progress
                   type="circle"
                   percent={completionPercent}
-                  width={42}
+                  width={44}
                   strokeColor={
-                    completionPercent === 100 ? "#52c41a" : primaryColor
+                    completionPercent === 100 ? "#22C55E" : primaryColor
                   }
                 />
               </div>
 
-              {/* PAIR LIST */}
-
               <div
                 style={{
                   display: "flex",
-
                   flexDirection: "column",
-
-                  gap: 12,
-
-                  maxHeight: 500,
-
+                  gap: 14,
+                  maxHeight: 520,
                   overflowY: "auto",
-
-                  paddingRight: 4,
+                  paddingRight: 6,
                 }}
               >
                 {pairs.map((pair, index) => (
                   <div
                     key={pair.id}
                     style={{
-                      padding: "14px 16px",
-
-                      border: "1px solid #e2e8f0",
-
-                      borderRadius: 14,
-
-                      background: "#fff",
+                      padding: "16px",
+                      border: "2px solid #FEE2E2",
+                      borderRadius: 18,
+                      background: "#FFFFFF",
+                      boxShadow: "0 4px 12px rgba(254, 226, 226, 0.3)",
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
-
                         justifyContent: "space-between",
-
                         alignItems: "center",
-
                         marginBottom: 10,
                       }}
                     >
                       <Space>
                         <div
                           style={{
-                            width: 30,
-                            height: 30,
+                            width: 32,
+                            height: 32,
                             borderRadius: "50%",
-                            background: `${primaryColor}15`,
+                            background: `${primaryColor}20`,
                             color: primaryColor,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontWeight: 700,
-                            fontSize: 12,
+                            fontWeight: 800,
+                            fontSize: 13,
                           }}
                         >
                           {index + 1}
                         </div>
-
-                        <Text
-                          strong
-                          style={{
-                            fontSize: 13,
-                          }}
-                        >
-                          Cặp {index + 1}
+                        <Text strong style={{ fontSize: 13, color: "#475569" }}>
+                          Cặp số {index + 1}
                         </Text>
                       </Space>
 
@@ -1057,37 +874,26 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                     <Row gutter={[12, 12]}>
                       <Col xs={24} sm={11}>
-                        <div
+                        <Text
+                          type="secondary"
                           style={{
-                            position: "relative",
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            fontWeight: 600,
                           }}
                         >
-                          <Text
-                            type="secondary"
-                            style={{
-                              display: "block",
-                              marginBottom: 6,
-                              fontSize: 12,
-                            }}
-                          >
-                            Nội dung A
-                          </Text>
-
-                          <Input.TextArea
-                            value={pair.left}
-                            onChange={(e) =>
-                              updatePair(pair.id, "left", e.target.value)
-                            }
-                            autoSize={{
-                              minRows: 2,
-                              maxRows: 4,
-                            }}
-                            placeholder="Ví dụ: Bí tích Rửa Tội"
-                            style={{
-                              borderRadius: 9,
-                            }}
-                          />
-                        </div>
+                          Nội dung trái (Câu hỏi)
+                        </Text>
+                        <Input.TextArea
+                          value={pair.left}
+                          onChange={(e) =>
+                            updatePair(pair.id, "left", e.target.value)
+                          }
+                          autoSize={{ minRows: 2, maxRows: 4 }}
+                          placeholder="Ví dụ: Bí tích Rửa Tội"
+                          style={{ borderRadius: 12, background: "#FFF9FA" }}
+                        />
                       </Col>
 
                       <Col
@@ -1099,7 +905,11 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                           justifyContent: "center",
                         }}
                       >
-                        <Link2 size={20} color={secondaryColor} />
+                        <Heart
+                          size={20}
+                          color={secondaryColor}
+                          fill={secondaryColor}
+                        />
                       </Col>
 
                       <Col xs={24} sm={11}>
@@ -1109,24 +919,19 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                             display: "block",
                             marginBottom: 6,
                             fontSize: 12,
+                            fontWeight: 600,
                           }}
                         >
-                          Nội dung B
+                          Nội dung phải (Đáp án)
                         </Text>
-
                         <Input.TextArea
                           value={pair.right}
                           onChange={(e) =>
                             updatePair(pair.id, "right", e.target.value)
                           }
-                          autoSize={{
-                            minRows: 2,
-                            maxRows: 4,
-                          }}
+                          autoSize={{ minRows: 2, maxRows: 4 }}
                           placeholder="Ví dụ: Gia nhập Hội Thánh"
-                          style={{
-                            borderRadius: 9,
-                          }}
+                          style={{ borderRadius: 12, background: "#FFF9FA" }}
                         />
                       </Col>
                     </Row>
@@ -1135,72 +940,78 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               </div>
             </Card>
 
-            {/* =================================================
-                GAME SETTINGS
-            ================================================= */}
-
+            {/* THEME & SETTINGS */}
             <Card
               bordered={false}
               style={{
-                borderRadius: 18,
-
-                marginBottom: 20,
-
-                boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+                borderRadius: 24,
+                marginBottom: 24,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.03)",
+                border: "2px solid #FFE3E8",
               }}
             >
-              <Title
-                level={5}
-                style={{
-                  marginBottom: 16,
-                }}
-              >
-                ⚙️ Cấu hình luật chơi
+              <Title level={5} style={{ marginBottom: 16, color: "#FF5C8A" }}>
+                🎨 Bảng màu Chibi Pastel
               </Title>
+              <Row gutter={20}>
+                <Col span={12}>
+                  <Text
+                    strong
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                      color: "#475569",
+                    }}
+                  >
+                    Màu hồng kẹo (Primary)
+                  </Text>
+                  <ColorPicker
+                    value={primaryColor}
+                    onChange={(color) => setPrimaryColor(color.toHexString())}
+                    showText
+                  />
+                </Col>
+                <Col span={12}>
+                  <Text
+                    strong
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                      color: "#475569",
+                    }}
+                  >
+                    Màu vàng kem (Secondary)
+                  </Text>
+                  <ColorPicker
+                    value={secondaryColor}
+                    onChange={(color) => setSecondaryColor(color.toHexString())}
+                    showText
+                  />
+                </Col>
+              </Row>
 
-              <Row gutter={[16, 12]}>
+              <Divider style={{ borderColor: "#FFE3E8" }} />
+
+              <Title level={5} style={{ marginBottom: 16, color: "#FF5C8A" }}>
+                ⚙️ Cài đặt luật chơi
+              </Title>
+              <Row gutter={[16, 16]}>
                 <Col xs={24} md={12}>
-                  <Form.Item name="timeLimit" label="Thời gian chơi (giây)">
+                  <Form.Item
+                    name="timeLimit"
+                    label={
+                      <Text strong style={{ color: "#475569" }}>
+                        Thời gian làm bài (giây)
+                      </Text>
+                    }
+                  >
                     <InputNumber
                       min={10}
                       max={3600}
-                      style={{
-                        width: "100%",
-                        borderRadius: 8,
-                      }}
+                      style={{ width: "100%", borderRadius: 12 }}
                     />
                   </Form.Item>
                 </Col>
-
-                <Col xs={24} md={12}>
-                  <div
-                    style={{
-                      padding: "8px 0",
-                    }}
-                  >
-                    <Text
-                      strong
-                      style={{
-                        display: "block",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Số cặp
-                    </Text>
-
-                    <Tag
-                      color="purple"
-                      style={{
-                        fontSize: 14,
-                        padding: "4px 12px",
-                        borderRadius: 8,
-                      }}
-                    >
-                      {pairs.length} cặp
-                    </Tag>
-                  </div>
-                </Col>
-
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="shuffleQuestions"
@@ -1210,7 +1021,6 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     <Switch />
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="shuffleAnswers"
@@ -1220,51 +1030,28 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     <Switch />
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="showProgress"
-                    label="Hiện tiến độ"
+                    label="Hiển thị tiến độ"
                     valuePropName="checked"
                   >
                     <Switch />
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="showScore"
-                    label="Hiện điểm"
+                    label="Hiển thị điểm"
                     valuePropName="checked"
                   >
                     <Switch />
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} md={8}>
                   <Form.Item
                     name="showTimer"
-                    label="Hiện đồng hồ"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={12} md={8}>
-                  <Form.Item
-                    name="allowHint"
-                    label="Cho phép gợi ý"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={12} md={8}>
-                  <Form.Item
-                    name="allowSkip"
-                    label="Cho phép bỏ qua"
+                    label="Đồng hồ đếm ngược"
                     valuePropName="checked"
                   >
                     <Switch />
@@ -1273,31 +1060,22 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               </Row>
             </Card>
 
-            {/* =================================================
-                MEDIA
-            ================================================= */}
-
+            {/* MEDIA UPLOAD SECTION */}
             <Card
               bordered={false}
               style={{
-                borderRadius: 18,
-
-                boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+                borderRadius: 24,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.03)",
+                border: "2px solid #FFE3E8",
               }}
             >
-              <Title
-                level={5}
-                style={{
-                  marginBottom: 16,
-                }}
-              >
-                🎨 Hình ảnh & Âm thanh
+              <Title level={5} style={{ marginBottom: 16, color: "#FF5C8A" }}>
+                🧸 Hình ảnh & Âm thanh ngộ nghĩnh
               </Title>
-
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={12}>
-                  <FileUpload
-                    title="Ảnh Thumbnail"
+              <Row gutter={[12, 12]}>
+                <Col xs={12} sm={8}>
+                  <FileUploadBox
+                    title="Ảnh thu nhỏ"
                     icon={<ImagePlus size={16} />}
                     accept="image/*"
                     file={thumbnail}
@@ -1305,20 +1083,18 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     existing={game?.thumbnail}
                   />
                 </Col>
-
-                <Col xs={24} sm={12}>
-                  <FileUpload
-                    title="Ảnh Background"
+                <Col xs={12} sm={8}>
+                  <FileUploadBox
+                    title="Hình nền"
                     icon={<ImagePlus size={16} />}
                     accept="image/*"
                     file={background}
                     setter={setBackground}
-                    existing={game?.background?.image}
+                    existing={game?.background}
                   />
                 </Col>
-
-                <Col xs={24} sm={8}>
-                  <FileUpload
+                <Col xs={12} sm={8}>
+                  <FileUploadBox
                     title="Nhạc nền"
                     icon={<Music size={16} />}
                     accept="audio/*"
@@ -1327,21 +1103,19 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     existing={game?.media?.backgroundMusic}
                   />
                 </Col>
-
-                <Col xs={24} sm={8}>
-                  <FileUpload
-                    title="Âm thanh đúng"
-                    icon={<CheckCircle2 size={16} />}
+                <Col xs={12} sm={12}>
+                  <FileUploadBox
+                    title="Âm thanh đúng 🎉"
+                    icon={<Volume2 size={16} />}
                     accept="audio/*"
                     file={correctSound}
                     setter={setCorrectSound}
                     existing={game?.media?.correctSound}
                   />
                 </Col>
-
-                <Col xs={24} sm={8}>
-                  <FileUpload
-                    title="Âm thanh sai"
+                <Col xs={12} sm={12}>
+                  <FileUploadBox
+                    title="Âm thanh sai ❌"
                     icon={<Volume2 size={16} />}
                     accept="audio/*"
                     file={wrongSound}
@@ -1353,341 +1127,56 @@ const MatchingGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             </Card>
           </Col>
 
-          {/* =================================================
-              RIGHT
-          ================================================= */}
-
-          <Col xs={24} lg={9}>
+          {/* RIGHT PREVIEW PANEL */}
+          <Col xs={24} lg={10}>
             <div
               style={{
                 position: "sticky",
-                top: 20,
+                top: 24,
               }}
             >
-              {/* =================================================
-                  PREVIEW
-              ================================================= */}
-
               <Card
                 bordered={false}
                 style={{
-                  borderRadius: 18,
-
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-
-                  marginBottom: 20,
+                  borderRadius: 24,
+                  boxShadow: "0 8px 24px rgba(255, 133, 161, 0.1)",
+                  border: "2px solid #FFE3E8",
                 }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-
-                    justifyContent: "space-between",
-
-                    alignItems: "center",
-                  }}
-                >
-                  <Space>
-                    <Sparkles size={18} color={primaryColor} />
-
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 15,
-                      }}
-                    >
-                      Màn hình xem trước
-                    </Text>
-                  </Space>
-
-                  <Button
-                    size="small"
-                    type="dashed"
-                    icon={<RotateCcw size={14} />}
-                    onClick={resetPreview}
-                  >
-                    Làm lại
-                  </Button>
-                </div>
-
-                <Divider
-                  style={{
-                    margin: "14px 0",
-                  }}
-                />
-
-                <div
-                  style={{
-                    background: "#F4F0FF",
-
-                    borderRadius: 16,
-
-                    padding: 16,
-                  }}
-                >
+                title={
                   <div
                     style={{
-                      textAlign: "center",
-
-                      marginBottom: 16,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 16,
-                      }}
-                    >
-                      🔗 Ghép đôi
-                    </Text>
-
-                    <Text
-                      type="secondary"
-                      style={{
-                        display: "block",
-
-                        fontSize: 12,
-
-                        marginTop: 4,
-                      }}
-                    >
-                      Chọn các nội dung tương ứng
-                    </Text>
-                  </div>
-
-                  {renderPreview()}
-                </div>
-
-                {(selectedLeft || selectedRight) && (
-                  <div
-                    style={{
-                      marginTop: 12,
-
-                      padding: 12,
-
-                      borderRadius: 10,
-
-                      background: "#f6ffed",
-
-                      border: "1px solid #b7eb8f",
-
-                      textAlign: "center",
-                    }}
-                  >
-                    <Space size={6}>
-                      <CheckCircle2 size={15} color="#52c41a" />
-
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: "#389e0d",
-                        }}
-                      >
-                        Đang chọn một phần tử
-                      </Text>
+                    <Space>
+                      <Sparkles size={18} color={primaryColor} />
+                      <span style={{ color: "#FF5C8A", fontWeight: 700 }}>
+                        Xem Trước (Live Preview)
+                      </span>
                     </Space>
+                    <Button
+                      size="small"
+                      icon={<RotateCcw size={13} />}
+                      onClick={resetPreview}
+                      style={{ borderRadius: 10, borderColor: "#FFE3E8" }}
+                    >
+                      Làm mới
+                    </Button>
                   </div>
-                )}
-
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 11,
-
-                    display: "block",
-
-                    textAlign: "center",
-
-                    marginTop: 12,
-                  }}
-                >
-                  Đây là bản xem trước. Học sinh sẽ được xáo trộn hai cột khi
-                  bắt đầu chơi.
-                </Text>
-              </Card>
-
-              {/* =================================================
-                  COLOR
-              ================================================= */}
-
-              <Card
-                bordered={false}
-                style={{
-                  borderRadius: 18,
-
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-                }}
+                }
               >
-                <Title
-                  level={5}
-                  style={{
-                    fontSize: 14,
-
-                    marginBottom: 14,
-
-                    display: "flex",
-
-                    alignItems: "center",
-
-                    gap: 6,
-                  }}
-                >
-                  <Palette size={16} color={primaryColor} />
-                  Tùy chỉnh màu sắc
-                </Title>
-
-                <Row gutter={[12, 12]}>
-                  <Col span={12}>
-                    <div
-                      style={{
-                        padding: 10,
-
-                        border: "1px solid #f0f0f0",
-
-                        borderRadius: 10,
-                      }}
-                    >
-                      <Text
-                        type="secondary"
-                        style={{
-                          fontSize: 12,
-
-                          display: "block",
-                        }}
-                      >
-                        Màu chính
-                      </Text>
-
-                      <div
-                        style={{
-                          marginTop: 6,
-                        }}
-                      >
-                        <ColorPicker
-                          value={primaryColor}
-                          onChange={(color) =>
-                            setPrimaryColor(color.toHexString())
-                          }
-                          showText
-                        />
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col span={12}>
-                    <div
-                      style={{
-                        padding: 10,
-
-                        border: "1px solid #f0f0f0",
-
-                        borderRadius: 10,
-                      }}
-                    >
-                      <Text
-                        type="secondary"
-                        style={{
-                          fontSize: 12,
-
-                          display: "block",
-                        }}
-                      >
-                        Màu phụ
-                      </Text>
-
-                      <div
-                        style={{
-                          marginTop: 6,
-                        }}
-                      >
-                        <ColorPicker
-                          value={secondaryColor}
-                          onChange={(color) =>
-                            setSecondaryColor(color.toHexString())
-                          }
-                          showText
-                        />
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-
-                <Divider />
-
                 <div
                   style={{
-                    display: "flex",
-
-                    gap: 8,
-
-                    alignItems: "center",
+                    background: "#FFF0F3",
+                    borderRadius: 20,
+                    padding: 16,
+                    minHeight: 450,
+                    border: "2px dashed #FFCCD5",
                   }}
                 >
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      background: primaryColor,
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      flex: 1,
-                    }}
-                  >
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 12,
-                      }}
-                    >
-                      Màu chính
-                    </Text>
-
-                    <Text
-                      type="secondary"
-                      style={{
-                        display: "block",
-
-                        fontSize: 11,
-                      }}
-                    >
-                      {primaryColor}
-                    </Text>
-                  </div>
-
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      background: secondaryColor,
-                    }}
-                  />
-
-                  <div>
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 12,
-                      }}
-                    >
-                      Màu phụ
-                    </Text>
-
-                    <Text
-                      type="secondary"
-                      style={{
-                        display: "block",
-
-                        fontSize: 11,
-                      }}
-                    >
-                      {secondaryColor}
-                    </Text>
-                  </div>
+                  {renderPreview()}
                 </div>
               </Card>
             </div>

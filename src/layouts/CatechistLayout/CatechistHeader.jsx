@@ -1,617 +1,531 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Layout,
   Dropdown,
   Space,
   Avatar,
-  Typography,
-  Badge,
   Tooltip,
-  Button,
   ConfigProvider,
-  notification,
-  Empty,
-  message,
+  Tag,
 } from "antd";
 import {
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
-  BellOutlined,
   QuestionCircleOutlined,
-  CalendarOutlined,
-  HistoryOutlined,
-  CheckOutlined,
+  HeartFilled,
+  StarFilled,
+  CrownFilled,
+  SmileOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
+
 import { useUser } from "../../context/UserContext";
-import socket from "../../socket/socket";
-import {
-  getNotificationsToday,
-  markAllNotificationsAsRead,
-} from "../../api/notificationApi";
-import HelpModal from "../../components/HelpModal";
+import HelpModalCate from "../../components/HelpModalCate";
 
 const { Header } = Layout;
-const { Text, Title } = Typography;
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-export default function AdminHeader({ collapsed, setCollapsed }) {
+export default function AdminHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useUser();
-  const [notifyCount, setNotifyCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const DEFAULT_TITLE = "Giáo lý & Sống đạo";
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await getNotificationsToday();
-      const dataList = res.data || [];
-      setNotifications(dataList);
-      setNotifyCount(dataList.filter((n) => !n.is_read).length);
-    } catch (err) {
-      console.error("Lỗi tải thông báo lịch sử:", err);
+  useEffect(() => {
+    const path = location.pathname;
+
+    let title = "Giáo lý • Sống đạo";
+
+    if (path === "/catechist") {
+      title = "Tổng quan";
+    } else if (path === "/catechist/classes") {
+      title = "Quản lý lớp học";
+    } else if (path === "/catechist/students") {
+      title = "Quản lý học sinh";
+    } else if (path === "/catechist/games") {
+      title = "Kho trò chơi";
+    } else if (path === "/catechist/results") {
+      title = "Kết quả học tập";
+    } else if (path === "/catechist/leaderboard") {
+      title = "Bảng xếp hạng";
+    } else if (path === "/catechist/lessons") {
+      title = "Bài học & Câu hỏi";
+    } else if (path === "/catechist-management") {
+      title = "Quản lý giáo lý viên";
+    } else if (path === "/catechist/profile") {
+      title = "Trang cá nhân";
+    } else if (path === "/login") {
+      title = "Đăng nhập Giáo Lý Viên";
+    }
+    document.title = `${title} | Giáo lý • Sống đạo`;
+  }, [location.pathname]);
+  /* =========================================================
+     AVATAR URL
+  ========================================================= */
+  const userAvatarUrl = useMemo(() => {
+    if (!user?.avatar) return null;
+    if (
+      user.avatar.startsWith("http://") ||
+      user.avatar.startsWith("https://") ||
+      user.avatar.startsWith("blob:")
+    ) {
+      return user.avatar;
+    }
+    const normalized = user.avatar.startsWith("/")
+      ? user.avatar
+      : `/${user.avatar}`;
+    return `${API_URL}${normalized}`;
+  }, [user?.avatar]);
+
+  /* =========================================================
+     ROLE HELPER
+  ========================================================= */
+  const translateRole = (role) => {
+    switch (role) {
+      case "priest":
+        return "Linh mục Chánh xứ ✝️";
+      case "admin":
+        return "Ban Quản Trị ✨";
+      case "teacher":
+      case "catechist":
+        return "Huynh Trưởng / GLV 💖";
+      case "liturgy_manager":
+        return "Ban Phụng Vụ ⛪";
+      case "media_manager":
+        return "Ban Truyền Thông 📸";
+      default:
+        return "Hội đồng Mục vụ 🌿";
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  useEffect(() => {
-    const handleNotification = (data) => {
-      const standardizedData = {
-        id: data.id || Date.now() + Math.random(),
-        title: data.title || "Thông báo hệ thống",
-        content: data.content || data.message || "",
-        type: data.type || "system",
-        is_read: false,
-        created_at: data.created_at || new Date(),
+  /* =========================================================
+     ACCOUNT TYPE CONFIG
+  ========================================================= */
+  const accountType = useMemo(() => {
+    const type = String(user?.account_type || "")
+      .trim()
+      .toLowerCase();
+    if (type === "vip") {
+      return {
+        key: "vip",
+        label: "VIP",
+        icon: <CrownFilled />,
+        color: "#D97706",
+        bg: "#FEF3C7",
+        border: "#FDE68A",
       };
-
-      setNotifyCount((prev) => prev + 1);
-      setNotifications((prev) => [standardizedData, ...prev]);
-
-      notification.info({
-        message: standardizedData.title,
-        description: standardizedData.content,
-        placement: "topRight",
-        icon:
-          standardizedData.type === "today_mass" ? (
-            <CalendarOutlined style={{ color: "#D97706" }} />
-          ) : (
-            <HistoryOutlined style={{ color: "#2563EB" }} />
-          ),
-      });
-
-      if (
-        document.hidden &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      ) {
-        new Notification(standardizedData.title, {
-          body: standardizedData.content,
-          tag: "church-notification",
-        });
-      }
-    };
-
-    socket.on("notification", handleNotification);
-    return () => {
-      socket.off("notification", handleNotification);
-    };
-  }, []);
-
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission();
     }
-  }, []);
-
-  useEffect(() => {
-    if (notifyCount > 0) {
-      document.title = `(${notifyCount}) Thông báo mới`;
-    } else {
-      document.title = DEFAULT_TITLE;
-    }
-  }, [notifyCount]);
-
-  useEffect(() => {
-    let interval = null;
-    if (notifyCount > 0 && document.hidden) {
-      interval = setInterval(() => {
-        document.title =
-          document.title === "🔔 Có thông báo mới!"
-            ? DEFAULT_TITLE
-            : "🔔 Có thông báo mới!";
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    return {
+      key: "member",
+      label: "Thành viên",
+      icon: <StarFilled />,
+      color: "#64748B",
+      bg: "#F1F5F9",
+      border: "#CBD5E1",
     };
-  }, [notifyCount]);
+  }, [user?.account_type]);
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        document.title =
-          notifyCount > 0 ? `(${notifyCount}) Thông báo mới` : DEFAULT_TITLE;
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [notifyCount]);
+  const userName =
+    user?.username ||
+    user?.full_name ||
+    user?.name ||
+    user?.email ||
+    "Huynh Trưởng";
 
-  const clearNotifications = async () => {
-    try {
-      await markAllNotificationsAsRead();
-      setNotifyCount(0);
-      document.title = DEFAULT_TITLE;
-      setNotifications((prev) =>
-        prev.map((n) => ({
-          ...n,
-          is_read: 1,
-        })),
-      );
-      message.success("Đã đánh dấu đọc tất cả thông báo");
-    } catch (err) {
-      message.error("Lỗi khi cập nhật thông báo");
+  /* =========================================================
+     MENU & NAVIGATE HANDLER
+  ========================================================= */
+  const handleMenuClick = ({ key }) => {
+    switch (key) {
+      case "profile":
+        navigate("/catechist/profile");
+        break;
+      case "settings":
+        navigate("/catechist/settings");
+        break;
+      case "logout":
+        if (typeof logout === "function") {
+          logout();
+        }
+        navigate("/login"); // Điều hướng về trang login sau khi đăng xuất
+        break;
+      default:
+        break;
     }
-  };
-
-  const formatNotifyTime = (date) => {
-    const diffMs = new Date() - new Date(date);
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "Vừa xong";
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    return new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   const menuItems = [
     {
-      key: "profile",
-      icon: <UserOutlined style={{ fontSize: "14px", color: "#344054" }} />,
+      key: "account-info",
+      disabled: true,
       label: (
-        <span style={{ fontWeight: 500, color: "#101828" }}>
-          Thông tin cá nhân
-        </span>
+        <div className="chibi-menu-header">
+          <span className="chibi-menu-sub">Tài khoản hiện tại</span>
+          <div className="chibi-menu-name">{userName}</div>
+          <div className="chibi-menu-tags">
+            <Tag className="chibi-tag-role">{translateRole(user?.role)}</Tag>
+            <Tag
+              icon={accountType.icon}
+              style={{
+                color: accountType.color,
+                background: accountType.bg,
+                borderColor: accountType.border,
+              }}
+              className="chibi-tag-account"
+            >
+              {accountType.label}
+            </Tag>
+          </div>
+        </div>
       ),
+    },
+    { type: "divider" },
+    {
+      key: "profile",
+      icon: <SmileOutlined style={{ color: "#FF6B8B" }} />,
+      label: <span>Trang cá nhân</span>,
     },
     {
       key: "settings",
-      icon: <SettingOutlined style={{ fontSize: "14px", color: "#344054" }} />,
-      label: (
-        <span style={{ fontWeight: 500, color: "#101828" }}>
-          Cài đặt hệ thống
-        </span>
-      ),
+      icon: <SettingOutlined style={{ color: "#A855F7" }} />,
+      label: <span>Thiết lập hệ thống</span>,
     },
-    {
-      type: "divider",
-    },
+    { type: "divider" },
     {
       key: "logout",
-      icon: <LogoutOutlined style={{ fontSize: "14px" }} />,
-      label: <span style={{ fontWeight: 500 }}>Đăng xuất</span>,
+      icon: <LogoutOutlined />,
+      label: <span>Đăng xuất</span>,
       danger: true,
     },
   ];
-
-  const notificationDropdown = () => (
-    <div className="header-dropdown-card">
-      <div className="dropdown-header">
-        <div>
-          <Title
-            level={5}
-            style={{
-              margin: 0,
-              fontSize: 15,
-              fontWeight: 600,
-              color: "#101828",
-            }}
-          >
-            Thông báo
-          </Title>
-          <Text style={{ fontSize: 12, color: "#667085" }}>
-            Cập nhật hoạt động & Mục vụ Giáo xứ
-          </Text>
-        </div>
-        {notifyCount > 0 && (
-          <Button
-            size="small"
-            type="text"
-            icon={<CheckOutlined style={{ fontSize: 12 }} />}
-            onClick={clearNotifications}
-            className="btn-mark-all"
-          >
-            Đọc tất cả
-          </Button>
-        )}
-      </div>
-
-      <div className="dropdown-body custom-header-scrollbar">
-        {notifications.length === 0 ? (
-          <div className="empty-state">
-            <Empty
-              description={
-                <span style={{ color: "#98A2B3", fontSize: 13 }}>
-                  Không có thông báo mới
-                </span>
-              }
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          </div>
-        ) : (
-          <div className="notify-list-wrapper">
-            {notifications.map((item) => {
-              const isMass = item.type === "today_mass";
-              return (
-                <div
-                  key={item.id}
-                  className={`notify-card-item ${!item.is_read ? "unread" : ""}`}
-                >
-                  <Space align="start" size={12} style={{ width: "100%" }}>
-                    <div
-                      className={`notify-icon-avatar ${isMass ? "mass" : "sys"}`}
-                    >
-                      {isMass ? <CalendarOutlined /> : <HistoryOutlined />}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="notify-item-meta">
-                        <span className="notify-item-title">{item.title}</span>
-                        <span className="notify-item-time">
-                          {formatNotifyTime(item.created_at)}
-                        </span>
-                      </div>
-                      <div className="notify-item-content">{item.content}</div>
-                    </div>
-                  </Space>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const userAvatarUrl = user?.avatar
-    ? user.avatar.startsWith("http")
-      ? user.avatar
-      : `${process.env.REACT_APP_API_URL}${user.avatar}`
-    : null;
-
-  const translateRole = (role) => {
-    if (role === "priest") return "Linh mục Chánh xứ";
-    if (role === "admin") return "Ban Quản Trị";
-    return "Hội đồng Mục vụ";
-  };
-
-  const handleMenuClick = ({ key }) => {
-    if (key === "logout") {
-      logout();
-    } else if (key === "settings") {
-      navigate("/settings");
-    } else if (key === "profile") {
-      navigate("/profile");
-    }
-  };
 
   return (
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#0F172A",
-          borderRadius: 10,
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          colorPrimary: "#FF6B8B",
+          borderRadius: 16,
+          fontFamily: "'Quicksand', 'Be Vietnam Pro', sans-serif",
         },
       }}
     >
-      <Header className="modern-admin-header">
-        {/* --- KHỐI ĐIỀU HƯỚNG BÊN TRÁI --- */}
-        <Space size={12} className="brand-container">
-          <div className="brand-logo-cube">ĐQ</div>
-          <div className="brand-title-wrap">
-            <Text className="brand-subtitle">Giáo Lý</Text>
-            <Text className="brand-main-title">Sống Đạo</Text>
-          </div>
-        </Space>
-
-        {/* --- KHỐI ĐIỀU KHIỂN & HỒ SƠ BÊN PHẢI --- */}
-        <Space size={8}>
-          <Tooltip title="Hướng dẫn sử dụng">
-            <Button
-              type="text"
-              className="btn-header-icon"
-              icon={<QuestionCircleOutlined style={{ fontSize: "17px" }} />}
-              onClick={() => setHelpOpen(true)}
-            />
-          </Tooltip>
-
-          {/* CHUÔNG THÔNG BÁO */}
-          <Dropdown
-            trigger={["click"]}
-            placement="bottomRight"
-            dropdownRender={notificationDropdown}
-            overlayClassName="header-dropdown-overlay"
-          >
-            <Badge
-              count={notifyCount}
-              size="small"
-              color="#F04438"
-              offset={[-4, 6]}
-            >
-              <Button
-                type="text"
-                className="btn-header-icon"
-                icon={<BellOutlined style={{ fontSize: "17px" }} />}
-              />
-            </Badge>
-          </Dropdown>
-
-          <div className="header-divider" />
-
-          {/* HỒ SƠ NGƯỜI ĐĂNG NHẬP */}
-          <Dropdown
-            menu={{
-              items: menuItems,
-              onClick: handleMenuClick,
-            }}
-            placement="bottomRight"
-            trigger={["click"]}
-            overlayClassName="header-dropdown-overlay"
-          >
-            <div className="user-profile-badge">
-              <Avatar
-                size={32}
-                className="user-avatar-main"
-                src={userAvatarUrl}
-                icon={<UserOutlined />}
-              />
-              <div className="user-meta-info">
-                <span className="user-name">
-                  {user?.username || user?.full_name || "Quản trị viên"}
-                </span>
-                <span className="user-role-tag">
-                  {translateRole(user?.role)}
-                </span>
-              </div>
+      <div className="chibi-header-wrapper">
+        <Header className="chibi-pastel-header">
+          {/* BRAND LOGO - NAVIGATE HOME */}
+          <div className="chibi-brand-pill" onClick={() => navigate("/")}>
+            <div className="chibi-logo-box">
+              <HeartFilled className="chibi-heart-icon" />
             </div>
-          </Dropdown>
-        </Space>
+            <div className="chibi-brand-text">
+              <span className="chibi-title">GIÁO LÝ • SỐNG ĐẠO</span>
+              <span className="chibi-sub">Nụ Cười Mới ✨</span>
+            </div>
+          </div>
 
-        {/* CSS SCOPED TỐI GIẢN & HIỆN ĐẠI */}
-        <style>{`
-          .modern-admin-header {
-            background: rgba(255, 255, 255, 0.85) !important;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 24px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            width: 100%;
-            height: 60px;
-            border-bottom: 1px solid #EAECF0;
-          }
+          {/* RIGHT CONTROLS */}
+          <Space size={10} align="center">
+            {/* HELP BUTTON */}
+            <Tooltip title="Hướng dẫn sử dụng nè!" placement="bottom">
+              <button
+                className="chibi-btn-help"
+                onClick={() => setHelpOpen(true)}
+              >
+                <QuestionCircleOutlined className="chibi-icon-help" />
+                <span className="chibi-text-help">Trợ giúp</span>
+              </button>
+            </Tooltip>
 
-          /* Thương hiệu */
-          .brand-container {
-            cursor: pointer;
-          }
-          .brand-logo-cube {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 13px;
-            background: #0F172A;
-          }
-          .brand-title-wrap {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.1;
-          }
-          .brand-subtitle {
-            font-size: 10px;
-            color: #667085;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 500;
-          }
-          .brand-main-title {
-            color: #101828;
-            font-size: 14px;
-            font-weight: 600;
-          }
+            {/* USER PROFILE DROPDOWN */}
+            <Dropdown
+              menu={{ items: menuItems, onClick: handleMenuClick }}
+              placement="bottomRight"
+              trigger={["click"]}
+              overlayClassName="chibi-dropdown-overlay"
+            >
+              <div className="chibi-user-badge">
+                <div className="chibi-avatar-wrapper">
+                  <Avatar
+                    size={36}
+                    className="chibi-avatar-main"
+                    src={userAvatarUrl}
+                    icon={<UserOutlined />}
+                  />
+                  <span className={`chibi-mini-star ${accountType.key}`}>
+                    {accountType.key === "vip" ? (
+                      <CrownFilled />
+                    ) : (
+                      <StarFilled />
+                    )}
+                  </span>
+                </div>
 
-          /* Nút Icon */
-          .btn-header-icon {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #475467;
-            border-radius: 8px;
-            transition: all 0.15s ease;
-          }
-          .btn-header-icon:hover {
-            background: #F2F4F7 !important;
-            color: #101828 !important;
-          }
+                <div className="chibi-user-info">
+                  <span className="chibi-user-name">{userName}</span>
+                  <span className="chibi-user-role">
+                    {translateRole(user?.role)}
+                  </span>
+                </div>
 
-          .header-divider {
-            width: 1px;
-            height: 20px;
-            background: #EAECF0;
-            margin: 0 4px;
-          }
+                <DownOutlined className="chibi-arrow-icon" />
+              </div>
+            </Dropdown>
+          </Space>
 
-          /* User Profile Tag */
-          .user-profile-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 8px;
-            transition: background 0.15s ease;
-          }
-          .user-profile-badge:hover {
-            background: #F8FAFC;
-          }
-          .user-avatar-main {
-            background-color: #0F172A;
-            border: 1px solid #E2E8F0;
-          }
-          .user-meta-info {
-            display: flex;
-            flex-direction: column;
-            text-align: left;
-            line-height: 1.2;
-          }
-          .user-name {
-            font-weight: 600;
-            font-size: 13px;
-            color: #344054;
-          }
-          .user-role-tag {
-            font-size: 11px;
-            color: #667085;
-            font-weight: 400;
-          }
+          {/* HELP MODAL */}
+          <HelpModalCate open={helpOpen} onCancel={() => setHelpOpen(false)} />
 
-          /* Dropdown Card Thông báo */
-          .header-dropdown-card {
-            width: 360px;
-            background: #ffffff;
-            border-radius: 12px;
-            border: 1px solid #EAECF0;
-            box-shadow: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
-            overflow: hidden;
-          }
-          .dropdown-header {
-            padding: 16px;
-            border-bottom: 1px solid #F2F4F7;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-          }
-          .btn-mark-all {
-            color: #475467 !important;
-            font-size: 12px;
-            font-weight: 500;
-            padding: 0 6px;
-            border-radius: 6px;
-          }
-          .btn-mark-all:hover {
-            background-color: #F2F4F7 !important;
-            color: #101828 !important;
-          }
+          {/* STYLES */}
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&display=swap');
 
-          /* Danh sách thông báo */
-          .dropdown-body {
-            max-height: 340px;
-            overflow-y: auto;
-          }
-          .notify-list-wrapper {
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-          }
-          .notify-card-item {
-            padding: 10px 12px;
-            border-radius: 8px;
-            transition: background 0.15s ease;
-          }
-          .notify-card-item:hover {
-            background: #F8FAFC;
-          }
-          .notify-card-item.unread {
-            background: #F0F9FF;
-          }
+            .chibi-header-wrapper {
+              position: sticky;
+              top: 0;
+              z-index: 1000;
+              padding: 8px 16px 0;
+              background: transparent;
+            }
 
-          .notify-icon-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            flex-shrink: 0;
-          }
-          .notify-icon-avatar.mass {
-            background: #FEF3C7;
-            color: #D97706;
-          }
-          .notify-icon-avatar.sys {
-            background: #F1F5F9;
-            color: #475569;
-          }
+            .chibi-pastel-header {
+              background: rgba(255, 255, 255, 0.88) !important;
+              backdrop-filter: blur(16px) saturate(180%);
+              -webkit-backdrop-filter: blur(16px) saturate(180%);
+              height: 62px !important;
+              line-height: 62px !important;
+              border-radius: 20px;
+              padding: 0 12px !important;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              border: 1.5px solid #FFE4E6;
+              box-shadow: 0 8px 20px -4px rgba(255, 182, 193, 0.25);
+            }
 
-          .notify-item-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-          }
-          .notify-item-title {
-            font-weight: 600;
-            color: #101828;
-            font-size: 13px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-          .notify-item-time {
-            font-size: 11px;
-            color: #98A2B3;
-            white-space: nowrap;
-          }
-          .notify-item-content {
-            font-size: 12px;
-            color: #475467;
-            margin-top: 2px;
-            line-height: 1.4;
-          }
+            /* BRAND */
+            .chibi-brand-pill {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              padding: 5px 12px 5px 6px;
+              background: #FFF1F2;
+              border: 1px solid #FECDD3;
+              border-radius: 16px;
+              cursor: pointer;
+              transition: all 0.25s ease;
+            }
+            .chibi-brand-pill:hover {
+              transform: translateY(-1px) scale(1.02);
+              background: #FFE4E6;
+            }
 
-          .empty-state {
-            padding: 32px 0;
-            text-align: center;
-          }
+            .chibi-logo-box {
+              width: 32px;
+              height: 32px;
+              border-radius: 12px;
+              background: linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 3px 8px rgba(255, 107, 139, 0.3);
+            }
 
-          /* Custom Scrollbar */
-          .custom-header-scrollbar::-webkit-scrollbar {
-            width: 5px;
-          }
-          .custom-header-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          .custom-header-scrollbar::-webkit-scrollbar-thumb {
-            background: #EAECF0;
-            border-radius: 10px;
-          }
-          .custom-header-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #D0D5DD;
-          }
-        `}</style>
-        <HelpModal open={helpOpen} onCancel={() => setHelpOpen(false)} />
-      </Header>
+            .chibi-heart-icon {
+              color: #FFF;
+              font-size: 15px;
+              animation: chibiPulse 2s infinite ease-in-out;
+            }
+
+            @keyframes chibiPulse {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.15); }
+            }
+
+            .chibi-brand-text {
+              display: flex;
+              flex-direction: column;
+              line-height: 1.15;
+            }
+
+            .chibi-title {
+              color: #475569;
+              font-size: 12px;
+              font-weight: 800;
+              letter-spacing: 0.2px;
+            }
+
+            .chibi-sub {
+              color: #FF6B8B;
+              font-size: 10px;
+              font-weight: 700;
+            }
+
+            /* HELP BUTTON */
+            .chibi-btn-help {
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              height: 36px;
+              padding: 0 12px;
+              background: #F0FDF4;
+              border: 1px solid #BBF7D0;
+              border-radius: 14px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            }
+            .chibi-btn-help:hover {
+              background: #DCFCE7;
+              transform: translateY(-1px);
+            }
+            .chibi-icon-help {
+              font-size: 15px;
+              color: #16A34A;
+            }
+            .chibi-text-help {
+              font-size: 12px;
+              font-weight: 700;
+              color: #15803D;
+            }
+
+            /* USER BADGE */
+            .chibi-user-badge {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              padding: 4px 10px 4px 5px;
+              background: #FAF5FF;
+              border: 1px solid #E9D5FF;
+              border-radius: 16px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            }
+            .chibi-user-badge:hover {
+              background: #F3E8FF;
+              border-color: #D8B4FE;
+            }
+
+            .chibi-avatar-wrapper {
+              position: relative;
+              display: flex;
+              align-items: center;
+            }
+
+            .chibi-avatar-main {
+              border: 2px solid #FFF;
+              box-shadow: 0 2px 6px rgba(168, 85, 247, 0.2);
+              background-color: #F472B6;
+            }
+
+            .chibi-mini-star {
+              position: absolute;
+              bottom: -2px;
+              right: -3px;
+              width: 14px;
+              height: 14px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 7px;
+              color: #FFF;
+              border: 1.5px solid #FFF;
+            }
+            .chibi-mini-star.vip { background: #F59E0B; }
+            .chibi-mini-star.member { background: #94A3B8; }
+
+            .chibi-user-info {
+              display: flex;
+              flex-direction: column;
+              text-align: left;
+              line-height: 1.15;
+            }
+
+            .chibi-user-name {
+              font-size: 12px;
+              font-weight: 800;
+              color: #334155;
+              max-width: 120px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .chibi-user-role {
+              font-size: 9.5px;
+              font-weight: 700;
+              color: #9333EA;
+              max-width: 130px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .chibi-arrow-icon {
+              font-size: 9px;
+              color: #A855F7;
+              margin-left: 2px;
+            }
+
+            /* DROPDOWN OVERLAY */
+            .chibi-dropdown-overlay .ant-dropdown-menu {
+              padding: 8px !important;
+              border-radius: 18px !important;
+              border: 1.5px solid #F3E8FF !important;
+              box-shadow: 0 12px 28px rgba(168, 85, 247, 0.15) !important;
+            }
+
+            .chibi-menu-header {
+              padding: 4px 4px 6px;
+              min-width: 190px;
+            }
+            .chibi-menu-sub {
+              font-size: 11px;
+              color: #94A3B8;
+              font-weight: 600;
+            }
+            .chibi-menu-name {
+              font-size: 14px;
+              color: #1E293B;
+              font-weight: 800;
+              margin: 2px 0 6px;
+            }
+            .chibi-menu-tags {
+              display: flex;
+              gap: 4px;
+              flex-wrap: wrap;
+            }
+            .chibi-tag-role {
+              margin: 0;
+              border-radius: 8px;
+              border: 1px solid #E9D5FF;
+              background: #FAF5FF;
+              color: #9333EA;
+              font-size: 10px;
+              font-weight: 700;
+            }
+            .chibi-tag-account {
+              margin: 0;
+              border-radius: 8px;
+              font-size: 10px;
+              font-weight: 800;
+            }
+
+            /* RESPONSIVE MOBILE */
+            @media (max-width: 640px) {
+              .chibi-header-wrapper { padding: 6px 8px 0; }
+              .chibi-pastel-header { height: 54px !important; padding: 0 8px !important; }
+              .chibi-brand-text,
+              .chibi-text-help,
+              .chibi-user-info,
+              .chibi-arrow-icon { display: none; }
+              .chibi-brand-pill { padding: 4px; }
+              .chibi-btn-help { padding: 0 10px; }
+              .chibi-user-badge { padding: 3px; }
+            }
+          `}</style>
+        </Header>
+      </div>
     </ConfigProvider>
   );
 }

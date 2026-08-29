@@ -3,51 +3,53 @@ import { Card, Col, Row, Skeleton, Typography } from "antd";
 
 const { Text } = Typography;
 
-const primaryNavy = "#1B365D";
-// const accentGold = "#D4AF37";
-const textDark = "#0F172A";
-const textMuted = "#64748B";
-
 const StatCard = ({
   title,
   value,
   suffix,
   description,
   icon,
-  iconColor = primaryNavy,
+  iconColor = "#FF6B8B", // Tông hồng pastel mặc định
   loading = false,
-  trend, // Tùy chọn: { value: "+12.5%", isUp: true }
+  trend, // { value: "+12.5%", isUp: true }
+  className = "",
+  style,
+  ...props
 }) => {
   return (
     <Card
       bordered={false}
+      className={`chibi-stat-card ${className}`}
       style={{
         height: "100%",
-        borderRadius: 20,
+        borderRadius: 24,
         background: "#FFFFFF",
-        border: "1px solid #F1F5F9",
-        boxShadow: "0 10px 30px -10px rgba(15, 23, 42, 0.05)",
+        border: "2px solid #FFE4E6",
+        boxShadow: "0 12px 28px rgba(255, 182, 193, 0.18)",
         overflow: "hidden",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
         cursor: "pointer",
+        position: "relative",
+        ...style,
       }}
       styles={{
         body: {
-          padding: "22px 24px",
+          padding: "20px 22px",
         },
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.transform = "translateY(-6px) scale(1.02)";
         e.currentTarget.style.boxShadow =
-          "0 20px 35px -12px rgba(27, 54, 93, 0.12)";
-        e.currentTarget.style.borderColor = `${iconColor}33`;
+          "0 20px 35px rgba(255, 182, 193, 0.35)";
+        e.currentTarget.style.borderColor = "#FFB6C1";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.transform = "translateY(0) scale(1)";
         e.currentTarget.style.boxShadow =
-          "0 10px 30px -10px rgba(15, 23, 42, 0.05)";
-        e.currentTarget.style.borderColor = "#F1F5F9";
+          "0 12px 28px rgba(255, 182, 193, 0.18)";
+        e.currentTarget.style.borderColor = "#FFE4E6";
       }}
+      {...props}
     >
       <Row justify="space-between" align="top" gutter={12}>
         <Col flex="auto">
@@ -55,11 +57,12 @@ const StatCard = ({
           <Text
             style={{
               display: "block",
-              color: textMuted,
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: "0.2px",
+              color: "#94A3B8",
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: "0.5px",
               textTransform: "uppercase",
+              fontFamily: "'Quicksand', sans-serif",
             }}
           >
             {title}
@@ -71,8 +74,8 @@ const StatCard = ({
               display: "flex",
               alignItems: "baseline",
               gap: 6,
-              marginTop: 10,
-              minHeight: 36,
+              marginTop: 6,
+              minHeight: 38,
             }}
           >
             {loading ? (
@@ -80,20 +83,21 @@ const StatCard = ({
                 active
                 size="small"
                 style={{
-                  width: 90,
-                  height: 32,
-                  borderRadius: 8,
+                  width: 100,
+                  height: 34,
+                  borderRadius: 12,
                 }}
               />
             ) : (
               <>
                 <span
                   style={{
-                    color: textDark,
+                    color: "#334155",
                     fontSize: 32,
                     lineHeight: 1,
-                    fontWeight: 800,
-                    letterSpacing: "-1px",
+                    fontWeight: 900,
+                    letterSpacing: "-0.5px",
+                    fontFamily: "'Fredoka', 'Quicksand', sans-serif",
                   }}
                 >
                   {value}
@@ -103,8 +107,9 @@ const StatCard = ({
                   <Text
                     style={{
                       fontSize: 13,
-                      fontWeight: 500,
-                      color: textMuted,
+                      fontWeight: 700,
+                      color: "#94A3B8",
+                      fontFamily: "'Quicksand', sans-serif",
                     }}
                   >
                     {suffix}
@@ -121,21 +126,27 @@ const StatCard = ({
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                marginTop: 12,
+                marginTop: 10,
               }}
             >
               {trend && !loading && (
                 <span
                   style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    padding: "2px 8px",
-                    borderRadius: 6,
-                    color: trend.isUp ? "#16A34A" : "#DC2626",
-                    background: trend.isUp ? "#DCFCE7" : "#FEE2E2",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: "3px 10px",
+                    borderRadius: 12,
+                    color: trend.isUp ? "#0284C7" : "#E11D48",
+                    background: trend.isUp ? "#E0F2FE" : "#FFE4E6",
+                    border: trend.isUp
+                      ? "1px solid #BAE6FD"
+                      : "1px solid #FFD1D9",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 3,
                   }}
                 >
-                  {trend.isUp ? "↑" : "↓"} {trend.value}
+                  {trend.isUp ? "✨ ↑" : "🌸 ↓"} {trend.value}
                 </span>
               )}
 
@@ -143,8 +154,9 @@ const StatCard = ({
                 <Text
                   style={{
                     fontSize: 12,
-                    color: textMuted,
-                    fontWeight: 400,
+                    color: "#94A3B8",
+                    fontWeight: 600,
+                    fontFamily: "'Quicksand', sans-serif",
                   }}
                 >
                   {description}
@@ -154,23 +166,24 @@ const StatCard = ({
           )}
         </Col>
 
-        {/* ICON */}
+        {/* ICON BOX CHIBI */}
         {icon && (
           <Col>
             <div
               style={{
                 width: 52,
                 height: 52,
-                borderRadius: 16,
+                borderRadius: 20,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: `linear-gradient(135deg, ${iconColor}1A 0%, ${iconColor}0D 100%)`,
+                background: "#FFF5F7",
                 color: iconColor,
                 fontSize: 22,
                 flexShrink: 0,
-                border: `1px solid ${iconColor}20`,
-                boxShadow: `0 8px 16px -4px ${iconColor}1F`,
+                border: `2px solid ${iconColor}40`,
+                boxShadow: `0 8px 18px ${iconColor}25`,
+                transition: "transform 0.3s ease",
               }}
             >
               {icon}
@@ -178,6 +191,20 @@ const StatCard = ({
           </Col>
         )}
       </Row>
+
+      {/* CHIBI SPARKLE DECORATION */}
+      <div
+        style={{
+          position: "absolute",
+          top: 6,
+          right: 12,
+          fontSize: 10,
+          opacity: 0.3,
+          pointerEvents: "none",
+        }}
+      >
+        ✨
+      </div>
     </Card>
   );
 };

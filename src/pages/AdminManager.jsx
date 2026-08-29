@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+
 import {
   Table,
   Button,
@@ -46,6 +47,7 @@ import {
   ClearOutlined,
   CompassOutlined,
   ReloadOutlined,
+  CrownOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -58,117 +60,250 @@ import {
   toggleAdmin,
   resetAdminPassword,
 } from "../api/adminApi";
+
 import { useUser } from "../context/UserContext";
+import { useChurch } from "../hooks/useChurch";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-// Bảng màu thiết kế Tôn Nghiêm (Editorial Sacred Palette)
-const primaryNavy = "#1B365D"; // Xanh Đêm Navy
-const accentGold = "#D4AF37"; // Vàng Đồng
+// ======================================================
+// EDITORIAL SACRED PALETTE
+// ======================================================
+
+const primaryNavy = "#1B365D";
+const accentGold = "#D4AF37";
 const textDark = "#1E293B";
 const softBg = "#FAFAFA";
 
 export default function AdminManager() {
   const { user } = useUser();
+  const { fetchChurches } = useChurch();
+
+  // ======================================================
+  // PERMISSION
+  // ======================================================
 
   const allowRoles = ["admin", "priest"];
 
-  const [admins, setAdmins] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // ======================================================
+  // DATA
+  // ======================================================
 
-  // Trạng thái Drawer Quản lý (Thêm / Sửa)
+  const [admins, setAdmins] = useState([]);
+  const [dataChurch, setDataChurch] = useState([]);
+
+  const [loading, setLoading] = useState(false);
+  const [churchLoading, setChurchLoading] = useState(false);
+
+  // ======================================================
+  // DRAWER CREATE / EDIT
+  // ======================================================
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+
   const [fileList, setFileList] = useState([]);
   const [currentRole, setCurrentRole] = useState("admin");
 
-  // Trạng thái Drawer Xem chi tiết
+  // ======================================================
+  // DRAWER VIEW
+  // ======================================================
+
   const [viewOpen, setViewOpen] = useState(false);
   const [viewRecord, setViewRecord] = useState(null);
 
-  const [form] = Form.useForm();
+  // ======================================================
+  // RESET PASSWORD
+  // ======================================================
+
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetUser, setResetUser] = useState(null);
+
+  // ======================================================
+  // FORMS
+  // ======================================================
+
+  const [form] = Form.useForm();
   const [resetForm] = Form.useForm();
 
-  // Lọc
+  // ======================================================
+  // FILTER
+  // ======================================================
+
   const [searchText, setSearchText] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  useEffect(() => {
-    fetchAdmins();
-  }, []);
+  // ======================================================
+  // LOAD CHURCHES
+  // ======================================================
 
-  const fetchAdmins = async () => {
+  const loadChurches = useCallback(async () => {
+    try {
+      setChurchLoading(true);
+
+      const res = await fetchChurches();
+
+      setDataChurch(res?.data || res || []);
+    } catch (error) {
+      console.error("Lỗi tải giáo xứ:", error);
+
+      message.error("Không thể tải danh sách giáo xứ!");
+    } finally {
+      setChurchLoading(false);
+    }
+  }, [fetchChurches]);
+
+  // ======================================================
+  // LOAD ADMINS
+  // ======================================================
+
+  const fetchAdmins = useCallback(async () => {
     try {
       setLoading(true);
+
       const res = await getAdmins();
-      setAdmins(res.data || []);
+
+      setAdmins(res?.data || []);
     } catch (error) {
-      message.error("Lỗi tải danh sách thành viên");
+      console.error("Lỗi tải danh sách thành viên:", error);
+
+      message.error("Lỗi tải danh sách thành viên!");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Tính toán số liệu thống kê cho Bento Grid
+  useEffect(() => {
+    loadChurches();
+  }, [loadChurches]);
+
+  useEffect(() => {
+    fetchAdmins();
+  }, [fetchAdmins]);
+
+  // ======================================================
+  // STATISTICS
+  // ======================================================
+
   const totalStaff = admins.length;
-  const totalPriests = admins.filter((a) => a.role === "priest").length;
-  const activeStaff = admins.filter((a) => a.is_active === 1).length;
+
+  const totalPriests = admins.filter((item) => item.role === "priest").length;
+
+  const activeStaff = admins.filter(
+    (item) => Number(item.is_active) === 1,
+  ).length;
+
+  // const totalMembers = admins.filter(
+  //   (item) => item.account_type === "member",
+  // ).length;
+
+  // const totalVip = admins.filter((item) => item.account_type === "vip").length;
+
+  // ======================================================
+  // AUTO USERNAME FROM EMAIL
+  // ======================================================
 
   const handleEmailChange = (e) => {
-    if (!editing) {
-      const email = e.target.value;
-      if (email.includes("@")) {
-        const username = email
-          .split("@")[0]
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
-        form.setFieldsValue({ username });
-      }
-    }
+    if (editing) return;
+
+    const email = e.target.value;
+
+    if (!email.includes("@")) return;
+
+    const username = email
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+    form.setFieldsValue({
+      username,
+    });
   };
+
+  // ======================================================
+  // OPEN CREATE / EDIT DRAWER
+  // ======================================================
 
   const openDrawer = (record = null) => {
     setEditing(record);
     setOpen(true);
 
     if (record) {
-      setCurrentRole(record.role);
+      const role = record.role || "admin";
+
+      setCurrentRole(role);
+
       form.setFieldsValue({
         ...record,
+        account_type: record.account_type || "member",
         birthday: record.birthday ? dayjs(record.birthday) : null,
         ordination_date: record.ordination_date
           ? dayjs(record.ordination_date)
           : null,
       });
 
-      setFileList(
-        record.avatar
-          ? [
-              {
-                uid: "-1",
-                name: "avatar.png",
-                status: "done",
-                url: `${process.env.REACT_APP_API_URL}${record.avatar}`,
-              },
-            ]
-          : [],
-      );
+      if (record.avatar) {
+        setFileList([
+          {
+            uid: "-1",
+            name: "avatar.png",
+            status: "done",
+            url: `${process.env.REACT_APP_API_URL}${record.avatar}`,
+          },
+        ]);
+      } else {
+        setFileList([]);
+      }
     } else {
       setCurrentRole("admin");
+
       form.resetFields();
+
+      form.setFieldsValue({
+        role: "admin",
+        account_type: "member",
+      });
+
       setFileList([]);
     }
   };
+
+  // ======================================================
+  // CLOSE CREATE / EDIT DRAWER
+  // ======================================================
+
+  const closeDrawer = () => {
+    setOpen(false);
+
+    setEditing(null);
+
+    setCurrentRole("admin");
+
+    setFileList([]);
+
+    form.resetFields();
+  };
+
+  // ======================================================
+  // VIEW PROFILE
+  // ======================================================
 
   const openViewDrawer = (record) => {
     setViewRecord(record);
     setViewOpen(true);
   };
+
+  const closeViewDrawer = () => {
+    setViewOpen(false);
+    setViewRecord(null);
+  };
+
+  // ======================================================
+  // SUBMIT CREATE / EDIT
+  // ======================================================
 
   const handleSubmit = async () => {
     try {
@@ -177,19 +312,38 @@ export default function AdminManager() {
       const formData = new FormData();
 
       Object.keys(values).forEach((key) => {
+        // Avatar xử lý riêng
         if (key === "avatar") return;
 
-        if (values[key] !== undefined && values[key] !== null) {
-          if (key === "birthday" || key === "ordination_date") {
-            formData.append(
-              key,
-              values[key] ? values[key].format("YYYY-MM-DD") : "",
-            );
-          } else {
-            formData.append(key, values[key]);
-          }
+        const value = values[key];
+
+        if (value === undefined || value === null) {
+          return;
         }
+
+        // DatePicker
+        if (key === "birthday" || key === "ordination_date") {
+          formData.append(key, value ? value.format("YYYY-MM-DD") : "");
+
+          return;
+        }
+
+        formData.append(key, value);
       });
+
+      // ==================================================
+      // ACCOUNT TYPE
+      // LẤY ĐÚNG GIÁ TRỊ USER CHỌN
+      // member / vip
+      // ==================================================
+
+      const accountType = values.account_type || "member";
+
+      formData.set("account_type", accountType);
+
+      // ==================================================
+      // AVATAR
+      // ==================================================
 
       if (fileList && fileList.length > 0 && fileList[0]?.originFileObj) {
         formData.append("avatar", fileList[0].originFileObj);
@@ -199,35 +353,131 @@ export default function AdminManager() {
 
       if (editing) {
         await updateAdmin(editing.id, formData);
-        message.success("Cập nhật thông tin nhân sự thành công");
+
+        message.success(
+          `Cập nhật tài khoản ${
+            accountType === "vip" ? "VIP" : "Member"
+          } thành công!`,
+        );
       } else {
         await createAdmin(formData);
-        message.success("Tạo tài khoản quản trị mới thành công");
+
+        message.success(
+          `Tạo tài khoản ${
+            accountType === "vip" ? "VIP" : "Member"
+          } thành công!`,
+        );
       }
 
-      setOpen(false);
-      fetchAdmins();
+      closeDrawer();
+
+      await fetchAdmins();
     } catch (error) {
-      console.error(error);
+      console.error("Submit admin error:", error);
+
+      if (error?.errorFields) {
+        return;
+      }
+
+      message.error(error?.response?.data?.message || "Không thể lưu dữ liệu!");
     } finally {
       setLoading(false);
     }
+  };
+
+  // ======================================================
+  // RESET PASSWORD
+  // ======================================================
+
+  const openResetPassword = (record) => {
+    setResetUser(record);
+    setResetModalOpen(true);
+
+    resetForm.resetFields();
+  };
+
+  const closeResetPassword = () => {
+    setResetModalOpen(false);
+    setResetUser(null);
+
+    resetForm.resetFields();
   };
 
   const handleResetPassword = async () => {
     try {
       const values = await resetForm.validateFields();
+
       setLoading(true);
+
       await resetAdminPassword(resetUser.id, values.newPassword);
+
       message.success(`Đã cấp lại mật khẩu mới cho ${resetUser.full_name}`);
-      setResetModalOpen(false);
-      resetForm.resetFields();
-    } catch {
-      message.error("Đổi mật khẩu thất bại");
+
+      closeResetPassword();
+    } catch (error) {
+      console.error("Reset password error:", error);
+
+      if (error?.errorFields) {
+        return;
+      }
+
+      message.error(error?.response?.data?.message || "Đổi mật khẩu thất bại!");
     } finally {
       setLoading(false);
     }
   };
+
+  // ======================================================
+  // TOGGLE ACCOUNT
+  // ======================================================
+
+  const handleToggle = async (record) => {
+    try {
+      setLoading(true);
+
+      await toggleAdmin(record.id);
+
+      message.success("Đã cập nhật trạng thái tài khoản!");
+
+      await fetchAdmins();
+    } catch (error) {
+      console.error(error);
+
+      message.error(
+        error?.response?.data?.message || "Không thể cập nhật trạng thái!",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ======================================================
+  // DELETE
+  // ======================================================
+
+  const handleDelete = async (record) => {
+    try {
+      setLoading(true);
+
+      await deleteAdmin(record.id);
+
+      message.success("Đã xóa tài khoản!");
+
+      await fetchAdmins();
+    } catch (error) {
+      console.error(error);
+
+      message.error(
+        error?.response?.data?.message || "Không thể xóa tài khoản!",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ======================================================
+  // DATE VALIDATION
+  // ======================================================
 
   const disabledFutureDates = (current) => {
     return current && current > dayjs().endOf("day");
@@ -235,14 +485,81 @@ export default function AdminManager() {
 
   const disabledOrdinationDates = (current) => {
     if (!current) return false;
+
     const isFuture = current > dayjs().endOf("day");
+
     const birthdayValue = form.getFieldValue("birthday");
+
     const isBeforeBirthday = birthdayValue
       ? current.isBefore(dayjs(birthdayValue), "day")
       : false;
 
     return isFuture || isBeforeBirthday;
   };
+
+  // ======================================================
+  // ROLE LABEL
+  // ======================================================
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case "admin":
+        return "QUẢN TRỊ";
+
+      case "priest":
+        return "LINH MỤC";
+
+      case "liturgy_manager":
+        return "QUẢN LÝ PHỤNG VỤ";
+
+      case "media_manager":
+        return "QUẢN LÝ TRUYỀN THÔNG";
+
+      case "catechist":
+        return "GIÁO LÝ VIÊN";
+
+      default:
+        return role || "THÀNH VIÊN";
+    }
+  };
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case "admin":
+        return "blue";
+
+      case "priest":
+        return "red";
+
+      case "liturgy_manager":
+        return "gold";
+
+      case "media_manager":
+        return "green";
+
+      case "catechist":
+        return "purple";
+
+      default:
+        return "default";
+    }
+  };
+
+  // ======================================================
+  // ACCOUNT TYPE
+  // ======================================================
+
+  const getAccountTypeLabel = (type) => {
+    if (type === "vip") {
+      return "VIP";
+    }
+
+    return "MEMBER";
+  };
+
+  // ======================================================
+  // TABLE COLUMNS
+  // ======================================================
 
   const columns = [
     {
@@ -262,16 +579,19 @@ export default function AdminManager() {
               background:
                 record.role === "priest"
                   ? "linear-gradient(135deg, #8b0000 0%, #a81c1c 100%)"
-                  : "linear-gradient(135deg, " +
-                    primaryNavy +
-                    " 0%, #0f2342 100%)",
-              border: "1px solid " + accentGold,
+                  : `linear-gradient(135deg, ${primaryNavy} 0%, #0f2342 100%)`,
+              border: `1px solid ${accentGold}`,
               boxShadow: "0 2px 8px rgba(27, 54, 93, 0.12)",
             }}
           />
+
           <div>
             <div
-              style={{ fontWeight: 700, color: primaryNavy, fontSize: "15px" }}
+              style={{
+                fontWeight: 700,
+                color: primaryNavy,
+                fontSize: 15,
+              }}
             >
               {record.saint_name ? (
                 <span>
@@ -280,22 +600,24 @@ export default function AdminManager() {
                     style={{
                       marginRight: 4,
                       fontWeight: 600,
-                      fontSize: "13px",
+                      fontSize: 13,
                       color: accentGold,
                     }}
                   >
                     {record.saint_name}
                   </Text>
+
                   {record.full_name}
                 </span>
               ) : (
                 record.full_name
               )}
             </div>
+
             <Text
               type="secondary"
               style={{
-                fontSize: "11px",
+                fontSize: 11,
                 fontFamily: "monospace",
                 color: "#64748b",
               }}
@@ -306,41 +628,58 @@ export default function AdminManager() {
         </Space>
       ),
     },
+
     {
       title: "Chức danh",
       dataIndex: "position",
       render: (position) => (
-        <span style={{ fontWeight: 600, color: textDark, fontSize: "13px" }}>
+        <span
+          style={{
+            fontWeight: 600,
+            color: textDark,
+            fontSize: 13,
+          }}
+        >
           {position || <Text type="secondary">—</Text>}
         </span>
       ),
     },
+
     {
-      title: "Phân vị vai trò",
+      title: "Vai trò",
       dataIndex: "role",
       render: (role) => (
         <Tag
-          color={
-            role === "admin"
-              ? "blue"
-              : role === "priest"
-                ? "red"
-                : role === "liturgy_manager"
-                  ? "gold"
-                  : "green"
-          }
-          style={{ fontWeight: 600, borderRadius: 8 }}
+          color={getRoleColor(role)}
+          style={{
+            fontWeight: 600,
+            borderRadius: 8,
+          }}
         >
-          {role === "admin"
-            ? "QUẢN TRỊ"
-            : role === "priest"
-              ? "LINH MỤC"
-              : role === "liturgy_manager"
-                ? "QUẢN LÝ PHỤNG VỤ"
-                : "QUẢN LÝ TRUYỀN THÔNG"}
+          {getRoleLabel(role)}
         </Tag>
       ),
     },
+
+    {
+      title: "Loại tài khoản",
+      dataIndex: "account_type",
+      width: 140,
+      align: "center",
+      render: (type) => (
+        <Tag
+          icon={type === "vip" ? <CrownOutlined /> : <UserOutlined />}
+          color={type === "vip" ? "gold" : "blue"}
+          style={{
+            fontWeight: 700,
+            borderRadius: 8,
+          }}
+        >
+          {getAccountTypeLabel(type)}
+        </Tag>
+      ),
+    },
+
     {
       title: "Trạng thái",
       dataIndex: "is_active",
@@ -358,17 +697,15 @@ export default function AdminManager() {
         >
           {allowRoles.includes(user?.role) && (
             <Switch
-              checked={val === 1}
+              checked={Number(val) === 1}
               size="small"
-              onChange={async () => {
-                await toggleAdmin(record.id);
-                message.success("Đã cập nhật trạng thái");
-                fetchAdmins();
-              }}
+              loading={loading}
+              onChange={() => handleToggle(record)}
             />
           )}
+
           <Tag
-            color={val === 1 ? "green" : "default"}
+            color={Number(val) === 1 ? "green" : "default"}
             style={{
               fontWeight: 600,
               borderRadius: 8,
@@ -376,15 +713,16 @@ export default function AdminManager() {
               margin: 0,
             }}
           >
-            {val === 1 ? "HOẠT ĐỘNG" : "ĐANG KHÓA"}
+            {Number(val) === 1 ? "HOẠT ĐỘNG" : "ĐANG KHÓA"}
           </Tag>
         </div>
       ),
     },
+
     {
       title: "Thao tác",
       key: "actions",
-      width: 140,
+      width: 150,
       align: "center",
       render: (_, record) => (
         <Space size="small">
@@ -393,60 +731,76 @@ export default function AdminManager() {
               type="text"
               shape="circle"
               icon={
-                <EyeOutlined style={{ color: primaryNavy, fontSize: 16 }} />
+                <EyeOutlined
+                  style={{
+                    color: primaryNavy,
+                    fontSize: 16,
+                  }}
+                />
               }
               onClick={() => openViewDrawer(record)}
-              className="action-btn-view"
             />
           </Tooltip>
+
           {allowRoles.includes(user?.role) && (
             <Tooltip title="Đổi mật khẩu">
               <Button
                 type="text"
                 shape="circle"
                 icon={
-                  <KeyOutlined style={{ color: accentGold, fontSize: 16 }} />
+                  <KeyOutlined
+                    style={{
+                      color: accentGold,
+                      fontSize: 16,
+                    }}
+                  />
                 }
-                onClick={() => {
-                  setResetUser(record);
-                  setResetModalOpen(true);
-                }}
-                className="action-btn-edit"
+                onClick={() => openResetPassword(record)}
               />
             </Tooltip>
           )}
+
           {allowRoles.includes(user?.role) && (
             <Tooltip title="Sửa hồ sơ">
               <Button
                 type="text"
                 shape="circle"
                 icon={
-                  <EditOutlined style={{ color: primaryNavy, fontSize: 16 }} />
+                  <EditOutlined
+                    style={{
+                      color: primaryNavy,
+                      fontSize: 16,
+                    }}
+                  />
                 }
                 onClick={() => openDrawer(record)}
-                className="action-btn-edit"
               />
             </Tooltip>
           )}
+
           {allowRoles.includes(user?.role) && (
             <Popconfirm
               title="Xóa nhân sự này?"
               description="Tài khoản sẽ bị gỡ vĩnh viễn khỏi hệ thống."
               okText="Xóa"
               cancelText="Hủy"
-              onConfirm={async () => {
-                await deleteAdmin(record.id);
-                message.success("Đã xóa tài khoản");
-                fetchAdmins();
+              okButtonProps={{
+                danger: true,
               }}
+              onConfirm={() => handleDelete(record)}
             >
               <Tooltip title="Xóa nhân sự">
                 <Button
                   type="text"
                   shape="circle"
                   danger
-                  icon={<DeleteOutlined style={{ fontSize: 16 }} />}
-                  className="action-btn-delete"
+                  icon={
+                    <DeleteOutlined
+                      style={{
+                        fontSize: 16,
+                      }}
+                    />
+                  }
                 />
               </Tooltip>
             </Popconfirm>
@@ -456,12 +810,18 @@ export default function AdminManager() {
     },
   ];
 
+  // ======================================================
+  // FILTER DATA
+  // ======================================================
+
   const filteredAdmins = admins.filter((item) => {
+    const keyword = searchText.trim().toLowerCase();
+
     const matchName =
-      !searchText ||
-      item.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.username?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.email?.toLowerCase().includes(searchText.toLowerCase());
+      !keyword ||
+      item.full_name?.toLowerCase().includes(keyword) ||
+      item.username?.toLowerCase().includes(keyword) ||
+      item.email?.toLowerCase().includes(keyword);
 
     const matchRole = !roleFilter || item.role === roleFilter;
 
@@ -472,6 +832,10 @@ export default function AdminManager() {
 
     return matchName && matchRole && matchStatus;
   });
+
+  // ======================================================
+  // RENDER
+  // ======================================================
 
   return (
     <ConfigProvider
@@ -486,15 +850,21 @@ export default function AdminManager() {
     >
       <div className="admin-editorial-layout">
         <div className="admin-editorial-container">
-          {/* HEADER BAR */}
+          {/* ==================================================
+              HEADER
+          ================================================== */}
+
           <div className="admin-header-section">
             <div className="header-text-group">
               <span className="sacred-badge">
-                <CompassOutlined /> HỆ THỐNG ĐIỀU HÀNH MỤC VỤ
+                <CompassOutlined />
+                HỆ THỐNG ĐIỀU HÀNH MỤC VỤ
               </span>
+
               <Title level={2} className="admin-main-title">
                 BAN ĐIỀU HÀNH & HỘI ĐỒNG MỤC VỤ
               </Title>
+
               <Paragraph className="admin-sub-title">
                 Quản lý phân quyền tài khoản hệ thống nội bộ Giáo xứ Đồng Quan.
               </Paragraph>
@@ -506,7 +876,9 @@ export default function AdminManager() {
                 onClick={fetchAdmins}
                 loading={loading}
                 className="refresh-btn"
-                style={{ marginRight: 10 }}
+                style={{
+                  marginRight: 10,
+                }}
               >
                 Làm mới
               </Button>
@@ -524,8 +896,16 @@ export default function AdminManager() {
             </div>
           </div>
 
-          {/* BENTO GRID THỐNG KÊ */}
-          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          {/* ==================================================
+              STATISTICS
+          ================================================== */}
+
+          <Row
+            gutter={[16, 16]}
+            style={{
+              marginBottom: 24,
+            }}
+          >
             <Col xs={24} sm={8}>
               <Card bordered={false} className="stat-card">
                 <Statistic
@@ -544,7 +924,7 @@ export default function AdminManager() {
             <Col xs={24} sm={8}>
               <Card bordered={false} className="stat-card">
                 <Statistic
-                  title="Hàng Giáo Sĩ (Linh Mục)"
+                  title="Linh Mục"
                   value={totalPriests}
                   prefix={
                     <SafetyCertificateOutlined className="stat-icon gold" />
@@ -574,14 +954,23 @@ export default function AdminManager() {
             </Col>
           </Row>
 
-          {/* CARD TÌM KIẾM BỘ LỌC */}
+          {/* ==================================================
+              FILTER
+          ================================================== */}
+
           <Card bordered={false} className="filter-card">
             <Row gutter={[16, 16]} align="middle">
               <Col xs={24} lg={10}>
                 <Input
                   allowClear
                   placeholder="Tìm theo tên, email hoặc username..."
-                  prefix={<SearchOutlined style={{ color: "#94a3b8" }} />}
+                  prefix={
+                    <SearchOutlined
+                      style={{
+                        color: "#94a3b8",
+                      }}
+                    />
+                  }
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                   className="custom-filter-input"
@@ -592,15 +981,33 @@ export default function AdminManager() {
                 <Select
                   allowClear
                   placeholder="Vai trò"
-                  style={{ width: "100%" }}
+                  style={{
+                    width: "100%",
+                  }}
                   value={roleFilter || undefined}
                   onChange={(value) => setRoleFilter(value || "")}
                   className="custom-filter-select"
                   options={[
-                    { value: "admin", label: "Quản trị viên" },
-                    { value: "priest", label: "Linh mục" },
-                    { value: "liturgy_manager", label: "Quản lý phụng vụ" },
-                    { value: "media_manager", label: "Quản lý truyền thông" },
+                    {
+                      value: "admin",
+                      label: "Quản trị viên",
+                    },
+                    {
+                      value: "priest",
+                      label: "Linh mục",
+                    },
+                    {
+                      value: "liturgy_manager",
+                      label: "Quản lý phụng vụ",
+                    },
+                    {
+                      value: "media_manager",
+                      label: "Quản lý truyền thông",
+                    },
+                    {
+                      value: "catechist",
+                      label: "Giáo lý viên",
+                    },
                   ]}
                 />
               </Col>
@@ -609,13 +1016,21 @@ export default function AdminManager() {
                 <Select
                   allowClear
                   placeholder="Trạng thái"
-                  style={{ width: "100%" }}
+                  style={{
+                    width: "100%",
+                  }}
                   value={statusFilter !== "" ? statusFilter : undefined}
                   onChange={(value) => setStatusFilter(value ?? "")}
                   className="custom-filter-select"
                   options={[
-                    { value: 1, label: "Đang hoạt động" },
-                    { value: 0, label: "Đang khóa" },
+                    {
+                      value: 1,
+                      label: "Đang hoạt động",
+                    },
+                    {
+                      value: 0,
+                      label: "Đang khóa",
+                    },
                   ]}
                 />
               </Col>
@@ -637,7 +1052,10 @@ export default function AdminManager() {
             </Row>
           </Card>
 
-          {/* BẢNG DỮ LIỆU CHÍNH */}
+          {/* ==================================================
+              TABLE
+          ================================================== */}
+
           <Card bordered={false} className="main-table-card">
             <Table
               rowKey="id"
@@ -647,30 +1065,43 @@ export default function AdminManager() {
               pagination={{
                 pageSize: 8,
                 showTotal: (total) => `Tổng số: ${total} nhân sự`,
-                style: { marginTop: 20 },
+                style: {
+                  marginTop: 20,
+                },
               }}
-              scroll={{ x: 800 }}
+              scroll={{
+                x: 1000,
+              }}
               className="custom-admin-table"
             />
           </Card>
         </div>
 
-        {/* DRAWER XEM CHI TIẾT HỒ SƠ */}
+        {/* ==================================================
+            VIEW DRAWER
+        ================================================== */}
+
         <Drawer
           title={
             <div className="drawer-title-box">
-              <UserOutlined style={{ color: accentGold }} />
+              <UserOutlined
+                style={{
+                  color: accentGold,
+                }}
+              />
+
               <span>Hồ Sơ Trích Ngang Nhân Sự</span>
             </div>
           }
           width={640}
-          onClose={() => setViewOpen(false)}
+          onClose={closeViewDrawer}
           open={viewOpen}
           className="editorial-drawer"
         >
           {viewRecord && (
             <div>
-              {/* Profile Header Box */}
+              {/* PROFILE HEADER */}
+
               <div className="profile-header-card">
                 <Avatar
                   size={80}
@@ -704,49 +1135,76 @@ export default function AdminManager() {
 
                 <Text
                   type="secondary"
-                  style={{ fontSize: "13px", display: "block", marginTop: 4 }}
+                  style={{
+                    fontSize: 13,
+                    display: "block",
+                    marginTop: 4,
+                  }}
                 >
                   Chức danh: <b>{viewRecord.position || "Thành viên"}</b>
                 </Text>
 
-                <div style={{ marginTop: 10 }}>
+                <div
+                  style={{
+                    marginTop: 10,
+                  }}
+                >
                   <Tag
-                    color={viewRecord.role === "priest" ? "red" : "blue"}
-                    style={{ fontWeight: 600, borderRadius: "6px" }}
+                    color={getRoleColor(viewRecord.role)}
+                    style={{
+                      fontWeight: 600,
+                      borderRadius: 6,
+                    }}
                   >
-                    {viewRecord.role === "priest"
-                      ? "LINH MỤC GIÁO XỨ"
-                      : "QUẢN TRỊ VIÊN HỆ THỐNG"}
+                    {getRoleLabel(viewRecord.role)}
                   </Tag>
 
                   <Tag
-                    color={viewRecord.is_active === 1 ? "green" : "default"}
-                    style={{ borderRadius: 6 }}
+                    icon={
+                      viewRecord.account_type === "vip" ? (
+                        <CrownOutlined />
+                      ) : (
+                        <UserOutlined />
+                      )
+                    }
+                    color={viewRecord.account_type === "vip" ? "gold" : "blue"}
+                    style={{
+                      fontWeight: 600,
+                      borderRadius: 6,
+                    }}
                   >
-                    {viewRecord.is_active === 1
+                    {getAccountTypeLabel(viewRecord.account_type)}
+                  </Tag>
+
+                  <Tag
+                    color={
+                      Number(viewRecord.is_active) === 1 ? "green" : "default"
+                    }
+                    style={{
+                      borderRadius: 6,
+                    }}
+                  >
+                    {Number(viewRecord.is_active) === 1
                       ? "Đang hoạt động"
                       : "Đang khóa"}
                   </Tag>
                 </div>
               </div>
 
-              {/* Khối Thông tin tài khoản */}
+              {/* ACCOUNT INFO */}
+
               <Card
                 title={
-                  <span
-                    style={{
-                      color: primaryNavy,
-                      fontWeight: 700,
-                      fontSize: 14,
-                    }}
-                  >
+                  <span className="section-card-title">
                     1. Thông tin tài khoản & Hệ thống
                   </span>
                 }
                 size="small"
                 bordered={false}
                 className="modal-prayer-card"
-                style={{ marginBottom: 16 }}
+                style={{
+                  marginBottom: 16,
+                }}
               >
                 <Descriptions
                   column={1}
@@ -765,32 +1223,57 @@ export default function AdminManager() {
                       {viewRecord.username}
                     </span>
                   </Descriptions.Item>
+
                   <Descriptions.Item label="Email">
-                    {viewRecord.email}
+                    {viewRecord.email || "—"}
                   </Descriptions.Item>
+
                   <Descriptions.Item label="Số điện thoại">
                     {viewRecord.phone || "—"}
+                  </Descriptions.Item>
+
+                  <Descriptions.Item label="Loại tài khoản">
+                    <Tag
+                      icon={
+                        viewRecord.account_type === "vip" ? (
+                          <CrownOutlined />
+                        ) : (
+                          <UserOutlined />
+                        )
+                      }
+                      color={
+                        viewRecord.account_type === "vip" ? "gold" : "blue"
+                      }
+                    >
+                      {getAccountTypeLabel(viewRecord.account_type)}
+                    </Tag>
+                  </Descriptions.Item>
+
+                  <Descriptions.Item label="Giáo xứ">
+                    {viewRecord.church_name ||
+                      dataChurch.find(
+                        (church) =>
+                          Number(church.id) === Number(viewRecord.church_id),
+                      )?.name ||
+                      "—"}
                   </Descriptions.Item>
                 </Descriptions>
               </Card>
 
-              {/* Khối Thông tin cá nhân */}
+              {/* PERSONAL INFO */}
+
               <Card
                 title={
-                  <span
-                    style={{
-                      color: primaryNavy,
-                      fontWeight: 700,
-                      fontSize: 14,
-                    }}
-                  >
+                  <span className="section-card-title">
                     2. Lý lịch & Nhân thân
                   </span>
                 }
                 size="small"
                 bordered={false}
                 className="modal-prayer-card"
-                style={{ marginBottom: 16 }}
+                style={{
+                  marginBottom: 16,
+                }}
               >
                 <Descriptions
                   column={1}
@@ -803,26 +1286,23 @@ export default function AdminManager() {
                       ? dayjs(viewRecord.birthday).format("DD/MM/YYYY")
                       : "—"}
                   </Descriptions.Item>
+
                   <Descriptions.Item label="Quê quán">
                     {viewRecord.hometown || "—"}
                   </Descriptions.Item>
+
                   <Descriptions.Item label="Địa chỉ cư trú">
                     {viewRecord.address || "—"}
                   </Descriptions.Item>
                 </Descriptions>
               </Card>
 
-              {/* Khối Thông tin mục vụ riêng cho Linh mục */}
+              {/* PRIEST INFO */}
+
               {viewRecord.role === "priest" && (
                 <Card
                   title={
-                    <span
-                      style={{
-                        color: primaryNavy,
-                        fontWeight: 700,
-                        fontSize: 14,
-                      }}
-                    >
+                    <span className="section-card-title">
                       3. Thông tin Chức thánh Mục vụ
                     </span>
                   }
@@ -837,7 +1317,12 @@ export default function AdminManager() {
                     className="custom-modal-desc"
                   >
                     <Descriptions.Item label="Ngày thụ phong">
-                      <span style={{ fontWeight: 700, color: primaryNavy }}>
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          color: primaryNavy,
+                        }}
+                      >
                         {viewRecord.ordination_date
                           ? dayjs(viewRecord.ordination_date).format(
                               "DD [Tháng] MM, YYYY",
@@ -845,6 +1330,7 @@ export default function AdminManager() {
                           : "—"}
                       </span>
                     </Descriptions.Item>
+
                     <Descriptions.Item label="Khẩu hiệu mục vụ">
                       <span
                         style={{
@@ -858,9 +1344,17 @@ export default function AdminManager() {
                     </Descriptions.Item>
                   </Descriptions>
 
-                  <Divider style={{ margin: "12px 0" }} />
+                  <Divider
+                    style={{
+                      margin: "12px 0",
+                    }}
+                  />
 
-                  <div style={{ padding: "0 8px" }}>
+                  <div
+                    style={{
+                      padding: "0 8px",
+                    }}
+                  >
                     <Text
                       strong
                       style={{
@@ -871,12 +1365,13 @@ export default function AdminManager() {
                     >
                       Tiểu sử chặng đường phục vụ:
                     </Text>
+
                     <Paragraph
                       style={{
                         color: textDark,
                         margin: 0,
                         whiteSpace: "pre-line",
-                        fontSize: "13px",
+                        fontSize: 13,
                       }}
                     >
                       {viewRecord.bio || "Chưa có dữ liệu tiểu sử."}
@@ -888,27 +1383,39 @@ export default function AdminManager() {
           )}
         </Drawer>
 
-        {/* DRAWER CẤU HÌNH THÊM / SỬA */}
+        {/* ==================================================
+            CREATE / EDIT DRAWER
+        ================================================== */}
+
         <Drawer
           title={
             <div className="drawer-title-box">
-              <UserOutlined style={{ color: accentGold }} />
+              <UserOutlined
+                style={{
+                  color: accentGold,
+                }}
+              />
+
               <span>
                 {editing ? "Cập Nhật Hồ Sơ Nhân Sự" : "Khởi Tạo Nhân Sự Mới"}
               </span>
             </div>
           }
           width={560}
-          onClose={() => setOpen(false)}
+          onClose={closeDrawer}
           open={open}
+          destroyOnClose={false}
           extra={
             <Space>
               <Button
-                onClick={() => setOpen(false)}
-                style={{ borderRadius: 8 }}
+                onClick={closeDrawer}
+                style={{
+                  borderRadius: 8,
+                }}
               >
                 Hủy
               </Button>
+
               <Button
                 onClick={handleSubmit}
                 type="primary"
@@ -924,7 +1431,15 @@ export default function AdminManager() {
             </Space>
           }
         >
-          <Form form={form} layout="vertical" style={{ paddingTop: 8 }}>
+          <Form
+            form={form}
+            layout="vertical"
+            style={{
+              paddingTop: 8,
+            }}
+          >
+            {/* ACCOUNT */}
+
             <Card
               title={
                 <Text strong className="form-field-label">
@@ -934,9 +1449,19 @@ export default function AdminManager() {
               size="small"
               bordered={false}
               className="modal-prayer-card"
-              style={{ marginBottom: 16 }}
+              style={{
+                marginBottom: 16,
+              }}
             >
-              <Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
+              {/* AVATAR */}
+
+              <Row
+                gutter={16}
+                align="middle"
+                style={{
+                  marginBottom: 16,
+                }}
+              >
                 <Col span={6}>
                   <Form.Item
                     label={
@@ -955,7 +1480,13 @@ export default function AdminManager() {
                       {fileList.length < 1 && (
                         <div>
                           <PlusOutlined />
-                          <div style={{ marginTop: 6, fontSize: 12 }}>
+
+                          <div
+                            style={{
+                              marginTop: 6,
+                              fontSize: 12,
+                            }}
+                          >
                             Tải lên
                           </div>
                         </div>
@@ -967,12 +1498,17 @@ export default function AdminManager() {
                 <Col span={18}>
                   <Paragraph
                     type="secondary"
-                    style={{ fontSize: "12px", margin: 0 }}
+                    style={{
+                      fontSize: 12,
+                      margin: 0,
+                    }}
                   >
                     Tải lên ảnh chân dung rõ nét. Định dạng cho phép PNG, JPG.
                   </Paragraph>
                 </Col>
               </Row>
+
+              {/* EMAIL */}
 
               <Form.Item
                 label={
@@ -990,12 +1526,20 @@ export default function AdminManager() {
                 ]}
               >
                 <Input
-                  prefix={<MailOutlined style={{ color: "#94a3b8" }} />}
+                  prefix={
+                    <MailOutlined
+                      style={{
+                        color: "#94a3b8",
+                      }}
+                    />
+                  }
                   placeholder="name@example.com"
                   onChange={handleEmailChange}
                   className="custom-form-input"
                 />
               </Form.Item>
+
+              {/* USERNAME + ROLE */}
 
               <Row gutter={16}>
                 <Col span={12}>
@@ -1009,7 +1553,13 @@ export default function AdminManager() {
                   >
                     <Input
                       disabled
-                      prefix={<UserOutlined style={{ color: "#94a3b8" }} />}
+                      prefix={
+                        <UserOutlined
+                          style={{
+                            color: "#94a3b8",
+                          }}
+                        />
+                      }
                       className="custom-form-input"
                     />
                   </Form.Item>
@@ -1030,16 +1580,22 @@ export default function AdminManager() {
                       className="custom-form-input"
                     >
                       <Option value="admin">Quản trị viên</Option>
+
                       <Option value="priest">Linh mục Giáo xứ</Option>
+
                       <Option value="liturgy_manager">Quản lý phụng vụ</Option>
+
                       <Option value="media_manager">
                         Quản lý truyền thông
                       </Option>
+
                       <Option value="catechist">Giáo lý viên</Option>
                     </Select>
                   </Form.Item>
                 </Col>
               </Row>
+
+              {/* POSITION */}
 
               <Form.Item
                 label={
@@ -1055,6 +1611,60 @@ export default function AdminManager() {
                 />
               </Form.Item>
 
+              {/* CHURCH */}
+
+              <Form.Item
+                label={
+                  <Text strong className="form-field-label">
+                    Giáo xứ quản lý *
+                  </Text>
+                }
+                name="church_id"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng chọn giáo xứ",
+                  },
+                ]}
+              >
+                <Select
+                  showSearch
+                  loading={churchLoading}
+                  placeholder="Chọn giáo xứ..."
+                  optionFilterProp="label"
+                  className="custom-form-input"
+                  options={dataChurch.map((church) => ({
+                    value: church.id,
+                    label: church.name,
+                  }))}
+                />
+              </Form.Item>
+
+              {/* ACCOUNT TYPE - READ ONLY */}
+
+              <Form.Item
+                label={
+                  <Text strong className="form-field-label">
+                    Loại tài khoản
+                  </Text>
+                }
+                name="account_type"
+                initialValue="member"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng chọn loại tài khoản",
+                  },
+                ]}
+              >
+                <Select className="custom-form-input">
+                  <Option value="member">Member</Option>
+                  <Option value="vip">VIP</Option>
+                </Select>
+              </Form.Item>
+
+              {/* PASSWORD */}
+
               {!editing && (
                 <Form.Item
                   label={
@@ -1063,16 +1673,33 @@ export default function AdminManager() {
                     </Text>
                   }
                   name="password"
-                  rules={[{ required: true, message: "Mật khẩu bắt buộc" }]}
+                  rules={[
+                    {
+                      required: true,
+                      message: "Mật khẩu bắt buộc",
+                    },
+                    {
+                      min: 6,
+                      message: "Mật khẩu tối thiểu 6 ký tự",
+                    },
+                  ]}
                 >
                   <Input.Password
-                    prefix={<LockOutlined style={{ color: "#94a3b8" }} />}
+                    prefix={
+                      <LockOutlined
+                        style={{
+                          color: "#94a3b8",
+                        }}
+                      />
+                    }
                     placeholder="Nhập mật khẩu..."
                     className="custom-form-input"
                   />
                 </Form.Item>
               )}
             </Card>
+
+            {/* PERSONAL */}
 
             <Card
               title={
@@ -1083,7 +1710,9 @@ export default function AdminManager() {
               size="small"
               bordered={false}
               className="modal-prayer-card"
-              style={{ marginBottom: 16 }}
+              style={{
+                marginBottom: 16,
+              }}
             >
               <Row gutter={16}>
                 <Col span={8}>
@@ -1111,11 +1740,20 @@ export default function AdminManager() {
                     }
                     name="full_name"
                     rules={[
-                      { required: true, message: "Vui lòng nhập họ tên" },
+                      {
+                        required: true,
+                        message: "Vui lòng nhập họ tên",
+                      },
                     ]}
                   >
                     <Input
-                      prefix={<IdcardOutlined style={{ color: "#94a3b8" }} />}
+                      prefix={
+                        <IdcardOutlined
+                          style={{
+                            color: "#94a3b8",
+                          }}
+                        />
+                      }
                       placeholder="Nguyễn Văn A..."
                       className="custom-form-input"
                     />
@@ -1134,7 +1772,13 @@ export default function AdminManager() {
                     name="phone"
                   >
                     <Input
-                      prefix={<PhoneOutlined style={{ color: "#94a3b8" }} />}
+                      prefix={
+                        <PhoneOutlined
+                          style={{
+                            color: "#94a3b8",
+                          }}
+                        />
+                      }
                       placeholder="09xxxx..."
                       className="custom-form-input"
                     />
@@ -1151,7 +1795,9 @@ export default function AdminManager() {
                     name="birthday"
                   >
                     <DatePicker
-                      style={{ width: "100%" }}
+                      style={{
+                        width: "100%",
+                      }}
                       format="DD/MM/YYYY"
                       placeholder="Chọn ngày..."
                       disabledDate={disabledFutureDates}
@@ -1170,7 +1816,13 @@ export default function AdminManager() {
                 name="hometown"
               >
                 <Input
-                  prefix={<HomeOutlined style={{ color: "#94a3b8" }} />}
+                  prefix={
+                    <HomeOutlined
+                      style={{
+                        color: "#94a3b8",
+                      }}
+                    />
+                  }
                   placeholder="Địa chỉ quê hương..."
                   className="custom-form-input"
                 />
@@ -1185,12 +1837,20 @@ export default function AdminManager() {
                 name="address"
               >
                 <Input
-                  prefix={<HomeOutlined style={{ color: "#94a3b8" }} />}
+                  prefix={
+                    <HomeOutlined
+                      style={{
+                        color: "#94a3b8",
+                      }}
+                    />
+                  }
                   placeholder="Nơi ở hiện nay..."
                   className="custom-form-input"
                 />
               </Form.Item>
             </Card>
+
+            {/* PRIEST */}
 
             {currentRole === "priest" && (
               <Card
@@ -1214,7 +1874,9 @@ export default function AdminManager() {
                       name="ordination_date"
                     >
                       <DatePicker
-                        style={{ width: "100%" }}
+                        style={{
+                          width: "100%",
+                        }}
                         format="DD/MM/YYYY"
                         placeholder="Chọn ngày..."
                         disabledDate={disabledOrdinationDates}
@@ -1233,7 +1895,13 @@ export default function AdminManager() {
                       name="motto"
                     >
                       <Input
-                        prefix={<BookOutlined style={{ color: "#94a3b8" }} />}
+                        prefix={
+                          <BookOutlined
+                            style={{
+                              color: "#94a3b8",
+                            }}
+                          />
+                        }
                         placeholder="Châm ngôn cuộc đời..."
                         className="custom-form-input"
                       />
@@ -1260,18 +1928,23 @@ export default function AdminManager() {
           </Form>
         </Drawer>
 
-        {/* MODAL RESET MẬT KHẨU */}
+        {/* ==================================================
+            RESET PASSWORD MODAL
+        ================================================== */}
+
         <Modal
           open={resetModalOpen}
-          onCancel={() => {
-            setResetModalOpen(false);
-            resetForm.resetFields();
-          }}
+          onCancel={closeResetPassword}
           onOk={handleResetPassword}
           confirmLoading={loading}
           title={
             <div className="modal-custom-title">
-              <KeyOutlined style={{ color: accentGold }} />
+              <KeyOutlined
+                style={{
+                  color: accentGold,
+                }}
+              />
+
               <span>Đặt Lại Mật Khẩu Truy Cập</span>
             </div>
           }
@@ -1285,10 +1958,19 @@ export default function AdminManager() {
             },
           }}
           cancelButtonProps={{
-            style: { borderRadius: 8, height: 38 },
+            style: {
+              borderRadius: 8,
+              height: 38,
+            },
           }}
         >
-          <Form form={resetForm} layout="vertical" style={{ paddingTop: 12 }}>
+          <Form
+            form={resetForm}
+            layout="vertical"
+            style={{
+              paddingTop: 12,
+            }}
+          >
             <Form.Item
               label={
                 <Text strong className="form-field-label">
@@ -1297,12 +1979,24 @@ export default function AdminManager() {
               }
               name="newPassword"
               rules={[
-                { required: true, message: "Bắt buộc nhập" },
-                { min: 6, message: "Tối thiểu 6 ký tự" },
+                {
+                  required: true,
+                  message: "Bắt buộc nhập",
+                },
+                {
+                  min: 6,
+                  message: "Tối thiểu 6 ký tự",
+                },
               ]}
             >
               <Input.Password
-                prefix={<LockOutlined style={{ color: "#94a3b8" }} />}
+                prefix={
+                  <LockOutlined
+                    style={{
+                      color: "#94a3b8",
+                    }}
+                  />
+                }
                 className="custom-form-input"
               />
             </Form.Item>
@@ -1316,11 +2010,17 @@ export default function AdminManager() {
               name="confirmPassword"
               dependencies={["newPassword"]}
               rules={[
-                { required: true, message: "Bắt buộc nhập" },
+                {
+                  required: true,
+                  message: "Bắt buộc nhập",
+                },
+
                 ({ getFieldValue }) => ({
                   validator(_, value) {
-                    if (!value || getFieldValue("newPassword") === value)
+                    if (!value || getFieldValue("newPassword") === value) {
                       return Promise.resolve();
+                    }
+
                     return Promise.reject(
                       new Error("Mật khẩu gõ lại chưa khớp"),
                     );
@@ -1329,196 +2029,273 @@ export default function AdminManager() {
               ]}
             >
               <Input.Password
-                prefix={<LockOutlined style={{ color: "#94a3b8" }} />}
+                prefix={
+                  <LockOutlined
+                    style={{
+                      color: "#94a3b8",
+                    }}
+                  />
+                }
                 className="custom-form-input"
               />
             </Form.Item>
           </Form>
         </Modal>
 
-        {/* STYLES SCOPED */}
+        {/* ==================================================
+            STYLES
+        ================================================== */}
+
         <style
           dangerouslySetInnerHTML={{
             __html: `
-            @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
+              @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
 
-            .admin-editorial-layout {
-              background: ${softBg};
-              min-height: 100vh;
-              padding: 40px 20px 80px 20px;
-              font-family: 'Be Vietnam Pro', sans-serif;
-              color: ${textDark};
-            }
+              .admin-editorial-layout {
+                background: ${softBg};
+                min-height: 100vh;
+                padding: 40px 20px 80px 20px;
+                font-family: 'Be Vietnam Pro', sans-serif;
+                color: ${textDark};
+              }
 
-            .admin-editorial-container {
-              max-width: 1100px;
-              margin: 0 auto;
-            }
+              .admin-editorial-container {
+                max-width: 1100px;
+                margin: 0 auto;
+              }
 
-            /* Header Section */
-            .admin-header-section {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-end;
-              margin-bottom: 28px;
-              flex-wrap: wrap;
-              gap: 16px;
-            }
+              .admin-header-section {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                margin-bottom: 28px;
+                flex-wrap: wrap;
+                gap: 16px;
+              }
 
-            .sacred-badge {
-              background: rgba(212, 175, 55, 0.15);
-              border: 1px solid ${accentGold};
-              color: ${primaryNavy};
-              padding: 4px 14px;
-              border-radius: 20px;
-              font-size: 11px;
-              font-weight: 700;
-              letter-spacing: 1px;
-              display: inline-flex;
-              align-items: center;
-              gap: 6px;
-              margin-bottom: 10px;
-            }
+              .sacred-badge {
+                background: rgba(212, 175, 55, 0.15);
+                border: 1px solid ${accentGold};
+                color: ${primaryNavy};
+                padding: 4px 14px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 1px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-bottom: 10px;
+              }
 
-            .admin-main-title {
-              font-family: 'Playfair Display', Georgia, serif !important;
-              color: ${primaryNavy} !important;
-              margin: 0 !important;
-              font-weight: 700 !important;
-              font-size: clamp(24px, 3.5vw, 32px) !important;
-            }
+              .admin-main-title {
+                font-family: 'Playfair Display', Georgia, serif !important;
+                color: ${primaryNavy} !important;
+                margin: 0 !important;
+                font-weight: 700 !important;
+                font-size: clamp(24px, 3.5vw, 32px) !important;
+              }
 
-            .admin-sub-title {
-              color: #64748b;
-              margin: 4px 0 0 0 !important;
-              font-size: 14px;
-            }
+              .admin-sub-title {
+                color: #64748b;
+                margin: 4px 0 0 0 !important;
+                font-size: 14px;
+              }
 
-            .refresh-btn {
-              border-radius: 10px !important;
-              border-color: rgba(27, 54, 93, 0.2) !important;
-              color: ${primaryNavy} !important;
-              font-weight: 600;
-              height: 42px;
-            }
+              .refresh-btn {
+                border-radius: 10px !important;
+                border-color: rgba(27, 54, 93, 0.2) !important;
+                color: ${primaryNavy} !important;
+                font-weight: 600;
+                height: 42px;
+              }
 
-            .add-admin-btn {
-              background: ${primaryNavy} !important;
-              border-color: ${primaryNavy} !important;
-              height: 42px !important;
-              border-radius: 10px !important;
-              font-weight: 700 !important;
-              box-shadow: 0 4px 14px rgba(27, 54, 93, 0.2);
-            }
+              .add-admin-btn {
+                background: ${primaryNavy} !important;
+                border-color: ${primaryNavy} !important;
+                height: 42px !important;
+                border-radius: 10px !important;
+                font-weight: 700 !important;
+                box-shadow: 0 4px 14px rgba(27, 54, 93, 0.2);
+              }
 
-            /* Stats Bento Cards */
-            .stat-card {
-              border-radius: 16px !important;
-              background: #ffffff !important;
-              border: 1px solid rgba(27, 54, 93, 0.08) !important;
-              box-shadow: 0 4px 16px rgba(27, 54, 93, 0.03) !important;
-            }
+              .stat-card {
+                border-radius: 16px !important;
+                background: #ffffff !important;
+                border: 1px solid rgba(27, 54, 93, 0.08) !important;
+                box-shadow: 0 4px 16px rgba(27, 54, 93, 0.03) !important;
+              }
 
-            .stat-icon {
-              margin-right: 8px;
-            }
-            .stat-icon.navy { color: ${primaryNavy}; }
-            .stat-icon.gold { color: ${accentGold}; }
-            .stat-icon.green { color: #2e7d32; }
+              .stat-icon {
+                margin-right: 8px;
+              }
 
-            /* Filter Card */
-            .filter-card {
-              border-radius: 16px !important;
-              background: #ffffff !important;
-              border: 1px solid rgba(27, 54, 93, 0.08) !important;
-              margin-bottom: 20px;
-              padding: 4px;
-            }
+              .stat-icon.navy {
+                color: ${primaryNavy};
+              }
 
-            .custom-filter-input {
-              border-radius: 10px !important;
-              height: 40px !important;
-            }
+              .stat-icon.gold {
+                color: ${accentGold};
+              }
 
-            .custom-filter-select .ant-select-selector {
-              border-radius: 10px !important;
-              height: 40px !important;
-              display: flex;
-              align-items: center;
-            }
+              .stat-icon.green {
+                color: #2e7d32;
+              }
 
-            .clear-filter-btn {
-              border-radius: 10px !important;
-              height: 40px !important;
-              color: #64748b !important;
-            }
+              .filter-card {
+                border-radius: 16px !important;
+                background: #ffffff !important;
+                border: 1px solid rgba(27, 54, 93, 0.08) !important;
+                margin-bottom: 20px;
+                padding: 4px;
+              }
 
-            /* Main Table Card */
-            .main-table-card {
-              border-radius: 20px !important;
-              background: #ffffff !important;
-              border: 1px solid rgba(212, 175, 55, 0.25) !important;
-              box-shadow: 0 10px 30px rgba(27, 54, 93, 0.05) !important;
-              padding: 8px;
-            }
+              .custom-filter-input {
+                border-radius: 10px !important;
+                height: 40px !important;
+              }
 
-            .custom-admin-table .ant-table-thead > tr > th {
-              background: ${softBg} !important;
-              color: ${primaryNavy} !important;
-              font-weight: 700 !important;
-              border-bottom: 1px solid rgba(27, 54, 93, 0.1) !important;
-            }
+              .custom-filter-select .ant-select-selector {
+                border-radius: 10px !important;
+                height: 40px !important;
+                display: flex;
+                align-items: center;
+              }
 
-            .action-btn-view:hover, .action-btn-edit:hover {
-              background: rgba(27, 54, 93, 0.1) !important;
-            }
+              .clear-filter-btn {
+                border-radius: 10px !important;
+                height: 40px !important;
+                color: #64748b !important;
+              }
 
-            .action-btn-delete:hover {
-              background: #fff5f5 !important;
-            }
+              .main-table-card {
+                border-radius: 20px !important;
+                background: #ffffff !important;
+                border: 1px solid rgba(212, 175, 55, 0.25) !important;
+                box-shadow: 0 10px 30px rgba(27, 54, 93, 0.05) !important;
+                padding: 8px;
+              }
 
-            /* Profile Header in Drawer */
-            .profile-header-card {
-              background: #ffffff;
-              padding: 24px;
-              border-radius: 16px;
-              border: 1px solid rgba(212, 175, 55, 0.3);
-              text-align: center;
-              margin-bottom: 20px;
-              box-shadow: 0 4px 16px rgba(27, 54, 93, 0.04);
-            }
+              .custom-admin-table .ant-table-thead > tr > th {
+                background: ${softBg} !important;
+                color: ${primaryNavy} !important;
+                font-weight: 700 !important;
+                border-bottom: 1px solid rgba(27, 54, 93, 0.1) !important;
+              }
 
-            /* Modal Style */
-            .modal-custom-title {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              font-family: 'Playfair Display', serif;
-              color: ${primaryNavy};
-              font-size: 18px;
-              font-weight: 700;
-            }
+              .custom-admin-table .ant-table-tbody > tr:hover > td {
+                background: rgba(27, 54, 93, 0.025) !important;
+              }
 
-            .modal-prayer-card {
-              border-radius: 12px !important;
-              border: 1px solid rgba(27, 54, 93, 0.08) !important;
-              background: ${softBg} !important;
-            }
+              .profile-header-card {
+                background: #ffffff;
+                padding: 24px;
+                border-radius: 16px;
+                border: 1px solid rgba(212, 175, 55, 0.3);
+                text-align: center;
+                margin-bottom: 20px;
+                box-shadow: 0 4px 16px rgba(27, 54, 93, 0.04);
+              }
 
-            .form-field-label {
-              font-size: 13px;
-              color: ${primaryNavy};
-            }
+              .drawer-title-box {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 700;
+                color: ${primaryNavy};
+              }
 
-            .custom-form-input {
-              border-radius: 8px !important;
-            }
+              .section-card-title {
+                color: ${primaryNavy};
+                font-weight: 700;
+                font-size: 14px;
+              }
 
-            .custom-modal-desc {
-              border-radius: 12px;
-              overflow: hidden;
-            }
-          `,
+              .modal-custom-title {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-family: 'Playfair Display', serif;
+                color: ${primaryNavy};
+                font-size: 18px;
+                font-weight: 700;
+              }
+
+              .modal-prayer-card {
+                border-radius: 12px !important;
+                border: 1px solid rgba(27, 54, 93, 0.08) !important;
+                background: ${softBg} !important;
+              }
+
+              .form-field-label {
+                font-size: 13px;
+                color: ${primaryNavy};
+              }
+
+              .custom-form-input {
+                border-radius: 8px !important;
+              }
+
+              .custom-modal-desc {
+                border-radius: 12px;
+                overflow: hidden;
+              }
+
+              .account-type-fixed {
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                padding: 0 12px;
+                background: #ffffff;
+                border: 1px solid rgba(27, 54, 93, 0.12);
+                border-radius: 8px;
+              }
+
+              @media (max-width: 768px) {
+                .admin-editorial-layout {
+                  padding: 24px 12px 60px;
+                }
+
+                .admin-header-section {
+                  align-items: flex-start;
+                  flex-direction: column;
+                }
+
+                .header-action-group {
+                  width: 100%;
+                  display: flex;
+                }
+
+                .header-action-group .refresh-btn {
+                  flex: 1;
+                }
+
+                .header-action-group .add-admin-btn {
+                  flex: 1;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .admin-editorial-layout {
+                  padding: 20px 8px 50px;
+                }
+
+                .header-action-group {
+                  flex-direction: column;
+                  gap: 8px;
+                }
+
+                .header-action-group .refresh-btn,
+                .header-action-group .add-admin-btn {
+                  width: 100%;
+                  margin-right: 0 !important;
+                }
+
+                .profile-header-card {
+                  padding: 18px;
+                }
+              }
+            `,
           }}
         />
       </div>

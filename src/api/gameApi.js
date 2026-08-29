@@ -28,29 +28,40 @@ import axiosClient from "./axios";
  */
 
 export const getGameFileUrl = (filePath) => {
-  if (!filePath) {
+  // 1. Bắt lỗi nếu filePath bị undefined, null, không phải kiểu string, hoặc chuỗi rỗng
+  if (!filePath || typeof filePath !== "string") {
     return null;
   }
 
-  // Đã là URL đầy đủ
-  if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-    return filePath;
+  // Trim để tránh khoảng trắng thừa ở 2 đầu
+  const cleanPath = filePath.trim();
+
+  if (!cleanPath) {
+    return null;
   }
 
+  // 2. Nếu đã là URL đầy đủ (http, https) hoặc Blob Preview URL từ trình duyệt
+  if (
+    cleanPath.startsWith("http://") ||
+    cleanPath.startsWith("https://") ||
+    cleanPath.startsWith("blob:")
+  ) {
+    return cleanPath;
+  }
+
+  // 3. Lấy serverURL từ axiosClient.defaults.baseURL
   const baseURL = axiosClient.defaults.baseURL || "";
 
-  // Ví dụ:
-  // http://localhost:12003/api
-  // => http://localhost:12003
+  // Loại bỏ đuôi /api hoặc /api/ ở cuối (nếu có)
   const serverURL = baseURL.replace(/\/api\/?$/, "");
 
-  if (filePath.startsWith("/")) {
-    return `${serverURL}${filePath}`;
-  }
+  // 4. Chuẩn hóa dấu gạch chéo '/' để tránh trùng lặp (ví dụ: http://localhost:12003//uploads/file.png)
+  const normalizedPath = cleanPath.startsWith("/")
+    ? cleanPath
+    : `/${cleanPath}`;
 
-  return `${serverURL}/${filePath}`;
+  return `${serverURL}${normalizedPath}`;
 };
-
 /**
  * =========================================================
  * BUILD FORM DATA

@@ -11,6 +11,7 @@ import {
   Hand,
   CheckCheck,
   Gamepad2,
+  Sparkles,
 } from "lucide-react";
 
 const { Title, Text } = Typography;
@@ -29,22 +30,44 @@ const ICON_MAP = {
 
 const GameTypeSelector = ({ types = [], value, onChange }) => {
   return (
-    <div style={{ padding: "8px 4px" }}>
-      {/* HEADER SECTION */}
-      <div style={{ marginBottom: 28, textAlign: "left" }}>
+    <div
+      style={{
+        padding: "16px 8px",
+        fontFamily: "'Quicksand', 'Plus Jakarta Sans', sans-serif",
+      }}
+    >
+      {/* HEADER SECTION CHIBI */}
+      <div style={{ marginBottom: 32, textAlign: "center" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "#FAF5FF",
+            padding: "6px 16px",
+            borderRadius: 20,
+            border: "1.5px solid #E9D5FF",
+            marginBottom: 10,
+          }}
+        >
+          <Sparkles size={18} style={{ color: "#A855F7" }} />
+          <Text style={{ fontWeight: 700, color: "#9333EA", fontSize: 13 }}>
+            Thử thách đáng yêu
+          </Text>
+        </div>
         <Title
           level={3}
           style={{
-            marginBottom: 6,
-            fontSize: 22,
-            fontWeight: 700,
-            color: "#1e293b",
+            margin: "4px 0 8px 0",
+            fontSize: 24,
+            fontWeight: 800,
+            color: "#3B2F4C",
           }}
         >
-          Chọn dạng trò chơi
+          Chọn dạng trò chơi bé thích ✨
         </Title>
-        <Text style={{ color: "#64748b", fontSize: 14 }}>
-          Mỗi dạng trò chơi có cách tương tác và cấu hình câu hỏi riêng biệt
+        <Text style={{ color: "#827093", fontSize: 14, fontWeight: 500 }}>
+          Mỗi mini-game mang đến một phong cách học tập siêu vui và hào hứng!
         </Text>
       </div>
 
@@ -52,7 +75,9 @@ const GameTypeSelector = ({ types = [], value, onChange }) => {
       <Row gutter={[20, 20]}>
         {types.map((type) => {
           const isSelected = value === type.key;
-          const themeColor = type.color || "#6C4BFF";
+          const themeColor = type.color || "#A855F7";
+          const bgColor = type.bgColor || "#FAF5FF";
+          const borderColor = type.borderColor || "#E9D5FF";
 
           // Lấy Icon component từ MAP
           const IconComponent = ICON_MAP[type.key] || Gamepad2;
@@ -64,18 +89,20 @@ const GameTypeSelector = ({ types = [], value, onChange }) => {
                 style={{
                   position: "relative",
                   height: "100%",
-                  borderRadius: 20,
-                  padding: 20,
-                  background: isSelected ? "#F4F0FF" : "#ffffff",
+                  borderRadius: 28, // Bo tròn chuẩn Chibi
+                  padding: 22,
+                  background: isSelected ? bgColor : "#FFFFFF",
                   border: isSelected
-                    ? `2px solid ${themeColor}`
-                    : "1px solid #e2e8f0",
+                    ? `2.5px solid ${themeColor}`
+                    : `2px solid ${borderColor}`,
                   cursor: "pointer",
-                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                  transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
                   boxShadow: isSelected
-                    ? `0 10px 25px -5px ${themeColor}33`
-                    : "0 2px 8px rgba(0, 0, 0, 0.04)",
-                  transform: isSelected ? "translateY(-4px)" : "none",
+                    ? `0 12px 28px ${themeColor}25`
+                    : "0 6px 18px rgba(244, 114, 182, 0.04)",
+                  transform: isSelected
+                    ? "scale(1.03) translateY(-4px)"
+                    : "scale(1)",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -83,36 +110,36 @@ const GameTypeSelector = ({ types = [], value, onChange }) => {
                 onMouseEnter={(e) => {
                   if (!isSelected) {
                     e.currentTarget.style.borderColor = themeColor;
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 10px 20px rgba(0,0,0,0.06)";
+                    e.currentTarget.style.transform =
+                      "scale(1.02) translateY(-4px)";
+                    e.currentTarget.style.boxShadow = `0 10px 22px ${themeColor}18`;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isSelected) {
-                    e.currentTarget.style.borderColor = "#e2e8f0";
-                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.borderColor = borderColor;
+                    e.currentTarget.style.transform = "scale(1) translateY(0)";
                     e.currentTarget.style.boxShadow =
-                      "0 2px 8px rgba(0, 0, 0, 0.04)";
+                      "0 6px 18px rgba(244, 114, 182, 0.04)";
                   }
                 }}
               >
-                {/* ACTIVE CHECK BADGE */}
+                {/* ACTIVE CHECK BADGE CHIBI */}
                 {isSelected && (
                   <div
                     style={{
                       position: "absolute",
                       top: 14,
                       right: 14,
-                      width: 26,
-                      height: 26,
+                      width: 28,
+                      height: 28,
                       borderRadius: "50%",
                       background: themeColor,
                       color: "#fff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                      boxShadow: `0 4px 10px ${themeColor}40`,
                     }}
                   >
                     <Check size={16} strokeWidth={3} />
@@ -120,38 +147,44 @@ const GameTypeSelector = ({ types = [], value, onChange }) => {
                 )}
 
                 <div>
-                  {/* BEAUTIFUL ICON CONTAINER WITH GRADIENT BACKGROUND */}
+                  {/* ICON CONTAINER PHONG CÁCH KẸO DẺO / CHIBI */}
                   <div
                     style={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: 18,
+                      width: 64,
+                      height: 64,
+                      borderRadius: 22,
                       background: isSelected
                         ? `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}CC 100%)`
-                        : `${themeColor}15`,
+                        : bgColor,
                       color: isSelected ? "#ffffff" : themeColor,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       marginBottom: 16,
+                      border: `1.5px solid ${isSelected ? "transparent" : borderColor}`,
                       boxShadow: isSelected
-                        ? `0 8px 16px ${themeColor}40`
+                        ? `0 8px 18px ${themeColor}35`
                         : "none",
                       transition: "all 0.3s ease",
+                      fontSize: 28,
                     }}
                   >
-                    <IconComponent size={30} strokeWidth={2.2} />
+                    {type.icon ? (
+                      <span>{type.icon}</span>
+                    ) : (
+                      <IconComponent size={30} strokeWidth={2.3} />
+                    )}
                   </div>
 
                   {/* TITLE */}
-                  <div style={{ marginBottom: 8 }}>
+                  <div style={{ marginBottom: 6 }}>
                     <Title
                       level={4}
                       style={{
                         margin: 0,
-                        fontSize: 16,
-                        fontWeight: 700,
-                        color: "#0f172a",
+                        fontSize: 17,
+                        fontWeight: 800,
+                        color: "#3B2F4C",
                       }}
                     >
                       {type.name}
@@ -161,9 +194,10 @@ const GameTypeSelector = ({ types = [], value, onChange }) => {
                   {/* DESCRIPTION */}
                   <Text
                     style={{
-                      color: "#64748b",
+                      color: "#827093",
                       fontSize: 13,
                       lineHeight: 1.5,
+                      fontWeight: 500,
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: "vertical",
@@ -174,25 +208,25 @@ const GameTypeSelector = ({ types = [], value, onChange }) => {
                   </Text>
                 </div>
 
-                {/* FOOTER INDICATOR */}
+                {/* FOOTER INDICATOR CHIBI */}
                 <div
                   style={{
-                    marginTop: 16,
+                    marginTop: 18,
                     paddingTop: 12,
-                    borderTop: "1px dashed #e2e8f0",
+                    borderTop: `1.5px dashed ${borderColor}`,
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 12,
-                      fontWeight: 600,
-                      color: isSelected ? themeColor : "#94a3b8",
+                      fontWeight: 700,
+                      color: isSelected ? themeColor : "#A093AD",
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
                     }}
                   >
-                    {isSelected ? "Đang chọn" : "Nhấn để chọn →"}
+                    {isSelected ? "✨ Đang chọn rồi nè" : "Bấm chọn nha 🌸"}
                   </Text>
                 </div>
               </div>

@@ -26,36 +26,50 @@ import {
   DeleteOutlined,
   DownOutlined,
   FileImageOutlined,
-  InboxOutlined,
   PlusOutlined,
   SaveOutlined,
   SoundOutlined,
   UpOutlined,
 } from "@ant-design/icons";
 
+import {
+  Heart,
+  Star,
+  Sparkles,
+  Smile,
+  Lightbulb,
+  SkipForward,
+  Trophy,
+  Clock3,
+  Shuffle,
+  Eye,
+  Target,
+} from "lucide-react";
+
 import { createGame, updateGame } from "../../../api/gameApi";
 
 const { Title, Text } = Typography;
-const { Dragger } = Upload;
 
-// =========================================================
-// COLORS
-// =========================================================
+/* =========================================================
+   COLORS
+========================================================= */
 
 const COLORS = {
-  navy: "#1B365D",
-  gold: "#D4AF37",
-  text: "#1E293B",
-  bg: "#FAFAFA",
-  border: "#E5E7EB",
-  soft: "#F8FAFC",
+  navy: "#FF5C8A",
+  gold: "#FFB703",
+  text: "#2D3748",
+  bg: "#FFF5F7",
+  border: "#FFE3E8",
+  soft: "#FFF9FA",
   success: "#52C41A",
   danger: "#FF4D4F",
+  purple: "#9B5DE5",
+  blue: "#4D96FF",
 };
 
-// =========================================================
-// HELPERS
-// =========================================================
+/* =========================================================
+   HELPERS
+========================================================= */
 
 const normalizeAnswer = (value = "") => {
   return String(value)
@@ -67,7 +81,11 @@ const normalizeAnswer = (value = "") => {
     .toUpperCase();
 };
 
-const createPreviewFileList = (file, fallbackUrl = null, name = "file") => {
+const createPreviewFileList = (
+  file,
+  fallbackUrl = null,
+  name = "file",
+) => {
   if (file instanceof File) {
     return [
       {
@@ -103,74 +121,105 @@ const createEmptyQuestion = (id, number) => ({
   answerIndex: null,
 });
 
-// =========================================================
-// COMPONENT
-// =========================================================
+/* =========================================================
+   COMPONENT
+========================================================= */
 
-const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
+const CrosswordGameEditor = ({
+  teacherId,
+  game = null,
+  onSuccess,
+  onBack,
+}) => {
   const isEdit = Boolean(game?.id);
 
-  // =======================================================
-  // LOADING
-  // =======================================================
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // =======================================================
-  // BASIC
-  // =======================================================
+  /* =======================================================
+     BASIC
+  ======================================================= */
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  // =======================================================
-  // CROSSWORD
-  // =======================================================
+  /* =======================================================
+     CROSSWORD
+  ======================================================= */
 
   const [verticalAnswer, setVerticalAnswer] = useState("");
 
-  const [questions, setQuestions] = useState([createEmptyQuestion(1, 1)]);
+  const [questions, setQuestions] = useState([
+    createEmptyQuestion(1, 1),
+  ]);
 
-  // =======================================================
-  // SETTINGS
-  // =======================================================
+  /* =======================================================
+     SETTINGS
+  ======================================================= */
 
-  const [showTimer, setShowTimer] = useState(false);
+  const [showTimer, setShowTimer] = useState(true);
   const [timeLimit, setTimeLimit] = useState(60);
 
   const [allowRetry, setAllowRetry] = useState(true);
-  const [showAnswerAfterSubmit, setShowAnswerAfterSubmit] = useState(true);
+  const [showAnswerAfterSubmit, setShowAnswerAfterSubmit] =
+    useState(true);
 
-  // =======================================================
-  // FILES
-  // =======================================================
+  const [allowHint, setAllowHint] = useState(false);
+  const [allowSkip, setAllowSkip] = useState(false);
+
+  const [showProgress, setShowProgress] = useState(false);
+  const [showScore, setShowScore] = useState(true);
+  const [showPoints, setShowPoints] = useState(true);
+
+  const [shuffleQuestions, setShuffleQuestions] =
+    useState(false);
+
+  const [shuffleAnswers, setShuffleAnswers] = useState(false);
+
+  /* =======================================================
+     FILES
+  ======================================================= */
 
   const [thumbnail, setThumbnail] = useState(null);
   const [background, setBackground] = useState(null);
+
   const [backgroundMusic, setBackgroundMusic] = useState(null);
   const [correctSound, setCorrectSound] = useState(null);
   const [wrongSound, setWrongSound] = useState(null);
 
-  // =======================================================
-  // OLD FILE URLS
-  // =======================================================
+  /* =======================================================
+     BACKGROUND CONFIG
+  ======================================================= */
+
+  const [bgColor, setBgColor] = useState("#F8F9FC");
+  const [bgImage, setBgImage] = useState(null);
+
+  /* =======================================================
+     OLD FILE URLS
+  ======================================================= */
 
   const [oldThumbnail, setOldThumbnail] = useState(null);
   const [oldBackground, setOldBackground] = useState(null);
-  const [oldBackgroundMusic, setOldBackgroundMusic] = useState(null);
+
+  const [oldBackgroundMusic, setOldBackgroundMusic] =
+    useState(null);
+
   const [oldCorrectSound, setOldCorrectSound] = useState(null);
   const [oldWrongSound, setOldWrongSound] = useState(null);
 
-  // =======================================================
-  // SELECTED CELL
-  // =======================================================
+  /* =======================================================
+     SELECTED CELL
+  ======================================================= */
 
   const [selectedCell, setSelectedCell] = useState(null);
 
-  // =======================================================
-  // LOAD GAME
-  // =======================================================
+  /* =======================================================
+     LOAD GAME
+  ======================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -179,9 +228,9 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       try {
         setInitializing(true);
 
-        // =================================================
-        // CREATE MODE
-        // =================================================
+        /* =================================================
+           CREATE MODE
+        ================================================= */
 
         if (!game) {
           setName("");
@@ -189,22 +238,47 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
           setVerticalAnswer("");
 
-          setQuestions([createEmptyQuestion(1, 1)]);
+          setQuestions([
+            createEmptyQuestion(1, 1),
+          ]);
 
-          setShowTimer(false);
+          /* SETTINGS */
+
+          setShowTimer(true);
           setTimeLimit(60);
 
           setAllowRetry(true);
           setShowAnswerAfterSubmit(true);
 
+          setAllowHint(false);
+          setAllowSkip(false);
+
+          setShowProgress(false);
+          setShowScore(true);
+          setShowPoints(true);
+
+          setShuffleQuestions(false);
+          setShuffleAnswers(false);
+
+          /* MEDIA */
+
           setThumbnail(null);
           setBackground(null);
+
           setBackgroundMusic(null);
           setCorrectSound(null);
           setWrongSound(null);
 
+          /* BACKGROUND */
+
+          setBgColor("#F8F9FC");
+          setBgImage(null);
+
+          /* OLD MEDIA */
+
           setOldThumbnail(null);
           setOldBackground(null);
+
           setOldBackgroundMusic(null);
           setOldCorrectSound(null);
           setOldWrongSound(null);
@@ -212,16 +286,16 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           return;
         }
 
-        // =================================================
-        // BASIC
-        // =================================================
+        /* =================================================
+           BASIC
+        ================================================= */
 
         setName(game.name || "");
         setDescription(game.description || "");
 
-        // =================================================
-        // CROSSWORD
-        // =================================================
+        /* =================================================
+           CROSSWORD
+        ================================================= */
 
         const crosswordData = game.crossword || {};
 
@@ -234,119 +308,278 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           crosswordData.verticalAnswer ||
           "";
 
+        /* Nếu không có verticalAnswer thì tự ghép từ requiredLetter */
+
         if (!loadedVertical && words.length > 0) {
           const sortedWords = [...words].sort(
-            (a, b) => Number(a.number || 0) - Number(b.number || 0),
+            (a, b) =>
+              Number(a.number || 0) -
+              Number(b.number || 0),
           );
 
           loadedVertical = sortedWords
-            .map((item) => item.requiredLetter || "")
+            .map(
+              (item) =>
+                item.requiredLetter || "",
+            )
             .join("");
         }
 
         setVerticalAnswer(loadedVertical);
 
-        // =================================================
-        // QUESTIONS
-        // =================================================
+        /* =================================================
+           QUESTIONS
+        ================================================= */
 
         const loadedQuestions = words
           .slice()
-          .sort((a, b) => Number(a.number || 0) - Number(b.number || 0))
+          .sort(
+            (a, b) =>
+              Number(a.number || 0) -
+              Number(b.number || 0),
+          )
           .map((item, index) => {
             const rawAnswer =
-              item.answerDisplay || item.answer || item.word || "";
+              item.answerDisplay ||
+              item.answer ||
+              item.word ||
+              "";
 
             return {
               id: item.id ?? index + 1,
 
-              number: Number(item.number) || index + 1,
+              number:
+                Number(item.number) ||
+                index + 1,
 
-              question: item.question || item.clue || "",
+              question:
+                item.question ||
+                item.clue ||
+                "",
 
               answer: rawAnswer,
 
               answerDisplay: rawAnswer,
 
-              points: Number(item.points) || 10,
+              points:
+                Number(item.points) || 10,
 
               answerIndex:
-                item.answerIndex !== undefined && item.answerIndex !== null
+                item.answerIndex !== undefined &&
+                item.answerIndex !== null
                   ? Number(item.answerIndex)
                   : null,
             };
           });
 
-        // fallback data cũ
         if (loadedQuestions.length > 0) {
           setQuestions(loadedQuestions);
         } else {
-          const oldQuestions = Array.isArray(crosswordData.questions)
-            ? crosswordData.questions
-            : [];
+          /* Hỗ trợ format cũ */
+
+          const oldQuestions =
+            Array.isArray(crosswordData.questions)
+              ? crosswordData.questions
+              : [];
 
           if (oldQuestions.length > 0) {
             setQuestions(
-              oldQuestions.map((item, index) => ({
-                id: item.id ?? index + 1,
+              oldQuestions.map(
+                (item, index) => ({
+                  id:
+                    item.id ??
+                    index + 1,
 
-                number: Number(item.number) || index + 1,
+                  number:
+                    Number(item.number) ||
+                    index + 1,
 
-                question: item.question || item.clue || "",
+                  question:
+                    item.question ||
+                    item.clue ||
+                    "",
 
-                answer: item.answerDisplay || item.answer || "",
+                  answer:
+                    item.answerDisplay ||
+                    item.answer ||
+                    "",
 
-                answerDisplay: item.answerDisplay || item.answer || "",
+                  answerDisplay:
+                    item.answerDisplay ||
+                    item.answer ||
+                    "",
 
-                points: Number(item.points) || 10,
+                  points:
+                    Number(item.points) ||
+                    10,
 
-                answerIndex:
-                  item.answerIndex !== undefined && item.answerIndex !== null
-                    ? Number(item.answerIndex)
-                    : null,
-              })),
+                  answerIndex:
+                    item.answerIndex !==
+                      undefined &&
+                    item.answerIndex !== null
+                      ? Number(
+                          item.answerIndex,
+                        )
+                      : null,
+                }),
+              ),
             );
           } else {
-            setQuestions([createEmptyQuestion(1, 1)]);
+            setQuestions([
+              createEmptyQuestion(1, 1),
+            ]);
           }
         }
 
-        // =================================================
-        // SETTINGS
-        // =================================================
+        /* =================================================
+           SETTINGS
+        ================================================= */
 
         const settings = game.settings || {};
 
-        setShowTimer(Boolean(settings.showTimer));
-
-        setTimeLimit(Number(settings.timeLimit) || 60);
-
-        setAllowRetry(settings.allowRetry !== false);
-
-        setShowAnswerAfterSubmit(settings.showAnswerAfterSubmit !== false);
-
-        // =================================================
-        // OLD MEDIA
-        // =================================================
-
-        setOldThumbnail(game.thumbnail || null);
-
-        setOldBackground(
-          game.background?.image ||
-            game.background?.value ||
-            game.background ||
-            null,
+        setShowTimer(
+          settings.showTimer !== undefined
+            ? Boolean(settings.showTimer)
+            : true,
         );
 
-        setOldBackgroundMusic(game.media?.backgroundMusic || null);
+        setTimeLimit(
+          settings.timeLimit !== undefined
+            ? Number(settings.timeLimit) ||
+                60
+            : 60,
+        );
 
-        setOldCorrectSound(game.media?.correctSound || null);
+        setAllowRetry(
+          settings.allowRetry !== undefined
+            ? Boolean(settings.allowRetry)
+            : true,
+        );
 
-        setOldWrongSound(game.media?.wrongSound || null);
+        setShowAnswerAfterSubmit(
+          settings.showAnswerAfterSubmit !==
+            undefined
+            ? Boolean(
+                settings.showAnswerAfterSubmit,
+              )
+            : true,
+        );
+
+        setAllowHint(
+          settings.allowHint !== undefined
+            ? Boolean(settings.allowHint)
+            : false,
+        );
+
+        setAllowSkip(
+          settings.allowSkip !== undefined
+            ? Boolean(settings.allowSkip)
+            : false,
+        );
+
+        setShowProgress(
+          settings.showProgress !== undefined
+            ? Boolean(settings.showProgress)
+            : false,
+        );
+
+        setShowScore(
+          settings.showScore !== undefined
+            ? Boolean(settings.showScore)
+            : true,
+        );
+
+        setShowPoints(
+          settings.showPoints !== undefined
+            ? Boolean(settings.showPoints)
+            : true,
+        );
+
+        setShuffleQuestions(
+          settings.shuffleQuestions !==
+            undefined
+            ? Boolean(
+                settings.shuffleQuestions,
+              )
+            : false,
+        );
+
+        setShuffleAnswers(
+          settings.shuffleAnswers !==
+            undefined
+            ? Boolean(
+                settings.shuffleAnswers,
+              )
+            : false,
+        );
+
+        /* =================================================
+           BACKGROUND
+        ================================================= */
+
+        const bgConfig = game.background;
+
+        if (
+          bgConfig &&
+          typeof bgConfig === "object" &&
+          !Array.isArray(bgConfig)
+        ) {
+          const loadedColor =
+            bgConfig.color ||
+            "#F8F9FC";
+
+          const loadedImage =
+            bgConfig.image || null;
+
+          setBgColor(loadedColor);
+          setBgImage(loadedImage);
+          setOldBackground(loadedImage);
+        } else if (
+          typeof bgConfig === "string"
+        ) {
+          setBgColor("#F8F9FC");
+          setBgImage(bgConfig);
+          setOldBackground(bgConfig);
+        } else {
+          setBgColor("#F8F9FC");
+          setBgImage(null);
+          setOldBackground(null);
+        }
+
+        /* =================================================
+           THUMBNAIL
+        ================================================= */
+
+        setOldThumbnail(
+          game.thumbnail || null,
+        );
+
+        /* =================================================
+           MEDIA
+        ================================================= */
+
+        const media = game.media || {};
+
+        setOldBackgroundMusic(
+          media.backgroundMusic || null,
+        );
+
+        setOldCorrectSound(
+          media.correctSound || null,
+        );
+
+        setOldWrongSound(
+          media.wrongSound || null,
+        );
       } catch (error) {
-        console.error("LOAD CROSSWORD GAME ERROR:", error);
+        console.error(
+          "LOAD CROSSWORD GAME ERROR:",
+          error,
+        );
 
-        message.error("Không thể đọc dữ liệu game.");
+        message.error(
+          "Không thể đọc dữ liệu game.",
+        );
       } finally {
         if (!cancelled) {
           setInitializing(false);
@@ -361,11 +594,15 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     };
   }, [game]);
 
-  // =======================================================
-  // UPDATE QUESTION
-  // =======================================================
+  /* =======================================================
+     UPDATE QUESTION
+  ======================================================= */
 
-  const updateQuestion = (id, field, value) => {
+  const updateQuestion = (
+    id,
+    field,
+    value,
+  ) => {
     setQuestions((prev) =>
       prev.map((item) => {
         if (item.id !== id) {
@@ -377,9 +614,9 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           [field]: value,
         };
 
-        // Khi đổi đáp án, reset chữ giao
         if (field === "answer") {
           next.answerIndex = null;
+          next.answerDisplay = value;
         }
 
         return next;
@@ -387,11 +624,14 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     );
   };
 
-  // =======================================================
-  // SELECT INTERSECTION LETTER
-  // =======================================================
+  /* =======================================================
+     SELECT INTERSECTION
+  ======================================================= */
 
-  const selectIntersection = (questionId, charIndex) => {
+  const selectIntersection = (
+    questionId,
+    charIndex,
+  ) => {
     setQuestions((prev) =>
       prev.map((item) =>
         item.id === questionId
@@ -404,68 +644,103 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     );
   };
 
-  // =======================================================
-  // ADD QUESTION
-  // =======================================================
+  /* =======================================================
+     ADD QUESTION
+  ======================================================= */
 
   const addQuestion = () => {
     const nextId =
       questions.length > 0
-        ? Math.max(...questions.map((item) => Number(item.id) || 0)) + 1
+        ? Math.max(
+            ...questions.map(
+              (item) =>
+                Number(item.id) || 0,
+            ),
+          ) + 1
         : 1;
 
     setQuestions((prev) => [
       ...prev,
-      createEmptyQuestion(nextId, prev.length + 1),
+      createEmptyQuestion(
+        nextId,
+        prev.length + 1,
+      ),
     ]);
   };
 
-  // =======================================================
-  // DELETE QUESTION
-  // =======================================================
+  /* =======================================================
+     DELETE QUESTION
+  ======================================================= */
 
   const removeQuestion = (id) => {
     setQuestions((prev) => {
       const next = prev
-        .filter((item) => item.id !== id)
+        .filter(
+          (item) => item.id !== id,
+        )
         .map((item, index) => ({
           ...item,
           number: index + 1,
         }));
 
-      return next.length ? next : [createEmptyQuestion(1, 1)];
+      return next.length
+        ? next
+        : [
+            createEmptyQuestion(
+              1,
+              1,
+            ),
+          ];
     });
   };
 
-  // =======================================================
-  // MOVE QUESTION
-  // =======================================================
+  /* =======================================================
+     MOVE QUESTION
+  ======================================================= */
 
-  const moveQuestion = (index, direction) => {
-    const newIndex = index + direction;
+  const moveQuestion = (
+    index,
+    direction,
+  ) => {
+    const newIndex =
+      index + direction;
 
-    if (newIndex < 0 || newIndex >= questions.length) {
+    if (
+      newIndex < 0 ||
+      newIndex >= questions.length
+    ) {
       return;
     }
 
     const clone = [...questions];
 
-    [clone[index], clone[newIndex]] = [clone[newIndex], clone[index]];
+    [
+      clone[index],
+      clone[newIndex],
+    ] = [
+      clone[newIndex],
+      clone[index],
+    ];
 
     setQuestions(
-      clone.map((item, index) => ({
-        ...item,
-        number: index + 1,
-      })),
+      clone.map(
+        (item, index) => ({
+          ...item,
+          number: index + 1,
+        }),
+      ),
     );
   };
 
-  // =======================================================
-  // BUILD CROSSWORD
-  // =======================================================
+  /* =======================================================
+     BUILD CROSSWORD
+  ======================================================= */
 
   const crossword = useMemo(() => {
-    const vertical = normalizeAnswer(verticalAnswer);
+    const vertical =
+      normalizeAnswer(
+        verticalAnswer,
+      );
 
     if (!vertical) {
       return {
@@ -481,70 +756,117 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
     const verticalCol = 0;
 
-    questions.forEach((item, questionIndex) => {
-      const answer = normalizeAnswer(item.answer);
+    questions.forEach(
+      (item, questionIndex) => {
+        const answer =
+          normalizeAnswer(
+            item.answer,
+          );
 
-      if (!answer) return;
+        if (!answer) {
+          return;
+        }
 
-      const requiredLetter = vertical[questionIndex] || "";
+        const requiredLetter =
+          vertical[
+            questionIndex
+          ] || "";
 
-      if (!requiredLetter) return;
+        if (!requiredLetter) {
+          return;
+        }
 
-      let answerIndex = Number.isInteger(Number(item.answerIndex))
-        ? Number(item.answerIndex)
-        : -1;
+        let answerIndex =
+          Number.isInteger(
+            Number(
+              item.answerIndex,
+            ),
+          )
+            ? Number(
+                item.answerIndex,
+              )
+            : -1;
 
-      // Không chọn thủ công thì tự tìm
-      if (
-        answerIndex < 0 ||
-        answerIndex >= answer.length ||
-        answer[answerIndex] !== requiredLetter
-      ) {
-        answerIndex = answer.indexOf(requiredLetter);
-      }
+        if (
+          answerIndex < 0 ||
+          answerIndex >=
+            answer.length ||
+          answer[answerIndex] !==
+            requiredLetter
+        ) {
+          answerIndex =
+            answer.indexOf(
+              requiredLetter,
+            );
+        }
 
-      if (answerIndex === -1) {
-        return;
-      }
+        if (answerIndex === -1) {
+          return;
+        }
 
-      placements.push({
-        questionId: item.id,
+        placements.push({
+          questionId: item.id,
 
-        number: Number(item.number) || questionIndex + 1,
+          number:
+            Number(item.number) ||
+            questionIndex + 1,
 
-        answer,
+          answer,
 
-        row: questionIndex,
+          row: questionIndex,
 
-        // Chữ giao nằm cùng cột
-        col: verticalCol - answerIndex,
+          col:
+            verticalCol -
+            answerIndex,
 
-        answerIndex,
+          answerIndex,
 
-        requiredLetter,
-      });
-    });
+          requiredLetter,
+        });
+      },
+    );
 
     let minCol = verticalCol;
     let maxCol = verticalCol;
 
-    placements.forEach((placement) => {
-      minCol = Math.min(minCol, placement.col);
+    placements.forEach(
+      (placement) => {
+        minCol = Math.min(
+          minCol,
+          placement.col,
+        );
 
-      maxCol = Math.max(maxCol, placement.col + placement.answer.length - 1);
-    });
+        maxCol = Math.max(
+          maxCol,
+          placement.col +
+            placement.answer.length -
+            1,
+        );
+      },
+    );
 
     const padding = 2;
 
-    const width = maxCol - minCol + 1 + padding * 2;
+    const width =
+      maxCol -
+      minCol +
+      1 +
+      padding * 2;
 
-    const height = Math.max(vertical.length, questions.length) + padding * 2;
+    const height =
+      Math.max(
+        vertical.length,
+        questions.length,
+      ) +
+      padding * 2;
 
-    const offsetCol = padding - minCol;
+    const offsetCol =
+      padding - minCol;
 
     const offsetRow = padding;
 
-    const actualVerticalCol = verticalCol + offsetCol;
+    const actualVerticalCol =
+      verticalCol + offsetCol;
 
     const grid = Array.from(
       {
@@ -565,362 +887,627 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         ),
     );
 
-    // =====================================================
-    // VERTICAL
-    // =====================================================
+    vertical
+      .split("")
+      .forEach(
+        (letter, index) => {
+          const row =
+            index + offsetRow;
 
-    vertical.split("").forEach((letter, index) => {
-      const row = index + offsetRow;
+          if (
+            row < 0 ||
+            row >= height
+          ) {
+            return;
+          }
 
-      grid[row][actualVerticalCol] = {
-        active: true,
+          grid[row][
+            actualVerticalCol
+          ] = {
+            active: true,
 
-        letter,
+            letter,
 
-        numbers: [index + 1],
+            numbers: [
+              index + 1,
+            ],
 
-        wordIds: [questions[index]?.id].filter(Boolean),
+            wordIds: [
+              questions[index]?.id,
+            ].filter(Boolean),
 
-        type: "vertical",
-      };
-    });
+            type: "vertical",
+          };
+        },
+      );
 
-    // =====================================================
-    // HORIZONTAL
-    // =====================================================
+    placements.forEach(
+      (placement) => {
+        const row =
+          placement.row +
+          offsetRow;
 
-    placements.forEach((placement) => {
-      const row = placement.row + offsetRow;
+        const startCol =
+          placement.col +
+          offsetCol;
 
-      const startCol = placement.col + offsetCol;
+        placement.answer
+          .split("")
+          .forEach(
+            (
+              letter,
+              charIndex,
+            ) => {
+              const col =
+                startCol +
+                charIndex;
 
-      placement.answer.split("").forEach((letter, charIndex) => {
-        const col = startCol + charIndex;
+              if (
+                row < 0 ||
+                row >= height ||
+                col < 0 ||
+                col >= width
+              ) {
+                return;
+              }
 
-        if (row < 0 || row >= height || col < 0 || col >= width) {
-          return;
-        }
+              const existing =
+                grid[row][col];
 
-        const existing = grid[row][col];
+              const isIntersection =
+                existing.active;
 
-        const isIntersection = existing.active;
+              grid[row][col] = {
+                active: true,
 
-        grid[row][col] = {
-          active: true,
+                letter,
 
-          letter,
+                numbers: [
+                  ...new Set([
+                    ...(existing.numbers ||
+                      []),
 
-          numbers: [
-            ...new Set([
-              ...(existing.numbers || []),
-              ...(charIndex === placement.answerIndex
-                ? [placement.number]
-                : []),
-            ]),
-          ],
+                    ...(charIndex ===
+                    placement.answerIndex
+                      ? [
+                          placement.number,
+                        ]
+                      : []),
+                  ]),
+                ],
 
-          wordIds: [
-            ...new Set([...(existing.wordIds || []), placement.questionId]),
-          ],
+                wordIds: [
+                  ...new Set([
+                    ...(existing.wordIds ||
+                      []),
+                    placement.questionId,
+                  ]),
+                ],
 
-          type: isIntersection ? "intersection" : "horizontal",
-        };
-      });
-    });
+                type:
+                  isIntersection
+                    ? "intersection"
+                    : "horizontal",
+              };
+            },
+          );
+      },
+    );
 
     return {
       grid,
-
       placements,
-
       width,
-
       height,
-
-      verticalCol: actualVerticalCol,
+      verticalCol:
+        actualVerticalCol,
     };
-  }, [verticalAnswer, questions]);
+  }, [
+    verticalAnswer,
+    questions,
+  ]);
 
-  // =======================================================
-  // VALIDATION
-  // =======================================================
+  /* =======================================================
+     VALIDATION
+  ======================================================= */
 
   const validation = useMemo(() => {
     const errors = [];
 
-    const vertical = normalizeAnswer(verticalAnswer);
+    const vertical =
+      normalizeAnswer(
+        verticalAnswer,
+      );
 
     if (!name.trim()) {
-      errors.push("Chưa nhập tên game.");
+      errors.push(
+        "Chưa nhập tên game.",
+      );
     }
 
     if (!vertical) {
-      errors.push("Chưa nhập đáp án hàng dọc.");
+      errors.push(
+        "Chưa nhập đáp án hàng dọc.",
+      );
     }
 
-    if (vertical && questions.length !== vertical.length) {
+    if (
+      vertical &&
+      questions.length !==
+        vertical.length
+    ) {
       errors.push(
         `Số câu hỏi (${questions.length}) phải bằng số chữ của đáp án hàng dọc (${vertical.length}).`,
       );
     }
 
-    questions.forEach((item, index) => {
-      if (!item.question?.trim()) {
-        errors.push(`Câu ${index + 1}: chưa nhập câu hỏi.`);
-      }
+    questions.forEach(
+      (item, index) => {
+        if (!item.question?.trim()) {
+          errors.push(
+            `Câu ${index + 1}: chưa nhập câu hỏi.`,
+          );
+        }
 
-      const answer = normalizeAnswer(item.answer);
+        const answer =
+          normalizeAnswer(
+            item.answer,
+          );
 
-      if (!answer) {
-        errors.push(`Câu ${index + 1}: chưa nhập đáp án.`);
+        if (!answer) {
+          errors.push(
+            `Câu ${index + 1}: chưa nhập đáp án.`,
+          );
 
-        return;
-      }
+          return;
+        }
 
-      const requiredLetter = vertical[index];
+        const requiredLetter =
+          vertical[index];
 
-      if (requiredLetter && !answer.includes(requiredLetter)) {
-        errors.push(
-          `Câu ${index + 1}: đáp án phải chứa chữ "${requiredLetter}".`,
-        );
-      }
+        if (
+          requiredLetter &&
+          !answer.includes(
+            requiredLetter,
+          )
+        ) {
+          errors.push(
+            `Câu ${index + 1}: đáp án phải chứa chữ "${requiredLetter}".`,
+          );
+        }
 
-      if (
-        requiredLetter &&
-        (item.answerIndex === null || item.answerIndex === undefined)
-      ) {
-        errors.push(`Câu ${index + 1}: chưa chọn ô chữ giao.`);
-      }
+        if (
+          requiredLetter &&
+          (
+            item.answerIndex ===
+              null ||
+            item.answerIndex ===
+              undefined
+          )
+        ) {
+          errors.push(
+            `Câu ${index + 1}: chưa chọn ô chữ giao.`,
+          );
+        }
 
-      if (
-        item.answerIndex !== null &&
-        item.answerIndex !== undefined &&
-        requiredLetter &&
-        answer[item.answerIndex] !== requiredLetter
-      ) {
-        errors.push(
-          `Câu ${index + 1}: ô chữ giao phải là "${requiredLetter}".`,
-        );
-      }
-    });
+        if (
+          item.answerIndex !==
+            null &&
+          item.answerIndex !==
+            undefined &&
+          requiredLetter &&
+          answer[
+            item.answerIndex
+          ] !== requiredLetter
+        ) {
+          errors.push(
+            `Câu ${index + 1}: ô chữ giao phải là "${requiredLetter}".`,
+          );
+        }
+      },
+    );
 
     return {
-      valid: errors.length === 0,
+      valid:
+        errors.length === 0,
       errors,
     };
-  }, [name, verticalAnswer, questions]);
+  }, [
+    name,
+    verticalAnswer,
+    questions,
+  ]);
 
-  // =======================================================
-  // SAVE
-  // =======================================================
+  /* =======================================================
+     SAVE
+  ======================================================= */
 
   const handleSave = async () => {
     if (!validation.valid) {
-      message.warning(validation.errors[0] || "Vui lòng kiểm tra dữ liệu.");
+      message.warning(
+        validation.errors[0] ||
+          "Vui lòng kiểm tra dữ liệu.",
+      );
 
       return;
     }
 
-    const normalizedVertical = normalizeAnswer(verticalAnswer);
-
-    // =====================================================
-    // WORDS
-    // =====================================================
-
-    const words = questions.map((item, index) => {
-      const answer = normalizeAnswer(item.answer);
-
-      const placement = crossword.placements.find(
-        (p) => p.questionId === item.id,
+    const normalizedVertical =
+      normalizeAnswer(
+        verticalAnswer,
       );
 
-      return {
-        id: item.id,
+    /* =====================================================
+       WORDS
+    ===================================================== */
 
-        number: index + 1,
+    const words = questions.map(
+      (item, index) => {
+        const answer =
+          normalizeAnswer(
+            item.answer,
+          );
 
-        word: answer,
+        const placement =
+          crossword.placements.find(
+            (p) =>
+              p.questionId ===
+              item.id,
+          );
 
-        answer,
+        return {
+          id: item.id,
 
-        answerDisplay: item.answer?.trim() || "",
+          number: index + 1,
 
-        clue: item.question?.trim() || "",
+          word: answer,
 
-        question: item.question?.trim() || "",
+          answer,
 
-        points: Number(item.points) || 10,
+          answerDisplay:
+            item.answer?.trim() ||
+            "",
 
-        direction: "horizontal",
+          clue:
+            item.question?.trim() ||
+            "",
 
-        row: placement?.row ?? index,
+          question:
+            item.question?.trim() ||
+            "",
 
-        col: placement?.col ?? 0,
+          points:
+            Number(item.points) ||
+            10,
 
-        answerIndex: placement?.answerIndex ?? item.answerIndex ?? 0,
+          direction:
+            "horizontal",
 
-        requiredLetter: normalizedVertical[index] || null,
-      };
-    });
+          row:
+            placement?.row ??
+            index,
 
-    // =====================================================
-    // GRID
-    // =====================================================
+          col:
+            placement?.col ??
+            0,
 
-    const grid = crossword.grid.map((row) =>
-      row.map((cell) => ({
-        active: Boolean(cell.active),
+          answerIndex:
+            placement?.answerIndex ??
+            item.answerIndex ??
+            null,
 
-        letter: cell.letter || "",
-
-        numbers: cell.numbers || [],
-
-        wordIds: cell.wordIds || [],
-
-        type: cell.type || null,
-      })),
+          requiredLetter:
+            normalizedVertical[
+              index
+            ] || null,
+        };
+      },
     );
 
-    // =====================================================
-    // QUESTIONS
-    // =====================================================
+    /* =====================================================
+       GRID
+    ===================================================== */
 
-    const questionData = questions.map((item, index) => ({
-      id: item.id,
+    const grid =
+      crossword.grid.map(
+        (row) =>
+          row.map((cell) => ({
+            active: Boolean(
+              cell.active,
+            ),
 
-      number: index + 1,
+            letter:
+              cell.letter || "",
 
-      question: item.question?.trim() || "",
+            numbers:
+              cell.numbers || [],
 
-      answer: normalizeAnswer(item.answer),
+            wordIds:
+              cell.wordIds || [],
 
-      answerDisplay: item.answer?.trim() || "",
+            type:
+              cell.type || null,
+          })),
+      );
 
-      points: Number(item.points) || 10,
+    /* =====================================================
+       QUESTIONS
+    ===================================================== */
 
-      answerIndex: Number(item.answerIndex),
+    const questionData =
+      questions.map(
+        (item, index) => ({
+          id: item.id,
 
-      requiredLetter: normalizedVertical[index] || null,
-    }));
+          number: index + 1,
 
-    // =====================================================
-    // PLACEMENTS
-    // =====================================================
+          question:
+            item.question?.trim() ||
+            "",
 
-    const placements = crossword.placements.map((item) => ({
-      questionId: item.questionId,
+          answer:
+            normalizeAnswer(
+              item.answer,
+            ),
 
-      number: item.number,
+          answerDisplay:
+            item.answer?.trim() ||
+            "",
 
-      answer: item.answer,
+          points:
+            Number(item.points) ||
+            10,
 
-      row: item.row,
+          answerIndex:
+            item.answerIndex !==
+              null &&
+            item.answerIndex !==
+              undefined
+              ? Number(
+                  item.answerIndex,
+                )
+              : null,
 
-      col: item.col,
+          requiredLetter:
+            normalizedVertical[
+              index
+            ] || null,
+        }),
+      );
 
-      answerIndex: item.answerIndex,
+    /* =====================================================
+       PLACEMENTS
+    ===================================================== */
 
-      requiredLetter: item.requiredLetter || null,
-    }));
+    const placements =
+      crossword.placements.map(
+        (item) => ({
+          questionId:
+            item.questionId,
 
-    // =====================================================
-    // CROSSWORD DATA
-    // =====================================================
+          number: item.number,
+
+          answer: item.answer,
+
+          row: item.row,
+
+          col: item.col,
+
+          answerIndex:
+            item.answerIndex,
+
+          requiredLetter:
+            item.requiredLetter ||
+            null,
+        }),
+      );
+
+    /* =====================================================
+       CROSSWORD DATA
+    ===================================================== */
 
     const crosswordData = {
       version: 2,
 
-      verticalAnswer: normalizedVertical,
+      verticalAnswer:
+        normalizedVertical,
 
-      verticalAnswerDisplay: verticalAnswer.trim(),
+      verticalAnswerDisplay:
+        verticalAnswer.trim(),
 
-      width: crossword.width,
+      width:
+        crossword.width,
 
-      height: crossword.height,
+      height:
+        crossword.height,
 
-      rows: crossword.height,
+      rows:
+        crossword.height,
 
-      cols: crossword.width,
+      cols:
+        crossword.width,
 
-      verticalCol: crossword.verticalCol,
+      verticalCol:
+        crossword.verticalCol,
 
       words,
 
-      questions: questionData,
+      questions:
+        questionData,
 
       placements,
 
       grid,
     };
 
-    // =====================================================
-    // GAME DATA
-    // =====================================================
+    /* =====================================================
+       GAME DATA
+    ===================================================== */
 
     const gameData = {
-      name: name.trim(),
+      /* ================================================
+         BASIC
+      ================================================= */
 
-      description: description.trim(),
+      name:
+        name.trim(),
 
-      type: "crossword",
+      description:
+        description.trim(),
 
-      teacher_id: teacherId || game?.teacher_id,
+      type:
+        "crossword",
 
-      backgroundConfig: {
-        type: "color",
+      teacher_id:
+        teacherId ||
+        game?.teacher_id ||
+        null,
 
-        value: "#F8F9FC",
+      /* ================================================
+         THUMBNAIL
+      ================================================= */
+
+      thumbnail:
+        thumbnail instanceof File
+          ? thumbnail
+          : game?.thumbnail ||
+            oldThumbnail ||
+            undefined,
+
+      /* ================================================
+         BACKGROUND
+      ================================================= */
+
+      background: {
+        color:
+          bgColor ||
+          "#F8F9FC",
+
+        image:
+          background instanceof File
+            ? background
+            : bgImage ||
+              oldBackground ||
+              null,
       },
 
+      /* ================================================
+         THEME
+      ================================================= */
+
       theme: {
-        primary: COLORS.navy,
+        primary:
+          COLORS.navy,
 
-        secondary: COLORS.gold,
+        secondary:
+          COLORS.gold,
 
-        primaryColor: COLORS.navy,
+        primaryColor:
+          COLORS.navy,
 
-        secondaryColor: COLORS.gold,
+        secondaryColor:
+          COLORS.gold,
 
-        font: "Be Vietnam Pro",
+        font:
+          "Be Vietnam Pro",
 
-        fontFamily: "Be Vietnam Pro",
+        fontFamily:
+          "Be Vietnam Pro",
 
         borderRadius: 20,
       },
 
+      /* ================================================
+         SETTINGS
+      ================================================= */
+
       settings: {
-        showTimer,
+        /* Timer */
 
-        timeLimit: Number(timeLimit) || 60,
+        showTimer:
+          Boolean(showTimer),
 
-        allowRetry,
+        timeLimit:
+          Number(timeLimit) ||
+          60,
 
-        showAnswerAfterSubmit,
+        /* Gameplay */
 
-        shuffleQuestions: false,
+        allowRetry:
+          Boolean(allowRetry),
 
-        shuffleAnswers: false,
+        showAnswerAfterSubmit:
+          Boolean(
+            showAnswerAfterSubmit,
+          ),
 
-        showPoints: true,
+        /* Help */
 
-        showScore: true,
+        allowHint:
+          Boolean(allowHint),
 
-        showProgress: false,
+        allowSkip:
+          Boolean(allowSkip),
 
-        allowHint: false,
+        /* Display */
 
-        allowSkip: false,
+        showProgress:
+          Boolean(showProgress),
+
+        showScore:
+          Boolean(showScore),
+
+        showPoints:
+          Boolean(showPoints),
+
+        /* Shuffle */
+
+        shuffleQuestions:
+          Boolean(
+            shuffleQuestions,
+          ),
+
+        shuffleAnswers:
+          Boolean(
+            shuffleAnswers,
+          ),
       },
+
+      /* ================================================
+         MEDIA
+      ================================================= */
 
       media: {
-        backgroundMusic: oldBackgroundMusic || null,
+        backgroundMusic:
+          backgroundMusic instanceof
+          File
+            ? backgroundMusic
+            : oldBackgroundMusic ||
+              null,
 
-        correctSound: oldCorrectSound || null,
+        correctSound:
+          correctSound instanceof File
+            ? correctSound
+            : oldCorrectSound ||
+              null,
 
-        wrongSound: oldWrongSound || null,
+        wrongSound:
+          wrongSound instanceof File
+            ? wrongSound
+            : oldWrongSound ||
+              null,
       },
 
-      crossword: crosswordData,
+      /* ================================================
+         CROSSWORD
+      ================================================= */
+
+      crossword:
+        crosswordData,
+
+      /* ================================================
+         OTHER GAME STRUCTURES
+      ================================================= */
 
       questions: [],
 
@@ -934,18 +1521,30 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       dragDrop: {},
 
-      thumbnail: thumbnail || undefined,
+      /* ================================================
+         LEGACY TOP LEVEL MEDIA
+      ================================================= */
 
-      background: background || undefined,
+      backgroundMusic:
+        backgroundMusic instanceof File
+          ? backgroundMusic
+          : undefined,
 
-      backgroundMusic: backgroundMusic || undefined,
+      correctSound:
+        correctSound instanceof File
+          ? correctSound
+          : undefined,
 
-      correctSound: correctSound || undefined,
-
-      wrongSound: wrongSound || undefined,
+      wrongSound:
+        wrongSound instanceof File
+          ? wrongSound
+          : undefined,
     };
 
-    console.log("SAVE CROSSWORD:", gameData);
+    console.log(
+      "SAVE CROSSWORD:",
+      gameData,
+    );
 
     try {
       setLoading(true);
@@ -953,79 +1552,196 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       let response;
 
       if (isEdit) {
-        response = await updateGame(game.id, gameData);
+        response =
+          await updateGame(
+            game.id,
+            gameData,
+          );
       } else {
-        response = await createGame(gameData);
+        response =
+          await createGame(
+            gameData,
+          );
       }
 
       message.success(
         isEdit
-          ? "Cập nhật game ô chữ thành công!"
-          : "Tạo game ô chữ thành công!",
+          ? "Cập nhật game ô chữ thành công! ✨"
+          : "Tạo game ô chữ thành công! ✨",
       );
 
-      if (typeof onSuccess === "function") {
+      if (
+        typeof onSuccess ===
+        "function"
+      ) {
         onSuccess(response);
       }
     } catch (error) {
-      console.error("SAVE CROSSWORD ERROR:", error);
+      console.error(
+        "SAVE CROSSWORD ERROR:",
+        error,
+      );
 
-      message.error(error?.message || "Không thể lưu game ô chữ.");
+      message.error(
+        error?.message ||
+          "Không thể lưu game ô chữ.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // =======================================================
-  // UPLOAD
-  // =======================================================
+  /* =======================================================
+     UPLOAD
+  ======================================================= */
 
-  const beforeUpload = (setter) => (file) => {
-    setter(file);
+  const beforeUpload =
+    (setter) => (file) => {
+      setter(file);
 
-    return false;
+      return false;
+    };
+
+  const removeUpload =
+    (setter) => () => {
+      setter(null);
+    };
+
+  /* =======================================================
+     SETTING ITEM
+  ======================================================= */
+
+  const SettingItem = ({
+    icon,
+    title,
+    description,
+    checked,
+    onChange,
+  }) => {
+    return (
+      <div
+        style={{
+          padding: 14,
+          borderRadius: 16,
+          border:
+            "2px solid #FFE3E8",
+          background: "#FFF9FA",
+          height: "100%",
+        }}
+      >
+        <Row
+          justify="space-between"
+          align="middle"
+          gutter={12}
+        >
+          <Col flex="auto">
+            <Space
+              align="start"
+              size={10}
+            >
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  background:
+                    "#FFF0F3",
+                  display: "flex",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "center",
+                  color:
+                    COLORS.navy,
+                  flexShrink: 0,
+                }}
+              >
+                {icon}
+              </div>
+
+              <div>
+                <Text
+                  strong
+                  style={{
+                    color:
+                      COLORS.text,
+                    display:
+                      "block",
+                    fontSize: 14,
+                  }}
+                >
+                  {title}
+                </Text>
+
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: 12,
+                    lineHeight:
+                      1.4,
+                  }}
+                >
+                  {description}
+                </Text>
+              </div>
+            </Space>
+          </Col>
+
+          <Col>
+            <Switch
+              checked={checked}
+              onChange={onChange}
+            />
+          </Col>
+        </Row>
+      </div>
+    );
   };
 
-  const removeUpload = (setter) => () => {
-    setter(null);
-  };
-
-  // =======================================================
-  // LOADING
-  // =======================================================
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (initializing) {
     return (
       <div
         style={{
           minHeight: 500,
-
           display: "flex",
-
           alignItems: "center",
-
           justifyContent: "center",
+          background:
+            COLORS.bg,
         }}
       >
-        <Space direction="vertical" align="center">
+        <Space
+          direction="vertical"
+          align="center"
+        >
           <Spin size="large" />
 
-          <Text type="secondary">Đang tải dữ liệu game...</Text>
+          <Text type="secondary">
+            Đang tải dữ liệu game
+            chibi...
+          </Text>
         </Space>
       </div>
     );
   }
 
-  // =======================================================
-  // RENDER
-  // =======================================================
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <div
       style={{
         minHeight: "100%",
-        background: COLORS.bg,
+        background:
+          COLORS.bg,
         padding: 24,
+        fontFamily:
+          "'Baloo 2', cursive, sans-serif",
       }}
     >
       {/* =================================================
@@ -1035,45 +1751,79 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       <Card
         bordered={false}
         style={{
-          borderRadius: 16,
+          borderRadius: 24,
           marginBottom: 20,
-          boxShadow: "0 4px 18px rgba(15,23,42,.05)",
+          boxShadow:
+            "0 8px 24px rgba(255, 92, 138, 0.08)",
+          border:
+            "2px solid #FFE3E8",
         }}
       >
-        <Row justify="space-between" align="middle" gutter={[20, 20]}>
+        <Row
+          justify="space-between"
+          align="middle"
+          gutter={[20, 20]}
+        >
           <Col>
-            <Space size={12}>
+            <Space size={14}>
               <Button
-                icon={<ArrowLeftOutlined />}
+                icon={
+                  <ArrowLeftOutlined />
+                }
                 onClick={onBack}
                 disabled={loading}
+                style={{
+                  borderRadius: 14,
+                  borderColor:
+                    "#FFE3E8",
+                  background:
+                    COLORS.soft,
+                  fontWeight: 600,
+                }}
               >
                 Quay lại
               </Button>
 
-              <Divider type="vertical" />
+              <Divider
+                type="vertical"
+                style={{
+                  borderColor:
+                    "#FFE3E8",
+                }}
+              />
 
-              <Space direction="vertical" size={2}>
+              <Space
+                direction="vertical"
+                size={2}
+              >
                 <Text
                   style={{
-                    color: COLORS.gold,
-                    fontWeight: 700,
+                    color:
+                      COLORS.gold,
+                    fontWeight: 800,
                     fontSize: 12,
-                    textTransform: "uppercase",
+                    textTransform:
+                      "uppercase",
                     letterSpacing: 1,
                   }}
                 >
-                  Game giáo lý
+                  Game Giáo Lý
+                  Chibi 🌸
                 </Text>
 
                 <Title
                   level={2}
                   style={{
                     margin: 0,
-                    color: COLORS.navy,
+                    color:
+                      COLORS.navy,
+                    fontWeight: 800,
                   }}
                 >
-                  ✝️ {isEdit ? "Chỉnh sửa ô chữ" : "Tạo game ô chữ"}
+                  🧩{" "}
+                  {isEdit
+                    ? "Chỉnh sửa ô chữ"
+                    : "Tạo game ô chữ"}
                 </Title>
               </Space>
             </Space>
@@ -1083,18 +1833,33 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             <Button
               type="primary"
               size="large"
-              icon={<SaveOutlined />}
+              icon={
+                <SaveOutlined />
+              }
               loading={loading}
-              disabled={!validation.valid}
-              onClick={handleSave}
+              disabled={
+                !validation.valid
+              }
+              onClick={
+                handleSave
+              }
               style={{
-                background: COLORS.navy,
-                borderColor: COLORS.navy,
-                borderRadius: 8,
-                fontWeight: 600,
+                background:
+                  COLORS.navy,
+                borderColor:
+                  COLORS.navy,
+                borderRadius: 16,
+                fontWeight: 700,
+                height: 46,
+                padding:
+                  "0 28px",
+                boxShadow:
+                  `0 6px 16px ${COLORS.navy}40`,
               }}
             >
-              {isEdit ? "Cập nhật game" : "Lưu game"}
+              {isEdit
+                ? "Cập nhật game ✨"
+                : "Lưu game ✨"}
             </Button>
           </Col>
         </Row>
@@ -1104,44 +1869,82 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
           VALIDATION
       ================================================= */}
 
-      {!validation.valid && validation.errors.length > 0 && (
-        <Alert
-          type="warning"
-          showIcon
-          style={{
-            marginBottom: 20,
-            borderRadius: 12,
-          }}
-          message="Game chưa hoàn chỉnh"
-          description={
-            <ul
-              style={{
-                margin: "6px 0 0 18px",
-                padding: 0,
-              }}
-            >
-              {validation.errors.slice(0, 10).map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          }
-        />
-      )}
+      {!validation.valid &&
+        validation.errors.length >
+          0 && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{
+              marginBottom: 20,
+              borderRadius: 16,
+              border:
+                "2px solid #FFE3E8",
+              background:
+                "#FFFBEB",
+            }}
+            message="Game chưa hoàn chỉnh nha bé!"
+            description={
+              <ul
+                style={{
+                  margin:
+                    "6px 0 0 18px",
+                  padding: 0,
+                }}
+              >
+                {validation.errors
+                  .slice(0, 10)
+                  .map(
+                    (
+                      error,
+                      index,
+                    ) => (
+                      <li
+                        key={index}
+                      >
+                        {error}
+                      </li>
+                    ),
+                  )}
+              </ul>
+            }
+          />
+        )}
 
-      <Row gutter={[20, 20]}>
-        {/* =============================================
+      <Row
+        gutter={[20, 20]}
+      >
+        {/* =================================================
             LEFT
-        ============================================== */}
+        ================================================= */}
 
-        <Col xs={24} lg={10}>
+        <Col
+          xs={24}
+          lg={10}
+        >
           {/* BASIC */}
 
           <Card
             bordered={false}
-            title="Thông tin game"
+            title={
+              <Space
+                style={{
+                  color:
+                    COLORS.navy,
+                  fontWeight: 700,
+                }}
+              >
+                <Smile size={18} />
+                Thông tin game
+              </Space>
+            }
             style={{
-              borderRadius: 16,
+              borderRadius: 24,
               marginBottom: 20,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
             }}
           >
             <Space
@@ -1152,11 +1955,18 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               }}
             >
               <div>
-                <Text strong>
+                <Text
+                  strong
+                  style={{
+                    color:
+                      "#475569",
+                  }}
+                >
                   Tên game{" "}
                   <span
                     style={{
-                      color: COLORS.danger,
+                      color:
+                        COLORS.danger,
                     }}
                   >
                     *
@@ -1166,24 +1976,54 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                 <Input
                   size="large"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="VD: Ô chữ Giáo lý"
+                  onChange={(e) =>
+                    setName(
+                      e.target
+                        .value,
+                    )
+                  }
+                  placeholder="VD: Ô chữ Giáo lý vui nhộn 🎀"
                   style={{
                     marginTop: 8,
+                    borderRadius: 14,
+                    borderColor:
+                      "#FFE3E8",
+                    background:
+                      COLORS.soft,
                   }}
                 />
               </div>
 
               <div>
-                <Text strong>Mô tả</Text>
+                <Text
+                  strong
+                  style={{
+                    color:
+                      "#475569",
+                  }}
+                >
+                  Mô tả
+                </Text>
 
                 <Input.TextArea
                   rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={
+                    description
+                  }
+                  onChange={(e) =>
+                    setDescription(
+                      e.target
+                        .value,
+                    )
+                  }
                   placeholder="Nhập mô tả game..."
                   style={{
                     marginTop: 8,
+                    borderRadius: 14,
+                    borderColor:
+                      "#FFE3E8",
+                    background:
+                      COLORS.soft,
                   }}
                 />
               </div>
@@ -1196,39 +2036,93 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             bordered={false}
             title={
               <Space>
-                <span>Đáp án hàng dọc</span>
+                <Star
+                  size={18}
+                  color={
+                    COLORS.gold
+                  }
+                  fill={
+                    COLORS.gold
+                  }
+                />
 
-                <Tag color="gold">
-                  {normalizeAnswer(verticalAnswer).length} chữ
+                <span
+                  style={{
+                    color:
+                      COLORS.navy,
+                    fontWeight: 700,
+                  }}
+                >
+                  Đáp án hàng dọc
+                </span>
+
+                <Tag
+                  color="gold"
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 700,
+                  }}
+                >
+                  {
+                    normalizeAnswer(
+                      verticalAnswer,
+                    ).length
+                  }{" "}
+                  chữ
                 </Tag>
               </Space>
             }
             style={{
-              borderRadius: 16,
+              borderRadius: 24,
               marginBottom: 20,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
             }}
           >
             <Input
               size="large"
-              value={verticalAnswer}
-              onChange={(e) => setVerticalAnswer(e.target.value)}
-              placeholder="VD: GIESU"
+              value={
+                verticalAnswer
+              }
+              onChange={(e) =>
+                setVerticalAnswer(
+                  e.target.value,
+                )
+              }
+              placeholder="VD: MARIA"
               style={{
                 fontWeight: 800,
-                letterSpacing: 3,
-                textTransform: "uppercase",
+                letterSpacing: 4,
+                textTransform:
+                  "uppercase",
+                borderRadius: 14,
+                borderColor:
+                  "#FFE3E8",
+                background:
+                  COLORS.soft,
+                color:
+                  COLORS.navy,
+                textAlign:
+                  "center",
               }}
             />
 
             <Text
               type="secondary"
               style={{
-                display: "block",
+                display:
+                  "block",
                 marginTop: 8,
                 lineHeight: 1.6,
+                fontSize: 13,
               }}
             >
-              Số câu hỏi hàng ngang phải bằng số chữ của đáp án hàng dọc.
+              Mỗi chữ cái của
+              đáp án hàng dọc
+              tương ứng với một
+              câu hỏi hàng ngang.
             </Text>
           </Card>
 
@@ -1238,26 +2132,64 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             bordered={false}
             title={
               <Space>
-                <span>Câu hỏi hàng ngang</span>
+                <Sparkles
+                  size={18}
+                  color={
+                    COLORS.navy
+                  }
+                />
 
-                <Tag color="blue">{questions.length}</Tag>
+                <span
+                  style={{
+                    color:
+                      COLORS.navy,
+                    fontWeight: 700,
+                  }}
+                >
+                  Câu hỏi hàng
+                  ngang
+                </span>
+
+                <Tag
+                  color="magenta"
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 700,
+                  }}
+                >
+                  {
+                    questions.length
+                  }
+                </Tag>
               </Space>
             }
             extra={
               <Button
                 type="primary"
-                icon={<PlusOutlined />}
-                onClick={addQuestion}
+                icon={
+                  <PlusOutlined />
+                }
+                onClick={
+                  addQuestion
+                }
                 style={{
-                  background: COLORS.navy,
-                  borderColor: COLORS.navy,
+                  background:
+                    COLORS.navy,
+                  borderColor:
+                    COLORS.navy,
+                  borderRadius: 14,
+                  fontWeight: 700,
                 }}
               >
                 Thêm câu
               </Button>
             }
             style={{
-              borderRadius: 16,
+              borderRadius: 24,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
             }}
           >
             <Space
@@ -1267,788 +2199,1669 @@ const CrosswordGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                 width: "100%",
               }}
             >
-              {questions.map((item, index) => {
-                const answer = normalizeAnswer(item.answer);
+              {questions.map(
+                (
+                  item,
+                  index,
+                ) => {
+                  const answer =
+                    normalizeAnswer(
+                      item.answer,
+                    );
 
-                const vertical = normalizeAnswer(verticalAnswer);
+                  const vertical =
+                    normalizeAnswer(
+                      verticalAnswer,
+                    );
 
-                const requiredLetter = vertical[index];
+                  const requiredLetter =
+                    vertical[index];
 
-                const selectedLetter =
-                  item.answerIndex !== null && item.answerIndex !== undefined
-                    ? answer[item.answerIndex]
-                    : null;
+                  const selectedLetter =
+                    item.answerIndex !==
+                      null &&
+                    item.answerIndex !==
+                      undefined
+                      ? answer[
+                          item
+                            .answerIndex
+                        ]
+                      : null;
 
-                const valid =
-                  Boolean(item.question?.trim()) &&
-                  Boolean(answer) &&
-                  Boolean(requiredLetter) &&
-                  selectedLetter === requiredLetter;
+                  const valid =
+                    Boolean(
+                      item.question?.trim(),
+                    ) &&
+                    Boolean(answer) &&
+                    Boolean(
+                      requiredLetter,
+                    ) &&
+                    selectedLetter ===
+                      requiredLetter;
 
-                return (
-                  <Card
-                    key={item.id}
-                    size="small"
-                    style={{
-                      borderRadius: 14,
-
-                      border: valid
-                        ? `1px solid ${COLORS.border}`
-                        : "1px solid #ffccc7",
-
-                      background: valid ? "#fff" : "#fffafa",
-                    }}
-                  >
-                    <Space
-                      direction="vertical"
-                      size={12}
+                  return (
+                    <Card
+                      key={
+                        item.id
+                      }
+                      size="small"
                       style={{
-                        width: "100%",
+                        borderRadius: 18,
+                        border:
+                          valid
+                            ? "2px solid #B7EB8F"
+                            : "2px solid #ffccc7",
+                        background:
+                          valid
+                            ? "#fff"
+                            : "#fffafa",
                       }}
                     >
-                      {/* HEADER */}
+                      <Space
+                        direction="vertical"
+                        size={12}
+                        style={{
+                          width:
+                            "100%",
+                        }}
+                      >
+                        {/* HEADER */}
 
-                      <Row justify="space-between" align="middle">
-                        <Col>
-                          <Space wrap>
-                            <Tag color="blue">Câu {index + 1}</Tag>
-
-                            {requiredLetter && (
-                              <Tag color="gold">Chữ giao: {requiredLetter}</Tag>
-                            )}
-
-                            {valid && (
-                              <Tag color="green" icon={<CheckCircleOutlined />}>
-                                Hợp lệ
-                              </Tag>
-                            )}
-                          </Space>
-                        </Col>
-
-                        <Col>
-                          <Space size={2}>
-                            <Button
-                              size="small"
-                              type="text"
-                              disabled={index === 0}
-                              icon={<UpOutlined />}
-                              onClick={() => moveQuestion(index, -1)}
-                            />
-
-                            <Button
-                              size="small"
-                              type="text"
-                              disabled={index === questions.length - 1}
-                              icon={<DownOutlined />}
-                              onClick={() => moveQuestion(index, 1)}
-                            />
-
-                            <Button
-                              danger
-                              size="small"
-                              type="text"
-                              icon={<DeleteOutlined />}
-                              onClick={() => removeQuestion(item.id)}
-                            />
-                          </Space>
-                        </Col>
-                      </Row>
-
-                      {/* QUESTION */}
-
-                      <Input.TextArea
-                        rows={3}
-                        value={item.question}
-                        onChange={(e) =>
-                          updateQuestion(item.id, "question", e.target.value)
-                        }
-                        placeholder="Nhập câu hỏi..."
-                      />
-
-                      {/* ANSWER */}
-
-                      <Row gutter={[8, 8]}>
-                        <Col xs={24} sm={17}>
-                          <Input
-                            value={item.answer}
-                            onChange={(e) =>
-                              updateQuestion(item.id, "answer", e.target.value)
-                            }
-                            placeholder="Nhập đáp án"
-                          />
-                        </Col>
-
-                        <Col xs={24} sm={7}>
-                          <InputNumber
-                            min={1}
-                            max={1000}
-                            value={item.points}
-                            onChange={(value) =>
-                              updateQuestion(item.id, "points", value || 10)
-                            }
-                            addonAfter="đ"
-                            style={{
-                              width: "100%",
-                            }}
-                          />
-                        </Col>
-                      </Row>
-
-                      {/* =====================================
-                            SELECT INTERSECTION LETTER
-                        ====================================== */}
-
-                      {answer && (
-                        <div
-                          style={{
-                            padding: 12,
-                            borderRadius: 12,
-                            background: COLORS.soft,
-                            border: `1px solid ${COLORS.border}`,
-                          }}
+                        <Row
+                          justify="space-between"
+                          align="middle"
                         >
+                          <Col>
+                            <Space
+                              wrap
+                            >
+                              <Tag
+                                color="pink"
+                                style={{
+                                  borderRadius: 10,
+                                  fontWeight: 800,
+                                }}
+                              >
+                                Câu{" "}
+                                {
+                                  item.number
+                                }
+                              </Tag>
+
+                              {requiredLetter && (
+                                <Tag
+                                  color="orange"
+                                  style={{
+                                    borderRadius: 10,
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  Chữ
+                                  giao:{" "}
+                                  {
+                                    requiredLetter
+                                  }
+                                </Tag>
+                              )}
+
+                              {valid && (
+                                <Tag
+                                  color="success"
+                                  icon={
+                                    <CheckCircleOutlined />
+                                  }
+                                  style={{
+                                    borderRadius: 10,
+                                  }}
+                                >
+                                  Đã
+                                  đúng
+                                </Tag>
+                              )}
+                            </Space>
+                          </Col>
+
+                          <Col>
+                            <Space
+                              size={4}
+                            >
+                              <Tooltip title="Đưa lên">
+                                <Button
+                                  size="small"
+                                  disabled={
+                                    index ===
+                                    0
+                                  }
+                                  icon={
+                                    <UpOutlined />
+                                  }
+                                  onClick={() =>
+                                    moveQuestion(
+                                      index,
+                                      -1,
+                                    )
+                                  }
+                                  style={{
+                                    borderRadius: 8,
+                                  }}
+                                />
+                              </Tooltip>
+
+                              <Tooltip title="Đưa xuống">
+                                <Button
+                                  size="small"
+                                  disabled={
+                                    index ===
+                                    questions.length -
+                                      1
+                                  }
+                                  icon={
+                                    <DownOutlined />
+                                  }
+                                  onClick={() =>
+                                    moveQuestion(
+                                      index,
+                                      1,
+                                    )
+                                  }
+                                  style={{
+                                    borderRadius: 8,
+                                  }}
+                                />
+                              </Tooltip>
+
+                              <Tooltip title="Xóa câu">
+                                <Button
+                                  size="small"
+                                  danger
+                                  type="text"
+                                  icon={
+                                    <DeleteOutlined />
+                                  }
+                                  onClick={() =>
+                                    removeQuestion(
+                                      item.id,
+                                    )
+                                  }
+                                />
+                              </Tooltip>
+                            </Space>
+                          </Col>
+                        </Row>
+
+                        {/* QUESTION */}
+
+                        <div>
                           <Text
                             strong
                             style={{
-                              display: "block",
-                              marginBottom: 8,
+                              fontSize: 13,
+                              color:
+                                "#475569",
                             }}
                           >
-                            Chọn ô chữ giao{" "}
-                            {requiredLetter && `với chữ "${requiredLetter}"`}
+                            Nội dung câu
+                            hỏi
                           </Text>
 
-                          <Space wrap size={6}>
-                            {answer.split("").map((letter, charIndex) => {
-                              const isSelected = item.answerIndex === charIndex;
-
-                              const isCorrectLetter = letter === requiredLetter;
-
-                              return (
-                                <Tooltip
-                                  key={charIndex}
-                                  title={
-                                    isCorrectLetter
-                                      ? "Có thể chọn làm chữ giao"
-                                      : requiredLetter
-                                        ? `Phải chọn chữ "${requiredLetter}"`
-                                        : "Chưa có chữ hàng dọc tương ứng"
-                                  }
-                                >
-                                  <Button
-                                    onClick={() =>
-                                      selectIntersection(item.id, charIndex)
-                                    }
-                                    disabled={
-                                      Boolean(requiredLetter) &&
-                                      !isCorrectLetter
-                                    }
-                                    style={{
-                                      width: 42,
-                                      height: 42,
-                                      padding: 0,
-                                      fontWeight: 800,
-                                      fontSize: 16,
-                                      borderRadius: 8,
-
-                                      background: isSelected
-                                        ? COLORS.gold
-                                        : isCorrectLetter
-                                          ? "#FFF8E1"
-                                          : "#fff",
-
-                                      borderColor: isSelected
-                                        ? COLORS.gold
-                                        : isCorrectLetter
-                                          ? COLORS.gold
-                                          : COLORS.border,
-
-                                      color: isSelected
-                                        ? COLORS.navy
-                                        : COLORS.text,
-                                    }}
-                                  >
-                                    {letter}
-                                  </Button>
-                                </Tooltip>
-                              );
-                            })}
-                          </Space>
-
-                          <Text
-                            type="secondary"
+                          <Input
+                            value={
+                              item.question
+                            }
+                            onChange={(
+                              e,
+                            ) =>
+                              updateQuestion(
+                                item.id,
+                                "question",
+                                e.target
+                                  .value,
+                              )
+                            }
+                            placeholder="VD: Thiên Chúa tạo dựng con người đầu tiên là ai?"
                             style={{
-                              display: "block",
-                              marginTop: 8,
-                              fontSize: 12,
+                              marginTop: 4,
+                              borderRadius: 12,
+                              borderColor:
+                                "#FFE3E8",
+                              background:
+                                COLORS.soft,
                             }}
-                          >
-                            Ô màu vàng là chữ bạn đã chọn làm giao điểm.
-                          </Text>
+                          />
                         </div>
-                      )}
 
-                      {!valid && (
-                        <Alert
-                          type="warning"
-                          showIcon
-                          message={
-                            !item.question?.trim()
-                              ? "Chưa nhập câu hỏi."
-                              : !answer
-                                ? "Chưa nhập đáp án."
-                                : !requiredLetter
-                                  ? "Đáp án hàng dọc chưa đủ chữ cho câu này."
-                                  : !answer.includes(requiredLetter)
-                                    ? `Đáp án phải chứa chữ "${requiredLetter}".`
-                                    : item.answerIndex === null ||
-                                        item.answerIndex === undefined
-                                      ? "Hãy chọn ô chữ giao."
-                                      : `Ô được chọn phải là chữ "${requiredLetter}".`
-                          }
-                        />
-                      )}
-                    </Space>
-                  </Card>
-                );
-              })}
-            </Space>
-          </Card>
+                        {/* ANSWER */}
 
-          {/* SETTINGS */}
+                        <Row
+                          gutter={8}
+                        >
+                          <Col
+                            span={16}
+                          >
+                            <Text
+                              strong
+                              style={{
+                                fontSize: 13,
+                                color:
+                                  "#475569",
+                              }}
+                            >
+                              Đáp án
+                              ngang
+                            </Text>
 
-          <Card
-            bordered={false}
-            title="Thiết lập game"
-            style={{
-              borderRadius: 16,
-              marginTop: 20,
-            }}
-          >
-            <Space
-              direction="vertical"
-              size={18}
-              style={{
-                width: "100%",
-              }}
-            >
-              <Row justify="space-between" align="middle">
-                <Text>⏱️ Hiển thị thời gian</Text>
+                            <Input
+                              value={
+                                item.answer
+                              }
+                              onChange={(
+                                e,
+                              ) =>
+                                updateQuestion(
+                                  item.id,
+                                  "answer",
+                                  e.target
+                                    .value,
+                                )
+                              }
+                              placeholder="VD: ADAM"
+                              style={{
+                                marginTop: 4,
+                                fontWeight: 700,
+                                textTransform:
+                                  "uppercase",
+                                borderRadius: 12,
+                                borderColor:
+                                  "#FFE3E8",
+                                background:
+                                  COLORS.soft,
+                              }}
+                            />
+                          </Col>
 
-                <Switch checked={showTimer} onChange={setShowTimer} />
-              </Row>
+                          <Col
+                            span={8}
+                          >
+                            <Text
+                              strong
+                              style={{
+                                fontSize: 13,
+                                color:
+                                  "#475569",
+                              }}
+                            >
+                              Điểm
+                            </Text>
 
-              {showTimer && (
-                <div>
-                  <Text strong>Thời gian chơi</Text>
+                            <InputNumber
+                              min={1}
+                              max={100}
+                              value={
+                                item.points
+                              }
+                              onChange={(
+                                val,
+                              ) =>
+                                updateQuestion(
+                                  item.id,
+                                  "points",
+                                  val ??
+                                    10,
+                                )
+                              }
+                              style={{
+                                marginTop: 4,
+                                width:
+                                  "100%",
+                                borderRadius: 12,
+                              }}
+                            />
+                          </Col>
+                        </Row>
 
-                  <InputNumber
-                    min={10}
-                    max={3600}
-                    value={timeLimit}
-                    onChange={(value) => setTimeLimit(value || 60)}
-                    addonAfter="giây"
-                    style={{
-                      width: "100%",
-                      marginTop: 8,
-                    }}
-                  />
-                </div>
+                        {/* INTERSECTION */}
+
+                        {answer &&
+                          requiredLetter && (
+                            <div
+                              style={{
+                                padding: 12,
+                                borderRadius: 14,
+                                background:
+                                  "#FFFDF5",
+                                border:
+                                  "1px dashed #FFD666",
+                              }}
+                            >
+                              <Text
+                                strong
+                                style={{
+                                  display:
+                                    "block",
+                                  marginBottom:
+                                    4,
+                                  fontSize: 12,
+                                  color:
+                                    "#92400E",
+                                }}
+                              >
+                                Chọn chữ cái
+                                giao với
+                                hàng dọc
+                                {" "}
+                                <b>
+                                  {requiredLetter}
+                                </b>
+                              </Text>
+
+                              <Space
+                                size={6}
+                                wrap
+                              >
+                                {answer
+                                  .split(
+                                    "",
+                                  )
+                                  .map(
+                                    (
+                                      char,
+                                      charIndex,
+                                    ) => {
+                                      const isSelected =
+                                        item.answerIndex ===
+                                        charIndex;
+
+                                      const isMatch =
+                                        char ===
+                                        requiredLetter;
+
+                                      return (
+                                        <Tooltip
+                                          key={
+                                            charIndex
+                                          }
+                                          title={
+                                            isMatch
+                                              ? `Chọn chữ ${char} làm ô giao`
+                                              : undefined
+                                          }
+                                        >
+                                          <Button
+                                            size="small"
+                                            type={
+                                              isSelected
+                                                ? "primary"
+                                                : "default"
+                                            }
+                                            onClick={() =>
+                                              selectIntersection(
+                                                item.id,
+                                                charIndex,
+                                              )
+                                            }
+                                            style={{
+                                              minWidth: 34,
+                                              borderRadius: 10,
+                                              fontWeight: 800,
+                                              background:
+                                                isSelected
+                                                  ? COLORS.navy
+                                                  : isMatch
+                                                  ? "#FFF7E6"
+                                                  : "#fff",
+                                              borderColor:
+                                                isMatch
+                                                  ? COLORS.gold
+                                                  : "#FFE3E8",
+                                              color:
+                                                isSelected
+                                                  ? "#fff"
+                                                  : COLORS.text,
+                                            }}
+                                          >
+                                            {char}
+                                          </Button>
+                                        </Tooltip>
+                                      );
+                                    },
+                                  )}
+                              </Space>
+                            </div>
+                          )}
+                      </Space>
+                    </Card>
+                  );
+                },
               )}
-
-              <Row justify="space-between" align="middle">
-                <Text>🔄 Cho phép chơi lại</Text>
-
-                <Switch checked={allowRetry} onChange={setAllowRetry} />
-              </Row>
-
-              <Row justify="space-between" align="middle">
-                <Text>💡 Hiển thị đáp án sau khi trả lời</Text>
-
-                <Switch
-                  checked={showAnswerAfterSubmit}
-                  onChange={setShowAnswerAfterSubmit}
-                />
-              </Row>
-            </Space>
-          </Card>
-
-          {/* MEDIA */}
-
-          <Card
-            bordered={false}
-            title="Media"
-            style={{
-              borderRadius: 16,
-              marginTop: 20,
-            }}
-          >
-            <Space
-              direction="vertical"
-              size={20}
-              style={{
-                width: "100%",
-              }}
-            >
-              <div>
-                <Text strong>
-                  <FileImageOutlined /> Thumbnail
-                </Text>
-
-                <Dragger
-                  multiple={false}
-                  maxCount={1}
-                  accept="image/*"
-                  beforeUpload={beforeUpload(setThumbnail)}
-                  onRemove={removeUpload(setThumbnail)}
-                  defaultFileList={createPreviewFileList(
-                    thumbnail,
-                    oldThumbnail,
-                    "thumbnail",
-                  )}
-                  style={{
-                    marginTop: 8,
-                  }}
-                >
-                  <p className="ant-upload-drag-icon">
-                    <InboxOutlined />
-                  </p>
-
-                  <p className="ant-upload-text">Click hoặc kéo ảnh vào đây</p>
-                </Dragger>
-              </div>
-
-              <div>
-                <Text strong>
-                  <FileImageOutlined /> Background
-                </Text>
-
-                <Dragger
-                  multiple={false}
-                  maxCount={1}
-                  accept="image/*"
-                  beforeUpload={beforeUpload(setBackground)}
-                  onRemove={removeUpload(setBackground)}
-                  defaultFileList={createPreviewFileList(
-                    background,
-                    oldBackground,
-                    "background",
-                  )}
-                  style={{
-                    marginTop: 8,
-                  }}
-                >
-                  <p className="ant-upload-drag-icon">
-                    <InboxOutlined />
-                  </p>
-
-                  <p className="ant-upload-text">Chọn ảnh nền game</p>
-                </Dragger>
-              </div>
-
-              <div>
-                <Text strong>
-                  <SoundOutlined /> Nhạc nền
-                </Text>
-
-                <Dragger
-                  multiple={false}
-                  maxCount={1}
-                  accept="audio/*"
-                  beforeUpload={beforeUpload(setBackgroundMusic)}
-                  onRemove={removeUpload(setBackgroundMusic)}
-                >
-                  <p className="ant-upload-drag-icon">
-                    <SoundOutlined />
-                  </p>
-
-                  <p className="ant-upload-text">Chọn nhạc nền</p>
-                </Dragger>
-              </div>
-
-              <div>
-                <Text strong>
-                  <SoundOutlined /> Âm thanh đúng
-                </Text>
-
-                <Dragger
-                  multiple={false}
-                  maxCount={1}
-                  accept="audio/*"
-                  beforeUpload={beforeUpload(setCorrectSound)}
-                  onRemove={removeUpload(setCorrectSound)}
-                >
-                  <p className="ant-upload-drag-icon">
-                    <SoundOutlined />
-                  </p>
-
-                  <p className="ant-upload-text">Chọn âm thanh đúng</p>
-                </Dragger>
-              </div>
-
-              <div>
-                <Text strong>
-                  <SoundOutlined /> Âm thanh sai
-                </Text>
-
-                <Dragger
-                  multiple={false}
-                  maxCount={1}
-                  accept="audio/*"
-                  beforeUpload={beforeUpload(setWrongSound)}
-                  onRemove={removeUpload(setWrongSound)}
-                >
-                  <p className="ant-upload-drag-icon">
-                    <SoundOutlined />
-                  </p>
-
-                  <p className="ant-upload-text">Chọn âm thanh sai</p>
-                </Dragger>
-              </div>
             </Space>
           </Card>
         </Col>
 
-        {/* =============================================
-            RIGHT - PREVIEW
-        ============================================== */}
+        {/* =================================================
+            RIGHT
+        ================================================= */}
 
-        <Col xs={24} lg={14}>
+        <Col
+          xs={24}
+          lg={14}
+        >
+          {/* PREVIEW */}
+
           <Card
             bordered={false}
             title={
-              <Space wrap>
-                <span>Preview ô chữ</span>
+              <Space
+                style={{
+                  color:
+                    COLORS.navy,
+                  fontWeight: 700,
+                }}
+              >
+                <Heart
+                  size={18}
+                  fill={
+                    COLORS.navy
+                  }
+                />
 
-                <Tag color="gold">
-                  {crossword.placements.length}/{questions.length} giao điểm
-                </Tag>
+                Xem trước bảng ô
+                chữ Chibi
               </Space>
             }
             style={{
-              borderRadius: 16,
-              minHeight: 500,
+              borderRadius: 24,
+              marginBottom: 20,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
             }}
           >
-            <Alert
-              type="info"
-              showIcon
-              message="Preview dành cho giáo lý viên"
-              description="Bạn đang nhìn thấy toàn bộ đáp án. Khi người chơi tham gia, các chữ cái sẽ được ẩn."
-              style={{
-                marginBottom: 20,
-              }}
-            />
-
-            {crossword.grid.length === 0 ? (
-              <Empty description="Nhập đáp án hàng dọc để tạo ô chữ" />
+            {crossword.grid.length ===
+            0 ? (
+              <Empty
+                description="Hãy nhập đáp án hàng dọc để xem trước ô chữ"
+              />
             ) : (
               <div
                 style={{
-                  overflowX: "auto",
-                  padding: 24,
-                  background: COLORS.soft,
-                  borderRadius: 16,
+                  background:
+                    bgColor ||
+                    COLORS.soft,
+                  borderRadius: 20,
+                  padding: 20,
+                  overflowX:
+                    "auto",
+                  border:
+                    "2px dashed #FFE3E8",
+                  display: "flex",
+                  justifyContent:
+                    "center",
+                  backgroundImage:
+                    bgImage
+                      ? `url(${bgImage})`
+                      : "none",
+                  backgroundSize:
+                    "cover",
+                  backgroundPosition:
+                    "center",
                 }}
               >
                 <div
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 3,
-                    minWidth: crossword.width * 42,
+                    display:
+                      "inline-block",
                   }}
                 >
-                  {crossword.grid.map((row, rowIndex) => (
-                    <div
-                      key={rowIndex}
-                      style={{
-                        display: "flex",
-                        gap: 3,
-                      }}
-                    >
-                      {row.map((cell, colIndex) => {
-                        const selected =
-                          selectedCell?.row === rowIndex &&
-                          selectedCell?.col === colIndex;
+                  {crossword.grid.map(
+                    (
+                      row,
+                      rowIndex,
+                    ) => (
+                      <div
+                        key={
+                          rowIndex
+                        }
+                        style={{
+                          display:
+                            "flex",
+                        }}
+                      >
+                        {row.map(
+                          (
+                            cell,
+                            colIndex,
+                          ) => {
+                            const isVerticalCol =
+                              colIndex ===
+                              crossword.verticalCol;
 
-                        return (
-                          <div
-                            key={`${rowIndex}-${colIndex}`}
-                            onClick={() => {
-                              if (cell.active) {
-                                setSelectedCell({
-                                  row: rowIndex,
-                                  col: colIndex,
-                                });
-                              }
-                            }}
-                            style={{
-                              width: 40,
-                              height: 40,
+                            const isSelected =
+                              selectedCell &&
+                              selectedCell.row ===
+                                rowIndex &&
+                              selectedCell.col ===
+                                colIndex;
 
-                              borderRadius: 7,
+                            return (
+                              <div
+                                key={
+                                  colIndex
+                                }
+                                onClick={() =>
+                                  cell.active &&
+                                  setSelectedCell(
+                                    {
+                                      row: rowIndex,
+                                      col: colIndex,
+                                      cell,
+                                    },
+                                  )
+                                }
+                                style={{
+                                  width: 38,
+                                  height: 38,
+                                  margin: 2,
+                                  borderRadius: 10,
 
-                              border: cell.active
-                                ? `1px solid ${COLORS.navy}`
-                                : "1px solid transparent",
+                                  background:
+                                    cell.active
+                                      ? isVerticalCol
+                                        ? "#FFD166"
+                                        : "#FFFFFF"
+                                      : "transparent",
 
-                              background: !cell.active
-                                ? "transparent"
-                                : selected
-                                  ? COLORS.gold
-                                  : cell.type === "intersection"
-                                    ? "#FFF8E1"
-                                    : "#fff",
+                                  border:
+                                    cell.active
+                                      ? isSelected
+                                        ? `3px solid ${COLORS.navy}`
+                                        : "2px solid #FF85A1"
+                                      : "1px dashed transparent",
 
-                              display: "flex",
+                                  display:
+                                    "flex",
+                                  alignItems:
+                                    "center",
+                                  justifyContent:
+                                    "center",
+                                  position:
+                                    "relative",
 
-                              alignItems: "center",
+                                  cursor:
+                                    cell.active
+                                      ? "pointer"
+                                      : "default",
 
-                              justifyContent: "center",
+                                  boxShadow:
+                                    cell.active
+                                      ? "0 4px 10px rgba(255, 133, 161, 0.15)"
+                                      : "none",
 
-                              position: "relative",
-
-                              cursor: cell.active ? "pointer" : "default",
-
-                              boxShadow: cell.active
-                                ? "0 1px 3px rgba(15,23,42,.05)"
-                                : "none",
-                            }}
-                          >
-                            {cell.active && (
-                              <>
-                                {cell.numbers?.length > 0 && (
-                                  <span
-                                    style={{
-                                      position: "absolute",
-
-                                      top: 2,
-
-                                      left: 4,
-
-                                      fontSize: 8,
-
-                                      fontWeight: 700,
-
-                                      color: COLORS.navy,
-                                    }}
-                                  >
-                                    {cell.numbers[0]}
-                                  </span>
-                                )}
+                                  transition:
+                                    "all 0.2s",
+                                }}
+                              >
+                                {cell.numbers &&
+                                  cell.numbers
+                                    .length >
+                                    0 && (
+                                    <span
+                                      style={{
+                                        position:
+                                          "absolute",
+                                        top: 1,
+                                        left: 3,
+                                        fontSize: 9,
+                                        fontWeight: 800,
+                                        color:
+                                          COLORS.navy,
+                                      }}
+                                    >
+                                      {
+                                        cell
+                                          .numbers[0]
+                                      }
+                                    </span>
+                                  )}
 
                                 <span
                                   style={{
                                     fontSize: 16,
-
                                     fontWeight: 800,
-
-                                    color: COLORS.navy,
+                                    color:
+                                      COLORS.navy,
                                   }}
                                 >
-                                  {cell.letter}
+                                  {
+                                    cell.letter
+                                  }
                                 </span>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
             )}
 
-            <Divider />
+            {/* GRID INFO */}
 
-            {/* STATS */}
-
-            <Row gutter={[12, 12]}>
-              <Col xs={24} sm={8}>
-                <Card
-                  size="small"
-                  style={{
-                    borderRadius: 12,
-                    textAlign: "center",
-                  }}
+            {crossword.grid.length >
+              0 && (
+              <div
+                style={{
+                  marginTop: 14,
+                  padding: 12,
+                  borderRadius: 14,
+                  background:
+                    "#FFF9FA",
+                  border:
+                    "1px solid #FFE3E8",
+                }}
+              >
+                <Space
+                  wrap
+                  size={8}
                 >
-                  <Text type="secondary">Câu hỏi</Text>
-
-                  <Title
-                    level={3}
+                  <Tag
+                    color="pink"
                     style={{
-                      margin: "4px 0 0",
-                      color: COLORS.navy,
+                      borderRadius: 8,
                     }}
                   >
-                    {questions.length}
-                  </Title>
-                </Card>
+                    {crossword.width}{" "}
+                    cột
+                  </Tag>
+
+                  <Tag
+                    color="purple"
+                    style={{
+                      borderRadius: 8,
+                    }}
+                  >
+                    {crossword.height}{" "}
+                    hàng
+                  </Tag>
+
+                  <Tag
+                    color="gold"
+                    style={{
+                      borderRadius: 8,
+                    }}
+                  >
+                    {
+                      crossword
+                        .placements
+                        .length
+                    }{" "}
+                    đáp án
+                  </Tag>
+                </Space>
+              </div>
+            )}
+          </Card>
+
+          {/* =================================================
+              SETTINGS
+          ================================================= */}
+
+          <Card
+            bordered={false}
+            title={
+              <Space
+                style={{
+                  color:
+                    COLORS.navy,
+                  fontWeight: 700,
+                }}
+              >
+                <Sparkles size={18} />
+                Cài đặt luật chơi
+              </Space>
+            }
+            style={{
+              borderRadius: 24,
+              marginBottom: 20,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
+            }}
+          >
+            {/* TIMER */}
+
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 18,
+                background:
+                  "#FFF5F7",
+                border:
+                  "2px solid #FFE3E8",
+                marginBottom: 16,
+              }}
+            >
+              <Space
+                align="center"
+                style={{
+                  marginBottom: 14,
+                }}
+              >
+                <Clock3
+                  size={20}
+                  color={
+                    COLORS.navy
+                  }
+                />
+
+                <Text
+                  strong
+                  style={{
+                    color:
+                      COLORS.navy,
+                    fontSize: 16,
+                  }}
+                >
+                  Thời gian
+                </Text>
+              </Space>
+
+              <Row
+                gutter={[16, 16]}
+              >
+                <Col
+                  xs={24}
+                  md={12}
+                >
+                  <Text
+                    strong
+                    style={{
+                      display:
+                        "block",
+                      marginBottom: 6,
+                      color:
+                        "#475569",
+                    }}
+                  >
+                    Thời gian làm
+                    bài (giây)
+                  </Text>
+
+                  <InputNumber
+                    min={10}
+                    max={3600}
+                    value={
+                      timeLimit
+                    }
+                    onChange={(
+                      val,
+                    ) =>
+                      setTimeLimit(
+                        val ||
+                          60,
+                      )
+                    }
+                    disabled={
+                      !showTimer
+                    }
+                    style={{
+                      width:
+                        "100%",
+                      borderRadius: 12,
+                    }}
+                  />
+                </Col>
+
+                <Col
+                  xs={24}
+                  md={12}
+                >
+                  <SettingItem
+                    icon={
+                      <Clock3
+                        size={18}
+                      />
+                    }
+                    title="Hiển thị đồng hồ"
+                    description="Đếm ngược thời gian khi chơi"
+                    checked={
+                      showTimer
+                    }
+                    onChange={
+                      setShowTimer
+                    }
+                  />
+                </Col>
+              </Row>
+            </div>
+
+            {/* GAMEPLAY */}
+
+            <Text
+              strong
+              style={{
+                display:
+                  "block",
+                marginBottom: 10,
+                color:
+                  COLORS.navy,
+              }}
+            >
+              🎮 Luật chơi
+            </Text>
+
+            <Row
+              gutter={[
+                12, 12,
+              ]}
+            >
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Target
+                      size={18}
+                    />
+                  }
+                  title="Cho phép thử lại"
+                  description="Người chơi được làm lại game"
+                  checked={
+                    allowRetry
+                  }
+                  onChange={
+                    setAllowRetry
+                  }
+                />
               </Col>
 
-              <Col xs={24} sm={8}>
-                <Card
-                  size="small"
-                  style={{
-                    borderRadius: 12,
-                    textAlign: "center",
-                  }}
-                >
-                  <Text type="secondary">Giao điểm</Text>
-
-                  <Title
-                    level={3}
-                    style={{
-                      margin: "4px 0 0",
-                      color: COLORS.gold,
-                    }}
-                  >
-                    {crossword.placements.length}
-                  </Title>
-                </Card>
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Eye
+                      size={18}
+                    />
+                  }
+                  title="Hiện đáp án sau khi nộp"
+                  description="Hiển thị đáp án đúng sau khi submit"
+                  checked={
+                    showAnswerAfterSubmit
+                  }
+                  onChange={
+                    setShowAnswerAfterSubmit
+                  }
+                />
               </Col>
 
-              <Col xs={24} sm={8}>
-                <Card
-                  size="small"
-                  style={{
-                    borderRadius: 12,
-                    textAlign: "center",
-                  }}
-                >
-                  <Text type="secondary">Tổng điểm</Text>
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Lightbulb
+                      size={18}
+                    />
+                  }
+                  title="Cho phép gợi ý"
+                  description="Người chơi có thể sử dụng hint"
+                  checked={
+                    allowHint
+                  }
+                  onChange={
+                    setAllowHint
+                  }
+                />
+              </Col>
 
-                  <Title
-                    level={3}
-                    style={{
-                      margin: "4px 0 0",
-                      color: COLORS.navy,
-                    }}
-                  >
-                    {questions.reduce(
-                      (total, item) => total + Number(item.points || 0),
-                      0,
-                    )}
-                  </Title>
-                </Card>
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <SkipForward
+                      size={18}
+                    />
+                  }
+                  title="Cho phép bỏ qua"
+                  description="Người chơi có thể bỏ qua câu"
+                  checked={
+                    allowSkip
+                  }
+                  onChange={
+                    setAllowSkip
+                  }
+                />
               </Col>
             </Row>
 
             <Divider />
 
-            {/* QUESTION PREVIEW */}
+            {/* DISPLAY */}
 
-            <Title
-              level={4}
+            <Text
+              strong
               style={{
-                color: COLORS.navy,
+                display:
+                  "block",
+                marginBottom: 10,
+                color:
+                  COLORS.navy,
               }}
             >
-              Danh sách câu hỏi
-            </Title>
+              👀 Hiển thị
+            </Text>
 
+            <Row
+              gutter={[
+                12, 12,
+              ]}
+            >
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Target
+                      size={18}
+                    />
+                  }
+                  title="Hiển thị tiến độ"
+                  description="Hiển thị tiến độ câu hỏi"
+                  checked={
+                    showProgress
+                  }
+                  onChange={
+                    setShowProgress
+                  }
+                />
+              </Col>
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Trophy
+                      size={18}
+                    />
+                  }
+                  title="Hiển thị điểm"
+                  description="Hiển thị tổng điểm của người chơi"
+                  checked={
+                    showScore
+                  }
+                  onChange={
+                    setShowScore
+                  }
+                />
+              </Col>
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Star
+                      size={18}
+                    />
+                  }
+                  title="Hiển thị điểm từng câu"
+                  description="Hiển thị số điểm của từng câu hỏi"
+                  checked={
+                    showPoints
+                  }
+                  onChange={
+                    setShowPoints
+                  }
+                />
+              </Col>
+            </Row>
+
+            <Divider />
+
+            {/* SHUFFLE */}
+
+            <Text
+              strong
+              style={{
+                display:
+                  "block",
+                marginBottom: 10,
+                color:
+                  COLORS.navy,
+              }}
+            >
+              🔀 Xáo trộn
+            </Text>
+
+            <Row
+              gutter={[
+                12, 12,
+              ]}
+            >
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Shuffle
+                      size={18}
+                    />
+                  }
+                  title="Xáo trộn câu hỏi"
+                  description="Thay đổi thứ tự câu hỏi khi chơi"
+                  checked={
+                    shuffleQuestions
+                  }
+                  onChange={
+                    setShuffleQuestions
+                  }
+                />
+              </Col>
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <SettingItem
+                  icon={
+                    <Shuffle
+                      size={18}
+                    />
+                  }
+                  title="Xáo trộn đáp án"
+                  description="Xáo trộn đáp án nếu game hỗ trợ"
+                  checked={
+                    shuffleAnswers
+                  }
+                  onChange={
+                    setShuffleAnswers
+                  }
+                />
+              </Col>
+            </Row>
+          </Card>
+
+          {/* =================================================
+              BACKGROUND
+          ================================================= */}
+
+          <Card
+            bordered={false}
+            title={
+              <Space
+                style={{
+                  color:
+                    COLORS.navy,
+                  fontWeight: 700,
+                }}
+              >
+                <FileImageOutlined />
+                Hình nền & giao diện
+              </Space>
+            }
+            style={{
+              borderRadius: 24,
+              marginBottom: 20,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
+            }}
+          >
+            <Row
+              gutter={[
+                16, 16,
+              ]}
+            >
+              {/* COLOR */}
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                    marginBottom: 8,
+                    color:
+                      "#475569",
+                  }}
+                >
+                  Màu nền
+                </Text>
+
+                <Space
+                  style={{
+                    width:
+                      "100%",
+                  }}
+                >
+                  <input
+                    type="color"
+                    value={
+                      bgColor
+                    }
+                    onChange={(
+                      e,
+                    ) =>
+                      setBgColor(
+                        e.target
+                          .value,
+                      )
+                    }
+                    style={{
+                      width: 52,
+                      height: 42,
+                      border: "none",
+                      padding: 0,
+                      background:
+                        "transparent",
+                      cursor:
+                        "pointer",
+                    }}
+                  />
+
+                  <Input
+                    value={
+                      bgColor
+                    }
+                    onChange={(
+                      e,
+                    ) =>
+                      setBgColor(
+                        e.target
+                          .value,
+                      )
+                    }
+                    style={{
+                      borderRadius: 12,
+                    }}
+                  />
+                </Space>
+              </Col>
+
+              {/* BACKGROUND IMAGE */}
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                    marginBottom: 8,
+                    color:
+                      "#475569",
+                  }}
+                >
+                  Hình nền
+                </Text>
+
+                <Upload
+                  maxCount={1}
+                  beforeUpload={beforeUpload(
+                    setBackground,
+                  )}
+                  fileList={createPreviewFileList(
+                    background,
+                    oldBackground,
+                    "background.png",
+                  )}
+                  onRemove={removeUpload(
+                    setBackground,
+                  )}
+                  accept="image/*"
+                >
+                  <Button
+                    icon={
+                      <FileImageOutlined />
+                    }
+                    style={{
+                      borderRadius: 12,
+                      borderColor:
+                        "#FFE3E8",
+                    }}
+                  >
+                    Chọn hình nền
+                  </Button>
+                </Upload>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* =================================================
+              MEDIA
+          ================================================= */}
+
+          <Card
+            bordered={false}
+            title={
+              <Space
+                style={{
+                  color:
+                    COLORS.navy,
+                  fontWeight: 700,
+                }}
+              >
+                <SoundOutlined />
+                Tệp đa phương tiện
+              </Space>
+            }
+            style={{
+              borderRadius: 24,
+              marginBottom: 20,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
+            }}
+          >
+            <Row
+              gutter={[
+                16, 20,
+              ]}
+            >
+              {/* THUMBNAIL */}
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                    marginBottom: 6,
+                    color:
+                      "#475569",
+                  }}
+                >
+                  Ảnh thu nhỏ
+                  (Thumbnail)
+                </Text>
+
+                <Upload
+                  maxCount={1}
+                  beforeUpload={beforeUpload(
+                    setThumbnail,
+                  )}
+                  fileList={createPreviewFileList(
+                    thumbnail,
+                    oldThumbnail,
+                    "thumbnail.png",
+                  )}
+                  onRemove={removeUpload(
+                    setThumbnail,
+                  )}
+                  accept="image/*"
+                >
+                  <Button
+                    icon={
+                      <FileImageOutlined />
+                    }
+                    style={{
+                      borderRadius: 12,
+                      borderColor:
+                        "#FFE3E8",
+                    }}
+                  >
+                    Chọn ảnh
+                  </Button>
+                </Upload>
+              </Col>
+
+              {/* BACKGROUND MUSIC */}
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                    marginBottom: 6,
+                    color:
+                      "#475569",
+                  }}
+                >
+                  Nhạc nền
+                </Text>
+
+                <Upload
+                  maxCount={1}
+                  beforeUpload={beforeUpload(
+                    setBackgroundMusic,
+                  )}
+                  fileList={createPreviewFileList(
+                    backgroundMusic,
+                    oldBackgroundMusic,
+                    "background-music.mp3",
+                  )}
+                  onRemove={removeUpload(
+                    setBackgroundMusic,
+                  )}
+                  accept="audio/*"
+                >
+                  <Button
+                    icon={
+                      <SoundOutlined />
+                    }
+                    style={{
+                      borderRadius: 12,
+                      borderColor:
+                        "#FFE3E8",
+                    }}
+                  >
+                    Chọn nhạc
+                  </Button>
+                </Upload>
+              </Col>
+
+              {/* CORRECT SOUND */}
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                    marginBottom: 6,
+                    color:
+                      "#475569",
+                  }}
+                >
+                  Âm thanh trả
+                  lời đúng
+                </Text>
+
+                <Upload
+                  maxCount={1}
+                  beforeUpload={beforeUpload(
+                    setCorrectSound,
+                  )}
+                  fileList={createPreviewFileList(
+                    correctSound,
+                    oldCorrectSound,
+                    "correct.mp3",
+                  )}
+                  onRemove={removeUpload(
+                    setCorrectSound,
+                  )}
+                  accept="audio/*"
+                >
+                  <Button
+                    icon={
+                      <SoundOutlined />
+                    }
+                    style={{
+                      borderRadius: 12,
+                      borderColor:
+                        "#FFE3E8",
+                    }}
+                  >
+                    Chọn âm thanh
+                  </Button>
+                </Upload>
+              </Col>
+
+              {/* WRONG SOUND */}
+
+              <Col
+                xs={24}
+                md={12}
+              >
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                    marginBottom: 6,
+                    color:
+                      "#475569",
+                  }}
+                >
+                  Âm thanh trả
+                  lời sai
+                </Text>
+
+                <Upload
+                  maxCount={1}
+                  beforeUpload={beforeUpload(
+                    setWrongSound,
+                  )}
+                  fileList={createPreviewFileList(
+                    wrongSound,
+                    oldWrongSound,
+                    "wrong.mp3",
+                  )}
+                  onRemove={removeUpload(
+                    setWrongSound,
+                  )}
+                  accept="audio/*"
+                >
+                  <Button
+                    icon={
+                      <SoundOutlined />
+                    }
+                    style={{
+                      borderRadius: 12,
+                      borderColor:
+                        "#FFE3E8",
+                    }}
+                  >
+                    Chọn âm thanh
+                  </Button>
+                </Upload>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* =================================================
+              DATA SUMMARY
+          ================================================= */}
+
+          <Card
+            bordered={false}
+            style={{
+              borderRadius: 24,
+              boxShadow:
+                "0 8px 24px rgba(0,0,0,0.03)",
+              border:
+                "2px solid #FFE3E8",
+              background:
+                "#FFFDFE",
+            }}
+          >
             <Space
               direction="vertical"
-              size={8}
               style={{
-                width: "100%",
+                width:
+                  "100%",
               }}
+              size={12}
             >
-              {questions.map((item, index) => {
-                const answer = normalizeAnswer(item.answer);
+              <Text
+                strong
+                style={{
+                  color:
+                    COLORS.navy,
+                  fontSize: 16,
+                }}
+              >
+                📦 Cấu hình đang lưu
+              </Text>
 
-                const intersection =
-                  item.answerIndex !== null && item.answerIndex !== undefined
-                    ? answer[item.answerIndex]
-                    : "—";
-
-                return (
-                  <Card
-                    key={item.id}
-                    size="small"
+              <Row
+                gutter={[
+                  8, 8,
+                ]}
+              >
+                <Col
+                  span={12}
+                >
+                  <Tag
+                    color="pink"
                     style={{
+                      width:
+                        "100%",
+                      textAlign:
+                        "center",
+                      padding: 6,
                       borderRadius: 10,
                     }}
                   >
-                    <Row
-                      justify="space-between"
-                      align="middle"
-                      gutter={[10, 10]}
-                    >
-                      <Col flex="1">
-                        <Space direction="vertical" size={2}>
-                          <Text strong>
-                            {index + 1}. {item.question || "Chưa có câu hỏi"}
-                          </Text>
+                    {questions.length}{" "}
+                    câu hỏi
+                  </Tag>
+                </Col>
 
-                          <Space wrap>
-                            <Text type="secondary">
-                              Đáp án: {answer || "—"}
-                            </Text>
+                <Col
+                  span={12}
+                >
+                  <Tag
+                    color="gold"
+                    style={{
+                      width:
+                        "100%",
+                      textAlign:
+                        "center",
+                      padding: 6,
+                      borderRadius: 10,
+                    }}
+                  >
+                    {
+                      normalizeAnswer(
+                        verticalAnswer,
+                      ).length
+                    }{" "}
+                    chữ hàng dọc
+                  </Tag>
+                </Col>
 
-                            <Tag color="gold">Giao: {intersection}</Tag>
-                          </Space>
-                        </Space>
-                      </Col>
+                <Col
+                  span={12}
+                >
+                  <Tag
+                    color="blue"
+                    style={{
+                      width:
+                        "100%",
+                      textAlign:
+                        "center",
+                      padding: 6,
+                      borderRadius: 10,
+                    }}
+                  >
+                    {showTimer
+                      ? `${timeLimit}s`
+                      : "Không giới hạn"}
+                  </Tag>
+                </Col>
 
-                      <Col>
-                        <Tag color="blue">{Number(item.points || 0)} điểm</Tag>
-                      </Col>
-                    </Row>
-                  </Card>
-                );
-              })}
+                <Col
+                  span={12}
+                >
+                  <Tag
+                    color={
+                      validation.valid
+                        ? "success"
+                        : "error"
+                    }
+                    style={{
+                      width:
+                        "100%",
+                      textAlign:
+                        "center",
+                      padding: 6,
+                      borderRadius: 10,
+                    }}
+                  >
+                    {validation.valid
+                      ? "✓ Sẵn sàng lưu"
+                      : "⚠ Chưa hoàn chỉnh"}
+                  </Tag>
+                </Col>
+              </Row>
             </Space>
           </Card>
         </Col>
       </Row>
 
-      {/* =============================================
-          BOTTOM SAVE
-      ============================================== */}
+      {/* =====================================================
+          FLOATING SAVE
+      ===================================================== */}
 
-      <Card
-        bordered={false}
+      <div
         style={{
-          borderRadius: 16,
+          position: "sticky",
+          bottom: 20,
+          zIndex: 20,
+          display: "flex",
+          justifyContent:
+            "flex-end",
           marginTop: 20,
+          pointerEvents:
+            "none",
         }}
       >
-        <Row justify="end" gutter={12}>
-          <Col>
-            <Button
-              size="large"
-              icon={<ArrowLeftOutlined />}
-              onClick={onBack}
-              disabled={loading}
-            >
-              Hủy
-            </Button>
-          </Col>
-
-          <Col>
-            <Button
-              type="primary"
-              size="large"
-              icon={<SaveOutlined />}
-              loading={loading}
-              disabled={!validation.valid}
-              onClick={handleSave}
-              style={{
-                background: COLORS.navy,
-                borderColor: COLORS.navy,
-                minWidth: 160,
-                borderRadius: 8,
-                fontWeight: 600,
-              }}
-            >
-              {isEdit ? "Cập nhật game" : "Tạo game"}
-            </Button>
-          </Col>
-        </Row>
-      </Card>
+        <Button
+          type="primary"
+          size="large"
+          icon={
+            <SaveOutlined />
+          }
+          loading={loading}
+          disabled={
+            !validation.valid
+          }
+          onClick={
+            handleSave
+          }
+          style={{
+            pointerEvents:
+              "auto",
+            background:
+              COLORS.navy,
+            borderColor:
+              COLORS.navy,
+            borderRadius: 18,
+            height: 52,
+            padding:
+              "0 30px",
+            fontWeight: 800,
+            boxShadow:
+              "0 10px 30px rgba(255,92,138,0.35)",
+          }}
+        >
+          {isEdit
+            ? "Cập nhật game ✨"
+            : "Lưu game ✨"}
+        </Button>
+      </div>
     </div>
   );
 };

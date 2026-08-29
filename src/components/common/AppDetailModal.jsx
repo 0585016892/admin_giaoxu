@@ -1,25 +1,33 @@
 import React from "react";
-import { Avatar, Button, Modal, Space, Typography, Tag } from "antd";
-import { EditOutlined, UserOutlined, CloseOutlined } from "@ant-design/icons";
+import { Avatar, Modal, Space, Typography, Tag } from "antd";
+import {
+  EditOutlined,
+  UserOutlined,
+  CloseOutlined,
+  HeartFilled,
+} from "@ant-design/icons";
+import AppButton from "./AppButton";
 
 const { Text, Title } = Typography;
 
 const AppDetailModal = ({
   open,
   loading = false,
-  title = "Thông tin chi tiết",
-  subtitle = "Xem toàn bộ chi tiết thông tin dữ liệu",
+  title = "Thông Tin Chi Tiết",
+  subtitle = "Xem toàn bộ thông tin hồ sơ chi tiết",
   avatar,
   avatarIcon = <UserOutlined />,
   children,
   width = 800,
   onCancel,
   onEdit,
-  editText = "Chỉnh sửa",
+  editText = "Chỉnh sửa ✨",
   closeText = "Đóng",
   showEdit = true,
   showClose = true,
-  extraHeader, // Prop mở rộng nếu muốn thêm Tag/Status riêng ở Header
+  extraHeader,
+  className = "",
+  ...props
 }) => {
   const handleCancel = () => {
     if (loading) return;
@@ -40,83 +48,98 @@ const AppDetailModal = ({
       maskClosable={!loading}
       closable={!loading}
       onCancel={handleCancel}
+      className={`chibi-pastel-detail-modal ${className}`}
       closeIcon={
-        <div className="detail-modal-close-btn">
-          <CloseOutlined style={{ fontSize: 13 }} />
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#FF6B8B",
+            backgroundColor: "#FFE4E6",
+            border: "1.5px solid #FFD1D9",
+            transition: "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            cursor: "pointer",
+          }}
+          className="chibi-close-hover"
+        >
+          <CloseOutlined style={{ fontSize: 13, fontWeight: "bold" }} />
         </div>
       }
       styles={{
         content: {
-          borderRadius: 20,
+          borderRadius: 28,
           padding: 0,
-          boxShadow: "0 20px 40px -15px rgba(15, 23, 42, 0.08)",
-          border: "1px solid #EAECF0",
+          boxShadow: "0 20px 40px rgba(255, 182, 193, 0.25)",
+          border: "2px solid #FFE4E6",
           overflow: "hidden",
           background: "#FFFFFF",
         },
         header: {
           marginBottom: 0,
-          padding: "20px 24px 16px",
-          background: "#F8FAFC",
-          borderBottom: "1px solid #F1F5F9",
+          padding: "20px 26px 16px",
+          background: "#FFF9FA",
+          borderBottom: "1.5px dashed #FFE4E6",
         },
         body: {
-          padding: "24px",
+          padding: "24px 26px",
           maxHeight: "calc(80vh - 150px)",
           overflowY: "auto",
+          backgroundColor: "#FFFFFF",
         },
         footer: {
           marginTop: 0,
-          padding: "16px 24px",
-          background: "#FFFFFF",
-          borderTop: "1px solid #F1F5F9",
+          padding: "16px 26px",
+          background: "#FFF9FA",
+          borderTop: "1.5px dashed #FFE4E6",
           display: "flex",
           justifyContent: "flex-end",
           alignItems: "center",
-          gap: 10,
+          gap: 12,
         },
       }}
       footer={[
         showClose && (
-          <Button
+          <AppButton
             key="close"
             disabled={loading}
             onClick={handleCancel}
+            variant="secondary"
+            size="middle"
             style={{
-              borderRadius: 10,
-              height: 38,
-              padding: "0 20px",
-              borderColor: "#D0D5DD",
-              color: "#344054",
-              fontWeight: 500,
-              fontSize: 14,
-              boxShadow: "none",
+              borderRadius: 20,
+              background: "#F1F5F9",
+              color: "#64748B",
+              fontWeight: 700,
+              border: "none",
             }}
           >
             {closeText}
-          </Button>
+          </AppButton>
         ),
 
         showEdit && (
-          <Button
+          <AppButton
             key="edit"
             type="primary"
             icon={<EditOutlined />}
             loading={loading}
             onClick={handleEdit}
+            size="middle"
             style={{
-              backgroundColor: "#0F172A",
-              borderColor: "#0F172A",
-              borderRadius: 10,
-              height: 38,
-              padding: "0 22px",
-              fontWeight: 500,
-              fontSize: 14,
-              boxShadow: "0 1px 2px rgba(16, 24, 40, 0.05)",
+              borderRadius: 20,
+              background: "linear-gradient(135deg, #FF6B8B 0%, #FF8E9E 100%)",
+              borderColor: "transparent",
+              color: "#FFFFFF",
+              fontWeight: 800,
+              boxShadow: "0 6px 16px rgba(255, 107, 139, 0.3)",
             }}
           >
             {editText}
-          </Button>
+          </AppButton>
         ),
       ].filter(Boolean)}
       title={
@@ -130,16 +153,17 @@ const AppDetailModal = ({
         >
           <Space align="center" size={14}>
             <Avatar
-              size={46}
+              size={50}
               src={avatar}
               icon={avatar ? undefined : avatarIcon}
               style={{
-                backgroundColor: "#F1F5F9",
-                color: "#0F172A",
-                borderRadius: 14,
-                border: "1px solid #E2E8F0",
-                fontSize: 20,
+                backgroundColor: "#FFE4E6",
+                color: "#FF6B8B",
+                borderRadius: 20,
+                border: "2px solid #FFC0CB",
+                fontSize: 22,
                 flexShrink: 0,
+                boxShadow: "0 4px 10px rgba(255, 182, 193, 0.3)",
               }}
             />
 
@@ -149,10 +173,11 @@ const AppDetailModal = ({
                   level={5}
                   style={{
                     margin: 0,
-                    color: "#101828",
-                    fontSize: 16,
-                    fontWeight: 600,
+                    color: "#334155",
+                    fontSize: 17,
+                    fontWeight: 800,
                     lineHeight: "24px",
+                    fontFamily: "'Quicksand', sans-serif",
                   }}
                 >
                   {title}
@@ -161,15 +186,17 @@ const AppDetailModal = ({
                 <Tag
                   bordered={false}
                   style={{
-                    borderRadius: 6,
+                    borderRadius: 14,
                     fontSize: 11,
-                    fontWeight: 500,
-                    padding: "0 8px",
+                    fontWeight: 800,
+                    padding: "2px 10px",
                     margin: 0,
-                    backgroundColor: "#F1F5F9",
-                    color: "#475569",
+                    backgroundColor: "#FFE4E6",
+                    color: "#FF6B8B",
+                    border: "1px solid #FFD1D9",
                   }}
                 >
+                  <HeartFilled style={{ fontSize: 10, marginRight: 4 }} />
                   Chi tiết
                 </Tag>
               </Space>
@@ -178,10 +205,10 @@ const AppDetailModal = ({
                 <Text
                   style={{
                     display: "block",
-                    marginTop: 2,
+                    marginTop: 3,
                     fontSize: 13,
-                    color: "#667085",
-                    fontWeight: 400,
+                    color: "#94A3B8",
+                    fontWeight: 600,
                     lineHeight: "18px",
                   }}
                 >
@@ -194,39 +221,8 @@ const AppDetailModal = ({
           {extraHeader && <div>{extraHeader}</div>}
         </div>
       }
+      {...props}
     >
-      {/* CSS Nhúng tinh chỉnh hiệu ứng nút Close & Scrollbar */}
-      <style>{`
-        .ant-modal-body::-webkit-scrollbar {
-          width: 5px;
-        }
-        .ant-modal-body::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .ant-modal-body::-webkit-scrollbar-thumb {
-          background: #EAECF0;
-          border-radius: 10px;
-        }
-        .ant-modal-body::-webkit-scrollbar-thumb:hover {
-          background: #D0D5DD;
-        }
-
-        .detail-modal-close-btn {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #667085;
-          transition: all 0.15s ease;
-        }
-        .detail-modal-close-btn:hover {
-          background-color: #E2E8F0;
-          color: #101828;
-        }
-      `}</style>
-
       {children}
     </Modal>
   );

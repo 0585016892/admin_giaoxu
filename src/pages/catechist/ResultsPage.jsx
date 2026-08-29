@@ -29,7 +29,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
-  ReloadOutlined,
   FileTextOutlined,
   TrophyOutlined,
   RiseOutlined,
@@ -40,7 +39,6 @@ import {
   CalendarOutlined,
   DesktopOutlined,
   FormOutlined,
-  BarChartOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -57,10 +55,11 @@ import {
 } from "../../api/resultApi";
 
 import studentApi from "../../api/studentApi";
-import AppButton from "../../components/common/AppButton";
 import AppDetailModal from "../../components/common/AppDetailModal";
-
-const { Title, Text } = Typography;
+import StatCard from "../../components/common/StatCard";
+import PageHeroHeader from "../../components/common/PageHeroHeader";
+const { Text } = Typography;
+const primaryNavy = "#1B365D";
 
 // =========================================================
 // COLORS
@@ -1100,470 +1099,107 @@ const ResultsPage = () => {
       style={{
         minHeight: "100vh",
         padding: "28px 32px",
-        background: COLORS.background,
       }}
     >
       {/* =====================================================
           HEADER
       ====================================================== */}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          gap: 20,
-          marginBottom: 28,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <Space
-            size={8}
-            style={{
-              marginBottom: 7,
-            }}
-          >
-            <BarChartOutlined
-              style={{
-                color: COLORS.primary,
-                fontSize: 18,
-              }}
-            />
-
-            <Text
-              style={{
-                color: COLORS.primary,
-                fontWeight: 700,
-                fontSize: 12,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}
-            >
-              Học tập
-            </Text>
-          </Space>
-
-          <Title
-            level={2}
-            style={{
-              margin: 0,
-              color: COLORS.text,
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Bảng điểm học viên
-          </Title>
-
-          <Text
-            style={{
-              display: "block",
-              marginTop: 6,
-              color: COLORS.textSecondary,
-              fontSize: 14,
-            }}
-          >
-            Theo dõi và quản lý kết quả học tập của học viên
-          </Text>
-        </div>
-
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={handleRefresh}
-            loading={loading || studentsLoading || statsLoading}
-            style={{
-              height: 42,
-              borderRadius: 10,
-              padding: "0 16px",
-              fontWeight: 600,
-            }}
-          >
-            Làm mới
-          </Button>
-
-          <AppButton
-            type="primary"
-            icon={<PlusOutlined size={18} />}
-            onClick={handleCreate}
-          >
-            Nhập điểm
-          </AppButton>
-        </Space>
-      </div>
-
+      <PageHeroHeader
+        icon={<TrophyOutlined />}
+        badgeText="🌸 QUẢN LÝ ĐIỂM SỐ"
+        title="Bảng điểm học viên"
+        description="Theo dõi và quản lý kết quả học tập của học viên"
+        // Refresh Props
+        onRefresh={handleRefresh}
+        refreshLoading={loading || studentsLoading || statsLoading}
+        // Primary Button Props
+        primaryButtonText="Nhập điểm"
+        primaryButtonIcon={<PlusOutlined />}
+        onPrimaryClick={handleCreate}
+      />
       {/* =====================================================
           KPI
       ====================================================== */}
-
       <Row
         gutter={[16, 16]}
         style={{
           marginBottom: 24,
         }}
       >
-        {/* TOTAL */}
-
+        {/* TỔNG BÀI KIỂM TRA */}
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 16,
-              height: "100%",
-              boxShadow: "0 2px 10px rgba(15,23,42,.04)",
-            }}
-            bodyStyle={{
-              padding: 20,
-            }}
-          >
-            {statsLoading ? (
-              <Skeleton
-                active
-                paragraph={{
-                  rows: 1,
-                }}
-              />
-            ) : (
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div>
-                    <Text
-                      style={{
-                        color: COLORS.textSecondary,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      TỔNG BÀI KIỂM TRA
-                    </Text>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 28,
-                        fontWeight: 800,
-                        color: COLORS.text,
-                      }}
-                    >
-                      {Number(statistics?.total_results || 0)}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: COLORS.primaryLight,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: COLORS.primary,
-                      fontSize: 20,
-                    }}
-                  >
-                    <FileTextOutlined />
-                  </div>
-                </div>
-
-                <Text
-                  style={{
-                    display: "block",
-                    marginTop: 10,
-                    color: COLORS.textSecondary,
-                    fontSize: 12,
-                  }}
-                >
-                  Tổng số lượt kiểm tra
-                </Text>
-              </div>
-            )}
-          </Card>
+          <StatCard
+            title="Tổng bài kiểm tra"
+            value={Number(statistics?.total_results || 0)}
+            loading={statsLoading}
+            icon={<FileTextOutlined />}
+            iconColor={primaryNavy}
+            description="Tổng số lượt kiểm tra"
+          />
         </Col>
 
-        {/* AVG */}
-
+        {/* ĐIỂM TRUNG BÌNH */}
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 16,
-              height: "100%",
-              boxShadow: "0 2px 10px rgba(15,23,42,.04)",
-            }}
-            bodyStyle={{
-              padding: 20,
-            }}
-          >
-            {statsLoading ? (
-              <Skeleton
-                active
-                paragraph={{
-                  rows: 1,
-                }}
-              />
-            ) : (
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div>
-                    <Text
-                      style={{
-                        color: COLORS.textSecondary,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      ĐIỂM TRUNG BÌNH
-                    </Text>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 28,
-                        fontWeight: 800,
-                        color: COLORS.green,
-                      }}
-                    >
-                      {Number(statistics?.average_score || 0).toFixed(2)}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: COLORS.greenLight,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: COLORS.green,
-                      fontSize: 20,
-                    }}
-                  >
-                    <RiseOutlined />
-                  </div>
-                </div>
-
-                <Text
-                  style={{
-                    display: "block",
-                    marginTop: 10,
-                    color: COLORS.textSecondary,
-                    fontSize: 12,
-                  }}
-                >
-                  Mức điểm trung bình
-                </Text>
-              </div>
-            )}
-          </Card>
+          <StatCard
+            title="Điểm trung bình"
+            value={Number(statistics?.average_score || 0).toFixed(2)}
+            loading={statsLoading}
+            icon={<RiseOutlined />}
+            iconColor={COLORS.green}
+            description="Mức điểm trung bình"
+          />
         </Col>
 
-        {/* HIGHEST */}
-
+        {/* ĐIỂM CAO NHẤT */}
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 16,
-              height: "100%",
-              boxShadow: "0 2px 10px rgba(15,23,42,.04)",
-            }}
-            bodyStyle={{
-              padding: 20,
-            }}
-          >
-            {statsLoading ? (
-              <Skeleton
-                active
-                paragraph={{
-                  rows: 1,
-                }}
-              />
-            ) : (
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div>
-                    <Text
-                      style={{
-                        color: COLORS.textSecondary,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      ĐIỂM CAO NHẤT
-                    </Text>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 28,
-                        fontWeight: 800,
-                        color: COLORS.orange,
-                      }}
-                    >
-                      {Number(statistics?.highest_score || 0).toFixed(1)}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: COLORS.orangeLight,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: COLORS.orange,
-                      fontSize: 20,
-                    }}
-                  >
-                    <TrophyOutlined />
-                  </div>
-                </div>
-
-                <Text
-                  style={{
-                    display: "block",
-                    marginTop: 10,
-                    color: COLORS.textSecondary,
-                    fontSize: 12,
-                  }}
-                >
-                  Thành tích cao nhất
-                </Text>
-              </div>
-            )}
-          </Card>
+          <StatCard
+            title="Điểm cao nhất"
+            value={Number(statistics?.highest_score || 0).toFixed(1)}
+            loading={statsLoading}
+            icon={<TrophyOutlined />}
+            iconColor={COLORS.orange}
+            description="Thành tích cao nhất"
+          />
         </Col>
 
-        {/* PASS */}
-
+        {/* KẾT QUẢ */}
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 16,
-              height: "100%",
-              boxShadow: "0 2px 10px rgba(15,23,42,.04)",
-            }}
-            bodyStyle={{
-              padding: 20,
-            }}
-          >
-            {statsLoading ? (
-              <Skeleton
-                active
-                paragraph={{
-                  rows: 1,
-                }}
-              />
-            ) : (
-              <div>
-                <div
+          <StatCard
+            title="Kết quả"
+            value={
+              <>
+                <span
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
+                    color: COLORS.green,
                   }}
                 >
-                  <div>
-                    <Text
-                      style={{
-                        color: COLORS.textSecondary,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      KẾT QUẢ
-                    </Text>
+                  {statistics?.passed ?? 0}
+                </span>
 
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 25,
-                        fontWeight: 800,
-                        color: COLORS.text,
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: COLORS.green,
-                        }}
-                      >
-                        {statistics?.passed ?? 0}
-                      </span>
-
-                      <span
-                        style={{
-                          margin: "0 5px",
-                          color: COLORS.border,
-                        }}
-                      >
-                        /
-                      </span>
-
-                      <span
-                        style={{
-                          color: COLORS.red,
-                        }}
-                      >
-                        {statistics?.failed ?? 0}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: COLORS.greenLight,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: COLORS.green,
-                      fontSize: 20,
-                    }}
-                  >
-                    <CheckCircleOutlined />
-                  </div>
-                </div>
-
-                <Text
+                <span
                   style={{
-                    display: "block",
-                    marginTop: 10,
-                    color: COLORS.textSecondary,
-                    fontSize: 12,
+                    margin: "0 5px",
+                    color: COLORS.border,
                   }}
                 >
-                  Đạt / Chưa đạt
-                </Text>
-              </div>
-            )}
-          </Card>
+                  /
+                </span>
+
+                <span
+                  style={{
+                    color: COLORS.red,
+                  }}
+                >
+                  {statistics?.failed ?? 0}
+                </span>
+              </>
+            }
+            loading={statsLoading}
+            icon={<CheckCircleOutlined />}
+            iconColor={COLORS.green}
+            description="Đạt / Chưa đạt"
+          />
         </Col>
       </Row>
 
