@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="vi">
   <head>
@@ -6,56 +7,82 @@
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
+
     <meta name="theme-color" content="#8c1515" />
+
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-    <title>Hệ Thống Quản Trị Phụng Vụ - Giáo Xứ Đồng Quan</title>
+    <!-- SEO -->
+    <title>Hệ Thống Quản Trị Giáo Lý Công Giáo</title>
+
     <meta
       name="description"
-      content="Hệ thống quản lý lịch phụng vụ, công tác mục vụ, kho Lời Chúa và điều hành nội bộ trực tuyến của Giáo xứ Đồng Quan. Cập nhật thông tin nhanh chóng, chính xác."
+      content="Hệ thống quản trị giáo lý Công giáo, hỗ trợ tổ chức lớp học, bài học, trò chơi giáo lý, hoạt động sinh hoạt và quản lý nội dung giáo lý trực tuyến."
     />
+
     <meta
       name="keywords"
-      content="Giáo xứ Đồng Quan, Lịch phụng vụ, Ban hành giáo, Công tác mục vụ, Tin Mừng hằng ngày, Quản lý giáo xứ, Đồng Quan"
+      content="Giáo lý Công giáo, học giáo lý, trò chơi giáo lý, giáo lý thiếu nhi, giáo lý giới trẻ, sinh hoạt giáo lý, quản lý giáo lý, Công giáo"
     />
-    <meta name="robots" content="index, follow" />
-    <meta name="author" content="Ban Truyền Thông Giáo Xứ Đồng Quan" />
 
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Ban Giáo Lý" />
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://gxdongquan.vn/" />
-    <meta
-      property="og:title"
-      content="Hệ Thống Quản Trị Phụng Vụ - Giáo Xứ Đồng Quan"
-    />
+    <meta property="og:url" content="https://quantrigiaoly.vercel.app/" />
+
+    <meta property="og:title" content="Hệ Thống Quản Trị Giáo Lý Công Giáo" />
+
     <meta
       property="og:description"
-      content="Hệ thống quản lý lịch phụng vụ, công tác mục vụ, kho Lời Chúa và điều hành nội bộ trực tuyến của Giáo xứ Đồng Quan."
+      content="Nền tảng quản lý và tổ chức hoạt động giáo lý Công giáo với bài học, trò chơi, sinh hoạt và nội dung dành cho thiếu nhi và giới trẻ."
     />
-    <meta property="og:image" content="%PUBLIC_URL%/thumbnail-seo.jpg" />
+
+    <meta property="og:image" content="%PUBLIC_URL%/thumbnail-seo.png" />
+
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="Hệ Thống Quản Trị Phụng Vụ - Giáo Xứ Đồng Quan"
-    />
+
+    <meta name="twitter:title" content="Hệ Thống Quản Trị Giáo Lý Công Giáo" />
+
     <meta
       name="twitter:description"
-      content="Hệ thống quản lý lịch phụng vụ và điều hành nội bộ trực tuyến của Giáo xứ Đồng Quan."
+      content="Nền tảng quản lý giáo lý Công giáo, bài học, trò chơi và các hoạt động sinh hoạt dành cho thiếu nhi và giới trẻ."
     />
-    <meta name="twitter:image" content="%PUBLIC_URL%/thumbnail-seo.jpg" />
 
+    <meta name="twitter:image" content="%PUBLIC_URL%/thumbnail-seo.png" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
 
+    <!-- Global styles -->
     <style>
-      /* Cấu hình Font chữ mặc định cho toàn bộ ứng dụng tránh bị lỗi vỡ font */
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100%;
+      }
+
       body {
         margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100vh;
+
         font-family:
           "Inter",
           -apple-system,
@@ -69,19 +96,46 @@
           "Droid Sans",
           "Helvetica Neue",
           sans-serif;
+
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+
         background-color: #f8fafc;
+        color: #1e293b;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font-family: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      img {
+        max-width: 100%;
+      }
+
+      #root {
+        width: 100%;
+        min-height: 100vh;
       }
     </style>
   </head>
+
   <body>
     <noscript>
-      <div style="text-align: center; padding: 50px; font-family: sans-serif">
-        <h2>Trình duyệt của bạn đã tắt JavaScript</h2>
+      <div
+        style="text-align: center; padding: 50px 20px; font-family: sans-serif"
+      >
+        <h2>JavaScript đang bị tắt</h2>
+
         <p>
-          Vui lòng kích hoạt JavaScript để hệ thống điều hành Giáo xứ Đồng Quan
-          có thể hoạt động chính xác.
+          Vui lòng bật JavaScript trên trình duyệt để sử dụng Hệ Thống Quản Trị
+          Giáo Lý Công Giáo.
         </p>
       </div>
     </noscript>
@@ -89,3 +143,4 @@
     <div id="root"></div>
   </body>
 </html>
+```
