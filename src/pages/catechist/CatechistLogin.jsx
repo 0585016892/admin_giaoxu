@@ -71,25 +71,65 @@ export default function Login() {
 
   const onFinish = async (values) => {
     setLoading(true);
-    try {
-      const res = await api.post("/auth/login", { ...values, role: "teacher" });
-      if (res.data?.token) {
-        if (values.remember) {
-          localStorage.setItem(
-            "remember_me",
-            JSON.stringify({ email: values.email, password: values.password }),
-          );
-        } else {
-          localStorage.removeItem("remember_me");
-        }
 
-        login(res.data.token);
-        message.success("Chào mừng Huynh Trưởng / GLV trở lại!");
-        setTimeout(() => navigate("/"), 800);
+    try {
+      const res = await api.post("/auth/login", {
+        email: values.email,
+        password: values.password,
+      });
+
+      if (!res.data?.token) {
+        message.error("Đăng nhập thất bại: Server không trả token");
+        setLoading(false);
+        return;
       }
+
+      // ==============================
+      // REMEMBER ME
+      // ==============================
+
+      if (values.remember) {
+        localStorage.setItem(
+          "remember_me",
+          JSON.stringify({
+            email: values.email,
+            password: values.password,
+          }),
+        );
+      } else {
+        localStorage.removeItem("remember_me");
+      }
+
+      // ==============================
+      // LOGIN CONTEXT
+      // ==============================
+
+      try {
+        login(res.data.token);
+      } catch (loginError) {
+        message.error("Không thể lưu phiên đăng nhập");
+        setLoading(false);
+        return;
+      }
+
+      // ==============================
+      // SUCCESS
+      // ==============================
+
+      message.success("Chào mừng Huynh Trưởng / GLV trở lại!");
+
+      setTimeout(() => {
+        console.log("🚀 navigate('/')");
+        navigate("/");
+      }, 800);
     } catch (error) {
-      const msg = error?.response?.data?.message || "Đăng nhập thất bại!";
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Đăng nhập thất bại!";
+
       message.error(msg);
+
       setLoading(false);
     }
   };

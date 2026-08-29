@@ -2,62 +2,138 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext();
 
+const decodeJWT = (token) => {
+  try {
+    const parts = token.split(".");
+
+    if (parts.length !== 3) {
+      throw new Error("JWT không hợp lệ");
+    }
+
+    let base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+
+    while (base64.length % 4) {
+      base64 += "=";
+    }
+
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((char) => "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2))
+        .join(""),
+    );
+
+    return JSON.parse(json);
+  } catch (error) {
+    console.error("❌ JWT DECODE ERROR:", error);
+    return null;
+  }
+};
+
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Khi reload -> khôi phục user từ localStorage
+  // ================================
+  // RESTORE LOGIN
+  // ================================
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
+    console.log("🔄 [AUTH] Restore token:", !!token);
 
-        setUser({
-          id: payload.id,
-          role: payload.role,
-          full_name: payload.full_name,
-          username: payload.username,
-          avatar: payload.avatar,
-          church_id: payload.church_id,
-          account_type: payload.account_type,
-          token,
-        });
-      } catch (error) {
-        console.error("Invalid JWT:", error);
-        localStorage.removeItem("token");
-      }
+    if (!token) {
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
-  }, []);
+    const payload = decodeJWT(token);
 
-  // Login
-  const login = (token) => {
-    localStorage.setItem("token", token);
+    if (!payload) {
+      console.error("❌ JWT không hợp lệ");
 
-    const payload = JSON.parse(atob(token.split(".")[1]));
+      localStorage.removeItem("token");
+      setLoading(false);
+      return;
+    }
 
-    console.log("Decoded JWT payload:", payload);
+    console.log("🔓 [AUTH] RESTORED JWT:", payload);
 
-    setUser({
+    // Check hết hạn
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      console.warn("⏰ JWT đã hết hạn");
+
+      localStorage.removeItem("token");
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    const restoredUser = {
       id: payload.id,
+      email: payload.email,
       role: payload.role,
       full_name: payload.full_name,
-      account_type: payload.account_type,
       username: payload.username,
       avatar: payload.avatar,
       church_id: payload.church_id,
+      account_type: payload.account_type,
       token,
-    });
+    };
+
+    console.log("✅ [AUTH] USER RESTORED:", restoredUser);
+
+    setUser(restoredUser);
+    setLoading(false);
+  }, []);
+
+  // ================================
+  // LOGIN
+  // ================================
+  const login = (token) => {
+    console.log("🔐 [AUTH] LOGIN");
+
+    const payload = decodeJWT(token);
+
+    if (!payload) {
+      throw new Error("JWT token không hợp lệ");
+    }
+
+    console.log("🔓 [AUTH] DECODED:", payload);
+
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      throw new Error("JWT token đã hết hạn");
+    }
+
+    localStorage.setItem("token", token);
+
+    const loggedUser = {
+      id: payload.id,
+      email: payload.email,
+      role: payload.role,
+      full_name: payload.full_name,
+      username: payload.username,
+      avatar: payload.avatar,
+      church_id: payload.church_id,
+      account_type: payload.account_type,
+      token,
+    };
+
+    console.log("👤 [AUTH] LOGIN USER:", loggedUser);
+
+    setUser(loggedUser);
+
+    return loggedUser;
   };
 
-  // Logout
+  // ================================
+  // LOGOUT
+  // ================================
   const logout = () => {
     const currentRole = user?.role;
 
-    // Xóa auth
+    console.log("🚪 [AUTH] LOGOUT:", currentRole);
+
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("catechist_user");
@@ -65,13 +141,11 @@ export function UserProvider({ children }) {
 
     setUser(null);
 
-    // Giáo lý viên
     if (currentRole === "catechist") {
       window.location.replace("/login");
       return;
     }
 
-    // Các role quản trị giáo xứ
     window.location.replace("/giao-xu/login");
   };
 
