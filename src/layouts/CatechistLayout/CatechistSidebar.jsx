@@ -20,13 +20,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Sparkles,
-  Heart,
 } from "lucide-react";
 
 import imgSidebar from "../../assets/images/imgSidebar.png";
 
 const { Sider } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export default function CatechistSidebar({
   onLogout,
