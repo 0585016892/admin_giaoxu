@@ -295,8 +295,8 @@ export default function CatechistDashboard() {
                   src={IMAGES.statStudents}
                   alt="Total Students"
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 50,
+                    height: 50,
                     objectFit: "contain",
                   }}
                 />
@@ -379,8 +379,8 @@ export default function CatechistDashboard() {
                   src={IMAGES.statClasses}
                   alt="Active Classes"
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 50,
+                    height: 50,
                     objectFit: "contain",
                   }}
                 />
@@ -456,8 +456,8 @@ export default function CatechistDashboard() {
                   src={IMAGES.statLessons}
                   alt="Created Lessons"
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 50,
+                    height: 50,
                     objectFit: "contain",
                   }}
                 />
@@ -533,8 +533,8 @@ export default function CatechistDashboard() {
                   src={IMAGES.statAchievements}
                   alt="Completion Rate"
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 50,
+                    height: 50,
                     objectFit: "contain",
                   }}
                 />
