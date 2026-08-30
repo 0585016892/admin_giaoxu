@@ -261,8 +261,10 @@ export default function CatechistManagement() {
   const handleSave = async (values) => {
     try {
       setSaving(true);
+
       const payload = {
         ...values,
+
         date_of_birth: formatDate(values.date_of_birth),
         baptism_date: formatDate(values.baptism_date),
         first_communion_date: formatDate(values.first_communion_date),
@@ -270,18 +272,38 @@ export default function CatechistManagement() {
         oath_date: formatDate(values.oath_date),
       };
 
+      // Không gửi field xác nhận mật khẩu lên backend
+      delete payload.password_confirm;
+
+      // Khi chỉnh sửa:
+      // Nếu để trống password => backend giữ nguyên password cũ
+      if (editingCatechist && !payload.password) {
+        delete payload.password;
+      }
+
+      // Khi tạo mới:
+      // Nếu không nhập password => mặc định 123456
+      if (!editingCatechist && !payload.password) {
+        payload.password = "123456";
+      }
+
       if (editingCatechist) {
         await catechistApi.update(editingCatechist.id, payload);
+
         message.success("Cập nhật Giáo lý viên thành công!");
       } else {
         await catechistApi.create(payload);
+
         message.success("Thêm Giáo lý viên mới thành công!");
       }
 
       setIsFormModalOpen(false);
       form.resetFields();
+
       await fetchData();
     } catch (error) {
+      console.error("SAVE CATECHIST ERROR:", error);
+
       message.error(
         error?.response?.data?.message || "Đã xảy ra lỗi khi lưu thông tin!",
       );
@@ -856,18 +878,83 @@ export default function CatechistManagement() {
                             />
                           </Form.Item>
                         </Col>
+
                         <Col xs={24} md={8}>
                           <Form.Item name="phone" label="Số điện thoại">
                             <Input placeholder="09xxxxxxxx" />
                           </Form.Item>
                         </Col>
+
                         <Col xs={24} md={8}>
-                          <Form.Item name="email" label="Email">
-                            <Input placeholder="example@email.com" />
+                          <Form.Item
+                            name="email"
+                            label="Email đăng nhập"
+                            rules={[
+                              {
+                                type: "email",
+                                message: "Email không hợp lệ!",
+                              },
+                            ]}
+                          >
+                            <Input
+                              prefix={<MailOutlined />}
+                              placeholder="example@email.com"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
 
+                      <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                          <Form.Item
+                            name="password"
+                            label={
+                              editingCatechist
+                                ? "Mật khẩu mới"
+                                : "Mật khẩu đăng nhập"
+                            }
+                            extra={
+                              editingCatechist
+                                ? "Để trống nếu không muốn thay đổi mật khẩu."
+                                : "Nếu để trống, mật khẩu mặc định là 123456."
+                            }
+                          >
+                            <Input.Password
+                              placeholder={
+                                editingCatechist
+                                  ? "Nhập mật khẩu mới nếu muốn đổi"
+                                  : "Để trống = 123456"
+                              }
+                            />
+                          </Form.Item>
+                        </Col>
+
+                        <Col xs={24} md={12}>
+                          <Form.Item
+                            name="password_confirm"
+                            label="Xác nhận mật khẩu"
+                            dependencies={["password"]}
+                            rules={[
+                              ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                  if (
+                                    !value ||
+                                    value === getFieldValue("password")
+                                  ) {
+                                    return Promise.resolve();
+                                  }
+
+                                  return Promise.reject(
+                                    new Error("Mật khẩu xác nhận không khớp!"),
+                                  );
+                                },
+                              }),
+                            ]}
+                          >
+                            <Input.Password placeholder="Nhập lại mật khẩu" />
+                          </Form.Item>
+                        </Col>
+                      </Row>
                       <Form.Item name="address" label="Địa chỉ hiện tại">
                         <Input placeholder="Nhập địa chỉ cư trú..." />
                       </Form.Item>
