@@ -874,7 +874,7 @@ export default function CatechistManagement() {
 
                       <Row gutter={16}>
                         <Col xs={24} md={12}>
-                          <Form.Item name="level" label="Cấp bậc Huấn luyện">
+                          <Form.Item name="level" label="Cấp bậc Giáo lý viên">
                             <Select options={LEVEL_OPTIONS} />
                           </Form.Item>
                         </Col>
@@ -1142,7 +1142,8 @@ export default function CatechistManagement() {
                 options={[
                   { value: "Giáo lý viên", label: "Giáo lý viên Phụ Trách" },
                   { value: "Trợ tá", label: "Trợ tá" },
-                  { value: "Huấn luyện viên", label: "Huấn luyện viên" },
+                  { value: "Trưởng lớp", label: "Trưởng lớp" },
+                  { value: "Phó lớp", label: "Phó lớp" },
                 ]}
               />
             </Form.Item>

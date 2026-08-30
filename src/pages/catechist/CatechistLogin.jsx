@@ -204,13 +204,6 @@ export default function Login() {
           </div>
         </motion.header>
 
-        {/* TYPOGRAPHY BACKGROUND CHÌM */}
-        <div className="bg-typography">
-          <span>LEADER</span>
-          <span>&</span>
-          <span>SERVE</span>
-        </div>
-
         {/* FLOATING CENTRAL CARD */}
         <main className="canvas-content">
           <motion.div
