@@ -69,7 +69,7 @@ export default function CatechistSidebar({
     },
     canViewCatechists && {
       key: "/catechist-management",
-      label: "Danh sách GLV",
+      label: "Quản lý giáo lý viên",
       icon: <Sparkles size={18} strokeWidth={2.3} />,
     },
 
