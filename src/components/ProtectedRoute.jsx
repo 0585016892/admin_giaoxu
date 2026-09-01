@@ -28,7 +28,7 @@ export function RoleGuard({ allowedRoles = [] }) {
 
   if (!allowedRoles.includes(user.role)) {
     // Nếu là giáo lý viên
-    if (user.role === "catechist") {
+    if (user.role === "catechist" || user.role === "teacher") {
       return <Navigate to="/catechist" replace />;
     }
 

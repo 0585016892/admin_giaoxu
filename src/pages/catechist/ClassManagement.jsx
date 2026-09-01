@@ -40,7 +40,7 @@ import {
   StarFilled,
   SmileOutlined,
 } from "@ant-design/icons";
-
+import usePermission from "../../hooks/usePermission";
 import AppFormModal from "../../components/common/AppFormModal";
 import ClassForm from "../../components/forms/ClassForm";
 import StatCard from "../../components/common/StatCard";
@@ -433,8 +433,10 @@ const SectionTitle = ({ icon, title, description, count }) => {
 
 const ClassManagement = () => {
   const { user } = useUser();
-  const churchId = user?.church_id;
+  console.log(user);
 
+  const churchId = user?.church_id;
+  const { canCreateClass, canEditClass, canDeleteClass } = usePermission();
   const [classesList, setClassesList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -478,7 +480,42 @@ const ClassManagement = () => {
   useEffect(() => {
     fetchClasses();
   }, [fetchClasses]);
+  useEffect(() => {
+    if (!isModalOpen) return;
 
+    if (editingClass) {
+      form.setFieldsValue({
+        name: editingClass.name || "",
+        category: editingClass.category || "Giáo lý Hôn Nhân",
+        description: editingClass.description || "",
+        room: editingClass.room || "",
+        day_of_week: editingClass.day_of_week ?? null,
+
+        start_time: editingClass.start_time
+          ? dayjs(editingClass.start_time, "HH:mm:ss")
+          : null,
+
+        end_time: editingClass.end_time
+          ? dayjs(editingClass.end_time, "HH:mm:ss")
+          : null,
+
+        start_date: editingClass.start_date
+          ? dayjs(editingClass.start_date)
+          : null,
+
+        end_date: editingClass.end_date ? dayjs(editingClass.end_date) : null,
+
+        status: editingClass.status || "active",
+      });
+    } else {
+      form.resetFields();
+
+      form.setFieldsValue({
+        category: "Giáo lý Hôn Nhân",
+        status: "active",
+      });
+    }
+  }, [editingClass, isModalOpen, form]);
   /* =====================================================
      STATISTICS
   ===================================================== */
@@ -543,18 +580,15 @@ const ClassManagement = () => {
 
   const handleCreate = useCallback(() => {
     if (saving) return;
+
     setEditingClass(null);
-    form.resetFields();
-    form.setFieldsValue({
-      category: "Giáo lý Hôn Nhân",
-      status: "active",
-    });
     setIsModalOpen(true);
-  }, [form, saving]);
+  }, [saving]);
 
   const handleEdit = useCallback(
     (item) => {
       if (saving) return;
+
       setEditingClass(item);
       setIsModalOpen(true);
     },
@@ -722,10 +756,10 @@ const ClassManagement = () => {
         description="Theo dõi lịch học, danh sách học viên và Giáo lý viên phụ trách."
         onRefresh={() => fetchClasses(true)}
         refreshLoading={loading}
-        primaryButtonText="Tạo lớp mới"
-        primaryButtonIcon={<PlusOutlined />}
-        onPrimaryClick={handleCreate}
-        primaryDisabled={loading || saving}
+        primaryButtonText={canCreateClass ? "Tạo lớp mới" : undefined}
+        primaryButtonIcon={canCreateClass ? <PlusOutlined /> : undefined}
+        onPrimaryClick={canCreateClass ? handleCreate : undefined}
+        primaryDisabled={loading || saving || !canCreateClass}
       />
       {/* STATISTICS CHIBI */}
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
@@ -890,8 +924,10 @@ const ClassManagement = () => {
               <ClassCard
                 item={item}
                 onView={handleViewDetail}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
+                onEdit={canEditClass ? handleEdit : undefined}
+                onDelete={canDeleteClass ? handleDelete : undefined}
+                canEdit={canEditClass}
+                canDelete={canDeleteClass}
               />
             </Col>
           ))}
@@ -941,7 +977,8 @@ const ClassManagement = () => {
       >
         <ClassForm
           form={form}
-          initialValues={editingClass}
+          editingClass={editingClass}
+          loading={saving}
           onFinish={handleSave}
         />
       </AppFormModal>

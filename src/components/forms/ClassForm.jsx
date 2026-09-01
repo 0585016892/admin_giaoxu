@@ -39,24 +39,24 @@ const borderColor = "#E8ECF1";
 
 const categoryOptions = [
   {
+    value: "Lớn Lên Trong Chúa Thánh Thần",
+    label: "Lớn Lên Trong Chúa Thánh Thần",
+  },
+  {
+    value: "Đến Bàn Tiệc Thánh",
+    label: "Đến Bàn Tiệc Thánh",
+  },
+  {
+    value: "Giáo lý Sống Đạo",
+    label: "Giáo lý Sống Đạo",
+  },
+  {
+    value: "Giáo lý Vào Đời",
+    label: "Giáo lý Vào Đời",
+  },
+  {
     value: "Giáo lý Hôn Nhân",
     label: "Giáo lý Hôn Nhân",
-  },
-  {
-    value: "Giáo lý Dự Tòng",
-    label: "Giáo lý Dự Tòng",
-  },
-  {
-    value: "Giáo lý Tân Tòng",
-    label: "Giáo lý Tân Tòng",
-  },
-  {
-    value: "Giáo lý Thiếu Nhi",
-    label: "Giáo lý Thiếu Nhi",
-  },
-  {
-    value: "Giáo lý Thêm Sức",
-    label: "Giáo lý Thêm Sức",
   },
 ];
 
@@ -201,7 +201,7 @@ const ClassForm = ({
       form.resetFields();
 
       form.setFieldsValue({
-        category: "Giáo lý Hôn Nhân",
+        category: "Vui lòng chọn chương trình",
         status: "active",
         name: undefined,
         description: undefined,

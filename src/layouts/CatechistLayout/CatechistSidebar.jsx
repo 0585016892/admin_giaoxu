@@ -15,6 +15,7 @@ import {
   Users,
   Gamepad2,
   BarChart3,
+  ClipboardCheck,
   Trophy,
   LogOut,
   PanelLeftClose,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 import imgSidebar from "../../assets/images/imgSidebar.png";
+import usePermission from "../../hooks/usePermission";
 
 const { Sider } = Layout;
 const { Title } = Typography;
@@ -34,6 +36,7 @@ export default function CatechistSidebar({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { canViewClass, canViewStudents, canViewCatechists } = usePermission();
 
   const menuItems = [
     {
@@ -41,44 +44,66 @@ export default function CatechistSidebar({
       label: "Tổng quan",
       icon: <Home size={18} strokeWidth={2.3} />,
     },
-    {
+
+    canViewClass && {
       key: "/catechist/classes",
-      label: "Lớp học",
+      label: "Quản lý lớp học",
       icon: <Users size={18} strokeWidth={2.3} />,
     },
+
     {
+      key: "/catechist/classes-teacher",
+      label: "Lớp học của bạn",
+      icon: <Users size={18} strokeWidth={2.3} />,
+    },
+
+    canViewStudents && {
       key: "/catechist/students",
-      label: "Học sinh",
+      label: "Quản lý học sinh",
       icon: <Users size={18} strokeWidth={2.3} />,
     },
     {
+      key: "/catechist/student-class",
+      label: "Học sinh của bạn",
+      icon: <Users size={18} strokeWidth={2.3} />,
+    },
+    canViewCatechists && {
       key: "/catechist-management",
       label: "Danh sách GLV",
       icon: <Sparkles size={18} strokeWidth={2.3} />,
     },
+
+    {
+      key: "/attendance",
+      label: "Điểm danh",
+      icon: <ClipboardCheck size={18} strokeWidth={2.3} />,
+    },
+
     {
       key: "/catechist/games",
       label: "Trò chơi tương tác",
       icon: <Gamepad2 size={18} strokeWidth={2.3} />,
     },
+
     {
       key: "/catechist/results",
       label: "Kết quả học tập",
       icon: <BarChart3 size={18} strokeWidth={2.3} />,
     },
+
     {
       key: "/catechist/leaderboard",
       label: "Bảng thành tích",
       icon: <Trophy size={18} strokeWidth={2.3} />,
     },
-  ];
+  ].filter(Boolean);
 
   return (
     <ConfigProvider
       theme={{
         token: {
           colorPrimary: "#FF6B8B",
-          borderRadius: 18,
+          borderRadius: 16,
           fontFamily: "'Quicksand', 'Be Vietnam Pro', sans-serif",
         },
         components: {
@@ -87,15 +112,12 @@ export default function CatechistSidebar({
             itemColor: "#4A5568",
             itemHoverColor: "#FF6B8B",
             itemHoverBg: "#FFF0F5",
-
-            itemSelectedColor: "#FF6B8B",
-            itemSelectedBg: "linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%)",
-
-            itemRadius: 18,
-            itemMarginInline: 0,
+            itemSelectedColor: "#FFFFFF",
+            itemSelectedBg: "#FF6B8B",
+            itemRadius: 16,
+            itemMarginInline: 8,
             itemPaddingInline: collapsed ? 0 : 16,
             itemHeight: 46,
-
             collapsedIconSize: 20,
           },
         },
@@ -107,7 +129,7 @@ export default function CatechistSidebar({
         onCollapse={setCollapsed}
         trigger={null}
         width={260}
-        collapsedWidth={84}
+        collapsedWidth={80}
         theme="light"
         className="chibi-sidebar"
         style={{
@@ -115,7 +137,7 @@ export default function CatechistSidebar({
           position: "sticky",
           top: 0,
           left: 0,
-          background: "rgba(255, 255, 255, 0.95)",
+          background: "rgba(255, 255, 255, 0.98)",
           borderRight: "2px solid #FFF0F5",
           boxShadow: "6px 0 24px rgba(255, 133, 161, 0.08)",
           zIndex: 99,
@@ -126,11 +148,12 @@ export default function CatechistSidebar({
           vertical
           style={{
             height: "100%",
-            padding: collapsed ? "14px 10px" : "14px 14px",
+            padding: collapsed ? "14px 8px" : "14px 10px",
             overflowY: "auto",
+            overflowX: "hidden",
           }}
         >
-          {/* BRAND PASTEL */}
+          {/* BRAND PASTEL CARD */}
           <div
             className="sidebar-brand-card"
             onClick={() => navigate("/catechist")}
@@ -141,7 +164,7 @@ export default function CatechistSidebar({
               gap: 12,
               padding: collapsed ? "8px 0" : "10px 12px",
               marginBottom: 12,
-              borderRadius: 22,
+              borderRadius: 20,
               background: collapsed
                 ? "transparent"
                 : "linear-gradient(135deg, #FFF0F5 0%, #F3E8FF 100%)",
@@ -152,7 +175,7 @@ export default function CatechistSidebar({
           >
             <div className="avatar-star-container">
               <Avatar
-                size={collapsed ? 44 : 48}
+                size={collapsed ? 42 : 46}
                 src={imgSidebar}
                 style={{
                   backgroundColor: "#FFD6E0",
@@ -164,26 +187,27 @@ export default function CatechistSidebar({
             </div>
 
             {!collapsed && (
-              <Flex vertical>
-                <Flex align="center" gap={4}>
-                  <Title
-                    level={5}
-                    style={{
-                      margin: 0,
-                      color: "#4A4E69",
-                      fontWeight: 700,
-                      lineHeight: 1.2,
-                      fontSize: 14,
-                    }}
-                  >
-                    Thiếu Nhi Thánh Thế
-                  </Title>
-                </Flex>
+              <Flex vertical style={{ minWidth: 0 }}>
+                <Title
+                  level={5}
+                  style={{
+                    margin: 0,
+                    color: "#4A4E69",
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                    fontSize: 13.5,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  Thiếu Nhi Thánh Thể
+                </Title>
               </Flex>
             )}
           </div>
 
-          {/* MENU */}
+          {/* MENU LIST */}
           <Menu
             mode="inline"
             inlineCollapsed={collapsed}
@@ -193,23 +217,24 @@ export default function CatechistSidebar({
             style={{
               border: "none",
               fontWeight: 700,
-              fontSize: 13.5,
+              fontSize: 13,
               flex: 1,
+              background: "transparent",
             }}
           />
 
           {/* FOOTER ACTIONS */}
-          <Flex vertical gap={6} style={{ marginTop: 8 }}>
-            {/* TOGGLE */}
+          <Flex vertical gap={6} style={{ marginTop: 12 }}>
+            {/* TOGGLE COLLAPSE */}
             <Tooltip title={collapsed ? "Mở rộng menu" : ""} placement="right">
               <Button
                 type="text"
                 onClick={() => setCollapsed(!collapsed)}
                 icon={
                   collapsed ? (
-                    <PanelLeftOpen size={19} color="#FF6B8B" />
+                    <PanelLeftOpen size={18} color="#FF6B8B" />
                   ) : (
-                    <PanelLeftClose size={19} color="#FF6B8B" />
+                    <PanelLeftClose size={18} color="#FF6B8B" />
                   )
                 }
                 style={{
@@ -236,7 +261,7 @@ export default function CatechistSidebar({
             >
               <Button
                 type="text"
-                icon={<LogOut size={18} strokeWidth={2.3} color="#EF4444" />}
+                icon={<LogOut size={17} strokeWidth={2.3} color="#EF4444" />}
                 onClick={onLogout}
                 block
                 style={{
@@ -261,7 +286,7 @@ export default function CatechistSidebar({
             <div
               style={{
                 marginTop: 12,
-                borderRadius: 20,
+                borderRadius: 18,
                 overflow: "hidden",
                 width: "100%",
                 background: "linear-gradient(135deg, #FFF0F5 0%, #F3E8FF 100%)",
@@ -276,17 +301,17 @@ export default function CatechistSidebar({
                 style={{
                   width: "100%",
                   height: "auto",
-                  maxHeight: 110,
+                  maxHeight: 100,
                   objectFit: "contain",
                   display: "block",
-                  borderRadius: 14,
+                  borderRadius: 12,
                 }}
               />
             </div>
           )}
         </Flex>
 
-        {/* CUSTOM CSS STYLES FOR MENU GLOW & SCROLLBAR */}
+        {/* CUSTOM CSS STYLES */}
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap');
 

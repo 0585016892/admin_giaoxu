@@ -32,6 +32,7 @@ export default function AdminHeader() {
   const location = useLocation();
   const { user, logout } = useUser();
   const [helpOpen, setHelpOpen] = useState(false);
+  console.log(user);
 
   useEffect(() => {
     const path = location.pathname;

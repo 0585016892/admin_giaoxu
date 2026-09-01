@@ -55,6 +55,9 @@ import LeaderboardPage from "../pages/catechist/LeaderboardPage";
 import LessonQuestionManager from "../pages/LessonQuestionManager";
 import ProfilePageCate from "../pages/catechist/ProfilePageCate";
 import ParishSettingsPage from "../pages/catechist/ParishSettingsPage";
+import AttendancePage from "../pages/catechist/AttendancePage";
+import TeacherClassesPage from "../pages/catechist/TeacherClassesPage";
+import MyStudentsPage from "../pages/catechist/MyStudentsPage";
 
 // ============================================================
 // ROLES
@@ -69,7 +72,7 @@ const PARISH_ADMIN_ROLES = [
 ];
 
 // Giáo lý viên
-const CATECHIST_ROLES = ["catechist"];
+const CATECHIST_ROLES = ["catechist", "teacher"];
 
 export default function AppRoutes() {
   return (
@@ -228,11 +231,18 @@ export default function AppRoutes() {
               path="/catechist/classes"
               element={<ClassManagementDashboard />}
             />
-
+            <Route
+              path="/catechist/classes-teacher"
+              element={<TeacherClassesPage />}
+            />
             {/* --------------------------------------------------
                 Quản lý học sinh
                 -------------------------------------------------- */}
             <Route path="/catechist/students" element={<StudentManagement />} />
+            <Route
+              path="/catechist/student-class"
+              element={<MyStudentsPage />}
+            />
 
             {/* --------------------------------------------------
                 Game giáo lý
@@ -263,6 +273,7 @@ export default function AppRoutes() {
               path="/catechist-management"
               element={<CatechistManagement />}
             />
+            <Route path="/attendance" element={<AttendancePage />} />
             <Route path="/catechist/profile" element={<ProfilePageCate />} />
             <Route
               path="/catechist/settings"

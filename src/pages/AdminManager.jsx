@@ -516,6 +516,8 @@ export default function AdminManager() {
         return "QUẢN LÝ TRUYỀN THÔNG";
 
       case "catechist":
+        return "QUẢN TRỊ VIÊN GIÁO LÝ";
+      case "teacher":
         return "GIÁO LÝ VIÊN";
 
       default:
@@ -1589,7 +1591,8 @@ export default function AdminManager() {
                         Quản lý truyền thông
                       </Option>
 
-                      <Option value="catechist">Giáo lý viên</Option>
+                      <Option value="catechist">Quản trị viên Giáo lý</Option>
+                      <Option value="teacher">Giáo lý viên</Option>
                     </Select>
                   </Form.Item>
                 </Col>

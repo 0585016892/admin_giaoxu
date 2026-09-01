@@ -103,7 +103,14 @@ const InfoItem = ({ icon, label, value }) => (
   </div>
 );
 
-const ClassCard = ({ item = {}, onView, onEdit, onDelete }) => {
+const ClassCard = ({
+  item = {},
+  onView,
+  onEdit,
+  onDelete,
+  canEdit = false,
+  canDelete = false,
+}) => {
   const catechists = Array.isArray(item.catechists) ? item.catechists : [];
   const studentsCount = Number(item.studentsCount || 0);
 
@@ -254,26 +261,46 @@ const ClassCard = ({ item = {}, onView, onEdit, onDelete }) => {
                       onView?.(item);
                     },
                   },
-                  {
-                    key: "edit",
-                    icon: <EditOutlined />,
-                    label: "Chỉnh sửa",
-                    onClick: ({ domEvent }) => {
-                      domEvent.stopPropagation();
-                      onEdit?.(item);
-                    },
-                  },
-                  { type: "divider" },
-                  {
-                    key: "delete",
-                    danger: true,
-                    icon: <DeleteOutlined />,
-                    label: "Xóa lớp",
-                    onClick: ({ domEvent }) => {
-                      domEvent.stopPropagation();
-                      onDelete?.(item);
-                    },
-                  },
+
+                  // CHỈ HIỆN KHI CÓ QUYỀN SỬA
+                  ...(canEdit
+                    ? [
+                        {
+                          key: "edit",
+                          icon: <EditOutlined />,
+                          label: "Chỉnh sửa",
+                          onClick: ({ domEvent }) => {
+                            domEvent.stopPropagation();
+                            onEdit?.(item);
+                          },
+                        },
+                      ]
+                    : []),
+
+                  // Chỉ hiện divider nếu có quyền sửa hoặc xóa
+                  ...(canEdit || canDelete
+                    ? [
+                        {
+                          type: "divider",
+                        },
+                      ]
+                    : []),
+
+                  // CHỈ HIỆN KHI CÓ QUYỀN XÓA
+                  ...(canDelete
+                    ? [
+                        {
+                          key: "delete",
+                          danger: true,
+                          icon: <DeleteOutlined />,
+                          label: "Xóa lớp",
+                          onClick: ({ domEvent }) => {
+                            domEvent.stopPropagation();
+                            onDelete?.(item);
+                          },
+                        },
+                      ]
+                    : []),
                 ],
               }}
             >

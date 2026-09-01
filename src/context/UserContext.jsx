@@ -78,6 +78,8 @@ export function UserProvider({ children }) {
       avatar: payload.avatar,
       church_id: payload.church_id,
       account_type: payload.account_type,
+      teacher_id: payload.teacher_id,
+      catechist_id: payload.catechist_id,
       token,
     };
 
@@ -116,6 +118,8 @@ export function UserProvider({ children }) {
       avatar: payload.avatar,
       church_id: payload.church_id,
       account_type: payload.account_type,
+      teacher_id: payload.teacher_id,
+      catechist_id: payload.catechist_id,
       token,
     };
 
@@ -141,7 +145,7 @@ export function UserProvider({ children }) {
 
     setUser(null);
 
-    if (currentRole === "catechist") {
+    if (currentRole === "catechist" || currentRole === "teacher") {
       window.location.replace("/login");
       return;
     }
