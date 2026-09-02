@@ -101,9 +101,9 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   placeholder="Chọn giới tính"
                   allowClear
                   options={[
-                    { value: "Nam", label: "Nam" },
-                    { value: "Nữ", label: "Nữ" },
-                    { value: "Khác", label: "Khác" },
+                    { value: "male", label: "Nam" },
+                    { value: "female", label: "Nữ" },
+                    { value: "other", label: "Khác" },
                   ]}
                 />
               </Form.Item>
