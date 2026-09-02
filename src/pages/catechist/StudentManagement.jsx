@@ -1138,7 +1138,7 @@ export default function StudentManagement() {
                   fontSize: 12,
                 }}
               >
-                {record.code} • {record.gender}
+                {record.code} • {record.gender === "male" ? "nam" : "nữ"}
               </Text>
             </div>
           </Space>
@@ -1795,9 +1795,7 @@ export default function StudentManagement() {
           rowKey="id"
           loading={{
             spinning: loading,
-            indicator: (
-              <Spin size="large" tip="Đang tải danh sách học sinh..." />
-            ),
+            indicator: <Spin size="large" />,
           }}
           columns={columns}
           dataSource={paginatedStudents}

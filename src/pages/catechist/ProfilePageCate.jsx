@@ -27,7 +27,6 @@ import {
   CameraOutlined,
   SaveOutlined,
   KeyOutlined,
-  SmileOutlined,
   StarFilled,
   CrownFilled,
   BookOutlined,
@@ -35,11 +34,12 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-
+import PageHeroHeader from "../../components/common/PageHeroHeader";
+import AppButton from "../../components/common/AppButton";
 import { useUser } from "../../context/UserContext";
 import { getAdminById, updateAdmin, changePassword } from "../../api/adminApi";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export default function ProfilePageCate() {
   const { user } = useUser();
@@ -240,11 +240,19 @@ export default function ProfilePageCate() {
 
   if (loading) {
     return (
-      <div className="chibi-loading-screen">
+      <div
+        className="chibi-loading-screen"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <Space direction="vertical" align="center" size="middle">
           <Spin size="large" />
           <Text className="chibi-loading-text">
-            Đang tải hồ sơ xinh xắn của bạn... 💕
+            Đang tải hồ sơ của bạn... 💕
           </Text>
         </Space>
       </div>
@@ -269,16 +277,13 @@ export default function ProfilePageCate() {
         <div className="chibi-profile-container">
           {/* HEADER BAR */}
           <div className="chibi-header-banner">
-            <span className="chibi-badge-pill">
-              <SmileOutlined /> THÔNG TIN HỒ SƠ CÁ NHÂN ✨
-            </span>
-            <Title level={2} className="chibi-main-title">
-              Hồ Sơ Của Bạn 🌸
-            </Title>
-            <Paragraph className="chibi-sub-title">
-              Quản lý thông tin lý lịch, chức vụ giáo lý và bảo mật mật khẩu tài
-              khoản.
-            </Paragraph>
+            <PageHeroHeader
+              icon={<UserOutlined />}
+              badgeText="🌸 THÔNG TIN HỒ SƠ CÁ NHÂN"
+              title="Hồ Sơ Của Bạn "
+              description=" Quản lý thông tin lý lịch, chức vụ giáo lý và bảo mật mật khẩu tài
+              khoản."
+            />
           </div>
 
           <Row gutter={[20, 20]}>
@@ -640,15 +645,17 @@ export default function ProfilePageCate() {
                     )}
 
                     <div style={{ textAlign: "right", marginTop: 12 }}>
-                      <Button
-                        type="primary"
+                      <AppButton
+                        key="submit"
                         icon={<SaveOutlined />}
+                        type="primary"
                         loading={submitLoading}
                         onClick={handleUpdateProfile}
-                        className="chibi-btn-submit"
+                        size="middle"
                       >
                         Lưu Thay Đổi ✨
-                      </Button>
+                      </AppButton>
+                      ,
                     </div>
                   </Form>
                 </Card>
@@ -719,15 +726,16 @@ export default function ProfilePageCate() {
                     </Row>
 
                     <div style={{ textAlign: "right" }}>
-                      <Button
-                        type="primary"
+                      <AppButton
+                        key="submit"
                         icon={<KeyOutlined />}
+                        type="primary"
                         loading={passwordLoading}
                         onClick={handleChangePassword}
-                        className="chibi-btn-purple"
+                        size="middle"
                       >
                         Cập Nhật Mật Khẩu 🔐
-                      </Button>
+                      </AppButton>
                     </div>
                   </Form>
                 </Card>
