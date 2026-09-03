@@ -58,6 +58,8 @@ import classApi from "../../api/classApi";
 
 import dayjs from "dayjs";
 
+import avataImg from "../../assets/images/jesusImg.png";
+
 const { Title, Text } = Typography;
 
 const LEVEL_OPTIONS = [
@@ -131,11 +133,7 @@ export default function CatechistManagement() {
     classes: item.classes || [],
     created_at: item.created_at || null,
     updated_at: item.updated_at || null,
-    avatar: item.avatar
-      ? item.avatar
-      : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
-          item.full_name || "GLV",
-        )}`,
+    avatar: item.avatar ? item.avatar : avataImg,
   });
 
   const formatDateStr = (dateStr) => {
@@ -426,7 +424,7 @@ export default function CatechistManagement() {
       key: "catechist",
       render: (_, record) => (
         <Space size={12}>
-          <div className="chibi-avatar-wrapper">
+          <div className=".chibi-avatar-wrapper--a">
             <Avatar size={48} src={record.avatar} className="chibi-avatar" />
           </div>
           <div>
@@ -1321,7 +1319,7 @@ export default function CatechistManagement() {
           }
 
           /* TABLE STYLES */
-          .chibi-avatar-wrapper {
+          ..chibi-avatar-wrapper--a {
             padding: 2px;
             background: linear-gradient(135deg, #FF6B8B, #A855F7);
             border-radius: 50%;
