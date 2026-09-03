@@ -10,9 +10,9 @@ import { Progress } from "antd";
 
 import {
   ArrowLeft,
+  ArrowRight,
   X,
   Lightbulb,
-  SkipForward,
   Trophy,
   Volume2,
   VolumeX,
@@ -26,9 +26,15 @@ import {
 } from "lucide-react";
 
 /* =========================================================
+   API
+========================================================= */
+
+const API_URL = process.env.REACT_APP_API_URL || "";
+
+/* =========================================================
    OPTION STYLES
 ========================================================= */
-const API_URL = process.env.REACT_APP_API_URL || "";
+
 const OPTION_STYLES = [
   {
     letter: "A",
@@ -80,24 +86,28 @@ const GameButton = ({
       border: "2px solid rgba(255,255,255,.35)",
       shadow: "0 8px 20px rgba(108,75,255,.28)",
     },
+
     secondary: {
       background: "linear-gradient(135deg, #FFD54F 0%, #FFB703 100%)",
       color: "#4A3200",
       border: "2px solid rgba(255,255,255,.7)",
       shadow: "0 8px 20px rgba(255,183,3,.25)",
     },
+
     danger: {
       background: "linear-gradient(135deg, #FF5C5C 0%, #EF4444 100%)",
       color: "#fff",
       border: "2px solid rgba(255,255,255,.35)",
       shadow: "0 8px 20px rgba(239,68,68,.25)",
     },
+
     ghost: {
       background: "rgba(255,255,255,.92)",
       color: "#374151",
       border: "2px solid #E5E7EB",
       shadow: "0 5px 14px rgba(0,0,0,.08)",
     },
+
     dark: {
       background: "linear-gradient(135deg, #374151, #111827)",
       color: "#fff",
@@ -106,7 +116,7 @@ const GameButton = ({
     },
   };
 
-  const v = variants[variant];
+  const v = variants[variant] || variants.primary;
 
   return (
     <button
@@ -167,6 +177,7 @@ const GameButton = ({
       >
         {icon}
       </span>
+
       <span>{children}</span>
     </button>
   );
@@ -192,6 +203,7 @@ const RoundButton = ({
       style={{
         width: 46,
         height: 46,
+        minWidth: 46,
         borderRadius: "50%",
         border: "3px solid rgba(255,255,255,.55)",
         background: primaryColor,
@@ -203,6 +215,7 @@ const RoundButton = ({
         boxShadow: "0 7px 18px rgba(0,0,0,.2)",
         transition: "all .18s ease",
         opacity: disabled ? 0.5 : 1,
+        flexShrink: 0,
       }}
       onMouseEnter={(e) => {
         if (!disabled) {
@@ -225,6 +238,8 @@ const RoundButton = ({
 ========================================================= */
 
 const QuizGame = ({ game = {}, onExit }) => {
+  console.log("QUIZ GAME:", game);
+
   /* =====================================================
      DATA
   ===================================================== */
@@ -254,7 +269,9 @@ const QuizGame = ({ game = {}, onExit }) => {
   ===================================================== */
 
   const primaryColor = theme?.primary || "#6C4BFF";
+
   const secondaryColor = theme?.secondary || "#FFD54F";
+
   const gameFont = theme?.font || "Baloo 2";
 
   /* =====================================================
@@ -271,6 +288,21 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   const bgColor = background?.color || "#ffffff";
 
+  const pageBackground = {
+    minHeight: "100vh",
+    backgroundColor: bgColor,
+    backgroundImage: bgImage
+      ? `linear-gradient(
+          rgba(0,0,0,.08),
+          rgba(0,0,0,.08)
+        ), url("${bgImage}")`
+      : "none",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundAttachment: "fixed",
+    boxSizing: "border-box",
+  };
+
   /* =====================================================
      QUESTIONS
   ===================================================== */
@@ -279,6 +311,7 @@ const QuizGame = ({ game = {}, onExit }) => {
     if (!settings.shuffleQuestions) {
       return rawQuestions;
     }
+
     return [...rawQuestions].sort(() => Math.random() - 0.5);
   }, [rawQuestions, settings.shuffleQuestions]);
 
@@ -287,14 +320,23 @@ const QuizGame = ({ game = {}, onExit }) => {
   ===================================================== */
 
   const [currentIndex, setCurrentIndex] = useState(0);
+
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+
   const [userAnswersHistory, setUserAnswersHistory] = useState([]);
+
   const [score, setScore] = useState(0);
+
   const [timeLeft, setTimeLeft] = useState(Number(settings.timeLimit) || 30);
+
   const [finished, setFinished] = useState(false);
+
   const [showResult, setShowResult] = useState(false);
+
   const [isReviewMode, setIsReviewMode] = useState(false);
+
   const [isMuted, setIsMuted] = useState(false);
+
   const [isHintOpen, setIsHintOpen] = useState(false);
 
   /* =====================================================
@@ -302,26 +344,12 @@ const QuizGame = ({ game = {}, onExit }) => {
   ===================================================== */
 
   const correctAudioRef = useRef(null);
+
   const wrongAudioRef = useRef(null);
+
   const backgroundMusicRef = useRef(null);
-  const nextTimeoutRef = useRef(null);
 
   const currentQuestion = questions[currentIndex];
-
-  /* =====================================================
-     BACKGROUND STYLE
-  ===================================================== */
-
-  const pageBackground = {
-    minHeight: "80vh",
-    backgroundColor: bgColor,
-    backgroundImage: bgImage
-      ? `linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.08)), url("${bgImage}")`
-      : "none",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundAttachment: "fixed",
-  };
 
   /* =====================================================
      AUDIO URL
@@ -329,10 +357,30 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   const getAudioUrl = useCallback((audio) => {
     if (!audio) return null;
-    if (typeof audio === "string") return audio;
-    if (typeof audio === "object") {
-      return audio.url || audio.path || audio.src || audio.location || null;
+
+    if (typeof audio === "string") {
+      return audio.startsWith("http")
+        ? audio
+        : `${API_URL.replace(/\/api\/?$/, "")}${
+            audio.startsWith("/") ? "" : "/"
+          }${audio}`;
     }
+
+    if (typeof audio === "object" && audio !== null) {
+      const value =
+        audio.url || audio.path || audio.src || audio.location || null;
+
+      if (!value) return null;
+
+      if (typeof value === "string" && value.startsWith("http")) {
+        return value;
+      }
+
+      return `${API_URL.replace(/\/api\/?$/, "")}${
+        value.startsWith("/") ? "" : "/"
+      }${value}`;
+    }
+
     return null;
   }, []);
 
@@ -342,23 +390,30 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   useEffect(() => {
     const correctUrl = getAudioUrl(media?.correctSound);
+
     const wrongUrl = getAudioUrl(media?.wrongSound);
+
     const backgroundMusicUrl = getAudioUrl(media?.backgroundMusic);
 
     if (correctUrl) {
       correctAudioRef.current = new Audio(correctUrl);
+
       correctAudioRef.current.preload = "auto";
     }
 
     if (wrongUrl) {
       wrongAudioRef.current = new Audio(wrongUrl);
+
       wrongAudioRef.current.preload = "auto";
     }
 
     if (backgroundMusicUrl) {
       backgroundMusicRef.current = new Audio(backgroundMusicUrl);
+
       backgroundMusicRef.current.loop = true;
+
       backgroundMusicRef.current.volume = 0.3;
+
       backgroundMusicRef.current.play().catch(() => {});
     }
 
@@ -395,9 +450,13 @@ const QuizGame = ({ game = {}, onExit }) => {
   const playSound = useCallback(
     (isCorrect) => {
       if (isMuted) return;
+
       const audio = isCorrect ? correctAudioRef.current : wrongAudioRef.current;
+
       if (!audio) return;
+
       audio.currentTime = 0;
+
       audio.play().catch(() => {});
     },
     [isMuted],
@@ -409,10 +468,13 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   const shuffledAnswers = useMemo(() => {
     if (!currentQuestion) return [];
+
     const options = currentQuestion.answers || currentQuestion.options || [];
+
     if (!settings.shuffleAnswers) {
       return options;
     }
+
     return [...options].sort(() => Math.random() - 0.5);
   }, [currentQuestion, settings.shuffleAnswers]);
 
@@ -422,10 +484,24 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   const checkAnswerIsCorrect = useCallback(
     (optionObj, question = currentQuestion) => {
-      if (!optionObj || !question) return false;
+      if (!optionObj || !question) {
+        return false;
+      }
+
+      /* -----------------------------------------------
+         DATA CỦA MÀY:
+
+         {
+           id: "A",
+           text: "Một",
+           correct: true
+         }
+
+         nên ưu tiên correct === true
+      ------------------------------------------------ */
 
       if (typeof optionObj === "object" && optionObj !== null) {
-        if (optionObj.isCorrect === true || optionObj.correct === true) {
+        if (optionObj.correct === true || optionObj.isCorrect === true) {
           return true;
         }
       }
@@ -455,7 +531,10 @@ const QuizGame = ({ game = {}, onExit }) => {
   );
 
   /* =====================================================
-     NEXT
+     NEXT QUESTION
+     
+     KHÔNG TỰ ĐỘNG NEXT.
+     Chỉ chạy khi người dùng bấm nút.
   ===================================================== */
 
   const handleNext = useCallback(() => {
@@ -470,6 +549,8 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   /* =====================================================
      SELECT ANSWER
+     
+     Không tự động chuyển câu.
   ===================================================== */
 
   const handleSelectAnswer = useCallback(
@@ -494,20 +575,23 @@ const QuizGame = ({ game = {}, onExit }) => {
         ...prev,
         {
           questionIndex: currentIndex,
+
           questionId: currentQuestion?.id || null,
+
           questionText:
             currentQuestion?.question || currentQuestion?.title || "",
+
           selectedOption: option,
+
           isCorrect: isCorrectChoice,
+
           isTimeout,
+
           skipped: false,
+
           points: questionPoints,
         },
       ]);
-
-      nextTimeoutRef.current = setTimeout(() => {
-        handleNext();
-      }, 1200);
     },
     [
       selectedAnswer,
@@ -515,12 +599,16 @@ const QuizGame = ({ game = {}, onExit }) => {
       currentIndex,
       checkAnswerIsCorrect,
       playSound,
-      handleNext,
     ],
   );
 
   /* =====================================================
      TIMER
+     
+     Hết giờ:
+     - đánh dấu sai
+     - đứng nguyên câu
+     - người dùng bấm Câu tiếp theo
   ===================================================== */
 
   useEffect(() => {
@@ -536,6 +624,7 @@ const QuizGame = ({ game = {}, onExit }) => {
 
     if (timeLeft <= 0) {
       handleSelectAnswer(null, true);
+
       return;
     }
 
@@ -564,66 +653,31 @@ const QuizGame = ({ game = {}, onExit }) => {
     setTimeLeft(Number(settings.timeLimit) || 30);
 
     setSelectedAnswer(null);
+
     setIsHintOpen(false);
   }, [currentIndex, currentQuestion, settings.timeLimit]);
-
-  /* =====================================================
-     CLEANUP
-  ===================================================== */
-
-  useEffect(() => {
-    return () => {
-      if (nextTimeoutRef.current) {
-        clearTimeout(nextTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  /* =====================================================
-     SKIP
-  ===================================================== */
-
-  const handleSkip = useCallback(() => {
-    if (selectedAnswer !== null || !currentQuestion) {
-      return;
-    }
-
-    const questionPoints = Number(currentQuestion?.points) || 10;
-
-    setUserAnswersHistory((prev) => [
-      ...prev,
-      {
-        questionIndex: currentIndex,
-        questionId: currentQuestion?.id || null,
-        questionText: currentQuestion?.question || currentQuestion?.title || "",
-        selectedOption: null,
-        isCorrect: false,
-        isTimeout: false,
-        skipped: true,
-        points: questionPoints,
-      },
-    ]);
-
-    handleNext();
-  }, [selectedAnswer, currentQuestion, currentIndex, handleNext]);
 
   /* =====================================================
      RESTART
   ===================================================== */
 
   const handleRestart = useCallback(() => {
-    if (nextTimeoutRef.current) {
-      clearTimeout(nextTimeoutRef.current);
-    }
-
     setCurrentIndex(0);
+
     setSelectedAnswer(null);
+
     setUserAnswersHistory([]);
+
     setScore(0);
+
     setTimeLeft(Number(settings.timeLimit) || 30);
+
     setFinished(false);
+
     setShowResult(false);
+
     setIsReviewMode(false);
+
     setIsHintOpen(false);
   }, [settings.timeLimit]);
 
@@ -633,6 +687,7 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   const formatTime = useCallback((seconds) => {
     const mins = Math.floor(seconds / 60);
+
     const secs = seconds % 60;
 
     return `${mins.toString().padStart(2, "0")}:${secs
@@ -710,7 +765,7 @@ const QuizGame = ({ game = {}, onExit }) => {
   }
 
   /* =====================================================
-     REVIEW
+     REVIEW MODE
   ===================================================== */
 
   if (isReviewMode) {
@@ -733,6 +788,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             boxShadow: "0 25px 60px rgba(0,0,0,.18)",
           }}
         >
+          {/* HEADER */}
+
           <div
             style={{
               display: "flex",
@@ -780,6 +837,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             </GameButton>
           </div>
 
+          {/* QUESTIONS */}
+
           <div
             style={{
               display: "flex",
@@ -804,6 +863,8 @@ const QuizGame = ({ game = {}, onExit }) => {
                     padding: 20,
                   }}
                 >
+                  {/* QUESTION */}
+
                   <div
                     style={{
                       display: "flex",
@@ -840,6 +901,8 @@ const QuizGame = ({ game = {}, onExit }) => {
                       {q.question || q.title}
                     </p>
                   </div>
+
+                  {/* ANSWERS */}
 
                   <div
                     style={{
@@ -903,6 +966,8 @@ const QuizGame = ({ game = {}, onExit }) => {
                     })}
                   </div>
 
+                  {/* EXPLANATION */}
+
                   {q.explanation && (
                     <div
                       style={{
@@ -913,6 +978,7 @@ const QuizGame = ({ game = {}, onExit }) => {
                         borderRadius: 16,
                         color: "#614700",
                         fontWeight: 650,
+                        lineHeight: 1.6,
                       }}
                     >
                       💡 {q.explanation}
@@ -968,13 +1034,19 @@ const QuizGame = ({ game = {}, onExit }) => {
             border: "5px solid rgba(255,255,255,.8)",
           }}
         >
+          {/* TROPHY */}
+
           <div
             style={{
               width: 105,
               height: 105,
               margin: "0 auto 18px",
               borderRadius: "50%",
-              background: `linear-gradient(135deg, ${secondaryColor}, ${primaryColor})`,
+              background: `linear-gradient(
+                135deg,
+                ${secondaryColor},
+                ${primaryColor}
+              )`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1017,6 +1089,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             {game.name || "Hoàn thành bài trắc nghiệm"}
           </p>
 
+          {/* SCORE */}
+
           <div
             style={{
               fontSize: 58,
@@ -1027,6 +1101,7 @@ const QuizGame = ({ game = {}, onExit }) => {
             }}
           >
             {score}
+
             <span
               style={{
                 fontSize: 22,
@@ -1036,6 +1111,8 @@ const QuizGame = ({ game = {}, onExit }) => {
               điểm
             </span>
           </div>
+
+          {/* CORRECT */}
 
           <div
             style={{
@@ -1054,6 +1131,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             Đúng {correctCount}/{questions.length} câu
           </div>
 
+          {/* PROGRESS */}
+
           <Progress
             percent={percentage}
             strokeColor={{
@@ -1063,6 +1142,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             size={["100%", 14]}
             showInfo={false}
           />
+
+          {/* ACTIONS */}
 
           <div
             style={{
@@ -1109,16 +1190,19 @@ const QuizGame = ({ game = {}, onExit }) => {
 
   /* =====================================================
      MAIN GAME
+     
+     VÀO LÀ CHƠI NGAY
+     Không có màn hình Bắt đầu chơi.
   ===================================================== */
 
   return (
     <div
       style={{
         ...pageBackground,
+        minHeight: "100vh",
         padding: "18px 24px 22px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
         boxSizing: "border-box",
         fontFamily: `'${gameFont}', 'Baloo 2', 'Nunito', sans-serif`,
         userSelect: "none",
@@ -1140,7 +1224,8 @@ const QuizGame = ({ game = {}, onExit }) => {
           flexWrap: "wrap",
         }}
       >
-        {/* TIMER DISPLAY */}
+        {/* TIMER */}
+
         {settings.showTimer ? (
           <div
             style={{
@@ -1182,6 +1267,7 @@ const QuizGame = ({ game = {}, onExit }) => {
               >
                 Thời gian
               </div>
+
               <div
                 style={{
                   fontSize: 18,
@@ -1198,7 +1284,8 @@ const QuizGame = ({ game = {}, onExit }) => {
           <div />
         )}
 
-        {/* CONTROLS & SCORE */}
+        {/* CONTROLS */}
+
         <div
           style={{
             display: "flex",
@@ -1206,7 +1293,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             gap: 10,
           }}
         >
-          {/* SCORE BOX */}
+          {/* SCORE */}
+
           {settings.showScore !== false && (
             <div
               style={{
@@ -1221,6 +1309,7 @@ const QuizGame = ({ game = {}, onExit }) => {
               }}
             >
               <Trophy size={18} color={primaryColor} />
+
               <div
                 style={{
                   fontSize: 14,
@@ -1233,7 +1322,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             </div>
           )}
 
-          {/* AUDIO MUTE TOGGLE */}
+          {/* MUTE */}
+
           <RoundButton
             title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
             onClick={() => setIsMuted(!isMuted)}
@@ -1242,7 +1332,8 @@ const QuizGame = ({ game = {}, onExit }) => {
             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </RoundButton>
 
-          {/* EXIT BUTTON */}
+          {/* EXIT */}
+
           <RoundButton title="Thoát" onClick={onExit} primaryColor="#EF4444">
             <X size={20} />
           </RoundButton>
@@ -1257,26 +1348,35 @@ const QuizGame = ({ game = {}, onExit }) => {
         style={{
           maxWidth: 900,
           width: "100%",
-          margin: "24px auto",
+          margin: "24px auto 18px",
           background: "rgba(255,255,255,.95)",
           backdropFilter: "blur(20px)",
           borderRadius: 32,
           padding: 32,
           boxShadow: "0 20px 50px rgba(0,0,0,.15)",
           border: "4px solid rgba(255,255,255,.8)",
+          boxSizing: "border-box",
         }}
       >
+        {/* QUESTION HEADER */}
+
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: 12,
             marginBottom: 20,
+            flexWrap: "wrap",
           }}
         >
           <span
             style={{
-              background: `linear-gradient(135deg, ${primaryColor}, #8B5CF6)`,
+              background: `linear-gradient(
+                135deg,
+                ${primaryColor},
+                #8B5CF6
+              )`,
               color: "#fff",
               padding: "6px 16px",
               borderRadius: 20,
@@ -1305,10 +1405,13 @@ const QuizGame = ({ game = {}, onExit }) => {
                 cursor: "pointer",
               }}
             >
-              <Lightbulb size={16} /> Gợi ý
+              <Lightbulb size={16} />
+              Gợi ý
             </button>
           )}
         </div>
+
+        {/* HINT */}
 
         {isHintOpen && currentQuestion?.hint && (
           <div
@@ -1321,11 +1424,14 @@ const QuizGame = ({ game = {}, onExit }) => {
               color: "#8C6B00",
               fontWeight: 700,
               fontSize: 14,
+              lineHeight: 1.6,
             }}
           >
             💡 {currentQuestion.hint}
           </div>
         )}
+
+        {/* QUESTION */}
 
         <h2
           style={{
@@ -1333,13 +1439,16 @@ const QuizGame = ({ game = {}, onExit }) => {
             fontWeight: 900,
             color: "#1F2937",
             lineHeight: 1.4,
-            marginBottom: 28,
+            margin: "0 0 28px",
           }}
         >
           {currentQuestion?.question || currentQuestion?.title}
         </h2>
 
-        {/* OPTIONS GRID */}
+        {/* =================================================
+            OPTIONS
+        ================================================= */}
+
         <div
           style={{
             display: "grid",
@@ -1349,18 +1458,23 @@ const QuizGame = ({ game = {}, onExit }) => {
         >
           {shuffledAnswers.map((option, index) => {
             const styleConfig = OPTION_STYLES[index % OPTION_STYLES.length];
+
             const isSelected = selectedAnswer === option;
+
             const isCorrect = checkAnswerIsCorrect(option);
 
             let bg = styleConfig.bg;
+
             let border = styleConfig.border;
 
             if (selectedAnswer !== null) {
               if (isCorrect) {
                 bg = "#ECFDF5";
+
                 border = "#10B981";
               } else if (isSelected) {
                 bg = "#FEF2F2";
+
                 border = "#EF4444";
               }
             }
@@ -1389,8 +1503,11 @@ const QuizGame = ({ game = {}, onExit }) => {
                   transition: "all .15s ease",
                   boxShadow: "0 6px 16px rgba(0,0,0,.04)",
                   fontFamily: "inherit",
+                  minWidth: 0,
                 }}
               >
+                {/* LETTER */}
+
                 <div
                   style={{
                     width: 38,
@@ -1409,52 +1526,128 @@ const QuizGame = ({ game = {}, onExit }) => {
                   {styleConfig.letter}
                 </div>
 
+                {/* TEXT */}
+
                 <span
                   style={{
                     fontSize: 17,
                     fontWeight: 800,
                     color: styleConfig.text,
                     flex: 1,
+                    minWidth: 0,
+                    lineHeight: 1.4,
+                    wordBreak: "break-word",
                   }}
                 >
                   {labelText}
                 </span>
 
+                {/* CORRECT */}
+
                 {selectedAnswer !== null && isCorrect && (
-                  <CheckCircle2 size={24} color="#10B981" />
+                  <CheckCircle2
+                    size={24}
+                    color="#10B981"
+                    style={{
+                      flexShrink: 0,
+                    }}
+                  />
                 )}
 
+                {/* WRONG */}
+
                 {selectedAnswer !== null && isSelected && !isCorrect && (
-                  <XCircle size={24} color="#EF4444" />
+                  <XCircle
+                    size={24}
+                    color="#EF4444"
+                    style={{
+                      flexShrink: 0,
+                    }}
+                  />
                 )}
               </button>
             );
           })}
         </div>
+
+        {/* =================================================
+            EXPLANATION
+        ================================================= */}
+
+        {selectedAnswer !== null && currentQuestion?.explanation && (
+          <div
+            style={{
+              marginTop: 20,
+              padding: 16,
+              background: "#FFFBE6",
+              border: "2px solid #FFE58F",
+              borderRadius: 18,
+              color: "#614700",
+              fontWeight: 650,
+              lineHeight: 1.6,
+            }}
+          >
+            <strong>💡 Giải thích:</strong> {currentQuestion.explanation}
+          </div>
+        )}
       </div>
 
       {/* =================================================
-          FOOTER / ACTIONS
+          NEXT BUTTON
+          
+          CHỈ HIỆN SAU KHI CHỌN ĐÁP ÁN
+          HOẶC HẾT THỜI GIAN.
       ================================================= */}
 
       <div
         style={{
-          display: "flex",
-          justifyContent: "flex-end",
           maxWidth: 900,
           margin: "0 auto",
           width: "100%",
+          display: "flex",
+          justifyContent: "flex-end",
+          paddingBottom: 8,
+          boxSizing: "border-box",
         }}
       >
-        <GameButton
-          variant="ghost"
-          icon={<SkipForward size={18} />}
-          onClick={handleSkip}
-          disabled={selectedAnswer !== null}
-        >
-          Bỏ qua
-        </GameButton>
+        {selectedAnswer !== null && (
+          <GameButton
+            variant="primary"
+            icon={<ArrowRight size={19} />}
+            onClick={handleNext}
+          >
+            {currentIndex >= questions.length - 1
+              ? "Xem kết quả"
+              : "Câu tiếp theo"}
+          </GameButton>
+        )}
       </div>
+
+      {/* =================================================
+          MOBILE RESPONSIVE
+      ================================================= */}
+
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .quiz-game-options {
+              grid-template-columns: 1fr !important;
+            }
+          }
+
+          @media (max-width: 576px) {
+            .quiz-game-root {
+              padding: 12px !important;
+            }
+          }
+
+          @media (max-width: 480px) {
+            button {
+              -webkit-tap-highlight-color: transparent;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

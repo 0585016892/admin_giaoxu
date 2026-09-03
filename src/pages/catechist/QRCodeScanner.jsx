@@ -214,11 +214,6 @@ const QRCodeScanner = ({
 
       setProcessing(false);
 
-      /**
-       * Sau khi hiển thị kết quả
-       * cho phép quét học sinh tiếp theo.
-       */
-
       messageTimeoutRef.current = null;
     }, duration);
   };
@@ -291,8 +286,7 @@ const QRCodeScanner = ({
     }
 
     /**
-     * Chống scanner đọc
-     * cùng một QR liên tục.
+     * Chống scanner đọc cùng QR liên tục
      */
 
     const now = Date.now();
@@ -528,13 +522,6 @@ const QRCodeScanner = ({
    */
 
   const handleFinishAttendance = async () => {
-    /**
-     * AttendancePage sẽ quyết định:
-     *
-     * - đóng luôn
-     * - hoặc confirm học sinh vắng
-     */
-
     if (typeof onFinishAttendance === "function") {
       try {
         await onFinishAttendance();
@@ -544,10 +531,6 @@ const QRCodeScanner = ({
 
       return;
     }
-
-    /**
-     * Fallback nếu không truyền callback
-     */
 
     resetScanner();
 
@@ -569,33 +552,24 @@ const QRCodeScanner = ({
       case "success":
         return {
           color: COLORS.success,
-
           background: COLORS.successBg,
-
           border: COLORS.successBorder,
-
           icon: <CheckCircleFilled />,
         };
 
       case "warning":
         return {
           color: COLORS.warning,
-
           background: COLORS.warningBg,
-
           border: COLORS.warningBorder,
-
           icon: <WarningFilled />,
         };
 
       default:
         return {
           color: COLORS.danger,
-
           background: COLORS.dangerBg,
-
           border: COLORS.dangerBorder,
-
           icon: <CloseCircleFilled />,
         };
     }
@@ -623,32 +597,16 @@ const QRCodeScanner = ({
     } = scanMessage;
 
     return (
-      <div
-        style={{
-          position: "absolute",
-
-          left: 20,
-
-          right: 20,
-
-          bottom: 20,
-
-          zIndex: 30,
-
-          animation:
-            "chibiBounceIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-        }}
-      >
+      <div className="qr-result-overlay">
         <Card
           bordered={false}
           styles={{
             body: {
-              padding: 22,
+              padding: 0,
             },
           }}
+          className="qr-result-card"
           style={{
-            borderRadius: 26,
-
             background: config.background,
 
             border: `2px solid ${config.border}`,
@@ -656,92 +614,41 @@ const QRCodeScanner = ({
             boxShadow: "0 12px 30px rgba(99, 102, 241, 0.18)",
           }}
         >
-          <Space
-            align="start"
-            size={16}
-            style={{
-              width: "100%",
-            }}
-          >
+          <div className="qr-result-inner">
             <div
+              className="qr-result-icon"
               style={{
-                fontSize: 38,
-
                 color: config.color,
-
-                lineHeight: 1,
-
-                marginTop: 2,
               }}
             >
               {config.icon}
             </div>
 
-            <div
-              style={{
-                flex: 1,
-
-                minWidth: 0,
-              }}
-            >
+            <div className="qr-result-content">
               <Text
                 strong
+                className="qr-result-title"
                 style={{
-                  display: "block",
-
-                  fontSize: 18,
-
                   color: config.color,
-
-                  fontFamily: "Nunito, Quicksand, sans-serif",
                 }}
               >
                 {title}
               </Text>
 
               {student?.name && (
-                <Text
-                  strong
-                  style={{
-                    display: "block",
-
-                    marginTop: 6,
-
-                    fontSize: 20,
-
-                    color: "#1E293B",
-                  }}
-                >
+                <Text strong className="qr-student-name">
                   ✨ {student.name}
                 </Text>
               )}
 
               {student?.code && (
-                <Text
-                  type="secondary"
-                  style={{
-                    display: "block",
-
-                    marginTop: 3,
-
-                    fontSize: 14,
-                  }}
-                >
+                <Text type="secondary" className="qr-student-code">
                   Mã học sinh: {student.code}
                 </Text>
               )}
 
               {classData?.name && (
-                <Text
-                  type="secondary"
-                  style={{
-                    display: "block",
-
-                    marginTop: 3,
-
-                    fontSize: 14,
-                  }}
-                >
+                <Text type="secondary" className="qr-class-name">
                   Lớp: {classData.name}
                 </Text>
               )}
@@ -750,17 +657,7 @@ const QRCodeScanner = ({
                 <Tag
                   color={scanMessage.type === "success" ? "success" : "warning"}
                   icon={<ClockCircleOutlined />}
-                  style={{
-                    marginTop: 10,
-
-                    borderRadius: 14,
-
-                    padding: "4px 12px",
-
-                    fontWeight: 600,
-
-                    fontSize: 13,
-                  }}
+                  className="qr-time-tag"
                 >
                   {scanMessage.type === "warning"
                     ? "Đã vào lúc "
@@ -771,23 +668,12 @@ const QRCodeScanner = ({
               )}
 
               {message && (
-                <Text
-                  type="secondary"
-                  style={{
-                    display: "block",
-
-                    marginTop: 8,
-
-                    fontSize: 13,
-
-                    lineHeight: 1.5,
-                  }}
-                >
+                <Text type="secondary" className="qr-result-message">
                   {message}
                 </Text>
               )}
             </div>
-          </Space>
+          </div>
         </Card>
       </div>
     );
@@ -837,7 +723,8 @@ const QRCodeScanner = ({
             border-radius: 32px !important;
             overflow: hidden;
             background: #FFFDF9 !important;
-            box-shadow: 0 25px 50px rgba(99, 102, 241, 0.2) !important;
+            box-shadow:
+              0 25px 50px rgba(99, 102, 241, 0.2) !important;
             border: 3px solid #E0E7FF;
           }
 
@@ -849,6 +736,611 @@ const QRCodeScanner = ({
 
           .chibi-modal .ant-modal-body {
             padding: 12px 28px 28px 28px !important;
+          }
+
+          /* =================================================
+             QR CAMERA
+             ================================================= */
+
+          .qr-camera-wrapper {
+            position: relative;
+            width: 100%;
+            height: 440px;
+            overflow: hidden;
+            border-radius: 28px;
+            background: #1E293B;
+            border: 3px solid #E2E8F0;
+          }
+
+          .qr-camera-wrapper video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+          }
+
+          /* =================================================
+             QR FRAME
+             ================================================= */
+
+          .qr-frame-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .qr-frame {
+            width: 260px;
+            height: 260px;
+            border: 4px dashed ${COLORS.accentYellow};
+            border-radius: 32px;
+            box-shadow:
+              0 0 0 9999px rgba(30, 41, 59, 0.45);
+            animation:
+              chibiPulse 3s infinite ease-in-out;
+          }
+
+          /* =================================================
+             PROCESSING
+             ================================================= */
+
+          .qr-processing-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            background: rgba(255, 253, 249, 0.88);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .qr-processing-card {
+            border-radius: 24px !important;
+            text-align: center;
+            min-width: 180px;
+            box-shadow:
+              0 12px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid #E0E7FF !important;
+          }
+
+          /* =================================================
+             RESULT
+             ================================================= */
+
+          .qr-result-overlay {
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            z-index: 30;
+            animation:
+              chibiBounceIn
+              0.35s
+              cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          }
+
+          .qr-result-card {
+            border-radius: 26px !important;
+            overflow: hidden;
+          }
+
+          .qr-result-inner {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 22px;
+          }
+
+          .qr-result-icon {
+            flex: 0 0 auto;
+            font-size: 38px;
+            line-height: 1;
+            margin-top: 2px;
+          }
+
+          .qr-result-content {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .qr-result-title {
+            display: block;
+            font-size: 18px;
+            line-height: 1.3;
+            font-family:
+              Nunito,
+              Quicksand,
+              sans-serif;
+          }
+
+          .qr-student-name {
+            display: block;
+            margin-top: 6px;
+            font-size: 20px;
+            line-height: 1.3;
+            color: #1E293B;
+          }
+
+          .qr-student-code,
+          .qr-class-name {
+            display: block;
+            margin-top: 3px;
+            font-size: 14px;
+          }
+
+          .qr-time-tag {
+            margin-top: 10px !important;
+            border-radius: 14px !important;
+            padding: 4px 12px !important;
+            font-weight: 600 !important;
+            font-size: 13px !important;
+          }
+
+          .qr-result-message {
+            display: block;
+            margin-top: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+          }
+
+          /* =================================================
+             GUIDE
+             ================================================= */
+
+          .qr-guide {
+            text-align: center;
+            margin-top: 18px;
+          }
+
+          .qr-guide-title {
+            margin-bottom: 4px !important;
+            color: #475569 !important;
+            font-size: 16px !important;
+          }
+
+          .qr-guide-description {
+            font-size: 14px;
+          }
+
+          /* =================================================
+             STATUS
+             ================================================= */
+
+          .qr-status {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            background: #F1F5F9;
+            border: 1px solid #E2E8F0;
+            text-align: center;
+          }
+
+          .qr-status-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            display: inline-block;
+          }
+
+          .qr-status-text {
+            font-size: 14px;
+            font-weight: 500;
+          }
+
+          /* =================================================
+             FINISH BUTTON
+             ================================================= */
+
+          .qr-finish-button {
+            height: 52px !important;
+            border-radius: 18px !important;
+            margin-top: 16px;
+            background: #EEF2FF !important;
+            border-color: #C7D2FE !important;
+            color: ${COLORS.primary} !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            box-shadow:
+              0 4px 14px rgba(99, 102, 241, 0.12);
+          }
+
+          /* =================================================
+             TABLET
+             ================================================= */
+
+          @media (max-width: 768px) {
+            .chibi-modal {
+              max-width: calc(100vw - 24px) !important;
+              margin: 12px auto !important;
+            }
+
+            .chibi-modal .ant-modal-content {
+              border-radius: 26px !important;
+            }
+
+            .chibi-modal .ant-modal-header {
+              padding:
+                18px
+                20px
+                10px
+                20px !important;
+            }
+
+            .chibi-modal .ant-modal-body {
+              padding:
+                10px
+                20px
+                20px
+                20px !important;
+            }
+
+            .qr-camera-wrapper {
+              height: min(
+                58vh,
+                440px
+              );
+              min-height: 330px;
+              border-radius: 24px;
+            }
+
+            .qr-frame {
+              width: min(
+                58vw,
+                240px
+              );
+
+              height: min(
+                58vw,
+                240px
+              );
+
+              border-radius: 28px;
+            }
+
+            .qr-result-overlay {
+              left: 12px;
+              right: 12px;
+              bottom: 12px;
+            }
+
+            .qr-result-inner {
+              padding: 18px;
+              gap: 12px;
+            }
+
+            .qr-result-icon {
+              font-size: 32px;
+            }
+
+            .qr-student-name {
+              font-size: 18px;
+            }
+          }
+
+          /* =================================================
+             MOBILE
+             ================================================= */
+
+          @media (max-width: 576px) {
+            .chibi-modal {
+              width: calc(100vw - 16px) !important;
+              max-width: calc(100vw - 16px) !important;
+              margin: 8px auto !important;
+            }
+
+            .chibi-modal .ant-modal-content {
+              border-radius: 22px !important;
+              border-width: 2px !important;
+            }
+
+            .chibi-modal .ant-modal-header {
+              padding:
+                14px
+                14px
+                8px
+                14px !important;
+            }
+
+            .chibi-modal .ant-modal-body {
+              padding:
+                8px
+                14px
+                14px
+                14px !important;
+            }
+
+            /* HEADER */
+
+            .chibi-modal .ant-modal-title {
+              font-size: 17px !important;
+            }
+
+            .chibi-modal .ant-modal-title > span {
+              gap: 8px !important;
+            }
+
+            .chibi-modal .ant-modal-title > span > div {
+              width: 36px !important;
+              height: 36px !important;
+              font-size: 17px !important;
+            }
+
+            .chibi-modal .ant-modal-title > span > span {
+              font-size: 17px !important;
+            }
+
+            /* CAMERA */
+
+            .qr-camera-wrapper {
+              height: min(
+                68vh,
+                430px
+              );
+
+              min-height: 300px;
+
+              border-radius: 20px;
+
+              border-width: 2px;
+            }
+
+            .qr-frame {
+              width: min(
+                68vw,
+                240px
+              );
+
+              height: min(
+                68vw,
+                240px
+              );
+
+              border-width: 3px;
+
+              border-radius: 24px;
+            }
+
+            /* PROCESSING */
+
+            .qr-processing-card {
+              min-width: 150px !important;
+              border-radius: 20px !important;
+            }
+
+            .qr-processing-card .ant-card-body {
+              padding: 18px !important;
+            }
+
+            /* RESULT */
+
+            .qr-result-overlay {
+              left: 8px;
+              right: 8px;
+              bottom: 8px;
+            }
+
+            .qr-result-card {
+              border-radius: 20px !important;
+            }
+
+            .qr-result-inner {
+              padding: 13px;
+              gap: 10px;
+            }
+
+            .qr-result-icon {
+              font-size: 28px;
+            }
+
+            .qr-result-title {
+              font-size: 15px;
+            }
+
+            .qr-student-name {
+              font-size: 17px;
+              margin-top: 4px;
+            }
+
+            .qr-student-code,
+            .qr-class-name {
+              font-size: 12px;
+            }
+
+            .qr-time-tag {
+              margin-top: 7px !important;
+              padding:
+                3px
+                8px !important;
+              font-size: 11px !important;
+            }
+
+            .qr-result-message {
+              margin-top: 5px;
+              font-size: 11px;
+            }
+
+            /* GUIDE */
+
+            .qr-guide {
+              margin-top: 12px;
+            }
+
+            .qr-guide-title {
+              font-size: 14px !important;
+            }
+
+            .qr-guide-description {
+              font-size: 12px;
+              line-height: 1.5;
+            }
+
+            /* STATUS */
+
+            .qr-status {
+              margin-top: 12px;
+              padding:
+                9px
+                10px;
+              border-radius: 14px;
+            }
+
+            .qr-status-text {
+              font-size: 12px;
+            }
+
+            .qr-status-dot {
+              width: 9px;
+              height: 9px;
+            }
+
+            /* BUTTON */
+
+            .qr-finish-button {
+              height: 46px !important;
+              margin-top: 12px;
+              border-radius: 15px !important;
+              font-size: 13px !important;
+            }
+          }
+
+          /* =================================================
+             SMALL PHONE
+             ================================================= */
+
+          @media (max-width: 380px) {
+            .chibi-modal {
+              width: calc(100vw - 10px) !important;
+              max-width: calc(100vw - 10px) !important;
+              margin: 5px auto !important;
+            }
+
+            .chibi-modal .ant-modal-header {
+              padding:
+                10px
+                10px
+                5px
+                10px !important;
+            }
+
+            .chibi-modal .ant-modal-body {
+              padding:
+                5px
+                10px
+                10px
+                10px !important;
+            }
+
+            .chibi-modal .ant-modal-title > span > div {
+              width: 32px !important;
+              height: 32px !important;
+              font-size: 15px !important;
+            }
+
+            .chibi-modal .ant-modal-title > span > span {
+              font-size: 15px !important;
+            }
+
+            .qr-camera-wrapper {
+              height: 55vh;
+              min-height: 270px;
+              border-radius: 18px;
+            }
+
+            .qr-frame {
+              width: 62vw;
+              height: 62vw;
+              border-radius: 20px;
+            }
+
+            .qr-result-inner {
+              padding: 10px;
+              gap: 8px;
+            }
+
+            .qr-result-icon {
+              font-size: 24px;
+            }
+
+            .qr-result-title {
+              font-size: 13px;
+            }
+
+            .qr-student-name {
+              font-size: 15px;
+            }
+
+            .qr-student-code,
+            .qr-class-name {
+              font-size: 11px;
+            }
+
+            .qr-time-tag {
+              font-size: 10px !important;
+            }
+
+            .qr-result-message {
+              font-size: 10px;
+            }
+
+            .qr-guide-title {
+              font-size: 13px !important;
+            }
+
+            .qr-guide-description {
+              font-size: 11px;
+            }
+
+            .qr-status-text {
+              font-size: 11px;
+            }
+
+            .qr-finish-button {
+              height: 42px !important;
+              font-size: 12px !important;
+            }
+          }
+
+          /* =================================================
+             SHORT SCREEN
+             ================================================= */
+
+          @media (
+            max-width: 576px
+          ) and (
+            max-height: 700px
+          ) {
+            .qr-camera-wrapper {
+              height: 52vh;
+              min-height: 250px;
+            }
+
+            .qr-guide {
+              margin-top: 8px;
+            }
+
+            .qr-status {
+              margin-top: 8px;
+            }
+
+            .qr-finish-button {
+              margin-top: 8px;
+            }
+          }
+
+          /* =================================================
+             REDUCE MOTION
+             ================================================= */
+
+          @media (
+            prefers-reduced-motion: reduce
+          ) {
+            .qr-frame,
+            .qr-result-overlay {
+              animation: none !important;
+            }
           }
         `}
       </style>
@@ -867,22 +1359,15 @@ const QRCodeScanner = ({
             <div
               style={{
                 width: 42,
-
                 height: 42,
-
                 borderRadius: "50%",
-
                 background: "#EEF2FF",
-
                 display: "flex",
-
                 alignItems: "center",
-
                 justifyContent: "center",
-
                 color: COLORS.primary,
-
                 fontSize: 20,
+                flexShrink: 0,
               }}
             >
               <CameraOutlined />
@@ -904,26 +1389,12 @@ const QRCodeScanner = ({
           </Space>
         }
       >
-        <div>
-          {/* CAMERA */}
+        <div className="qr-scanner-content">
+          {/* =================================================
+              CAMERA
+              ================================================= */}
 
-          <div
-            style={{
-              position: "relative",
-
-              width: "100%",
-
-              height: 440,
-
-              overflow: "hidden",
-
-              borderRadius: 28,
-
-              background: "#1E293B",
-
-              border: "3px solid #E2E8F0",
-            }}
-          >
+          <div className="qr-camera-wrapper">
             <Scanner
               onScan={handleScan}
               allowMultiple
@@ -947,80 +1418,22 @@ const QRCodeScanner = ({
 
             {/* QR FRAME */}
 
-            <div
-              style={{
-                position: "absolute",
-
-                inset: 0,
-
-                pointerEvents: "none",
-
-                display: "flex",
-
-                justifyContent: "center",
-
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  width: 260,
-
-                  height: 260,
-
-                  border: `4px dashed ${COLORS.accentYellow}`,
-
-                  borderRadius: 32,
-
-                  boxShadow: "0 0 0 9999px rgba(30, 41, 59, 0.45)",
-
-                  animation: "chibiPulse 3s infinite ease-in-out",
-                }}
-              />
+            <div className="qr-frame-container">
+              <div className="qr-frame" />
             </div>
 
-            {/* PROCESSING */}
+            {/* =================================================
+                PROCESSING
+                ================================================= */}
 
             {processing && !scanMessage && (
-              <div
-                style={{
-                  position: "absolute",
-
-                  inset: 0,
-
-                  zIndex: 20,
-
-                  background: "rgba(255, 253, 249, 0.88)",
-
-                  backdropFilter: "blur(6px)",
-
-                  display: "flex",
-
-                  alignItems: "center",
-
-                  justifyContent: "center",
-                }}
-              >
-                <Card
-                  bordered={false}
-                  style={{
-                    borderRadius: 24,
-
-                    textAlign: "center",
-
-                    minWidth: 180,
-
-                    boxShadow: "0 12px 30px rgba(0,0,0,0.1)",
-
-                    border: "2px solid #E0E7FF",
-                  }}
-                >
+              <div className="qr-processing-overlay">
+                <Card bordered={false} className="qr-processing-card">
                   <Spin
                     indicator={
                       <LoadingOutlined
                         style={{
                           fontSize: 36,
-
                           color: COLORS.primary,
                         }}
                         spin
@@ -1037,7 +1450,6 @@ const QRCodeScanner = ({
                       strong
                       style={{
                         color: COLORS.primary,
-
                         fontSize: 15,
                       }}
                     >
@@ -1053,26 +1465,13 @@ const QRCodeScanner = ({
             {renderResultOverlay()}
           </div>
 
-          {/* GUIDE */}
+          {/* =================================================
+              GUIDE
+              ================================================= */}
 
           {!scanMessage && (
-            <div
-              style={{
-                textAlign: "center",
-
-                marginTop: 18,
-              }}
-            >
-              <Title
-                level={5}
-                style={{
-                  marginBottom: 4,
-
-                  color: "#475569",
-
-                  fontSize: 16,
-                }}
-              >
+            <div className="qr-guide">
+              <Title level={5} className="qr-guide-title">
                 <ScanOutlined
                   style={{
                     color: COLORS.primary,
@@ -1081,45 +1480,21 @@ const QRCodeScanner = ({
                 Đưa mã QR vào khung hình nha!
               </Title>
 
-              <Text
-                type="secondary"
-                style={{
-                  fontSize: 14,
-                }}
-              >
+              <Text type="secondary" className="qr-guide-description">
                 Hệ thống sẽ tự động ghi nhận và chuyển tiếp học sinh tiếp theo.
               </Text>
             </div>
           )}
 
-          {/* STATUS */}
+          {/* =================================================
+              STATUS
+              ================================================= */}
 
-          <div
-            style={{
-              marginTop: 16,
-
-              padding: "12px 16px",
-
-              borderRadius: 18,
-
-              background: "#F1F5F9",
-
-              border: "1px solid #E2E8F0",
-
-              textAlign: "center",
-            }}
-          >
+          <div className="qr-status">
             <Space size={10}>
               <span
+                className="qr-status-dot"
                 style={{
-                  width: 11,
-
-                  height: 11,
-
-                  borderRadius: "50%",
-
-                  display: "inline-block",
-
                   background: processing
                     ? COLORS.warning
                     : scanMessage?.type === "error" ||
@@ -1133,14 +1508,7 @@ const QRCodeScanner = ({
                 }}
               />
 
-              <Text
-                type="secondary"
-                style={{
-                  fontSize: 14,
-
-                  fontWeight: 500,
-                }}
-              >
+              <Text type="secondary" className="qr-status-text">
                 {processing && !scanMessage
                   ? "Đang xử lý thông tin..."
                   : scanMessage
@@ -1150,31 +1518,15 @@ const QRCodeScanner = ({
             </Space>
           </div>
 
-          {/* FINISH BUTTON */}
+          {/* =================================================
+              FINISH BUTTON
+              ================================================= */}
 
           <Button
             size="large"
             block
             onClick={handleFinishAttendance}
-            style={{
-              height: 52,
-
-              borderRadius: 18,
-
-              marginTop: 16,
-
-              background: "#EEF2FF",
-
-              borderColor: "#C7D2FE",
-
-              color: COLORS.primary,
-
-              fontWeight: 700,
-
-              fontSize: 15,
-
-              boxShadow: "0 4px 14px rgba(99, 102, 241, 0.12)",
-            }}
+            className="qr-finish-button"
           >
             Đóng máy quét 🌻
           </Button>
