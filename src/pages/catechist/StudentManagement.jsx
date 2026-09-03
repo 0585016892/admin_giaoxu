@@ -206,29 +206,41 @@ export default function StudentManagement() {
 
     try {
       // ==============================
-      // THÔNG TIN HIỂN THỊ
+      // THÔNG TIN HỌC SINH
       // ==============================
       const studentName = qrStudent.full_name || qrStudent.name || "Học sinh";
 
       const studentCode = qrStudent.code || `HS-${qrStudent.id}`;
 
+      const className =
+        qrStudent.class_name ||
+        qrStudent.className ||
+        qrStudent.class?.name ||
+        qrStudent.class?.class_name ||
+        "Chưa xếp lớp";
+
       // ==============================
-      // KÍCH THƯỚC ẢNH
+      // KÍCH THƯỚC
       // ==============================
       const qrSize = qrCanvas.width || 300;
 
       const padding = 30;
+
       const nameFontSize = 24;
-      const codeFontSize = 20;
+      const codeFontSize = 19;
+      const classFontSize = 18;
 
       const nameHeight = 40;
-      const codeHeight = 35;
+      const codeHeight = 32;
+      const classHeight = 32;
 
       const canvasWidth = qrSize + padding * 2;
-      const canvasHeight = qrSize + padding * 2 + nameHeight + codeHeight + 20;
+
+      const canvasHeight =
+        qrSize + padding * 2 + nameHeight + codeHeight + classHeight + 20;
 
       // ==============================
-      // TẠO CANVAS MỚI
+      // TẠO CANVAS
       // ==============================
       const canvas = document.createElement("canvas");
 
@@ -237,10 +249,15 @@ export default function StudentManagement() {
 
       const ctx = canvas.getContext("2d");
 
+      if (!ctx) {
+        throw new Error("Không thể tạo Canvas Context");
+      }
+
       // ==============================
-      // NỀN TRẮNG
+      // NỀN
       // ==============================
       ctx.fillStyle = "#FFFFFF";
+
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
       // ==============================
@@ -249,23 +266,37 @@ export default function StudentManagement() {
       ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
 
       // ==============================
-      // TÊN HỌC SINH
+      // CĂN GIỮA TEXT
       // ==============================
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
+      // ==============================
+      // TÊN HỌC SINH
+      // ==============================
       ctx.fillStyle = "#1E293B";
+
       ctx.font = `600 ${nameFontSize}px Arial`;
 
-      ctx.fillText(studentName, canvasWidth / 2, qrSize + padding + 25);
+      ctx.fillText(studentName, canvasWidth / 2, qrSize + padding + 20);
 
       // ==============================
       // MÃ HỌC SINH
       // ==============================
       ctx.fillStyle = "#64748B";
+
       ctx.font = `500 ${codeFontSize}px Arial`;
 
-      ctx.fillText(studentCode, canvasWidth / 2, qrSize + padding + 60);
+      ctx.fillText(studentCode, canvasWidth / 2, qrSize + padding + 52);
+
+      // ==============================
+      // TÊN LỚP
+      // ==============================
+      ctx.fillStyle = "#1B365D";
+
+      ctx.font = `600 ${classFontSize}px Arial`;
+
+      ctx.fillText(`Lớp: ${className}`, canvasWidth / 2, qrSize + padding + 84);
 
       // ==============================
       // DOWNLOAD
@@ -289,6 +320,7 @@ export default function StudentManagement() {
       message.error("Không thể tải mã QR!");
     }
   }, [qrStudent]);
+
   /* ===================================================
      FORMS
   =================================================== */

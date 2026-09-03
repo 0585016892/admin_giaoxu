@@ -329,12 +329,6 @@ const QRCodeScanner = ({
 
       const data = response?.data || response;
 
-      console.log("========== QR API SUCCESS ==========");
-
-      console.log(data);
-
-      console.log("====================================");
-
       /**
        * Cập nhật AttendancePage
        */

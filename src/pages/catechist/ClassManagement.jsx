@@ -433,7 +433,6 @@ const SectionTitle = ({ icon, title, description, count }) => {
 
 const ClassManagement = () => {
   const { user } = useUser();
-  console.log(user);
 
   const churchId = user?.church_id;
   const { canCreateClass, canEditClass, canDeleteClass } = usePermission();

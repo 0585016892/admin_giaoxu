@@ -252,8 +252,6 @@ export default function CatechistDashboard() {
 
       const data = response?.data?.data || response?.data || response || null;
 
-      console.log("📊 DASHBOARD DATA:", data);
-
       if (!data) {
         throw new Error("Không có dữ liệu dashboard");
       }
