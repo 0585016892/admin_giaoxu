@@ -48,6 +48,8 @@ import {
   UnlockOutlined,
   UserOutlined,
   UserSwitchOutlined,
+  QrcodeOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -55,23 +57,28 @@ import dayjs from "dayjs";
 import studentApi from "../../api/studentApi";
 import classStudentApi from "../../api/classStudentApi";
 import classApi from "../../api/classApi";
+
 import AppFormModal from "../../components/common/AppFormModal";
 import StudentForm from "../../components/forms/StudentForm";
 import StatCard from "../../components/common/StatCard";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
+import AppButton from "../../components/common/AppButton";
+
+import { QRCodeCanvas } from "qrcode.react";
+
 const { Text } = Typography;
+
 const primaryNavy = "#1B365D";
 
 const EMPTY_VALUE = "-";
 
 /* =====================================================
-   HELPERSLớp học*
+   HELPERS
 ===================================================== */
 
 const getResponseData = (response, keys = []) => {
   const data = response?.data;
-  console.log("data class:::", data);
 
   if (data?.data !== undefined) {
     return data.data;
@@ -116,39 +123,21 @@ export default function StudentManagement() {
   const [classes, setClasses] = useState([]);
 
   /* ===================================================
-     GLOBAL LOADING
+     LOADING
   =================================================== */
 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-
-  /*
-   * Loading cho create / edit / change class
-   */
   const [saving, setSaving] = useState(false);
-
-  /*
-   * Loading bulk delete
-   */
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  /*
-   * Loading riêng từng học sinh
-   */
   const [actionLoading, setActionLoading] = useState({
     delete: null,
     toggle: null,
     changeClass: null,
   });
 
-  /*
-   * React StrictMode có thể chạy effect 2 lần
-   */
   const didInitialFetch = useRef(false);
-
-  /*
-   * Tránh update state sau unmount
-   */
   const mountedRef = useRef(true);
 
   /* ===================================================
@@ -156,13 +145,10 @@ export default function StudentManagement() {
   =================================================== */
 
   const [activeClassTab, setActiveClassTab] = useState("all");
-
   const [searchText, setSearchText] = useState("");
-
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const [currentPage, setCurrentPage] = useState(1);
-
   const [pageSize, setPageSize] = useState(10);
 
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -172,7 +158,6 @@ export default function StudentManagement() {
   =================================================== */
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-
   const [editingStudent, setEditingStudent] = useState(null);
 
   /* ===================================================
@@ -180,7 +165,6 @@ export default function StudentManagement() {
   =================================================== */
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
   const [detailStudent, setDetailStudent] = useState(null);
 
   /* ===================================================
@@ -191,6 +175,120 @@ export default function StudentManagement() {
 
   const [changeClassStudent, setChangeClassStudent] = useState(null);
 
+  /* ===================================================
+     QR
+  =================================================== */
+
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [qrStudent, setQrStudent] = useState(null);
+
+  const handleOpenQR = useCallback((student) => {
+    if (!student?.qr_token) {
+      message.warning("Học sinh này chưa có mã QR. Vui lòng tạo mã QR trước!");
+      return;
+    }
+
+    setQrStudent(student);
+    setIsQRModalOpen(true);
+  }, []);
+  const handleDownloadQR = useCallback(() => {
+    if (!qrStudent?.qr_token) {
+      message.warning("Không có mã QR để tải!");
+      return;
+    }
+
+    const qrCanvas = document.getElementById(`student-qr-${qrStudent.id}`);
+
+    if (!qrCanvas) {
+      message.error("Không tìm thấy ảnh QR!");
+      return;
+    }
+
+    try {
+      // ==============================
+      // THÔNG TIN HIỂN THỊ
+      // ==============================
+      const studentName = qrStudent.full_name || qrStudent.name || "Học sinh";
+
+      const studentCode = qrStudent.code || `HS-${qrStudent.id}`;
+
+      // ==============================
+      // KÍCH THƯỚC ẢNH
+      // ==============================
+      const qrSize = qrCanvas.width || 300;
+
+      const padding = 30;
+      const nameFontSize = 24;
+      const codeFontSize = 20;
+
+      const nameHeight = 40;
+      const codeHeight = 35;
+
+      const canvasWidth = qrSize + padding * 2;
+      const canvasHeight = qrSize + padding * 2 + nameHeight + codeHeight + 20;
+
+      // ==============================
+      // TẠO CANVAS MỚI
+      // ==============================
+      const canvas = document.createElement("canvas");
+
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      const ctx = canvas.getContext("2d");
+
+      // ==============================
+      // NỀN TRẮNG
+      // ==============================
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // ==============================
+      // VẼ QR
+      // ==============================
+      ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
+
+      // ==============================
+      // TÊN HỌC SINH
+      // ==============================
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.fillStyle = "#1E293B";
+      ctx.font = `600 ${nameFontSize}px Arial`;
+
+      ctx.fillText(studentName, canvasWidth / 2, qrSize + padding + 25);
+
+      // ==============================
+      // MÃ HỌC SINH
+      // ==============================
+      ctx.fillStyle = "#64748B";
+      ctx.font = `500 ${codeFontSize}px Arial`;
+
+      ctx.fillText(studentCode, canvasWidth / 2, qrSize + padding + 60);
+
+      // ==============================
+      // DOWNLOAD
+      // ==============================
+      const link = document.createElement("a");
+
+      link.download = `${studentCode}-QR.png`;
+
+      link.href = canvas.toDataURL("image/png");
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+
+      message.success("Đã tải mã QR!");
+    } catch (error) {
+      console.error("DOWNLOAD QR ERROR:", error);
+
+      message.error("Không thể tải mã QR!");
+    }
+  }, [qrStudent]);
   /* ===================================================
      FORMS
   =================================================== */
@@ -236,12 +334,10 @@ export default function StudentManagement() {
       key: student.id,
       id: student.id,
 
-      /* ================= BASIC ================= */
+      qr_token: student.qr_token || null,
 
       code: student.code || EMPTY_VALUE,
-
       name: student.name || "Chưa có tên",
-
       gender: student.gender || "Khác",
 
       date_of_birth: student.date_of_birth || null,
@@ -251,14 +347,9 @@ export default function StudentManagement() {
       nationality: student.nationality || "Việt Nam",
 
       phone: student.phone || EMPTY_VALUE,
-
       email: student.email || EMPTY_VALUE,
-
       address: student.address || EMPTY_VALUE,
-
       parish: student.parish || EMPTY_VALUE,
-
-      /* ================= FAMILY ================= */
 
       father_name: student.father_name || EMPTY_VALUE,
 
@@ -273,8 +364,6 @@ export default function StudentManagement() {
       guardian_phone: student.guardian_phone || EMPTY_VALUE,
 
       guardian_relationship: student.guardian_relationship || EMPTY_VALUE,
-
-      /* ================= SACRAMENTS ================= */
 
       baptism_name: student.baptism_name || EMPTY_VALUE,
 
@@ -298,8 +387,6 @@ export default function StudentManagement() {
 
       confirmation_saint_name: student.confirmation_saint_name || EMPTY_VALUE,
 
-      /* ================= CATECHISM ================= */
-
       catechism_level: student.catechism_level || EMPTY_VALUE,
 
       catechism_status: student.catechism_status || "new",
@@ -308,8 +395,6 @@ export default function StudentManagement() {
 
       note: student.note || EMPTY_VALUE,
 
-      /* ================= STATUS ================= */
-
       status: student.status || "active",
 
       avatar: student.avatar || null,
@@ -317,8 +402,6 @@ export default function StudentManagement() {
       created_at: student.created_at || null,
 
       updated_at: student.updated_at || null,
-
-      /* ================= CLASS ================= */
 
       classId: matchedClass?.id || classId || null,
 
@@ -341,9 +424,6 @@ export default function StudentManagement() {
           setLoading(true);
         }
 
-        /*
-         * Lấy students + classes song song
-         */
         const [studentRes, classRes] = await Promise.all([
           studentApi.getAll(),
           classApi.getAll(),
@@ -356,7 +436,6 @@ export default function StudentManagement() {
         const studentData = getResponseData(studentRes, ["students"]);
 
         const classData = getResponseData(classRes, ["classes"]);
-        console.log("classData:::", classData);
 
         const formattedClasses = Array.isArray(classData)
           ? classData.map((item) => ({
@@ -372,9 +451,6 @@ export default function StudentManagement() {
           return;
         }
 
-        /*
-         * Lấy relation lớp từng học sinh
-         */
         const formattedStudents = await Promise.all(
           studentData.map(async (student) => {
             let relation = null;
@@ -394,8 +470,8 @@ export default function StudentManagement() {
               } else if (relationData) {
                 relation = relationData;
               }
-            } catch (error) {
-              console.warn(`Không lấy được lớp học sinh ${student.id}`, error);
+            } catch {
+              relation = null;
             }
 
             return formatStudent(student, relation, formattedClasses);
@@ -407,11 +483,8 @@ export default function StudentManagement() {
         }
 
         setStudents(formattedStudents);
-
         setSelectedRowKeys([]);
       } catch (error) {
-        console.error("fetchStudents error:", error);
-
         if (mountedRef.current) {
           message.error(
             error?.response?.data?.message ||
@@ -437,7 +510,6 @@ export default function StudentManagement() {
 
     if (!didInitialFetch.current) {
       didInitialFetch.current = true;
-
       fetchStudents();
     }
 
@@ -453,8 +525,6 @@ export default function StudentManagement() {
   const filteredStudents = useMemo(() => {
     let result = [...students];
 
-    /* ===== CLASS ===== */
-
     if (activeClassTab === "unassigned") {
       result = result.filter((student) => !student.classId);
     } else if (activeClassTab !== "all") {
@@ -462,8 +532,6 @@ export default function StudentManagement() {
         (student) => String(student.classId) === String(activeClassTab),
       );
     }
-
-    /* ===== SEARCH ===== */
 
     const keyword = searchText.trim().toLowerCase();
 
@@ -476,8 +544,6 @@ export default function StudentManagement() {
           student.email?.toLowerCase().includes(keyword),
       );
     }
-
-    /* ===== STATUS ===== */
 
     if (selectedStatus !== "all") {
       result = result.filter((student) => student.status === selectedStatus);
@@ -493,9 +559,7 @@ export default function StudentManagement() {
   const paginatedStudents = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
 
-    const end = start + pageSize;
-
-    return filteredStudents.slice(start, end);
+    return filteredStudents.slice(start, start + pageSize);
   }, [filteredStudents, currentPage, pageSize]);
 
   /* ===================================================
@@ -588,6 +652,7 @@ export default function StudentManagement() {
           : null,
 
         birth_place: value(student.birth_place),
+
         nationality: value(student.nationality),
 
         phone: value(student.phone),
@@ -598,13 +663,17 @@ export default function StudentManagement() {
         class_id: student.classId ? String(student.classId) : undefined,
 
         father_name: value(student.father_name),
+
         father_phone: value(student.father_phone),
 
         mother_name: value(student.mother_name),
+
         mother_phone: value(student.mother_phone),
 
         guardian_name: value(student.guardian_name),
+
         guardian_phone: value(student.guardian_phone),
+
         guardian_relationship: value(student.guardian_relationship),
 
         baptism_name: value(student.baptism_name),
@@ -612,7 +681,9 @@ export default function StudentManagement() {
         baptism_date: student.baptism_date ? dayjs(student.baptism_date) : null,
 
         baptism_place: value(student.baptism_place),
+
         baptism_parish: value(student.baptism_parish),
+
         baptism_certificate_no: value(student.baptism_certificate_no),
 
         saint_name: value(student.saint_name),
@@ -676,13 +747,17 @@ export default function StudentManagement() {
       parish: values.parish?.trim() || null,
 
       father_name: values.father_name?.trim() || null,
+
       father_phone: values.father_phone?.trim() || null,
 
       mother_name: values.mother_name?.trim() || null,
+
       mother_phone: values.mother_phone?.trim() || null,
 
       guardian_name: values.guardian_name?.trim() || null,
+
       guardian_phone: values.guardian_phone?.trim() || null,
+
       guardian_relationship: values.guardian_relationship?.trim() || null,
 
       baptism_name: values.baptism_name?.trim() || null,
@@ -692,7 +767,9 @@ export default function StudentManagement() {
         : null,
 
       baptism_place: values.baptism_place?.trim() || null,
+
       baptism_parish: values.baptism_parish?.trim() || null,
+
       baptism_certificate_no: values.baptism_certificate_no?.trim() || null,
 
       saint_name: values.saint_name?.trim() || null,
@@ -723,7 +800,6 @@ export default function StudentManagement() {
 
       status: values.status || "active",
 
-      // QUAN TRỌNG
       class_id: values.class_id || null,
     };
   };
@@ -740,32 +816,11 @@ export default function StudentManagement() {
 
       const payload = buildStudentPayload(values);
 
-      console.log("========== SAVE STUDENT ==========");
-      console.log("PAYLOAD:", payload);
-
       if (!editingStudent) {
-        // ==========================================
-        // CREATE
-        // Backend sẽ:
-        // 1. lấy church_id từ token
-        // 2. kiểm tra class_id thuộc church
-        // 3. tạo student
-        // 4. tạo class_students
-        // ==========================================
-
         await studentApi.create(payload);
 
         message.success("Thêm học sinh thành công!");
       } else {
-        // ==========================================
-        // UPDATE
-        // Backend sẽ:
-        // 1. kiểm tra student thuộc church
-        // 2. kiểm tra class_id mới thuộc church
-        // 3. update student
-        // 4. đổi class_students nếu class_id thay đổi
-        // ==========================================
-
         await studentApi.update(editingStudent.id, payload);
 
         message.success("Cập nhật học sinh thành công!");
@@ -773,14 +828,13 @@ export default function StudentManagement() {
 
       setIsFormModalOpen(false);
       setEditingStudent(null);
+
       form.resetFields();
 
       await fetchStudents({
         silent: true,
       });
     } catch (error) {
-      console.error("handleSaveStudent error:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.message ||
@@ -794,6 +848,7 @@ export default function StudentManagement() {
   /* ===================================================
      DETAIL
   =================================================== */
+
   const handleOpenDetail = useCallback((student) => {
     setDetailStudent(student);
     setIsDetailModalOpen(true);
@@ -884,8 +939,6 @@ export default function StudentManagement() {
         silent: true,
       });
     } catch (error) {
-      console.error("change class error:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.message ||
@@ -907,6 +960,8 @@ export default function StudentManagement() {
       try {
         setSaving(true);
 
+        setActionLoadingState("toggle", student.id);
+
         const newStatus = student.status === "active" ? "inactive" : "active";
 
         await studentApi.update(student.id, {
@@ -920,16 +975,16 @@ export default function StudentManagement() {
 
         await fetchStudents();
       } catch (error) {
-        console.error("toggle status error:", error);
-
         message.error(
           error?.response?.data?.message || "Không thể cập nhật trạng thái!",
         );
       } finally {
+        clearActionLoadingState("toggle");
+
         setSaving(false);
       }
     },
-    [fetchStudents],
+    [fetchStudents, setActionLoadingState, clearActionLoadingState],
   );
 
   /* ===================================================
@@ -940,6 +995,8 @@ export default function StudentManagement() {
     async (id) => {
       try {
         setSaving(true);
+
+        setActionLoadingState("delete", id);
 
         await studentApi.delete(id);
 
@@ -955,16 +1012,23 @@ export default function StudentManagement() {
 
         await fetchStudents();
       } catch (error) {
-        console.error("delete student error:", error);
-
         message.error(
           error?.response?.data?.message || "Không thể xóa học sinh!",
         );
       } finally {
+        clearActionLoadingState("delete");
+
         setSaving(false);
       }
     },
-    [filteredStudents.length, pageSize, currentPage, fetchStudents],
+    [
+      filteredStudents.length,
+      pageSize,
+      currentPage,
+      fetchStudents,
+      setActionLoadingState,
+      clearActionLoadingState,
+    ],
   );
 
   /* ===================================================
@@ -1005,8 +1069,6 @@ export default function StudentManagement() {
         silent: true,
       });
     } catch (error) {
-      console.error("bulk delete error:", error);
-
       message.error(
         error?.response?.data?.message || "Không thể xóa một số học sinh!",
       );
@@ -1067,6 +1129,7 @@ export default function StudentManagement() {
           background: item.bg,
           color: item.color,
           fontWeight: 600,
+          whiteSpace: "nowrap",
         }}
       >
         ● {item.text}
@@ -1087,11 +1150,19 @@ export default function StudentManagement() {
       dropped: "Đã nghỉ",
     };
 
-    return <Tag>{map[status] || status}</Tag>;
+    return (
+      <Tag
+        style={{
+          whiteSpace: "nowrap",
+        }}
+      >
+        {map[status] || status}
+      </Tag>
+    );
   };
 
   /* ===================================================
-     TABLE
+     TABLE COLUMNS
   =================================================== */
 
   const columns = useMemo(
@@ -1102,12 +1173,20 @@ export default function StudentManagement() {
         width: 270,
 
         render: (_, record) => (
-          <Space size={12}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              minWidth: 230,
+            }}
+          >
             <Avatar
               size={44}
               src={record.avatar}
               icon={<UserOutlined />}
               style={{
+                flexShrink: 0,
                 background: "#eef2ff",
                 color: "#6366f1",
                 fontWeight: 700,
@@ -1117,6 +1196,7 @@ export default function StudentManagement() {
             <div
               style={{
                 minWidth: 0,
+                flex: 1,
               }}
             >
               <Text
@@ -1136,12 +1216,13 @@ export default function StudentManagement() {
                 type="secondary"
                 style={{
                   fontSize: 12,
+                  whiteSpace: "nowrap",
                 }}
               >
                 {record.code} • {record.gender === "male" ? "nam" : "nữ"}
               </Text>
             </div>
-          </Space>
+          </div>
         ),
       },
 
@@ -1155,12 +1236,20 @@ export default function StudentManagement() {
               icon={<BookOutlined />}
               style={{
                 borderRadius: 8,
+                whiteSpace: "nowrap",
               }}
             >
               {record.className}
             </Tag>
           ) : (
-            <Text type="secondary">Chưa xếp lớp</Text>
+            <Text
+              type="secondary"
+              style={{
+                whiteSpace: "nowrap",
+              }}
+            >
+              Chưa xếp lớp
+            </Text>
           ),
       },
 
@@ -1194,8 +1283,19 @@ export default function StudentManagement() {
         fixed: "right",
 
         render: (_, record) => (
-          <Space>
-            {/* XEM */}
+          <Space size={2}>
+            <Tooltip title="Xem QR">
+              <Button
+                type="text"
+                shape="circle"
+                icon={<QrcodeOutlined />}
+                onClick={() => handleOpenQR(record)}
+                style={{
+                  color: primaryNavy,
+                }}
+              />
+            </Tooltip>
+
             <Tooltip title="Xem">
               <Button
                 type="text"
@@ -1205,7 +1305,6 @@ export default function StudentManagement() {
               />
             </Tooltip>
 
-            {/* SỬA */}
             <Tooltip title="Sửa">
               <Button
                 type="text"
@@ -1215,22 +1314,26 @@ export default function StudentManagement() {
               />
             </Tooltip>
 
-            {/* MORE */}
             <Dropdown
               trigger={["click"]}
               menu={{
                 items: [
                   {
+                    key: "qr",
+                    icon: <QrcodeOutlined />,
+                    label: "Xem mã QR",
+                    onClick: () => handleOpenQR(record),
+                  },
+
+                  {
                     key: "change",
                     icon: <SwapOutlined />,
                     label: "Chuyển lớp",
-
                     onClick: () => handleOpenChangeClass(record),
                   },
 
                   {
                     key: "status",
-
                     icon:
                       record.status === "active" ? (
                         <LockOutlined />
@@ -1283,6 +1386,7 @@ export default function StudentManagement() {
       handleOpenDetail,
       handleOpenEditModal,
       handleToggleStatus,
+      handleOpenQR,
     ],
   );
 
@@ -1296,7 +1400,7 @@ export default function StudentManagement() {
         key: "all",
 
         label: (
-          <Space>
+          <Space size={6}>
             <TeamOutlined />
 
             <span>Tất cả</span>
@@ -1322,7 +1426,7 @@ export default function StudentManagement() {
         key: String(classItem.id),
 
         label: (
-          <Space>
+          <Space size={6}>
             <BookOutlined />
 
             <span>{classItem.name}</span>
@@ -1343,7 +1447,7 @@ export default function StudentManagement() {
       key: "unassigned",
 
       label: (
-        <Space>
+        <Space size={6}>
           <IdcardOutlined />
 
           <span>Chưa xếp lớp</span>
@@ -1363,10 +1467,6 @@ export default function StudentManagement() {
   }, [classes, students, statistics]);
 
   /* ===================================================
-     FORM TABS
-  =================================================== */
-
-  /* ===================================================
      DETAIL TABS
   =================================================== */
 
@@ -1379,6 +1479,7 @@ export default function StudentManagement() {
           children: (
             <Descriptions
               bordered
+              size="small"
               column={{
                 xs: 1,
                 sm: 2,
@@ -1446,6 +1547,7 @@ export default function StudentManagement() {
           children: (
             <Descriptions
               bordered
+              size="small"
               column={{
                 xs: 1,
                 sm: 2,
@@ -1505,6 +1607,7 @@ export default function StudentManagement() {
           children: (
             <Descriptions
               bordered
+              size="small"
               column={{
                 xs: 1,
                 sm: 2,
@@ -1548,6 +1651,7 @@ export default function StudentManagement() {
           children: (
             <Descriptions
               bordered
+              size="small"
               column={{
                 xs: 1,
                 sm: 2,
@@ -1579,468 +1683,985 @@ export default function StudentManagement() {
   =================================================== */
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: 28,
-        fontFamily: "'Be Vietnam Pro', sans-serif",
-      }}
-    >
-      {/* =================================================
-          HEADER
-      ================================================= */}
+    <>
+      <style>
+        {`
+          /* =====================================================
+             GLOBAL RESPONSIVE
+          ===================================================== */
 
-      <PageHeroHeader
-        icon={<UserOutlined />}
-        badgeText="🌸 QUẢN LÝ HỌC SINH"
-        title="Quản lý học sinh"
-        description="Quản lý thông tin, lớp học và quá trình giáo lý của học sinh"
-        // Bulk Delete Props
-        selectedCount={selectedRowKeys.length}
-        onBulkDelete={handleBulkDelete}
-        bulkDeleting={bulkDeleting}
-        // Refresh Props
-        onRefresh={() => fetchStudents({ silent: true })}
-        refreshLoading={refreshing}
-        // Primary Button Props
-        primaryButtonText={
-          saving && !editingStudent ? "Đang thêm..." : "Thêm học sinh"
-        }
-        primaryButtonIcon={<PlusOutlined />}
-        onPrimaryClick={handleOpenCreateModal}
-        primaryLoading={saving && !editingStudent}
-        primaryDisabled={loading || saving}
-      />
+          .student-management-page {
+            min-height: 100vh;
+            padding: 28px;
+            box-sizing: border-box;
+            overflow-x: hidden;
+          }
 
-      {/* =================================================
-          STATISTICS
-      ================================================= */}
-      <Row
-        gutter={[18, 18]}
+          /* =====================================================
+             TABS
+          ===================================================== */
+
+          .student-class-tabs {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+          }
+
+          .student-class-tabs .ant-tabs-nav {
+            margin-bottom: 22px !important;
+          }
+
+          .student-class-tabs .ant-tabs-tab {
+            white-space: nowrap;
+          }
+
+          /* =====================================================
+             MAIN CARD
+          ===================================================== */
+
+          .student-main-card .ant-card-body {
+            padding: 24px;
+          }
+
+          /* =====================================================
+             FILTER
+          ===================================================== */
+
+          .student-filter-row {
+            width: 100%;
+          }
+
+          .student-filter-control {
+            width: 100%;
+          }
+
+          /* =====================================================
+             TABLE
+          ===================================================== */
+
+          .student-table .ant-table {
+            border-radius: 12px;
+          }
+
+          .student-table .ant-table-container {
+            border-radius: 12px;
+          }
+
+          .student-table .ant-table-thead > tr > th {
+            white-space: nowrap;
+          }
+
+          .student-table .ant-table-cell {
+            vertical-align: middle;
+          }
+
+          /* =====================================================
+             BOTTOM PAGINATION
+          ===================================================== */
+
+          .student-pagination-row {
+            width: 100%;
+          }
+
+          .student-pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+
+          /* =====================================================
+             QR
+          ===================================================== */
+
+          .student-qr-card {
+            width: 330px;
+            max-width: 100%;
+            margin: 0 auto 20px;
+          }
+
+          .student-qr-wrapper {
+            max-width: 100%;
+            overflow: hidden;
+          }
+
+          .student-qr-canvas {
+            max-width: 100%;
+            height: auto !important;
+          }
+
+          .student-qr-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+
+          /* =====================================================
+             MODAL
+          ===================================================== */
+
+          .student-responsive-modal .ant-modal-content {
+            border-radius: 18px;
+            overflow: hidden;
+          }
+
+          /* =====================================================
+             TABLET
+          ===================================================== */
+
+          @media (max-width: 992px) {
+            .student-management-page {
+              padding: 20px;
+            }
+
+            .student-main-card .ant-card-body {
+              padding: 20px;
+            }
+          }
+
+          /* =====================================================
+             MOBILE
+          ===================================================== */
+
+          @media (max-width: 767px) {
+            .student-management-page {
+              padding: 12px;
+            }
+
+            .student-main-card {
+              border-radius: 16px !important;
+            }
+
+            .student-main-card .ant-card-body {
+              padding: 14px !important;
+            }
+
+            /* Tabs */
+
+            .student-class-tabs {
+              margin-left: -4px;
+              margin-right: -4px;
+            }
+
+            .student-class-tabs .ant-tabs-nav {
+              margin-bottom: 16px !important;
+            }
+
+            .student-class-tabs .ant-tabs-tab {
+              padding: 8px 10px !important;
+              font-size: 13px;
+            }
+
+            /* Filter */
+
+            .student-filter-row {
+              margin-bottom: 16px !important;
+            }
+
+            /* Table */
+
+            .student-table .ant-table {
+              font-size: 13px;
+            }
+
+            .student-table .ant-table-thead > tr > th {
+              padding: 10px 12px !important;
+              font-size: 12px;
+            }
+
+            .student-table .ant-table-tbody > tr > td {
+              padding: 10px 12px !important;
+            }
+
+            /* Bottom */
+
+            .student-pagination-row {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: stretch !important;
+            }
+
+            .student-pagination-info {
+              width: 100%;
+              text-align: center;
+            }
+
+            .student-pagination-controls {
+              width: 100%;
+              justify-content: center;
+            }
+
+            .student-pagination-controls
+              .ant-pagination {
+              max-width: 100%;
+            }
+
+            /* Modal */
+
+            .student-responsive-modal {
+              max-width: calc(100vw - 16px) !important;
+              margin: 8px auto !important;
+            }
+
+            .student-responsive-modal
+              .ant-modal-content {
+              border-radius: 16px;
+            }
+
+            /* QR */
+
+            .student-qr-card {
+              width: 100%;
+              padding: 0 !important;
+            }
+
+            .student-qr-card
+              .ant-card-body {
+              padding: 12px !important;
+            }
+
+            .student-qr-wrapper {
+              padding: 10px !important;
+            }
+
+            .student-qr-actions {
+              width: 100%;
+            }
+
+            .student-qr-actions
+              .ant-btn {
+              flex: 1 1 140px;
+              min-width: 0 !important;
+            }
+
+            /* Description */
+
+            .ant-descriptions {
+              overflow: hidden;
+            }
+
+            .ant-descriptions-item-label,
+            .ant-descriptions-item-content {
+              word-break: break-word;
+            }
+          }
+
+          /* =====================================================
+             SMALL MOBILE
+          ===================================================== */
+
+          @media (max-width: 480px) {
+            .student-management-page {
+              padding: 8px;
+            }
+
+            .student-main-card .ant-card-body {
+              padding: 10px !important;
+            }
+
+            .student-class-tabs .ant-tabs-tab {
+              padding: 7px 8px !important;
+              font-size: 12px;
+            }
+
+            .student-table .ant-table-thead > tr > th,
+            .student-table .ant-table-tbody > tr > td {
+              padding: 9px 10px !important;
+            }
+
+            .student-pagination-controls {
+              flex-direction: column;
+            }
+
+            .student-pagination-controls
+              .ant-select {
+              width: 100%;
+            }
+
+            .student-pagination-controls
+              .ant-pagination {
+              width: 100%;
+              justify-content: center;
+            }
+
+            .student-pagination-controls
+              .ant-pagination-options {
+              display: none;
+            }
+
+            .student-qr-actions {
+              flex-direction: column;
+            }
+
+            .student-qr-actions
+              .ant-btn {
+              width: 100%;
+            }
+          }
+
+          /* =====================================================
+             VERY SMALL
+          ===================================================== */
+
+          @media (max-width: 360px) {
+            .student-management-page {
+              padding: 6px;
+            }
+
+            .student-main-card .ant-card-body {
+              padding: 8px !important;
+            }
+
+            .student-class-tabs .ant-tabs-tab {
+              padding: 6px !important;
+              font-size: 11px;
+            }
+          }
+        `}
+      </style>
+
+      <div
+        className="student-management-page"
         style={{
-          marginBottom: 26,
+          fontFamily: "'Be Vietnam Pro', sans-serif",
         }}
       >
-        {/* Tổng học sinh */}
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Tổng học sinh"
-            value={statistics.total}
-            loading={loading}
-            icon={<TeamOutlined />}
-            iconColor={primaryNavy}
-            description="Tất cả học sinh"
-          />
-        </Col>
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
-        {/* Đang hoạt động */}
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Đang hoạt động"
-            value={statistics.active}
-            loading={loading}
-            icon={<UserSwitchOutlined />}
-            iconColor="#059669"
-            description="Học sinh đang hoạt động"
-          />
-        </Col>
-
-        {/* Tạm khóa */}
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Tạm khóa"
-            value={statistics.inactive}
-            loading={loading}
-            icon={<LockOutlined />}
-            iconColor="#ea580c"
-            description="Học sinh tạm khóa"
-          />
-        </Col>
-
-        {/* Chưa xếp lớp */}
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Chưa xếp lớp"
-            value={statistics.unassigned}
-            loading={loading}
-            icon={<BookOutlined />}
-            iconColor="#d97706"
-            description="Chưa được phân lớp"
-          />
-        </Col>
-      </Row>
-      {/* =================================================
-          MAIN
-      ================================================= */}
-
-      <Card
-        bordered={false}
-        style={{
-          borderRadius: 22,
-        }}
-        bodyStyle={{
-          padding: 24,
-        }}
-      >
-        <Tabs
-          activeKey={activeClassTab}
-          onChange={handleTabChange}
-          type="card"
-          items={classTabs}
-          style={{
-            marginBottom: 22,
-          }}
+        <PageHeroHeader
+          icon={<UserOutlined />}
+          badgeText="🌸 QUẢN LÝ HỌC SINH"
+          title="Quản lý học sinh"
+          description="Quản lý thông tin, lớp học và quá trình giáo lý của học sinh"
+          selectedCount={selectedRowKeys.length}
+          onBulkDelete={handleBulkDelete}
+          bulkDeleting={bulkDeleting}
+          onRefresh={() =>
+            fetchStudents({
+              silent: true,
+            })
+          }
+          refreshLoading={refreshing}
+          primaryButtonText={
+            saving && !editingStudent ? "Đang thêm..." : "Thêm học sinh"
+          }
+          primaryButtonIcon={<PlusOutlined />}
+          onPrimaryClick={handleOpenCreateModal}
+          primaryLoading={saving && !editingStudent}
+          primaryDisabled={loading || saving}
         />
 
-        {/* FILTER */}
+        {/* =================================================
+            STATISTICS
+        ================================================= */}
 
         <Row
-          gutter={[12, 12]}
-          align="middle"
+          gutter={[18, 18]}
           style={{
-            marginBottom: 22,
+            marginBottom: 26,
           }}
         >
-          <Col xs={24} md={12} lg={9}>
-            <Input
-              allowClear
-              size="large"
-              prefix={
-                <SearchOutlined
-                  style={{
-                    color: "#94a3b8",
-                  }}
-                />
-              }
-              placeholder="Tìm tên, mã, số điện thoại, email..."
-              value={searchText}
-              disabled={loading || bulkDeleting}
-              onChange={(e) => {
-                setSearchText(e.target.value);
-
-                setCurrentPage(1);
-              }}
-              style={{
-                borderRadius: 12,
-              }}
+          <Col xs={24} sm={12} lg={6}>
+            <StatCard
+              title="Tổng học sinh"
+              value={statistics.total}
+              loading={loading}
+              icon={<TeamOutlined />}
+              iconColor={primaryNavy}
+              description="Tất cả học sinh"
             />
           </Col>
 
-          <Col xs={24} md={6} lg={4}>
-            <Select
-              size="large"
-              value={selectedStatus}
-              disabled={loading || bulkDeleting}
-              onChange={(value) => {
-                setSelectedStatus(value);
-
-                setCurrentPage(1);
-              }}
-              style={{
-                width: "100%",
-              }}
-              options={[
-                {
-                  value: "all",
-                  label: "Tất cả trạng thái",
-                },
-                {
-                  value: "active",
-                  label: "Đang hoạt động",
-                },
-                {
-                  value: "inactive",
-                  label: "Tạm khóa",
-                },
-                {
-                  value: "graduated",
-                  label: "Đã tốt nghiệp",
-                },
-                {
-                  value: "transferred",
-                  label: "Đã chuyển đi",
-                },
-                {
-                  value: "dropped",
-                  label: "Đã nghỉ",
-                },
-              ]}
+          <Col xs={24} sm={12} lg={6}>
+            <StatCard
+              title="Đang hoạt động"
+              value={statistics.active}
+              loading={loading}
+              icon={<UserSwitchOutlined />}
+              iconColor="#059669"
+              description="Học sinh đang hoạt động"
             />
           </Col>
 
-          <Col xs={24} md={6} lg={3}>
-            <Button
-              size="large"
-              block
-              disabled={loading || saving || bulkDeleting}
-              onClick={resetFilters}
-              style={{
-                borderRadius: 12,
-              }}
-            >
-              Đặt lại
-            </Button>
+          <Col xs={24} sm={12} lg={6}>
+            <StatCard
+              title="Tạm khóa"
+              value={statistics.inactive}
+              loading={loading}
+              icon={<LockOutlined />}
+              iconColor="#ea580c"
+              description="Học sinh tạm khóa"
+            />
+          </Col>
+
+          <Col xs={24} sm={12} lg={6}>
+            <StatCard
+              title="Chưa xếp lớp"
+              value={statistics.unassigned}
+              loading={loading}
+              icon={<BookOutlined />}
+              iconColor="#d97706"
+              description="Chưa được phân lớp"
+            />
           </Col>
         </Row>
 
-        <Divider
+        {/* =================================================
+            MAIN
+        ================================================= */}
+
+        <Card
+          className="student-main-card"
+          bordered={false}
           style={{
-            margin: "0 0 18px",
-          }}
-        />
-
-        {/* TABLE */}
-
-        <Table
-          rowKey="id"
-          loading={{
-            spinning: loading,
-            indicator: <Spin size="large" />,
-          }}
-          columns={columns}
-          dataSource={paginatedStudents}
-          pagination={false}
-          scroll={{
-            x: 1150,
-          }}
-          locale={{
-            emptyText: (
-              <Empty
-                description={
-                  searchText || selectedStatus !== "all"
-                    ? "Không tìm thấy học sinh phù hợp"
-                    : "Chưa có học sinh"
-                }
-              />
-            ),
-          }}
-          rowSelection={{
-            selectedRowKeys,
-
-            onChange: setSelectedRowKeys,
-
-            getCheckboxProps: (record) => ({
-              disabled:
-                actionLoading.delete === record.id ||
-                actionLoading.toggle === record.id ||
-                actionLoading.changeClass === record.id ||
-                saving ||
-                bulkDeleting,
-            }),
-          }}
-        />
-
-        {/* PAGINATION */}
-
-        <Row
-          justify="space-between"
-          align="middle"
-          gutter={[16, 16]}
-          style={{
-            marginTop: 24,
+            borderRadius: 22,
+            overflow: "hidden",
           }}
         >
-          <Col>
-            <Text type="secondary">
-              Hiển thị <strong>{filteredStudents.length}</strong> học sinh
-            </Text>
-          </Col>
+          <div className="student-class-tabs">
+            <Tabs
+              activeKey={activeClassTab}
+              onChange={handleTabChange}
+              type="card"
+              items={classTabs}
+            />
+          </div>
 
-          <Col>
-            <Space>
+          {/* =================================================
+              FILTER
+          ================================================= */}
+
+          <Row className="student-filter-row" gutter={[12, 12]} align="middle">
+            <Col xs={24} md={12} lg={9}>
+              <Input
+                className="student-filter-control"
+                allowClear
+                size="large"
+                prefix={
+                  <SearchOutlined
+                    style={{
+                      color: "#94a3b8",
+                    }}
+                  />
+                }
+                placeholder="Tìm tên, mã, số điện thoại, email..."
+                value={searchText}
+                disabled={loading || bulkDeleting}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  borderRadius: 12,
+                }}
+              />
+            </Col>
+
+            <Col xs={24} md={6} lg={4}>
               <Select
-                value={String(pageSize)}
-                disabled={loading || saving || bulkDeleting}
+                className="student-filter-control"
+                size="large"
+                value={selectedStatus}
+                disabled={loading || bulkDeleting}
                 onChange={(value) => {
-                  setPageSize(Number(value));
-
+                  setSelectedStatus(value);
                   setCurrentPage(1);
                 }}
                 options={[
                   {
-                    value: "10",
-                    label: "10 / trang",
+                    value: "all",
+                    label: "Tất cả trạng thái",
                   },
                   {
-                    value: "20",
-                    label: "20 / trang",
+                    value: "active",
+                    label: "Đang hoạt động",
                   },
                   {
-                    value: "50",
-                    label: "50 / trang",
+                    value: "inactive",
+                    label: "Tạm khóa",
+                  },
+                  {
+                    value: "graduated",
+                    label: "Đã tốt nghiệp",
+                  },
+                  {
+                    value: "transferred",
+                    label: "Đã chuyển đi",
+                  },
+                  {
+                    value: "dropped",
+                    label: "Đã nghỉ",
                   },
                 ]}
               />
+            </Col>
 
-              <Pagination
-                current={currentPage}
-                total={filteredStudents.length}
-                pageSize={pageSize}
+            <Col xs={24} md={6} lg={3}>
+              <Button
+                size="large"
+                block
                 disabled={loading || saving || bulkDeleting}
-                onChange={(page) => setCurrentPage(page)}
-                showSizeChanger={false}
-                showTotal={(total) => `${total} học sinh`}
-              />
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+                onClick={resetFilters}
+                style={{
+                  borderRadius: 12,
+                }}
+              >
+                Đặt lại
+              </Button>
+            </Col>
+          </Row>
 
-      {/* =================================================
-          CREATE / EDIT MODAL
-      ================================================= */}
-      <AppFormModal
-        open={isFormModalOpen}
-        loading={saving}
-        editing={!!editingStudent}
-        form={form}
-        width={900}
-        title="Học sinh"
-        createTitle="Thêm học sinh mới"
-        editTitle="Chỉnh sửa học sinh"
-        subtitle="Thiết lập thông tin và lưu thay đổi."
-        icon={<UserOutlined />}
-        createText="Thêm học sinh"
-        editText="Lưu thay đổi"
-        onCancel={() => {
-          if (saving) return;
+          <Divider
+            style={{
+              margin: "0 0 18px",
+            }}
+          />
 
-          setIsFormModalOpen(false);
-          setEditingStudent(null);
-          form.resetFields();
-        }}
-      >
-        <StudentForm
+          {/* =================================================
+              TABLE
+          ================================================= */}
+
+          <div className="student-table">
+            <Table
+              rowKey="id"
+              loading={{
+                spinning: loading,
+                indicator: <Spin size="large" />,
+              }}
+              columns={columns}
+              dataSource={paginatedStudents}
+              pagination={false}
+              scroll={{
+                x: 1150,
+              }}
+              locale={{
+                emptyText: (
+                  <Empty
+                    description={
+                      searchText || selectedStatus !== "all"
+                        ? "Không tìm thấy học sinh phù hợp"
+                        : "Chưa có học sinh"
+                    }
+                  />
+                ),
+              }}
+              rowSelection={{
+                selectedRowKeys,
+
+                onChange: setSelectedRowKeys,
+
+                getCheckboxProps: (record) => ({
+                  disabled:
+                    actionLoading.delete === record.id ||
+                    actionLoading.toggle === record.id ||
+                    actionLoading.changeClass === record.id ||
+                    saving ||
+                    bulkDeleting,
+                }),
+              }}
+            />
+          </div>
+
+          {/* =================================================
+              PAGINATION
+          ================================================= */}
+
+          <Row
+            className="student-pagination-row"
+            justify="space-between"
+            align="middle"
+            gutter={[16, 16]}
+            style={{
+              marginTop: 24,
+            }}
+          >
+            <Col className="student-pagination-info">
+              <Text type="secondary">
+                Hiển thị <strong>{filteredStudents.length}</strong> học sinh
+              </Text>
+            </Col>
+
+            <Col>
+              <div className="student-pagination-controls">
+                <Select
+                  value={String(pageSize)}
+                  disabled={loading || saving || bulkDeleting}
+                  onChange={(value) => {
+                    setPageSize(Number(value));
+                    setCurrentPage(1);
+                  }}
+                  options={[
+                    {
+                      value: "10",
+                      label: "10 / trang",
+                    },
+                    {
+                      value: "20",
+                      label: "20 / trang",
+                    },
+                    {
+                      value: "50",
+                      label: "50 / trang",
+                    },
+                  ]}
+                />
+
+                <Pagination
+                  responsive
+                  current={currentPage}
+                  total={filteredStudents.length}
+                  pageSize={pageSize}
+                  disabled={loading || saving || bulkDeleting}
+                  onChange={(page) => setCurrentPage(page)}
+                  showSizeChanger={false}
+                  showTotal={(total) => `${total} học sinh`}
+                />
+              </div>
+            </Col>
+          </Row>
+        </Card>
+
+        {/* =================================================
+            CREATE / EDIT
+        ================================================= */}
+
+        <AppFormModal
+          open={isFormModalOpen}
+          loading={saving}
+          editing={!!editingStudent}
           form={form}
-          classes={classes}
-          saving={saving}
-          onFinish={handleSaveStudent}
-        />
-      </AppFormModal>
-      {/* =================================================
-          DETAIL MODAL
-      ================================================= */}
+          width={900}
+          title="Học sinh"
+          createTitle="Thêm học sinh mới"
+          editTitle="Chỉnh sửa học sinh"
+          subtitle="Thiết lập thông tin và lưu thay đổi."
+          icon={<UserOutlined />}
+          createText="Thêm học sinh"
+          editText="Lưu thay đổi"
+          onCancel={() => {
+            if (saving) return;
 
-      <AppDetailModal
-        open={isDetailModalOpen}
-        width={850}
-        title="Thông tin học sinh"
-        subtitle={
-          detailStudent
-            ? `Thông tin chi tiết học sinh #${detailStudent.id}`
-            : undefined
-        }
-        avatar={detailStudent?.avatar}
-        loading={saving || bulkDeleting}
-        onCancel={() => setIsDetailModalOpen(false)}
-        onEdit={() => {
-          setIsDetailModalOpen(false);
-          handleOpenEditModal(detailStudent);
-        }}
-      >
-        {detailStudent && (
-          <Tabs
+            setIsFormModalOpen(false);
+
+            setEditingStudent(null);
+
+            form.resetFields();
+          }}
+        >
+          <StudentForm
+            form={form}
+            classes={classes}
+            saving={saving}
+            onFinish={handleSaveStudent}
+          />
+        </AppFormModal>
+
+        {/* =================================================
+            DETAIL
+        ================================================= */}
+
+        <AppDetailModal
+          open={isDetailModalOpen}
+          width={850}
+          title="Thông tin học sinh"
+          subtitle={
+            detailStudent
+              ? `Thông tin chi tiết học sinh #${detailStudent.id}`
+              : undefined
+          }
+          avatar={detailStudent?.avatar}
+          loading={saving || bulkDeleting}
+          onCancel={() => setIsDetailModalOpen(false)}
+          onEdit={() => {
+            setIsDetailModalOpen(false);
+
+            handleOpenEditModal(detailStudent);
+          }}
+        >
+          {detailStudent && (
+            <Tabs
+              style={{
+                marginTop: 20,
+              }}
+              items={detailTabs}
+            />
+          )}
+        </AppDetailModal>
+
+        {/* =================================================
+            CHANGE CLASS
+        ================================================= */}
+
+        <Modal
+          className="student-responsive-modal"
+          title="Chuyển lớp học"
+          open={isChangeClassModalOpen}
+          maskClosable={!saving}
+          closable={!saving}
+          keyboard={!saving}
+          onCancel={() => {
+            if (saving) return;
+
+            setIsChangeClassModalOpen(false);
+
+            setChangeClassStudent(null);
+
+            changeClassForm.resetFields();
+          }}
+          onOk={() => changeClassForm.submit()}
+          confirmLoading={saving}
+          okText="Chuyển lớp"
+          cancelText="Hủy"
+          okButtonProps={{
+            disabled: saving,
+          }}
+          cancelButtonProps={{
+            disabled: saving,
+          }}
+          width={500}
+        >
+          <Form
+            form={changeClassForm}
+            layout="vertical"
+            onFinish={handleChangeClassSubmit}
             style={{
               marginTop: 20,
             }}
-            items={detailTabs}
-          />
-        )}
-      </AppDetailModal>
-
-      {/* =================================================
-          CHANGE CLASS MODAL
-      ================================================= */}
-
-      <Modal
-        title="Chuyển lớp học"
-        open={isChangeClassModalOpen}
-        maskClosable={!saving}
-        closable={!saving}
-        keyboard={!saving}
-        onCancel={() => {
-          if (saving) return;
-
-          setIsChangeClassModalOpen(false);
-
-          setChangeClassStudent(null);
-
-          changeClassForm.resetFields();
-        }}
-        onOk={() => changeClassForm.submit()}
-        confirmLoading={saving}
-        okText="Chuyển lớp"
-        cancelText="Hủy"
-        okButtonProps={{
-          disabled: saving,
-        }}
-        cancelButtonProps={{
-          disabled: saving,
-        }}
-        width={500}
-      >
-        <Form
-          form={changeClassForm}
-          layout="vertical"
-          onFinish={handleChangeClassSubmit}
-          style={{
-            marginTop: 20,
-          }}
-        >
-          <Card
-            size="small"
-            style={{
-              background: "#f8fafc",
-              borderRadius: 12,
-              border: "1px solid #e2e8f0",
-              marginBottom: 20,
-            }}
           >
-            <Space>
-              <Avatar icon={<UserOutlined />} />
+            <Card
+              size="small"
+              style={{
+                background: "#f8fafc",
+                borderRadius: 12,
+                border: "1px solid #e2e8f0",
+                marginBottom: 20,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  minWidth: 0,
+                }}
+              >
+                <Avatar
+                  icon={<UserOutlined />}
+                  style={{
+                    flexShrink: 0,
+                  }}
+                />
 
-              <div>
-                <Text type="secondary">Học sinh</Text>
+                <div
+                  style={{
+                    minWidth: 0,
+                  }}
+                >
+                  <Text type="secondary">Học sinh</Text>
 
-                <br />
+                  <div>
+                    <Text strong>{changeClassStudent?.name}</Text>
+                  </div>
 
-                <Text strong>{changeClassStudent?.name}</Text>
-
-                <br />
-
-                <Text type="secondary">
-                  Lớp hiện tại:{" "}
-                  {changeClassStudent?.className || "Chưa xếp lớp"}
-                </Text>
+                  <Text
+                    type="secondary"
+                    style={{
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    Lớp hiện tại:{" "}
+                    {changeClassStudent?.className || "Chưa xếp lớp"}
+                  </Text>
+                </div>
               </div>
-            </Space>
-          </Card>
+            </Card>
 
-          <Form.Item
-            name="new_class_id"
-            label="Lớp mới"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng chọn lớp!",
-              },
-            ]}
-          >
-            <Select
-              size="large"
-              showSearch
-              optionFilterProp="label"
-              placeholder="Chọn lớp học"
-              loading={loading}
-              disabled={saving || loading}
-              options={classes.map((item) => ({
-                value: String(item.id),
-                label: item.name,
-              }))}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+            <Form.Item
+              name="new_class_id"
+              label="Lớp mới"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng chọn lớp!",
+                },
+              ]}
+            >
+              <Select
+                size="large"
+                showSearch
+                optionFilterProp="label"
+                placeholder="Chọn lớp học"
+                loading={loading}
+                disabled={saving || loading}
+                options={classes.map((item) => ({
+                  value: String(item.id),
+                  label: item.name,
+                }))}
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        {/* =================================================
+            QR MODAL
+        ================================================= */}
+
+        <Modal
+          className="student-responsive-modal"
+          open={isQRModalOpen}
+          onCancel={() => {
+            setIsQRModalOpen(false);
+
+            setQrStudent(null);
+          }}
+          footer={null}
+          centered
+          width={430}
+          destroyOnClose
+          title={
+            <Space>
+              <QrcodeOutlined
+                style={{
+                  color: primaryNavy,
+                  fontSize: 20,
+                }}
+              />
+
+              <span>Mã QR học sinh</span>
+            </Space>
+          }
+        >
+          {qrStudent && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "10px 0 20px",
+              }}
+            >
+              {/* INFO */}
+
+              <Avatar
+                size={64}
+                src={qrStudent.avatar}
+                icon={<UserOutlined />}
+                style={{
+                  background: "#eef2ff",
+                  color: "#6366f1",
+                  marginBottom: 12,
+                }}
+              />
+
+              <Typography.Title
+                level={4}
+                style={{
+                  margin: "0 0 4px",
+                  color: "#1E293B",
+                  wordBreak: "break-word",
+                }}
+              >
+                {qrStudent.name}
+              </Typography.Title>
+
+              <Typography.Text
+                type="secondary"
+                style={{
+                  display: "block",
+                  marginBottom: 20,
+                }}
+              >
+                {qrStudent.code}
+              </Typography.Text>
+
+              {/* QR */}
+
+              <Card
+                className="student-qr-card"
+                bordered={false}
+                style={{
+                  background: "#F8FAFC",
+                  borderRadius: 20,
+                  border: "1px solid #E2E8F0",
+                }}
+                bodyStyle={{
+                  padding: 20,
+                }}
+              >
+                <div
+                  className="student-qr-wrapper"
+                  style={{
+                    background: "#FFFFFF",
+                    padding: 16,
+                    borderRadius: 16,
+                    display: "inline-flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    maxWidth: "100%",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <QRCodeCanvas
+                    id={`student-qr-${qrStudent.id}`}
+                    value={qrStudent.qr_token}
+                    size={260}
+                    level="H"
+                    includeMargin
+                    className="student-qr-canvas"
+                  />
+                </div>
+              </Card>
+
+              <Typography.Text
+                type="secondary"
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  marginBottom: 20,
+                }}
+              >
+                Mã này dùng để điểm danh bằng QR
+              </Typography.Text>
+
+              {/* ACTION */}
+
+              <div className="student-qr-actions">
+                <AppButton
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  onClick={handleDownloadQR}
+                  style={{
+                    borderRadius: 14,
+                    height: 40,
+                    padding: "0 16px",
+                    fontWeight: 800,
+                    boxShadow: "0 8px 18px rgba(255, 107, 139, 0.3)",
+                  }}
+                >
+                  Tải QR
+                </AppButton>
+                <AppButton
+                  type="primary"
+                  size="large"
+                  onClick={() => {
+                    setIsQRModalOpen(false);
+                    setQrStudent(null);
+                  }}
+                  style={{
+                    borderRadius: 12,
+                    minWidth: 100,
+                  }}
+                >
+                  Đóng
+                </AppButton>
+              </div>
+            </div>
+          )}
+        </Modal>
+      </div>
+    </>
   );
 }

@@ -14,6 +14,14 @@ import api from "./axios";
  * }
  */
 export const getAttendance = async ({ class_id, date }) => {
+  if (!class_id) {
+    throw new Error("class_id không hợp lệ");
+  }
+
+  if (!date) {
+    throw new Error("Ngày điểm danh không hợp lệ");
+  }
+
   const response = await api.get("/attendance", {
     params: {
       class_id,
@@ -31,10 +39,11 @@ export const getAttendance = async ({ class_id, date }) => {
  *
  * POST /attendance/bulk
  *
+ * Backend yêu cầu:
+ *
  * {
  *   class_id: 17,
- *   date: "2026-09-01",
- *
+ *   attendance_date: "2026-09-01",
  *   students: [
  *     {
  *       student_id: 1,
@@ -45,10 +54,29 @@ export const getAttendance = async ({ class_id, date }) => {
  *   ]
  * }
  */
-export const saveBulkAttendance = async ({ class_id, date, students }) => {
+export const saveBulkAttendance = async ({
+  class_id,
+  date,
+  attendance_date,
+  students,
+}) => {
+  if (!class_id) {
+    throw new Error("class_id không hợp lệ");
+  }
+
+  const finalDate = attendance_date || date;
+
+  if (!finalDate) {
+    throw new Error("Ngày điểm danh không hợp lệ");
+  }
+
+  if (!Array.isArray(students)) {
+    throw new Error("Danh sách học sinh không hợp lệ");
+  }
+
   const response = await api.post("/attendance/bulk", {
     class_id,
-    date,
+    attendance_date: finalDate,
     students,
   });
 
@@ -57,7 +85,39 @@ export const saveBulkAttendance = async ({ class_id, date, students }) => {
 
 /**
  * =========================================================
- * 3. UPDATE ONE ATTENDANCE
+ * 3. SCAN QR ATTENDANCE
+ * =========================================================
+ *
+ * POST /attendance/scan-qr
+ *
+ * Body:
+ *
+ * {
+ *   qr_token:
+ *     "846cee63a74f11f19cdce0d55eb860a8",
+ *   class_id: 17
+ * }
+ */
+export const scanQRCode = async ({ qr_token, class_id }) => {
+  if (!class_id) {
+    throw new Error("Vui lòng chọn lớp trước khi quét QR");
+  }
+
+  if (typeof qr_token !== "string" || !qr_token.trim()) {
+    throw new Error("Mã QR không hợp lệ");
+  }
+
+  const response = await api.post("/attendance/scan-qr", {
+    qr_token: qr_token.trim(),
+    class_id: Number(class_id),
+  });
+
+  return response.data;
+};
+
+/**
+ =========================================================
+ * 4. UPDATE ONE ATTENDANCE
  * =========================================================
  *
  * PUT /attendance/:id
@@ -69,10 +129,18 @@ export const saveBulkAttendance = async ({ class_id, date, students }) => {
  * }
  */
 export const updateAttendance = async (id, { status, check_in_time, note }) => {
+  if (!id) {
+    throw new Error("ID điểm danh không hợp lệ");
+  }
+
+  if (!status) {
+    throw new Error("Trạng thái điểm danh không hợp lệ");
+  }
+
   const response = await api.put(`/attendance/${id}`, {
     status,
     check_in_time: check_in_time || null,
-    note: note?.trim() || null,
+    note: typeof note === "string" ? note.trim() || null : null,
   });
 
   return response.data;
@@ -80,12 +148,16 @@ export const updateAttendance = async (id, { status, check_in_time, note }) => {
 
 /**
  * =========================================================
- * 4. DELETE ATTENDANCE
+ * 5. DELETE ATTENDANCE
  * =========================================================
  *
  * DELETE /attendance/:id
  */
 export const deleteAttendance = async (id) => {
+  if (!id) {
+    throw new Error("ID điểm danh không hợp lệ");
+  }
+
   const response = await api.delete(`/attendance/${id}`);
 
   return response.data;
@@ -93,31 +165,46 @@ export const deleteAttendance = async (id) => {
 
 /**
  * =========================================================
- * 5. GET STUDENT ATTENDANCE
+ * 6. GET STUDENT ATTENDANCE
  * =========================================================
  *
  * GET /attendance/student/:studentId
  *
- * API hiện tại của bạn trả toàn bộ lịch sử.
+ * Có thể truyền:
  *
- * Frontend sẽ lọc theo tháng đang được chọn.
+ * {
+ *   month: 9,
+ *   year: 2026
+ * }
  */
-export const getStudentAttendance = async (studentId) => {
+export const getStudentAttendance = async (studentId, { month, year } = {}) => {
   if (!studentId) {
     throw new Error("studentId không hợp lệ");
   }
 
-  const response = await api.get(`/attendance/student/${studentId}`);
+  const params = {};
+
+  if (month) {
+    params.month = month;
+  }
+
+  if (year) {
+    params.year = year;
+  }
+
+  const response = await api.get(`/attendance/student/${studentId}`, {
+    params,
+  });
 
   return response.data;
 };
 
 /**
  * =========================================================
- * 6. GET CLASS STATISTICS
+ * 7. GET CLASS STATISTICS
  * =========================================================
  *
- * GET /attendance/statistics/class/:classId
+ * GET /attendance/statistics/:classId
  *
  * params:
  *
@@ -131,11 +218,18 @@ export const getClassStatistics = async (classId, { from, to } = {}) => {
     throw new Error("classId không hợp lệ");
   }
 
-  const response = await api.get(`/attendance/statistics/class/${classId}`, {
-    params: {
-      ...(from ? { from } : {}),
-      ...(to ? { to } : {}),
-    },
+  const params = {};
+
+  if (from) {
+    params.from = from;
+  }
+
+  if (to) {
+    params.to = to;
+  }
+
+  const response = await api.get(`/attendance/statistics/${classId}`, {
+    params,
   });
 
   return response.data;
@@ -150,6 +244,7 @@ export const getClassStatistics = async (classId, { from, to } = {}) => {
 const attendanceApi = {
   getAttendance,
   saveBulkAttendance,
+  scanQRCode,
   updateAttendance,
   deleteAttendance,
   getStudentAttendance,

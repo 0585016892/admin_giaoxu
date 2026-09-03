@@ -38,9 +38,9 @@ const PageHeroHeader = ({
       style={{
         position: "relative",
         overflow: "hidden",
-        padding: "24px 28px",
+        padding: "20px 20px",
         marginBottom: 20,
-        borderRadius: 28,
+        borderRadius: 24,
         background:
           "linear-gradient(135deg, #FFFFFF 0%, #FFF5F7 50%, #FFE4E6 100%)",
         border: "2px solid #FFE4E6",
@@ -64,24 +64,24 @@ const PageHeroHeader = ({
       <Row
         justify="space-between"
         align="middle"
-        gutter={[20, 20]}
+        gutter={[16, 16]}
         style={{ position: "relative", zIndex: 1 }}
       >
         {/* BÊN TRÁI: Icon, Badge, Title, Description */}
-        <Col xs={24} lg={14}>
-          <Space align="start" size={16}>
+        <Col xs={24} md={14} lg={16}>
+          <Space align="start" size={14} style={{ width: "100%" }}>
             {icon && (
               <div
                 style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 22,
+                  width: 52,
+                  height: 52,
+                  borderRadius: 18,
                   background: "#FF6B8B",
                   color: "#FFFFFF",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 26,
+                  fontSize: 22,
                   flexShrink: 0,
                   boxShadow: "0 8px 20px rgba(255, 107, 139, 0.35)",
                 }}
@@ -90,7 +90,7 @@ const PageHeroHeader = ({
               </div>
             )}
 
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {badgeText && (
                 <Text
                   style={{
@@ -113,7 +113,10 @@ const PageHeroHeader = ({
                   margin: 0,
                   color: "#334155",
                   fontWeight: 900,
+                  fontSize: "calc(1.2rem + 0.4vw)",
+                  lineHeight: 1.3,
                   fontFamily: "'Fredoka', 'Quicksand', sans-serif",
+                  wordBreak: "break-word",
                 }}
               >
                 {title}
@@ -137,9 +140,16 @@ const PageHeroHeader = ({
         </Col>
 
         {/* BÊN PHẢI: Các nút hành động */}
-        <Col>
-          <Space size={10} wrap>
-            {/* 1. Nút Xóa hàng loạt (Hiển thị khi selectedCount > 0) */}
+        <Col xs={24} md={10} lg={8}>
+          <Space
+            size={10}
+            wrap
+            style={{
+              width: "100%",
+              justifyContent: "flex-end",
+            }}
+          >
+            {/* 1. Nút Xóa hàng loạt */}
             {selectedCount > 0 && onBulkDelete && (
               <Popconfirm
                 title={bulkDeleteTitle || `Xóa ${selectedCount} mục đã chọn?`}
@@ -164,8 +174,8 @@ const PageHeroHeader = ({
                   loading={bulkDeleting}
                   disabled={primaryDisabled || bulkDeleting}
                   style={{
-                    height: 44,
-                    borderRadius: 16,
+                    height: 40,
+                    borderRadius: 14,
                     fontWeight: 800,
                     boxShadow: "0 6px 16px rgba(239, 68, 68, 0.25)",
                   }}
@@ -184,9 +194,9 @@ const PageHeroHeader = ({
                   onClick={onRefresh}
                   disabled={bulkDeleting}
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 16,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 14,
                     background: "#FFFFFF",
                     border: "1.5px solid #FFE4E6",
                     boxShadow: "0 4px 10px rgba(255, 182, 193, 0.15)",
@@ -195,7 +205,7 @@ const PageHeroHeader = ({
               </Tooltip>
             )}
 
-            {/* 3. Nút Action chính (VD: Thêm học sinh) */}
+            {/* 3. Nút Action chính */}
             {primaryButtonText && (
               <AppButton
                 type="primary"
@@ -204,11 +214,11 @@ const PageHeroHeader = ({
                 disabled={primaryDisabled || bulkDeleting}
                 loading={primaryLoading}
                 style={{
-                  borderRadius: 16,
+                  borderRadius: 14,
                   background: "#FF6B8B",
                   borderColor: "#FF6B8B",
-                  height: 44,
-                  padding: "0 20px",
+                  height: 40,
+                  padding: "0 16px",
                   fontWeight: 800,
                   boxShadow: "0 8px 18px rgba(255, 107, 139, 0.3)",
                 }}

@@ -37,6 +37,7 @@ const { Text } = Typography;
 
 const ParishSettingsPage = () => {
   const { user } = useUser();
+  const isCatechist = user?.role === "catechist";
   const { editChurch, getChurchId } = useChurch();
 
   const [form] = Form.useForm();
@@ -97,41 +98,52 @@ const ParishSettingsPage = () => {
 
   // 2. Xử lý lưu thông tin bằng editChurch
   const handleSave = async (values) => {
+    if (!isCatechist) {
+      message.warning("Bạn không có quyền chỉnh sửa thông tin giáo xứ!");
+      return;
+    }
+
     if (!churchId) {
       message.error("Không tìm thấy ID giáo xứ để cập nhật!");
       return;
     }
 
     setSaving(true);
+
     try {
-      // Chuẩn bị payload khớp dữ liệu DB
       const payload = {
         ...values,
         is_active: values.is_active ? 1 : 0,
       };
 
-      // Nếu API hỗ trợ FormData để upload ảnh
       if (selectedFile) {
         const formData = new FormData();
+
         Object.keys(payload).forEach((key) => {
           if (payload[key] !== null && payload[key] !== undefined) {
             formData.append(key, payload[key]);
           }
         });
+
         formData.append("image", selectedFile);
 
         await editChurch(churchId, formData);
       } else {
-        // Hoặc gửi dạng JSON object / URL ảnh cũ nếu không đổi file
         payload.image = imageUrl;
+
         await editChurch(churchId, payload);
       }
 
       message.success("Cập nhật thông tin giáo xứ thành công! ✨");
-      fetchParishInfo(); // Tải lại dữ liệu sau khi lưu thành công
+
+      await fetchParishInfo();
     } catch (error) {
       console.error("Lỗi khi lưu thông tin:", error);
-      message.error("Có lỗi xảy ra khi lưu thông tin giáo xứ!");
+
+      message.error(
+        error?.response?.data?.message ||
+          "Có lỗi xảy ra khi lưu thông tin giáo xứ!",
+      );
     } finally {
       setSaving(false);
     }
@@ -154,14 +166,20 @@ const ParishSettingsPage = () => {
         icon={<BankOutlined />}
         badgeText="🌸 CẤU HÌNH HỆ THỐNG"
         title="Thông Tin Giáo Xứ / Giáo Họ"
-        description="Chỉnh sửa chi tiết thông tin nhà thờ, linh mục phụ trách và địa chỉ"
+        description={
+          isCatechist
+            ? "Chỉnh sửa chi tiết thông tin nhà thờ, linh mục phụ trách và địa chỉ"
+            : "Xem thông tin nhà thờ, linh mục phụ trách và địa chỉ"
+        }
         onRefresh={fetchParishInfo}
         refreshLoading={loading}
-        primaryButtonText={saving ? "Đang lưu..." : "Lưu Thay Đổi"}
-        primaryButtonIcon={<SaveOutlined />}
-        onPrimaryClick={() => form.submit()}
+        primaryButtonText={
+          isCatechist ? (saving ? "Đang lưu..." : "Lưu Thay Đổi") : undefined
+        }
+        primaryButtonIcon={isCatechist ? <SaveOutlined /> : undefined}
+        onPrimaryClick={isCatechist ? () => form.submit() : undefined}
         primaryLoading={saving}
-        primaryDisabled={loading}
+        primaryDisabled={loading || !isCatechist}
       />
 
       <Spin spinning={loading}>
@@ -169,6 +187,7 @@ const ParishSettingsPage = () => {
           form={form}
           layout="vertical"
           onFinish={handleSave}
+          disabled={!isCatechist}
           initialValues={{ is_active: true, type: "GIAO_XU" }}
         >
           <Row gutter={[20, 20]}>
@@ -231,19 +250,36 @@ const ParishSettingsPage = () => {
                   )}
                 </div>
 
-                <Upload
-                  showUploadList={false}
-                  beforeUpload={handleBeforeUpload}
-                  accept="image/*"
-                >
-                  <AppButton
-                    icon={<UploadOutlined />}
-                    style={{ borderRadius: 12 }}
+                {isCatechist && (
+                  <Upload
+                    showUploadList={false}
+                    beforeUpload={handleBeforeUpload}
+                    accept="image/*"
                   >
-                    Chọn ảnh mới
-                  </AppButton>
-                </Upload>
-
+                    <AppButton
+                      icon={<UploadOutlined />}
+                      style={{ borderRadius: 12 }}
+                    >
+                      Chọn ảnh mới
+                    </AppButton>
+                  </Upload>
+                )}
+                {!isCatechist && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: "8px 12px",
+                      borderRadius: 10,
+                      background: "#F8FAFC",
+                      border: "1px solid #E2E8F0",
+                      color: "#64748B",
+                      fontSize: 12,
+                    }}
+                  >
+                    <InfoCircleOutlined style={{ marginRight: 6 }} />
+                    Tài khoản của bạn chỉ có quyền xem thông tin.
+                  </div>
+                )}
                 <div
                   style={{
                     marginTop: 24,

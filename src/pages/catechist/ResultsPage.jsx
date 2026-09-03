@@ -42,8 +42,10 @@ import {
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
+
 import AppFormModal from "../../components/common/AppFormModal";
 import ResultForm from "../../components/forms/ResultForm";
+
 import {
   getResults,
   getResultStatistics,
@@ -55,10 +57,13 @@ import {
 } from "../../api/resultApi";
 
 import studentApi from "../../api/studentApi";
+
 import AppDetailModal from "../../components/common/AppDetailModal";
 import StatCard from "../../components/common/StatCard";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
+
 const { Text } = Typography;
+
 const primaryNavy = "#1B365D";
 
 // =========================================================
@@ -131,6 +136,10 @@ const getScoreStatus = (score) => {
   };
 };
 
+// =========================================================
+// SCORE DISPLAY
+// =========================================================
+
 const ScoreDisplay = ({ score, large = false }) => {
   const value =
     score === null || score === undefined || score === "" ? 0 : Number(score);
@@ -143,6 +152,7 @@ const ScoreDisplay = ({ score, large = false }) => {
         display: "flex",
         alignItems: "center",
         gap: large ? 12 : 8,
+        flexWrap: "wrap",
       }}
     >
       <div
@@ -159,6 +169,7 @@ const ScoreDisplay = ({ score, large = false }) => {
           justifyContent: "center",
           fontSize: large ? 18 : 14,
           fontWeight: 800,
+          boxSizing: "border-box",
         }}
       >
         {value.toFixed(1)}
@@ -261,8 +272,6 @@ const ResultsPage = () => {
 
       setResults(data);
     } catch (error) {
-      console.error("LOAD RESULTS ERROR:", error);
-
       setResults([]);
 
       message.error(
@@ -297,8 +306,6 @@ const ResultsPage = () => {
 
       setStudents(list);
     } catch (error) {
-      console.error("LOAD STUDENTS ERROR:", error);
-
       setStudents([]);
 
       message.error("Không thể lấy danh sách học viên");
@@ -325,8 +332,6 @@ const ResultsPage = () => {
 
       setStatistics(resData?.data || resData || null);
     } catch (error) {
-      console.error("LOAD STATISTICS ERROR:", error);
-
       setStatistics(null);
     } finally {
       setStatsLoading(false);
@@ -461,8 +466,6 @@ const ResultsPage = () => {
 
         setStudentResults(list);
       } else {
-        console.error("GET STUDENT RESULTS ERROR:", resultsResponse.reason);
-
         setStudentResults([]);
       }
 
@@ -471,13 +474,9 @@ const ResultsPage = () => {
 
         setStudentStats(resData?.data || resData || null);
       } else {
-        console.error("GET STUDENT STATISTICS ERROR:", statsResponse.reason);
-
         setStudentStats(null);
       }
     } catch (error) {
-      console.error("FETCH STUDENT DETAILS ERROR:", error);
-
       message.error("Không thể lấy chi tiết điểm của học viên");
     } finally {
       setDetailLoading(false);
@@ -574,15 +573,11 @@ const ResultsPage = () => {
 
       const payload = {
         student_id: values.student_id,
-
         score: Number(values.score),
-
         exam_type: values.exam_type || "paper",
-
         exam_date: values.exam_date
           ? values.exam_date.format("YYYY-MM-DD")
           : null,
-
         note: values.note ? values.note.trim() : null,
       };
 
@@ -619,8 +614,6 @@ const ResultsPage = () => {
     } catch (error) {
       if (error?.errorFields) return;
 
-      console.error("SUBMIT RESULT ERROR:", error);
-
       message.error(
         error?.response?.data?.message || "Có lỗi xảy ra khi lưu điểm",
       );
@@ -656,8 +649,6 @@ const ResultsPage = () => {
         await fetchStudentDetailsData(selectedStudent.id);
       }
     } catch (error) {
-      console.error("DELETE RESULT ERROR:", error);
-
       message.error(error?.response?.data?.message || "Không thể xóa điểm");
     } finally {
       setDeletingId(null);
@@ -690,29 +681,12 @@ const ResultsPage = () => {
         const guardian = student?.guardian_name;
 
         return (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <Avatar
-              size={44}
-              style={{
-                flexShrink: 0,
-                background: "linear-gradient(135deg,#6366F1,#4F46E5)",
-                fontWeight: 800,
-              }}
-            >
+          <div className="result-student-cell">
+            <Avatar size={44} className="result-student-avatar">
               {name.charAt(0).toUpperCase()}
             </Avatar>
 
-            <div
-              style={{
-                minWidth: 0,
-              }}
-            >
+            <div className="result-student-info">
               <Text
                 strong
                 ellipsis
@@ -726,11 +700,7 @@ const ResultsPage = () => {
                 {name}
               </Text>
 
-              <div
-                style={{
-                  marginTop: 3,
-                }}
-              >
+              <div className="result-student-meta">
                 <Text
                   type="secondary"
                   style={{
@@ -754,7 +724,9 @@ const ResultsPage = () => {
 
                     <Text
                       type="secondary"
+                      ellipsis
                       style={{
+                        maxWidth: 130,
                         fontSize: 11,
                       }}
                     >
@@ -800,25 +772,8 @@ const ResultsPage = () => {
       align: "center",
 
       render: (value) => (
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-          }}
-        >
-          <div
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
-              background: COLORS.primaryLight,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: COLORS.primary,
-            }}
-          >
+        <div className="result-count-cell">
+          <div className="result-count-icon">
             <BookOutlined />
           </div>
 
@@ -841,19 +796,8 @@ const ResultsPage = () => {
         const status = getScoreStatus(value);
 
         return (
-          <div
-            style={{
-              minWidth: 150,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 4,
-              }}
-            >
+          <div className="result-score-progress">
+            <div className="result-score-header">
               <Text
                 strong
                 style={{
@@ -1095,12 +1039,7 @@ const ResultsPage = () => {
   // =========================================================
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: "28px 32px",
-      }}
-    >
+    <div className="results-page">
       {/* =====================================================
           HEADER
       ====================================================== */}
@@ -1110,24 +1049,18 @@ const ResultsPage = () => {
         badgeText="🌸 QUẢN LÝ ĐIỂM SỐ"
         title="Bảng điểm học viên"
         description="Theo dõi và quản lý kết quả học tập của học viên"
-        // Refresh Props
         onRefresh={handleRefresh}
         refreshLoading={loading || studentsLoading || statsLoading}
-        // Primary Button Props
         primaryButtonText="Nhập điểm"
         primaryButtonIcon={<PlusOutlined />}
         onPrimaryClick={handleCreate}
       />
+
       {/* =====================================================
           KPI
       ====================================================== */}
-      <Row
-        gutter={[16, 16]}
-        style={{
-          marginBottom: 24,
-        }}
-      >
-        {/* TỔNG BÀI KIỂM TRA */}
+
+      <Row gutter={[16, 16]} className="results-kpi-row">
         <Col xs={24} sm={12} lg={6}>
           <StatCard
             title="Tổng bài kiểm tra"
@@ -1139,7 +1072,6 @@ const ResultsPage = () => {
           />
         </Col>
 
-        {/* ĐIỂM TRUNG BÌNH */}
         <Col xs={24} sm={12} lg={6}>
           <StatCard
             title="Điểm trung bình"
@@ -1151,7 +1083,6 @@ const ResultsPage = () => {
           />
         </Col>
 
-        {/* ĐIỂM CAO NHẤT */}
         <Col xs={24} sm={12} lg={6}>
           <StatCard
             title="Điểm cao nhất"
@@ -1163,7 +1094,6 @@ const ResultsPage = () => {
           />
         </Col>
 
-        {/* KẾT QUẢ */}
         <Col xs={24} sm={12} lg={6}>
           <StatCard
             title="Kết quả"
@@ -1209,11 +1139,7 @@ const ResultsPage = () => {
 
       <Card
         bordered={false}
-        style={{
-          borderRadius: 16,
-          marginBottom: 16,
-          boxShadow: "0 2px 10px rgba(15,23,42,.04)",
-        }}
+        className="results-filter-card"
         bodyStyle={{
           padding: 16,
         }}
@@ -1249,6 +1175,7 @@ const ResultsPage = () => {
                 setClassId(value);
                 setCurrentPage(1);
               }}
+              className="results-class-select"
               style={{
                 width: "100%",
                 height: 42,
@@ -1269,14 +1196,7 @@ const ResultsPage = () => {
           </Col>
 
           <Col xs={24} md={6} lg={10}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: 8,
-              }}
-            >
+            <div className="results-found">
               <TeamOutlined
                 style={{
                   color: COLORS.textSecondary,
@@ -1310,26 +1230,15 @@ const ResultsPage = () => {
 
       <Card
         bordered={false}
-        style={{
-          borderRadius: 18,
-          overflow: "hidden",
-          boxShadow: "0 2px 12px rgba(15,23,42,.04)",
-        }}
+        className="results-main-card"
         bodyStyle={{
           padding: 0,
         }}
       >
-        <div
-          style={{
-            padding: "18px 22px",
-            borderBottom: `1px solid ${COLORS.border}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <div>
+        {/* TABLE HEADER */}
+
+        <div className="results-table-header">
+          <div className="results-table-title">
             <Text
               strong
               style={{
@@ -1366,12 +1275,10 @@ const ResultsPage = () => {
           </Tag>
         </div>
 
+        {/* LOADING */}
+
         {loading ? (
-          <div
-            style={{
-              padding: 32,
-            }}
-          >
+          <div className="results-loading">
             <Skeleton
               active
               paragraph={{
@@ -1380,12 +1287,8 @@ const ResultsPage = () => {
             />
           </div>
         ) : filteredResults.length === 0 ? (
-          <div
-            style={{
-              padding: 80,
-              textAlign: "center",
-            }}
-          >
+          /* EMPTY */
+          <div className="results-empty">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               description={
@@ -1399,6 +1302,7 @@ const ResultsPage = () => {
                   onClick={() => {
                     setSearchText("");
                     setClassId("all");
+                    setCurrentPage(1);
                   }}
                 >
                   Xóa bộ lọc
@@ -1408,16 +1312,18 @@ const ResultsPage = () => {
           </div>
         ) : (
           <>
-            <Table
-              rowKey={(record) => `${record.student_id}-${record.class_id}`}
-              columns={columns}
-              dataSource={paginatedResults}
-              pagination={false}
-              scroll={{
-                x: 1200,
-              }}
-              rowClassName={() => "result-table-row"}
-            />
+            <div className="results-table-wrapper">
+              <Table
+                rowKey={(record) => `${record.student_id}-${record.class_id}`}
+                columns={columns}
+                dataSource={paginatedResults}
+                pagination={false}
+                scroll={{
+                  x: 1200,
+                }}
+                rowClassName={() => "result-table-row"}
+              />
+            </div>
 
             <Divider
               style={{
@@ -1425,22 +1331,10 @@ const ResultsPage = () => {
               }}
             />
 
-            <div
-              style={{
-                padding: "15px 22px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 16,
-                flexWrap: "wrap",
-              }}
-            >
-              <Text
-                type="secondary"
-                style={{
-                  fontSize: 12,
-                }}
-              >
+            {/* PAGINATION */}
+
+            <div className="results-pagination">
+              <Text type="secondary" className="results-pagination-text">
                 Hiển thị <strong>{paginatedResults.length}</strong> /{" "}
                 <strong>{filteredResults.length}</strong> học viên
               </Text>
@@ -1456,6 +1350,10 @@ const ResultsPage = () => {
                   setPageSize(size);
                 }}
                 size="small"
+                responsive
+                showTotal={(total, range) =>
+                  `${range[0]}-${range[1]} / ${total}`
+                }
               />
             </div>
           </>
@@ -1465,6 +1363,7 @@ const ResultsPage = () => {
       {/* =====================================================
           DETAIL MODAL
       ====================================================== */}
+
       <AppDetailModal
         open={detailModalOpen}
         loading={detailLoading}
@@ -1487,7 +1386,8 @@ const ResultsPage = () => {
           />
         ) : (
           <>
-            {/* STATS */}
+            {/* DETAIL STATS */}
+
             <Row
               gutter={[12, 12]}
               style={{
@@ -1495,31 +1395,12 @@ const ResultsPage = () => {
               }}
             >
               <Col xs={24} sm={8}>
-                <div
-                  style={{
-                    padding: 18,
-                    borderRadius: 14,
-                    background: "#F8FAFC",
-                    border: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  <Text
-                    type="secondary"
-                    style={{
-                      fontSize: 12,
-                    }}
-                  >
+                <div className="detail-stat-card">
+                  <Text type="secondary" className="detail-stat-label">
                     TỔNG BÀI
                   </Text>
 
-                  <div
-                    style={{
-                      marginTop: 7,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
+                  <div className="detail-stat-value">
                     <BookOutlined
                       style={{
                         color: COLORS.primary,
@@ -1541,31 +1422,23 @@ const ResultsPage = () => {
 
               <Col xs={24} sm={8}>
                 <div
+                  className="detail-stat-card"
                   style={{
-                    padding: 18,
-                    borderRadius: 14,
                     background: COLORS.greenLight,
-                    border: "1px solid #DCFCE7",
+                    borderColor: "#DCFCE7",
                   }}
                 >
                   <Text
+                    className="detail-stat-label"
                     style={{
                       color: COLORS.green,
-                      fontSize: 12,
                       fontWeight: 600,
                     }}
                   >
                     ĐIỂM TRUNG BÌNH
                   </Text>
 
-                  <div
-                    style={{
-                      marginTop: 7,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
+                  <div className="detail-stat-value">
                     <RiseOutlined
                       style={{
                         color: COLORS.green,
@@ -1588,31 +1461,23 @@ const ResultsPage = () => {
 
               <Col xs={24} sm={8}>
                 <div
+                  className="detail-stat-card"
                   style={{
-                    padding: 18,
-                    borderRadius: 14,
                     background: COLORS.orangeLight,
-                    border: "1px solid #FEF3C7",
+                    borderColor: "#FEF3C7",
                   }}
                 >
                   <Text
+                    className="detail-stat-label"
                     style={{
                       color: COLORS.orange,
-                      fontSize: 12,
                       fontWeight: 600,
                     }}
                   >
                     ĐIỂM CAO NHẤT
                   </Text>
 
-                  <div
-                    style={{
-                      marginTop: 7,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
+                  <div className="detail-stat-value">
                     <TrophyOutlined
                       style={{
                         color: COLORS.orange,
@@ -1634,15 +1499,9 @@ const ResultsPage = () => {
               </Col>
             </Row>
 
-            {/* TABLE TITLE */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 12,
-              }}
-            >
+            {/* DETAIL TITLE */}
+
+            <div className="detail-table-title">
               <div>
                 <Text
                   strong
@@ -1674,20 +1533,23 @@ const ResultsPage = () => {
               />
             </div>
 
-            {/* TABLE */}
-            <Table
-              rowKey="id"
-              columns={detailColumns}
-              dataSource={studentResults}
-              pagination={false}
-              size="middle"
-              scroll={{
-                x: 700,
-              }}
-              locale={{
-                emptyText: "Học viên chưa có điểm kiểm tra",
-              }}
-            />
+            {/* DETAIL TABLE */}
+
+            <div className="detail-table-wrapper">
+              <Table
+                rowKey="id"
+                columns={detailColumns}
+                dataSource={studentResults}
+                pagination={false}
+                size="middle"
+                scroll={{
+                  x: 700,
+                }}
+                locale={{
+                  emptyText: "Học viên chưa có điểm kiểm tra",
+                }}
+              />
+            </div>
           </>
         )}
       </AppDetailModal>
@@ -1695,6 +1557,7 @@ const ResultsPage = () => {
       {/* =====================================================
           CREATE / EDIT MODAL
       ====================================================== */}
+
       <AppFormModal
         open={modalOpen}
         loading={submitting}
@@ -1722,12 +1585,213 @@ const ResultsPage = () => {
           onFinish={handleSubmit}
         />
       </AppFormModal>
+
       {/* =====================================================
-          EXTRA CSS
+          RESPONSIVE CSS
       ====================================================== */}
 
       <style>
         {`
+          /* ==========================================
+             PAGE
+          ========================================== */
+
+          .results-page {
+            min-height: 100vh;
+            padding: clamp(14px, 3vw, 28px)
+              clamp(12px, 3vw, 32px);
+            background: #F8FAFC;
+            overflow-x: hidden;
+            box-sizing: border-box;
+          }
+
+          .results-kpi-row {
+            margin-bottom: 24px;
+          }
+
+          /* ==========================================
+             FILTER
+          ========================================== */
+
+          .results-filter-card {
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow:
+              0 2px 10px rgba(15, 23, 42, 0.04);
+          }
+
+          .results-found {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            min-height: 42px;
+          }
+
+          /* ==========================================
+             MAIN CARD
+          ========================================== */
+
+          .results-main-card {
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow:
+              0 2px 12px rgba(15, 23, 42, 0.04);
+          }
+
+          .results-table-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid ${COLORS.border};
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+          }
+
+          .results-table-title {
+            min-width: 0;
+          }
+
+          .results-loading {
+            padding: 32px;
+          }
+
+          .results-empty {
+            padding: 80px 24px;
+            text-align: center;
+          }
+
+          .results-table-wrapper {
+            width: 100%;
+            overflow: hidden;
+          }
+
+          /* ==========================================
+             STUDENT
+          ========================================== */
+
+          .result-student-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+          }
+
+          .result-student-avatar {
+            flex-shrink: 0;
+            background:
+              linear-gradient(
+                135deg,
+                #6366F1,
+                #4F46E5
+              );
+            font-weight: 800;
+          }
+
+          .result-student-info {
+            min-width: 0;
+            flex: 1;
+          }
+
+          .result-student-meta {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            margin-top: 3px;
+          }
+
+          /* ==========================================
+             RESULT COUNT
+          ========================================== */
+
+          .result-count-cell {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+          }
+
+          .result-count-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: ${COLORS.primaryLight};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: ${COLORS.primary};
+          }
+
+          /* ==========================================
+             SCORE
+          ========================================== */
+
+          .result-score-progress {
+            min-width: 150px;
+          }
+
+          .result-score-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+          }
+
+          /* ==========================================
+             PAGINATION
+          ========================================== */
+
+          .results-pagination {
+            padding: 15px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+          }
+
+          .results-pagination-text {
+            font-size: 12px;
+          }
+
+          /* ==========================================
+             DETAIL
+          ========================================== */
+
+          .detail-stat-card {
+            padding: 18px;
+            border-radius: 14px;
+            background: #F8FAFC;
+            border: 1px solid ${COLORS.border};
+          }
+
+          .detail-stat-label {
+            font-size: 12px;
+          }
+
+          .detail-stat-value {
+            margin-top: 7px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .detail-table-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 10px;
+          }
+
+          .detail-table-wrapper {
+            width: 100%;
+            overflow: hidden;
+          }
+
+          /* ==========================================
+             ANT DESIGN
+          ========================================== */
+
           .result-table-row:hover > td {
             background: #F8FAFC !important;
           }
@@ -1775,9 +1839,220 @@ const ResultsPage = () => {
             margin-bottom: 16px !important;
           }
 
+          /* ==========================================
+             TABLET
+          ========================================== */
+
+          @media (max-width: 992px) {
+            .results-page {
+              padding-left: 20px;
+              padding-right: 20px;
+            }
+
+            .results-found {
+              justify-content: flex-start;
+            }
+          }
+
+          /* ==========================================
+             MOBILE
+          ========================================== */
+
           @media (max-width: 768px) {
+            .results-page {
+              padding: 14px 12px 24px;
+            }
+
+            .results-kpi-row {
+              margin-bottom: 16px;
+            }
+
+            .results-filter-card {
+              border-radius: 14px;
+            }
+
+            .results-main-card {
+              border-radius: 14px;
+            }
+
+            .results-table-header {
+              padding: 15px 16px;
+              align-items: flex-start;
+            }
+
+            .results-table-title {
+              flex: 1;
+            }
+
+            .results-loading {
+              padding: 20px 16px;
+            }
+
+            .results-empty {
+              padding: 55px 16px;
+            }
+
+            .results-pagination {
+              padding: 14px 16px;
+              flex-direction: column;
+              align-items: flex-start;
+            }
+
+            .results-pagination
+              .ant-pagination {
+              width: 100%;
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: flex-start;
+            }
+
+            .result-student-cell {
+              gap: 9px;
+            }
+
+            .result-student-avatar {
+              width: 38px !important;
+              height: 38px !important;
+              line-height: 38px !important;
+            }
+
+            .result-score-progress {
+              min-width: 130px;
+            }
+
+            .detail-stat-card {
+              padding: 15px;
+            }
+
+            .detail-table-title {
+              margin-bottom: 10px;
+            }
+
             .ant-table {
               font-size: 12px;
+            }
+
+            .ant-table-thead > tr > th {
+              font-size: 10px !important;
+            }
+
+            .ant-table-tbody > tr > td {
+              padding: 10px 8px !important;
+            }
+          }
+
+          /* ==========================================
+             SMALL MOBILE
+          ========================================== */
+
+          @media (max-width: 480px) {
+            .results-page {
+              padding: 10px 8px 20px;
+            }
+
+            .results-filter-card {
+              margin-bottom: 12px;
+            }
+
+            .results-filter-card
+              .ant-card-body {
+              padding: 12px !important;
+            }
+
+            .results-table-header {
+              padding: 14px;
+              flex-direction: column;
+              align-items: stretch;
+              gap: 10px;
+            }
+
+            .results-table-header
+              .ant-tag {
+              align-self: flex-start;
+            }
+
+            .results-found {
+              justify-content: flex-start;
+            }
+
+            .results-pagination {
+              padding: 13px 14px;
+              gap: 12px;
+            }
+
+            .results-pagination-text {
+              width: 100%;
+            }
+
+            .results-pagination
+              .ant-pagination {
+              width: 100%;
+            }
+
+            .results-pagination
+              .ant-pagination-options {
+              margin-inline-start: 0;
+            }
+
+            .detail-stat-card {
+              padding: 14px;
+              border-radius: 12px;
+            }
+
+            .detail-stat-value {
+              margin-top: 5px;
+            }
+
+            .detail-table-title {
+              align-items: flex-start;
+            }
+
+            .ant-modal {
+              max-width: calc(100vw - 20px) !important;
+              margin: 10px auto !important;
+            }
+
+            .ant-modal-content {
+              border-radius: 14px !important;
+            }
+          }
+
+          /* ==========================================
+             VERY SMALL MOBILE
+          ========================================== */
+
+          @media (max-width: 360px) {
+            .results-page {
+              padding-left: 6px;
+              padding-right: 6px;
+            }
+
+            .results-table-header {
+              padding: 12px;
+            }
+
+            .results-pagination {
+              padding-left: 12px;
+              padding-right: 12px;
+            }
+
+            .result-student-meta {
+              display: block;
+            }
+
+            .result-student-meta > .ant-typography:nth-child(2) {
+              display: none;
+            }
+          }
+
+          /* ==========================================
+             REDUCE MOTION
+          ========================================== */
+
+          @media (prefers-reduced-motion: reduce) {
+            * {
+              scroll-behavior: auto !important;
+              transition: none !important;
             }
           }
         `}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Layout, Typography, ConfigProvider } from "antd";
 import { Outlet } from "react-router-dom";
 import { HeartFilled, SmileOutlined } from "@ant-design/icons";
@@ -9,7 +9,40 @@ const { Content, Footer } = Layout;
 const { Text } = Typography;
 
 export default function CatechistLayout() {
-  const [collapsed, setCollapsed] = useState(false);
+  // ==============================
+  // SIDEBAR
+  // ==============================
+  const [collapsed, setCollapsed] = useState(() => {
+    // Mobile mặc định thu sidebar
+    if (typeof window !== "undefined") {
+      return window.innerWidth <= 640;
+    }
+
+    return false;
+  });
+
+  // ==============================
+  // RESPONSIVE SIDEBAR
+  // ==============================
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth <= 640;
+
+      // Khi chuyển sang mobile -> tự thu
+      if (isMobile) {
+        setCollapsed(true);
+      }
+    };
+
+    // Kiểm tra ngay khi component mount
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   return (
     <ConfigProvider
@@ -22,10 +55,14 @@ export default function CatechistLayout() {
       }}
     >
       <Layout className="chibi-layout-root">
-        {/* SIDEBAR */}
+        {/* =========================================
+            SIDEBAR
+        ========================================= */}
         <CatechistSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 
-        {/* MAIN LAYOUT */}
+        {/* =========================================
+            MAIN LAYOUT
+        ========================================= */}
         <Layout className="chibi-layout-main">
           {/* HEADER */}
           <CatechistHeader />
@@ -35,19 +72,29 @@ export default function CatechistLayout() {
             <Outlet />
           </Content>
 
-          {/* FOOTER CHIBI DỄ THƯƠNG */}
+          {/* =========================================
+              FOOTER
+          ========================================= */}
           <Footer className="chibi-layout-footer">
             <div className="chibi-footer-pill">
               <SmileOutlined className="chibi-footer-sparkle" />
+
               <Text className="chibi-footer-text">Giáo lý công giáo</Text>
+
               <HeartFilled className="chibi-footer-heart" />
             </div>
           </Footer>
         </Layout>
 
-        {/* CSS SCOPED STYLES */}
+        {/* =========================================
+            CSS
+        ========================================= */}
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+
+          * {
+            box-sizing: border-box;
+          }
 
           .chibi-layout-root {
             min-height: 100vh;
@@ -61,6 +108,7 @@ export default function CatechistLayout() {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            min-width: 0;
           }
 
           .chibi-layout-content {
@@ -68,9 +116,13 @@ export default function CatechistLayout() {
             min-height: 280px;
             flex: 1;
             transition: all 0.3s ease;
+            min-width: 0;
           }
 
-          /* FOOTER STYLES */
+          /* =========================================
+             FOOTER
+          ========================================= */
+
           .chibi-layout-footer {
             background: transparent !important;
             text-align: center;
@@ -118,20 +170,73 @@ export default function CatechistLayout() {
           }
 
           @keyframes chibiHeartBeat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.25); }
+            0%,
+            100% {
+              transform: scale(1);
+            }
+
+            50% {
+              transform: scale(1.25);
+            }
           }
 
-          /* RESPONSIVE MOBILE */
+          /* =========================================
+             TABLET
+          ========================================= */
+
+          @media (max-width: 1024px) {
+            .chibi-layout-content {
+              margin: 14px 14px 8px;
+            }
+          }
+
+          /* =========================================
+             MOBILE
+          ========================================= */
+
           @media (max-width: 640px) {
             .chibi-layout-content {
-              margin: 12px 10px 6px;
+              margin: 10px 8px 6px;
+              min-height: 0;
             }
+
+            .chibi-layout-footer {
+              padding: 8px 10px 14px !important;
+            }
+
             .chibi-footer-pill {
               padding: 5px 12px;
+              gap: 6px;
             }
+
             .chibi-footer-text {
               font-size: 10.5px;
+            }
+
+            .chibi-footer-sparkle {
+              font-size: 12px;
+            }
+
+            .chibi-footer-heart {
+              font-size: 12px;
+            }
+          }
+
+          /* =========================================
+             SMALL PHONE
+          ========================================= */
+
+          @media (max-width: 380px) {
+            .chibi-layout-content {
+              margin: 8px 6px 4px;
+            }
+
+            .chibi-footer-pill {
+              padding: 4px 10px;
+            }
+
+            .chibi-footer-text {
+              font-size: 10px;
             }
           }
         `}</style>
