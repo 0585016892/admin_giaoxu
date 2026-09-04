@@ -23,7 +23,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import imgSidebar from "../../assets/images/logoweb.png";
+import imgSidebar from "../../assets/images/imgSidebar.png";
+import logoWeb from "../../assets/images/logoweb.png";
 import usePermission from "../../hooks/usePermission";
 
 const { Sider } = Layout;
@@ -176,7 +177,7 @@ export default function CatechistSidebar({
             <div className="avatar-star-container">
               <Avatar
                 size={collapsed ? 42 : 46}
-                src={imgSidebar}
+                src={logoWeb}
                 style={{
                   backgroundColor: "#FFD6E0",
                   border: "2px solid #FF85A1",
