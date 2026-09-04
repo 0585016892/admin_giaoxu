@@ -23,7 +23,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import imgSidebar from "../../assets/images/imgSidebar.png";
+import imgSidebar from "../../assets/images/logoweb.png";
 import usePermission from "../../hooks/usePermission";
 
 const { Sider } = Layout;

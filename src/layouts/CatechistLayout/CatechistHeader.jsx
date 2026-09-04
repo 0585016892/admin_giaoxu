@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Layout,
   Dropdown,
@@ -9,35 +9,43 @@ import {
   ConfigProvider,
   Tag,
 } from "antd";
+
 import {
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
-  QuestionCircleOutlined,
-  HeartFilled,
+  BookOutlined,
   StarFilled,
   CrownFilled,
   SmileOutlined,
   DownOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
 
 import { useUser } from "../../context/UserContext";
 import HelpModalCate from "../../components/HelpModalCate";
+import logoWeb from "../../assets/images/logoweb.png";
 
 const { Header } = Layout;
+
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function AdminHeader() {
   const navigate = useNavigate();
   const location = useLocation();
+
   const { user, logout } = useUser();
+
   const [helpOpen, setHelpOpen] = useState(false);
-  console.log(user);
+
+  /* =========================================================
+     PAGE TITLE
+  ========================================================= */
 
   useEffect(() => {
     const path = location.pathname;
 
-    let title = "Giáo lý • Sống đạo";
+    let title = "Tổng quan";
 
     if (path === "/catechist") {
       title = "Tổng quan";
@@ -50,127 +58,171 @@ export default function AdminHeader() {
     } else if (path === "/catechist/results") {
       title = "Kết quả học tập";
     } else if (path === "/catechist/leaderboard") {
-      title = "Bảng xếp hạng";
+      title = "Bảng thành tích";
     } else if (path === "/catechist/lessons") {
       title = "Bài học & Câu hỏi";
     } else if (path === "/catechist-management") {
       title = "Quản lý giáo lý viên";
     } else if (path === "/catechist/profile") {
       title = "Trang cá nhân";
+    } else if (path === "/catechist/settings") {
+      title = "Thiết lập hệ thống";
+    } else if (path === "/catechist/classes-teacher") {
+      title = "Lớp học của bạn";
+    } else if (path === "/catechist/student-class") {
+      title = "Học sinh của bạn";
+    } else if (path === "/attendance") {
+      title = "Điểm danh";
+    } else if (path === "/catechist") {
+      title = "Trang cá nhân";
     } else if (path === "/login") {
-      title = "Đăng nhập Giáo Lý Viên";
+      title = "Đăng nhập";
     }
-    document.title = `${title} | Giáo lý • Sống đạo`;
+
+    document.title = `${title} | FaithEdu`;
   }, [location.pathname]);
+
   /* =========================================================
      AVATAR URL
   ========================================================= */
+
   const userAvatarUrl = useMemo(() => {
     if (!user?.avatar) return null;
+
+    const avatar = String(user.avatar).trim();
+
     if (
-      user.avatar.startsWith("http://") ||
-      user.avatar.startsWith("https://") ||
-      user.avatar.startsWith("blob:")
+      avatar.startsWith("http://") ||
+      avatar.startsWith("https://") ||
+      avatar.startsWith("blob:")
     ) {
-      return user.avatar;
+      return avatar;
     }
-    const normalized = user.avatar.startsWith("/")
-      ? user.avatar
-      : `/${user.avatar}`;
+
+    const normalized = avatar.startsWith("/") ? avatar : `/${avatar}`;
+
     return `${API_URL}${normalized}`;
   }, [user?.avatar]);
 
   /* =========================================================
-     ROLE HELPER
+     ROLE
   ========================================================= */
+
   const translateRole = (role) => {
     switch (role) {
       case "priest":
-        return "Linh mục Chánh xứ ✝️";
+        return "Linh mục Chánh xứ";
+
       case "admin":
-        return "Ban Quản Trị ✨";
+        return "Ban Quản Trị";
+
       case "teacher":
-        return "Huynh Trưởng / GLV 💖";
+        return "Giáo lý viên";
+
       case "catechist":
         return "Ban Quản Trị";
+
       case "liturgy_manager":
-        return "Ban Phụng Vụ ⛪";
+        return "Ban Phụng Vụ";
+
       case "media_manager":
-        return "Ban Truyền Thông 📸";
+        return "Ban Truyền Thông";
+
       default:
-        return "Hội đồng Mục vụ 🌿";
+        return "Hội đồng Mục vụ";
     }
   };
 
   /* =========================================================
-     ACCOUNT TYPE CONFIG
+     ACCOUNT TYPE
   ========================================================= */
+
   const accountType = useMemo(() => {
     const type = String(user?.account_type || "")
       .trim()
       .toLowerCase();
+
     if (type === "vip") {
       return {
         key: "vip",
         label: "VIP",
         icon: <CrownFilled />,
-        color: "#D97706",
-        bg: "#FEF3C7",
-        border: "#FDE68A",
+        color: "#B7791F",
+        bg: "#FFF8E1",
+        border: "#F6D98B",
       };
     }
+
     return {
       key: "member",
       label: "Thành viên",
       icon: <StarFilled />,
       color: "#64748B",
-      bg: "#F1F5F9",
-      border: "#CBD5E1",
+      bg: "#F8FAFC",
+      border: "#E2E8F0",
     };
   }, [user?.account_type]);
 
-  const userName = user?.full_name || user?.email || "Huynh Trưởng";
+  /* =========================================================
+     USER
+  ========================================================= */
+
+  const userName = user?.full_name || user?.email || "Giáo lý viên";
+
+  const userRole = translateRole(user?.role);
 
   /* =========================================================
-     MENU & NAVIGATE HANDLER
+     HELP MODAL
   ========================================================= */
-  const handleMenuClick = ({ key }) => {
-    switch (key) {
-      case "profile":
-        navigate("/catechist/profile");
-        break;
-      case "settings":
-        navigate("/catechist/settings");
-        break;
-      case "logout":
-        if (typeof logout === "function") {
-          logout();
-        }
-        navigate("/login"); // Điều hướng về trang login sau khi đăng xuất
-        break;
-      default:
-        break;
+
+  const handleOpenHelp = () => {
+    setHelpOpen(true);
+  };
+
+  const handleCloseHelp = () => {
+    setHelpOpen(false);
+  };
+
+  /* =========================================================
+     LOGOUT
+  ========================================================= */
+
+  const handleLogout = () => {
+    try {
+      if (typeof logout === "function") {
+        logout();
+      }
+    } finally {
+      navigate("/login");
     }
   };
+
+  /* =========================================================
+     USER MENU
+  ========================================================= */
 
   const menuItems = [
     {
       key: "account-info",
       disabled: true,
+
       label: (
-        <div className="chibi-menu-header">
-          <span className="chibi-menu-sub">Tài khoản hiện tại</span>
-          <div className="chibi-menu-name">{userName}</div>
-          <div className="chibi-menu-tags">
-            <Tag className="chibi-tag-role">{translateRole(user?.role)}</Tag>
+        <div className="faith-user-menu-header">
+          <div className="faith-user-menu-caption">TÀI KHOẢN HIỆN TẠI</div>
+
+          <div className="faith-user-menu-name">{userName}</div>
+
+          <div className="faith-user-menu-tags">
+            <Tag className="faith-role-tag">{userRole}</Tag>
+
             <Tag
               icon={accountType.icon}
+              className="faith-account-tag"
               style={{
                 color: accountType.color,
                 background: accountType.bg,
                 borderColor: accountType.border,
               }}
-              className="chibi-tag-account"
             >
               {accountType.label}
             </Tag>
@@ -178,25 +230,71 @@ export default function AdminHeader() {
         </div>
       ),
     },
-    { type: "divider" },
+
+    {
+      type: "divider",
+    },
+
+    {
+      key: "home",
+      icon: <HomeOutlined />,
+      label: "Trang chủ",
+    },
+
     {
       key: "profile",
-      icon: <SmileOutlined style={{ color: "#FF6B8B" }} />,
-      label: <span>Trang cá nhân</span>,
+      icon: <SmileOutlined />,
+      label: "Trang cá nhân",
     },
+
     {
       key: "settings",
-      icon: <SettingOutlined style={{ color: "#A855F7" }} />,
-      label: <span>Thiết lập hệ thống</span>,
+      icon: <SettingOutlined />,
+      label: "Thiết lập hệ thống",
     },
-    { type: "divider" },
+
+    {
+      type: "divider",
+    },
+
     {
       key: "logout",
       icon: <LogoutOutlined />,
-      label: <span>Đăng xuất</span>,
+      label: "Đăng xuất",
       danger: true,
     },
   ];
+
+  /* =========================================================
+     MENU CLICK
+  ========================================================= */
+
+  const handleMenuClick = ({ key }) => {
+    switch (key) {
+      case "home":
+        navigate("/");
+        break;
+
+      case "profile":
+        navigate("/catechist/profile");
+        break;
+
+      case "settings":
+        navigate("/catechist/settings");
+        break;
+
+      case "logout":
+        handleLogout();
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <ConfigProvider
@@ -208,48 +306,88 @@ export default function AdminHeader() {
         },
       }}
     >
-      <div className="chibi-header-wrapper">
-        <Header className="chibi-pastel-header">
-          {/* BRAND LOGO - NAVIGATE HOME */}
-          <div className="chibi-brand-pill" onClick={() => navigate("/")}>
-            <div className="chibi-logo-box">
-              <HeartFilled className="chibi-heart-icon" />
+      <div className="faith-header-wrapper">
+        <Header className="faith-header">
+          {/* =================================================
+              BRAND
+          ================================================= */}
+
+          <div
+            className="faith-brand"
+            onClick={() => navigate("/")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate("/");
+              }
+            }}
+          >
+            <div className="faith-brand-logo">
+              <img src={logoWeb} alt="FaithEdu" className="faith-logo-image" />
             </div>
-            <div className="chibi-brand-text">
-              <span className="chibi-title">GIÁO LÝ • SỐNG ĐẠO</span>
-              <span className="chibi-sub">Nụ Cười Mới ✨</span>
+
+            <div className="faith-brand-content">
+              <div className="faith-brand-name">
+                Faith<span>Edu</span>
+              </div>
+
+              <div className="faith-brand-slogan">
+                Số hóa giáo lý • Kết nối đức tin
+              </div>
             </div>
           </div>
 
-          {/* RIGHT CONTROLS */}
-          <Space size={10} align="center">
-            {/* HELP BUTTON */}
-            <Tooltip title="Hướng dẫn sử dụng nè!" placement="bottom">
+          {/* =================================================
+              RIGHT AREA
+          ================================================= */}
+
+          <Space className="faith-header-right" size={10} align="center">
+            {/* =================================================
+                HELP BUTTON
+            ================================================= */}
+
+            <Tooltip title="Khám phá FaithEdu" placement="bottom">
               <button
-                className="chibi-btn-help"
-                onClick={() => setHelpOpen(true)}
+                type="button"
+                className="faith-help-button"
+                onClick={handleOpenHelp}
+                aria-label="Về FaithEdu"
               >
-                <QuestionCircleOutlined className="chibi-icon-help" />
-                <span className="chibi-text-help">Trợ giúp</span>
+                <span className="faith-help-icon">
+                  <BookOutlined />
+                </span>
+
+                <span className="faith-help-text">Về FaithEdu</span>
               </button>
             </Tooltip>
 
-            {/* USER PROFILE DROPDOWN */}
+            {/* =================================================
+                USER DROPDOWN
+            ================================================= */}
+
             <Dropdown
-              menu={{ items: menuItems, onClick: handleMenuClick }}
+              menu={{
+                items: menuItems,
+                onClick: handleMenuClick,
+              }}
               placement="bottomRight"
               trigger={["click"]}
-              overlayClassName="chibi-dropdown-overlay"
+              overlayClassName="faith-dropdown"
             >
-              <div className="chibi-user-badge">
-                <div className="chibi-avatar-wrapper">
+              <div className="faith-user" role="button" tabIndex={0}>
+                {/* AVATAR */}
+
+                <div className="faith-avatar-wrapper">
                   <Avatar
-                    size={36}
-                    className="chibi-avatar-main"
+                    size={38}
+                    className="faith-avatar"
                     src={userAvatarUrl}
                     icon={<UserOutlined />}
                   />
-                  <span className={`chibi-mini-star ${accountType.key}`}>
+
+                  <span className={`faith-account-badge ${accountType.key}`}>
                     {accountType.key === "vip" ? (
                       <CrownFilled />
                     ) : (
@@ -258,271 +396,727 @@ export default function AdminHeader() {
                   </span>
                 </div>
 
-                <div className="chibi-user-info">
-                  <span className="chibi-user-name">{userName}</span>
-                  <span className="chibi-user-role">
-                    {translateRole(user?.role)}
-                  </span>
+                {/* USER INFO */}
+
+                <div className="faith-user-info">
+                  <div className="faith-user-name">{userName}</div>
+
+                  <div className="faith-user-role">{userRole}</div>
                 </div>
 
-                <DownOutlined className="chibi-arrow-icon" />
+                {/* ARROW */}
+
+                <DownOutlined className="faith-user-arrow" />
               </div>
             </Dropdown>
           </Space>
 
-          {/* HELP MODAL */}
-          <HelpModalCate open={helpOpen} onCancel={() => setHelpOpen(false)} />
+          {/* =================================================
+              HELP MODAL
 
-          {/* STYLES */}
-          <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&display=swap');
+              QUAN TRỌNG:
+              Chỉ truyền open + onCancel.
+          ================================================= */}
 
-            .chibi-header-wrapper {
-              position: sticky;
-              top: 0;
-              z-index: 1000;
-              padding: 8px 16px 0;
-              background: transparent;
-            }
-
-            .chibi-pastel-header {
-              background: rgba(255, 255, 255, 0.88) !important;
-              backdrop-filter: blur(16px) saturate(180%);
-              -webkit-backdrop-filter: blur(16px) saturate(180%);
-              height: 62px !important;
-              line-height: 62px !important;
-              border-radius: 20px;
-              padding: 0 12px !important;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              border: 1.5px solid #FFE4E6;
-              box-shadow: 0 8px 20px -4px rgba(255, 182, 193, 0.25);
-            }
-
-            /* BRAND */
-            .chibi-brand-pill {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              padding: 5px 12px 5px 6px;
-              background: #FFF1F2;
-              border: 1px solid #FECDD3;
-              border-radius: 16px;
-              cursor: pointer;
-              transition: all 0.25s ease;
-            }
-            .chibi-brand-pill:hover {
-              transform: translateY(-1px) scale(1.02);
-              background: #FFE4E6;
-            }
-
-            .chibi-logo-box {
-              width: 32px;
-              height: 32px;
-              border-radius: 12px;
-              background: linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 3px 8px rgba(255, 107, 139, 0.3);
-            }
-
-            .chibi-heart-icon {
-              color: #FFF;
-              font-size: 15px;
-              animation: chibiPulse 2s infinite ease-in-out;
-            }
-
-            @keyframes chibiPulse {
-              0%, 100% { transform: scale(1); }
-              50% { transform: scale(1.15); }
-            }
-
-            .chibi-brand-text {
-              display: flex;
-              flex-direction: column;
-              line-height: 1.15;
-            }
-
-            .chibi-title {
-              color: #475569;
-              font-size: 12px;
-              font-weight: 800;
-              letter-spacing: 0.2px;
-            }
-
-            .chibi-sub {
-              color: #FF6B8B;
-              font-size: 10px;
-              font-weight: 700;
-            }
-
-            /* HELP BUTTON */
-            .chibi-btn-help {
-              display: flex;
-              align-items: center;
-              gap: 5px;
-              height: 36px;
-              padding: 0 12px;
-              background: #F0FDF4;
-              border: 1px solid #BBF7D0;
-              border-radius: 14px;
-              cursor: pointer;
-              transition: all 0.2s ease;
-            }
-            .chibi-btn-help:hover {
-              background: #DCFCE7;
-              transform: translateY(-1px);
-            }
-            .chibi-icon-help {
-              font-size: 15px;
-              color: #16A34A;
-            }
-            .chibi-text-help {
-              font-size: 12px;
-              font-weight: 700;
-              color: #15803D;
-            }
-
-            /* USER BADGE */
-            .chibi-user-badge {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              padding: 4px 10px 4px 5px;
-              background: #FAF5FF;
-              border: 1px solid #E9D5FF;
-              border-radius: 16px;
-              cursor: pointer;
-              transition: all 0.2s ease;
-            }
-            .chibi-user-badge:hover {
-              background: #F3E8FF;
-              border-color: #D8B4FE;
-            }
-
-            .chibi-avatar-wrapper {
-              position: relative;
-              display: flex;
-              align-items: center;
-            }
-
-            .chibi-avatar-main {
-              border: 2px solid #FFF;
-              box-shadow: 0 2px 6px rgba(168, 85, 247, 0.2);
-              background-color: #F472B6;
-            }
-
-            .chibi-mini-star {
-              position: absolute;
-              bottom: -2px;
-              right: -3px;
-              width: 14px;
-              height: 14px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 7px;
-              color: #FFF;
-              border: 1.5px solid #FFF;
-            }
-            .chibi-mini-star.vip { background: #F59E0B; }
-            .chibi-mini-star.member { background: #94A3B8; }
-
-            .chibi-user-info {
-              display: flex;
-              flex-direction: column;
-              text-align: left;
-              line-height: 1.15;
-            }
-
-            .chibi-user-name {
-              font-size: 12px;
-              font-weight: 800;
-              color: #334155;
-              max-width: 120px;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
-
-            .chibi-user-role {
-              font-size: 9.5px;
-              font-weight: 700;
-              color: #9333EA;
-              max-width: 130px;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
-
-            .chibi-arrow-icon {
-              font-size: 9px;
-              color: #A855F7;
-              margin-left: 2px;
-            }
-
-            /* DROPDOWN OVERLAY */
-            .chibi-dropdown-overlay .ant-dropdown-menu {
-              padding: 8px !important;
-              border-radius: 18px !important;
-              border: 1.5px solid #F3E8FF !important;
-              box-shadow: 0 12px 28px rgba(168, 85, 247, 0.15) !important;
-            }
-
-            .chibi-menu-header {
-              padding: 4px 4px 6px;
-              min-width: 190px;
-            }
-            .chibi-menu-sub {
-              font-size: 11px;
-              color: #94A3B8;
-              font-weight: 600;
-            }
-            .chibi-menu-name {
-              font-size: 14px;
-              color: #1E293B;
-              font-weight: 800;
-              margin: 2px 0 6px;
-            }
-            .chibi-menu-tags {
-              display: flex;
-              gap: 4px;
-              flex-wrap: wrap;
-            }
-            .chibi-tag-role {
-              margin: 0;
-              border-radius: 8px;
-              border: 1px solid #E9D5FF;
-              background: #FAF5FF;
-              color: #9333EA;
-              font-size: 10px;
-              font-weight: 700;
-            }
-            .chibi-tag-account {
-              margin: 0;
-              border-radius: 8px;
-              font-size: 10px;
-              font-weight: 800;
-            }
-
-            /* RESPONSIVE MOBILE */
-            @media (max-width: 640px) {
-              .chibi-header-wrapper { padding: 6px 8px 0; }
-              .chibi-pastel-header { height: 54px !important; padding: 0 8px !important; }
-              .chibi-brand-text,
-              .chibi-text-help,
-              .chibi-user-info,
-              .chibi-arrow-icon { display: none; }
-              .chibi-brand-pill { padding: 4px; }
-              .chibi-btn-help { padding: 0 10px; }
-              .chibi-user-badge { padding: 3px; }
-            }
-          `}</style>
+          <HelpModalCate open={helpOpen} onClose={handleCloseHelp} />
         </Header>
       </div>
+
+      {/* =====================================================
+          STYLES
+      ===================================================== */}
+
+      <style>{`
+
+        @import url(
+          'https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap'
+        );
+
+        /* =====================================================
+           WRAPPER
+        ===================================================== */
+
+        .faith-header-wrapper {
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+
+          padding: 9px 16px 0;
+
+          background: transparent;
+        }
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .faith-header {
+          position: relative;
+
+          height: 64px !important;
+          min-height: 64px !important;
+
+          padding: 0 10px 0 8px !important;
+
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          border-radius: 22px;
+
+          background:
+            linear-gradient(
+              135deg,
+              rgba(255,255,255,.96),
+              rgba(255,249,252,.94)
+            ) !important;
+
+          border: 1px solid rgba(248,194,208,.65);
+
+          box-shadow:
+            0 8px 25px rgba(224,136,164,.10),
+            0 2px 6px rgba(224,136,164,.06);
+
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+        }
+
+        /* =====================================================
+           BRAND
+        ===================================================== */
+
+        .faith-brand {
+          display: flex;
+          align-items: center;
+
+          gap: 10px;
+
+          padding: 4px 14px 4px 5px;
+
+          border-radius: 17px;
+
+          cursor: pointer;
+          user-select: none;
+
+          background:
+            linear-gradient(
+              135deg,
+              #fff5f8 0%,
+              #fffafa 55%,
+              #fffdf8 100%
+            );
+
+          border: 1px solid #f7dce4;
+
+          transition:
+            transform .2s ease,
+            box-shadow .2s ease,
+            border-color .2s ease,
+            background .2s ease;
+        }
+
+        .faith-brand:hover {
+          transform: translateY(-1px);
+
+          border-color: #efbdce;
+
+          background:
+            linear-gradient(
+              135deg,
+              #ffedf3,
+              #fff8fa
+            );
+
+          box-shadow:
+            0 7px 18px rgba(231,130,159,.14);
+        }
+
+        .faith-brand:active {
+          transform: translateY(0);
+        }
+
+        /* =====================================================
+           LOGO
+        ===================================================== */
+
+        .faith-brand-logo {
+          width: 42px;
+          height: 42px;
+
+          flex-shrink: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          overflow: hidden;
+
+          border-radius: 15px;
+
+          background: #fff;
+
+          border: 2px solid #fff;
+
+          box-shadow:
+            0 5px 12px rgba(232,113,150,.20);
+        }
+
+        .faith-logo-image {
+          width: 100%;
+          height: 100%;
+
+          display: block;
+
+          object-fit: contain;
+
+          border-radius: 13px;
+        }
+
+        /* =====================================================
+           BRAND TEXT
+        ===================================================== */
+
+        .faith-brand-content {
+          display: flex;
+          flex-direction: column;
+
+          justify-content: center;
+
+          gap: 2px;
+
+          line-height: 1;
+        }
+
+        .faith-brand-name {
+          color: #694455;
+
+          font-size: 18px;
+          font-weight: 800;
+
+          letter-spacing: -.5px;
+        }
+
+        .faith-brand-name span {
+          color: #ef7194;
+        }
+
+        .faith-brand-slogan {
+          color: #b9788d;
+
+          font-size: 9.5px;
+          font-weight: 700;
+
+          letter-spacing: .05px;
+
+          white-space: nowrap;
+        }
+
+        /* =====================================================
+           RIGHT AREA
+        ===================================================== */
+
+        .faith-header-right {
+          display: flex;
+          align-items: center;
+        }
+
+        /* =====================================================
+           HELP BUTTON
+        ===================================================== */
+
+        .faith-help-button {
+          height: 40px;
+
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+
+          gap: 7px;
+
+          padding: 0 14px;
+
+          border-radius: 13px;
+
+          border: 1px solid #ead79e;
+
+          background:
+            linear-gradient(
+              135deg,
+              #fffdf5,
+              #fff8df
+            );
+
+          color: #806414;
+
+          cursor: pointer;
+
+          font-family: inherit;
+
+          box-shadow:
+            0 3px 8px rgba(168,132,35,.07);
+
+          transition:
+            transform .2s ease,
+            box-shadow .2s ease,
+            border-color .2s ease,
+            background .2s ease;
+        }
+
+        .faith-help-button:hover {
+          transform: translateY(-1px);
+
+          border-color: #d8b94e;
+
+          background:
+            linear-gradient(
+              135deg,
+              #fff9df,
+              #fff2c4
+            );
+
+          box-shadow:
+            0 6px 14px rgba(168,132,35,.12);
+        }
+
+        .faith-help-button:active {
+          transform: translateY(0);
+        }
+
+        .faith-help-icon {
+          width: 25px;
+          height: 25px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 8px;
+
+          background: #fff3c4;
+
+          color: #b18b28;
+
+          font-size: 14px;
+        }
+
+        .faith-help-text {
+          color: #765b13;
+
+          font-size: 12px;
+          font-weight: 800;
+
+          white-space: nowrap;
+        }
+
+        /* =====================================================
+           USER
+        ===================================================== */
+
+        .faith-user {
+          display: flex;
+          align-items: center;
+
+          gap: 9px;
+
+          min-width: 0;
+
+          padding: 4px 10px 4px 5px;
+
+          border-radius: 17px;
+
+          border: 1px solid #eadcf6;
+
+          background:
+            linear-gradient(
+              135deg,
+              #fcf8ff,
+              #faf5ff
+            );
+
+          cursor: pointer;
+
+          transition:
+            transform .2s ease,
+            background .2s ease,
+            border-color .2s ease,
+            box-shadow .2s ease;
+        }
+
+        .faith-user:hover {
+          transform: translateY(-1px);
+
+          background:
+            linear-gradient(
+              135deg,
+              #f8efff,
+              #f5ebff
+            );
+
+          border-color: #dcbff4;
+
+          box-shadow:
+            0 5px 14px rgba(168,85,247,.10);
+        }
+
+        /* =====================================================
+           AVATAR
+        ===================================================== */
+
+        .faith-avatar-wrapper {
+          position: relative;
+
+          width: 38px;
+          height: 38px;
+
+          flex-shrink: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          line-height: 0;
+        }
+
+        .faith-avatar {
+          width: 38px !important;
+          height: 38px !important;
+
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+
+          margin: 0 !important;
+          padding: 0 !important;
+
+          vertical-align: middle !important;
+
+          line-height: 1 !important;
+
+          background: #f28caf !important;
+
+          border: 2px solid #fff;
+
+          box-shadow:
+            0 3px 8px rgba(177,88,126,.18);
+        }
+
+        .faith-avatar .anticon {
+          display: flex !important;
+
+          align-items: center;
+          justify-content: center;
+
+          line-height: 1 !important;
+        }
+
+        /* =====================================================
+           ACCOUNT BADGE
+        ===================================================== */
+
+        .faith-account-badge {
+          position: absolute;
+
+          right: -3px;
+          bottom: -2px;
+
+          width: 15px;
+          height: 15px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 50%;
+
+          border: 1.5px solid #fff;
+
+          color: #fff;
+
+          font-size: 7px;
+
+          box-shadow:
+            0 2px 4px rgba(0,0,0,.08);
+        }
+
+        .faith-account-badge.vip {
+          background: #f3a51a;
+        }
+
+        .faith-account-badge.member {
+          background: #94a3b8;
+        }
+
+        /* =====================================================
+           USER INFO
+        ===================================================== */
+
+        .faith-user-info {
+          display: flex;
+          flex-direction: column;
+
+          justify-content: center;
+
+          min-width: 0;
+
+          line-height: 1.15;
+        }
+
+        .faith-user-name {
+          max-width: 125px;
+
+          overflow: hidden;
+
+          text-overflow: ellipsis;
+
+          white-space: nowrap;
+
+          color: #334155;
+
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .faith-user-role {
+          max-width: 135px;
+
+          overflow: hidden;
+
+          text-overflow: ellipsis;
+
+          white-space: nowrap;
+
+          margin-top: 2px;
+
+          color: #9b59c8;
+
+          font-size: 9px;
+          font-weight: 700;
+        }
+
+        .faith-user-arrow {
+          margin-left: 2px;
+
+          color: #a855f7;
+
+          font-size: 9px;
+        }
+
+        /* =====================================================
+           DROPDOWN
+        ===================================================== */
+
+        .faith-dropdown .ant-dropdown-menu {
+          min-width: 245px;
+
+          padding: 8px !important;
+
+          border-radius: 18px !important;
+
+          border: 1px solid #eadcf6 !important;
+
+          box-shadow:
+            0 15px 35px rgba(115,73,140,.13) !important;
+        }
+
+        .faith-dropdown .ant-dropdown-menu-item {
+          border-radius: 11px;
+
+          min-height: 40px;
+
+          font-family:
+            "Quicksand",
+            "Be Vietnam Pro",
+            sans-serif;
+
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .faith-dropdown
+          .ant-dropdown-menu-item:hover {
+          background: #faf5ff !important;
+        }
+
+        .faith-dropdown
+          .ant-dropdown-menu-item
+          .anticon {
+          color: #a855f7;
+        }
+
+        /* =====================================================
+           MENU HEADER
+        ===================================================== */
+
+        .faith-user-menu-header {
+          padding: 5px 6px 8px;
+
+          min-width: 215px;
+        }
+
+        .faith-user-menu-caption {
+          color: #a1a1aa;
+
+          font-size: 9px;
+          font-weight: 800;
+
+          letter-spacing: .7px;
+        }
+
+        .faith-user-menu-name {
+          margin-top: 3px;
+          margin-bottom: 7px;
+
+          color: #1e293b;
+
+          font-size: 15px;
+          font-weight: 800;
+
+          overflow: hidden;
+
+          text-overflow: ellipsis;
+
+          white-space: nowrap;
+        }
+
+        .faith-user-menu-tags {
+          display: flex;
+          align-items: center;
+
+          gap: 5px;
+
+          flex-wrap: wrap;
+        }
+
+        .faith-role-tag {
+          margin: 0 !important;
+
+          border-radius: 8px !important;
+
+          border: 1px solid #eadcf6 !important;
+
+          background: #faf5ff !important;
+
+          color: #9333ea !important;
+
+          font-size: 9px !important;
+
+          font-weight: 800 !important;
+        }
+
+        .faith-account-tag {
+          margin: 0 !important;
+
+          border-radius: 8px !important;
+
+          font-size: 9px !important;
+
+          font-weight: 800 !important;
+        }
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 700px) {
+
+          .faith-header-wrapper {
+            padding: 6px 8px 0;
+          }
+
+          .faith-header {
+            height: 56px !important;
+            min-height: 56px !important;
+
+            padding: 0 7px !important;
+
+            border-radius: 18px;
+          }
+
+          .faith-brand {
+            gap: 0;
+
+            padding: 3px;
+
+            border-radius: 14px;
+          }
+
+          .faith-brand-content {
+            display: none;
+          }
+
+          .faith-brand-logo {
+            width: 38px;
+            height: 38px;
+
+            border-radius: 13px;
+          }
+
+          .faith-help-button {
+            width: 38px;
+            height: 38px;
+
+            padding: 0;
+
+            border-radius: 11px;
+          }
+
+          .faith-help-text {
+            display: none;
+          }
+
+          .faith-help-icon {
+            width: 26px;
+            height: 26px;
+          }
+
+          .faith-user {
+            padding: 3px;
+
+            border-radius: 14px;
+          }
+
+          .faith-user-info,
+          .faith-user-arrow {
+            display: none;
+          }
+
+          .faith-avatar-wrapper,
+          .faith-avatar {
+            width: 38px !important;
+            height: 38px !important;
+          }
+        }
+
+        /* =====================================================
+           VERY SMALL SCREEN
+        ===================================================== */
+
+        @media (max-width: 400px) {
+
+          .faith-header {
+            padding: 0 5px !important;
+          }
+
+          .faith-header-right {
+            gap: 5px !important;
+          }
+
+          .faith-help-button {
+            width: 36px;
+            height: 36px;
+          }
+
+          .faith-user {
+            padding: 2px;
+          }
+
+          .faith-brand-logo {
+            width: 36px;
+            height: 36px;
+          }
+        }
+
+      `}</style>
     </ConfigProvider>
   );
 }
