@@ -57,6 +57,7 @@ import {
 } from "../../api/resultApi";
 
 import studentApi from "../../api/studentApi";
+import classApi from "../../api/classApi";
 
 import AppDetailModal from "../../components/common/AppDetailModal";
 import StatCard from "../../components/common/StatCard";
@@ -99,7 +100,7 @@ const COLORS = {
 // =========================================================
 
 const getStudentName = (record, studentsMap) => {
-  const student = studentsMap.get(record?.student_id);
+  const student = studentsMap.get(Number(record?.student_id));
 
   return (
     record?.student_name ||
@@ -194,33 +195,53 @@ const ScoreDisplay = ({ score, large = false }) => {
 };
 
 // =========================================================
-// MAIN COMPONENT
+// MAIN
 // =========================================================
 
 const ResultsPage = () => {
-  // =========================================================
-  // STATE
-  // =========================================================
+  // =======================================================
+  // LOADING
+  // =======================================================
 
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [teacherClassesLoading, setTeacherClassesLoading] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // =========================================================
+  // =======================================================
   // DATA
-  // =========================================================
+  // =======================================================
 
   const [results, setResults] = useState([]);
   const [students, setStudents] = useState([]);
   const [statistics, setStatistics] = useState(null);
 
-  // =========================================================
+  // =======================================================
+  // TEACHER CLASSES
+  // =======================================================
+
+  const [teacherClasses, setTeacherClasses] = useState([]);
+
+  // =======================================================
+  // FILTER
+  // =======================================================
+
+  const [searchText, setSearchText] = useState("");
+
+  // Không cho mặc định all nếu giáo viên có nhiều lớp.
+  // Ban đầu chưa chọn lớp.
+  const [classId, setClassId] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // =======================================================
   // DETAIL
-  // =========================================================
+  // =======================================================
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -228,39 +249,116 @@ const ResultsPage = () => {
   const [studentResults, setStudentResults] = useState([]);
   const [studentStats, setStudentStats] = useState(null);
 
-  // =========================================================
-  // FILTER
-  // =========================================================
-
-  const [searchText, setSearchText] = useState("");
-  const [classId, setClassId] = useState("all");
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-  // =========================================================
+  // =======================================================
   // FORM
-  // =========================================================
+  // =======================================================
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingResult, setEditingResult] = useState(null);
 
   const [form] = Form.useForm();
 
-  // =========================================================
-  // LOAD RESULTS
-  // =========================================================
+  // =======================================================
+  // LOAD TEACHER CLASSES
+  // =======================================================
 
-  const loadResults = useCallback(async () => {
+  const loadTeacherClasses = useCallback(async () => {
     try {
-      setLoading(true);
+      setTeacherClassesLoading(true);
 
-      const response = await getResults();
+      const response = await classApi.getClassTeacher();
+
       const resData = response?.data || response;
 
       if (resData?.success === false) {
-        message.error(resData?.message || "Không thể lấy bảng điểm");
+        setTeacherClasses([]);
+
+        message.error(
+          resData?.message || "Không thể lấy danh sách lớp giáo viên quản lý",
+        );
+
+        return [];
+      }
+
+      const rawList = Array.isArray(resData?.data)
+        ? resData.data
+        : Array.isArray(resData)
+          ? resData
+          : [];
+
+      const list = rawList
+        .filter((item) => item?.id !== undefined && item?.id !== null)
+        .map((item) => ({
+          ...item,
+          id: Number(item.id),
+          name:
+            item.name || item.class_name || item.className || `Lớp #${item.id}`,
+        }));
+
+      setTeacherClasses(list);
+
+      /*
+       * Nếu đang chọn một lớp nhưng lớp đó không còn
+       * thuộc giáo viên thì reset.
+       */
+      if (
+        classId &&
+        !list.some((item) => String(item.id) === String(classId))
+      ) {
+        setClassId(null);
+      }
+
+      /*
+       * Nếu chỉ có 1 lớp → tự chọn.
+       */
+      if (list.length === 1) {
+        setClassId(String(list[0].id));
+      }
+
+      return list;
+    } catch (error) {
+      console.error("GET TEACHER CLASSES ERROR:", error);
+
+      setTeacherClasses([]);
+
+      message.error(
+        error?.response?.data?.message ||
+          "Không thể lấy danh sách lớp giáo viên quản lý",
+      );
+
+      return [];
+    } finally {
+      setTeacherClassesLoading(false);
+    }
+  }, [classId]);
+
+  // =======================================================
+  // LOAD RESULTS
+  // =======================================================
+
+  const loadResults = useCallback(async (selectedClassId) => {
+    try {
+      setLoading(true);
+
+      /*
+       * Chưa chọn lớp thì không lấy bảng điểm.
+       */
+      if (!selectedClassId) {
         setResults([]);
+        return;
+      }
+
+      const response = await getResults({
+        class_id: selectedClassId,
+      });
+
+      const resData = response?.data || response;
+
+      if (resData?.success === false) {
+        setResults([]);
+
+        message.error(resData?.message || "Không thể lấy bảng điểm");
+
         return;
       }
 
@@ -272,6 +370,8 @@ const ResultsPage = () => {
 
       setResults(data);
     } catch (error) {
+      console.error("GET RESULTS ERROR:", error);
+
       setResults([]);
 
       message.error(
@@ -283,15 +383,31 @@ const ResultsPage = () => {
     }
   }, []);
 
-  // =========================================================
-  // LOAD STUDENTS
-  // =========================================================
+  // =======================================================
+  // LOAD STUDENTS OF SELECTED CLASS
+  // =======================================================
 
-  const loadStudents = useCallback(async () => {
+  const loadStudents = useCallback(async (selectedClassId) => {
     try {
       setStudentsLoading(true);
 
-      const response = await studentApi.getAll();
+      /*
+       * Chưa chọn lớp → không lấy học viên.
+       */
+      if (!selectedClassId) {
+        setStudents([]);
+        return;
+      }
+
+      /*
+       * Nếu studentApi hỗ trợ class_id:
+       *
+       * GET /students?class_id=17
+       */
+      const response = await studentApi.getAll({
+        class_id: selectedClassId,
+      });
+
       const resData = response?.data || response;
 
       let list = [];
@@ -306,23 +422,42 @@ const ResultsPage = () => {
 
       setStudents(list);
     } catch (error) {
+      console.error("GET STUDENTS ERROR:", error);
+
       setStudents([]);
 
-      message.error("Không thể lấy danh sách học viên");
+      message.error(
+        error?.response?.data?.message ||
+          "Không thể lấy danh sách học viên của lớp",
+      );
     } finally {
       setStudentsLoading(false);
     }
   }, []);
 
-  // =========================================================
+  // =======================================================
   // LOAD STATISTICS
-  // =========================================================
+  // =======================================================
 
-  const loadStatistics = useCallback(async () => {
+  const loadStatistics = useCallback(async (selectedClassId) => {
     try {
       setStatsLoading(true);
 
-      const response = await getResultStatistics();
+      /*
+       * Nếu API statistics hỗ trợ class_id
+       * thì truyền class_id.
+       */
+      const response = selectedClassId
+        ? await getResultStatistics({
+            class_id: selectedClassId,
+          })
+        : null;
+
+      if (!response) {
+        setStatistics(null);
+        return;
+      }
+
       const resData = response?.data || response;
 
       if (resData?.success === false) {
@@ -332,64 +467,104 @@ const ResultsPage = () => {
 
       setStatistics(resData?.data || resData || null);
     } catch (error) {
+      console.error("GET RESULT STATISTICS ERROR:", error);
+
       setStatistics(null);
     } finally {
       setStatsLoading(false);
     }
   }, []);
 
-  // =========================================================
-  // REFRESH
-  // =========================================================
+  // =======================================================
+  // LOAD ALL
+  // =======================================================
 
-  const handleRefresh = useCallback(async () => {
-    await Promise.all([loadResults(), loadStudents(), loadStatistics()]);
-  }, [loadResults, loadStudents, loadStatistics]);
+  const loadData = useCallback(
+    async (selectedClassId) => {
+      await Promise.all([
+        loadResults(selectedClassId),
+        loadStudents(selectedClassId),
+        loadStatistics(selectedClassId),
+      ]);
+    },
+    [loadResults, loadStudents, loadStatistics],
+  );
+
+  // =======================================================
+  // INITIAL LOAD
+  // =======================================================
 
   useEffect(() => {
-    handleRefresh();
-  }, [handleRefresh]);
+    loadTeacherClasses();
+  }, [loadTeacherClasses]);
 
-  // =========================================================
+  // =======================================================
+  // LOAD DATA WHEN CLASS CHANGES
+  // =======================================================
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setSearchText("");
+
+    loadData(classId);
+  }, [classId, loadData]);
+
+  // =======================================================
+  // REFRESH
+  // =======================================================
+
+  const handleRefresh = useCallback(async () => {
+    const classes = await loadTeacherClasses();
+
+    /*
+     * Sau khi refresh:
+     * - nếu đang có classId → tải lại lớp đó
+     * - nếu chưa có mà chỉ có 1 lớp → loadData sẽ chạy
+     *   theo effect khi classId thay đổi
+     */
+    if (
+      classId &&
+      classes.some((item) => String(item.id) === String(classId))
+    ) {
+      await loadData(classId);
+    }
+  }, [classId, loadTeacherClasses, loadData]);
+
+  // =======================================================
   // STUDENT MAP
-  // =========================================================
+  // =======================================================
 
   const studentsMap = useMemo(() => {
     const map = new Map();
 
     students.forEach((student) => {
-      map.set(student.id, student);
+      map.set(Number(student.id), student);
     });
 
     return map;
   }, [students]);
 
-  // =========================================================
+  // =======================================================
   // CLASS LIST
-  // =========================================================
+  // =======================================================
 
   const classList = useMemo(() => {
-    const map = new Map();
-
-    results.forEach((item) => {
-      if (item.class_id !== null && item.class_id !== undefined) {
-        const id = item.class_id;
-
-        map.set(id, {
-          id,
-          name: item.class_name || item.className || `Lớp #${item.class_id}`,
-        });
-      }
-    });
-
-    return Array.from(map.values()).sort((a, b) =>
+    return [...teacherClasses].sort((a, b) =>
       String(a.name).localeCompare(String(b.name), "vi"),
     );
-  }, [results]);
+  }, [teacherClasses]);
 
-  // =========================================================
-  // FILTER
-  // =========================================================
+  // =======================================================
+  // SELECTED CLASS
+  // =======================================================
+
+  const selectedClass = useMemo(() => {
+    return classList.find((item) => String(item.id) === String(classId));
+  }, [classList, classId]);
+
+  // =======================================================
+  // FILTER RESULTS
+  // =======================================================
 
   const filteredResults = useMemo(() => {
     let data = [...results];
@@ -398,7 +573,7 @@ const ResultsPage = () => {
       const keyword = searchText.trim().toLowerCase();
 
       data = data.filter((item) => {
-        const student = studentsMap.get(item.student_id);
+        const student = studentsMap.get(Number(item.student_id));
 
         const studentName = getStudentName(item, studentsMap).toLowerCase();
 
@@ -406,13 +581,11 @@ const ResultsPage = () => {
           item.student_id || student?.id || "",
         ).toLowerCase();
 
-        const className = (
-          item.class_name ||
-          item.className ||
-          ""
+        const className = String(
+          item.class_name || item.className || "",
         ).toLowerCase();
 
-        const guardianName = (student?.guardian_name || "").toLowerCase();
+        const guardianName = String(student?.guardian_name || "").toLowerCase();
 
         return (
           studentName.includes(keyword) ||
@@ -423,16 +596,20 @@ const ResultsPage = () => {
       });
     }
 
-    if (classId !== "all") {
+    /*
+     * Thêm lớp filter ở frontend để chắc chắn
+     * bảng đang hiển thị đúng lớp được chọn.
+     */
+    if (classId) {
       data = data.filter((item) => String(item.class_id) === String(classId));
     }
 
     return data;
   }, [results, searchText, classId, studentsMap]);
 
-  // =========================================================
+  // =======================================================
   // PAGINATION
-  // =========================================================
+  // =======================================================
 
   const paginatedResults = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -440,56 +617,69 @@ const ResultsPage = () => {
     return filteredResults.slice(start, start + pageSize);
   }, [filteredResults, currentPage, pageSize]);
 
-  // =========================================================
+  // =======================================================
   // DETAIL
-  // =========================================================
+  // =======================================================
 
-  const fetchStudentDetailsData = useCallback(async (studentId) => {
-    if (!studentId) return;
+  const fetchStudentDetailsData = useCallback(
+    async (studentId) => {
+      if (!studentId) return;
 
-    try {
-      setDetailLoading(true);
+      try {
+        setDetailLoading(true);
 
-      const [resultsResponse, statsResponse] = await Promise.allSettled([
-        getResultsByStudent(studentId),
-        getStudentStatistics(studentId),
-      ]);
+        const [resultsResponse, statsResponse] = await Promise.allSettled([
+          getResultsByStudent(studentId),
+          getStudentStatistics(studentId),
+        ]);
 
-      if (resultsResponse.status === "fulfilled") {
-        const resData = resultsResponse.value?.data || resultsResponse.value;
+        if (resultsResponse.status === "fulfilled") {
+          const resData = resultsResponse.value?.data || resultsResponse.value;
 
-        const list = Array.isArray(resData?.data)
-          ? resData.data
-          : Array.isArray(resData)
-            ? resData
-            : [];
+          const list = Array.isArray(resData?.data)
+            ? resData.data
+            : Array.isArray(resData)
+              ? resData
+              : [];
 
-        setStudentResults(list);
-      } else {
-        setStudentResults([]);
+          /*
+           * Chỉ hiển thị kết quả thuộc lớp
+           * đang được chọn.
+           */
+          const classResults = classId
+            ? list.filter((item) => String(item.class_id) === String(classId))
+            : list;
+
+          setStudentResults(classResults);
+        } else {
+          setStudentResults([]);
+        }
+
+        if (statsResponse.status === "fulfilled") {
+          const resData = statsResponse.value?.data || statsResponse.value;
+
+          setStudentStats(resData?.data || resData || null);
+        } else {
+          setStudentStats(null);
+        }
+      } catch (error) {
+        console.error("GET STUDENT DETAIL ERROR:", error);
+
+        message.error("Không thể lấy chi tiết điểm của học viên");
+      } finally {
+        setDetailLoading(false);
       }
+    },
+    [classId],
+  );
 
-      if (statsResponse.status === "fulfilled") {
-        const resData = statsResponse.value?.data || statsResponse.value;
-
-        setStudentStats(resData?.data || resData || null);
-      } else {
-        setStudentStats(null);
-      }
-    } catch (error) {
-      message.error("Không thể lấy chi tiết điểm của học viên");
-    } finally {
-      setDetailLoading(false);
-    }
-  }, []);
-
-  // =========================================================
+  // =======================================================
   // VIEW DETAIL
-  // =========================================================
+  // =======================================================
 
   const handleViewDetail = useCallback(
     (record) => {
-      const student = studentsMap.get(record.student_id) || {
+      const student = studentsMap.get(Number(record.student_id)) || {
         id: record.student_id,
         name:
           record.student_name ||
@@ -498,6 +688,7 @@ const ResultsPage = () => {
       };
 
       setSelectedStudent(student);
+
       setDetailModalOpen(true);
 
       fetchStudentDetailsData(record.student_id);
@@ -505,11 +696,23 @@ const ResultsPage = () => {
     [studentsMap, fetchStudentDetailsData],
   );
 
-  // =========================================================
+  // =======================================================
   // CREATE
-  // =========================================================
+  // =======================================================
 
   const handleCreate = () => {
+    if (!classId) {
+      message.warning("Vui lòng chọn lớp trước khi nhập điểm");
+
+      return;
+    }
+
+    if (!students.length) {
+      message.warning("Lớp này chưa có học viên");
+
+      return;
+    }
+
     setEditingResult(null);
 
     form.resetFields();
@@ -524,11 +727,20 @@ const ResultsPage = () => {
     setModalOpen(true);
   };
 
-  // =========================================================
+  // =======================================================
   // EDIT
-  // =========================================================
+  // =======================================================
 
   const handleEdit = (record) => {
+    /*
+     * Không cho sửa điểm ngoài lớp hiện tại.
+     */
+    if (classId && String(record.class_id) !== String(classId)) {
+      message.error("Học viên không thuộc lớp đang chọn");
+
+      return;
+    }
+
     setEditingResult(record);
 
     form.setFieldsValue({
@@ -549,35 +761,68 @@ const ResultsPage = () => {
     setModalOpen(true);
   };
 
-  // =========================================================
+  // =======================================================
   // CLOSE FORM
-  // =========================================================
+  // =======================================================
 
   const handleCloseForm = () => {
     if (submitting) return;
 
     setModalOpen(false);
     setEditingResult(null);
+
     form.resetFields();
   };
 
-  // =========================================================
+  // =======================================================
   // SUBMIT
-  // =========================================================
+  // =======================================================
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
 
+      if (!classId) {
+        message.error("Vui lòng chọn lớp");
+
+        return;
+      }
+
+      /*
+       * Kiểm tra học viên có thuộc danh sách
+       * của lớp hiện tại hay không.
+       */
+      const selectedStudentId = Number(values.student_id);
+
+      const validStudent = students.some(
+        (student) => Number(student.id) === selectedStudentId,
+      );
+
+      if (!validStudent) {
+        message.error("Học viên không thuộc lớp đang chọn");
+
+        return;
+      }
+
       setSubmitting(true);
 
       const payload = {
-        student_id: values.student_id,
+        student_id: selectedStudentId,
+
+        /*
+         * Gửi class_id để backend có thể
+         * kiểm tra quyền.
+         */
+        class_id: Number(classId),
+
         score: Number(values.score),
+
         exam_type: values.exam_type || "paper",
+
         exam_date: values.exam_date
           ? values.exam_date.format("YYYY-MM-DD")
           : null,
+
         note: values.note ? values.note.trim() : null,
       };
 
@@ -606,13 +851,17 @@ const ResultsPage = () => {
 
       form.resetFields();
 
-      await Promise.all([loadResults(), loadStatistics()]);
+      await loadData(classId);
 
       if (detailModalOpen && selectedStudent?.id) {
         await fetchStudentDetailsData(selectedStudent.id);
       }
     } catch (error) {
-      if (error?.errorFields) return;
+      if (error?.errorFields) {
+        return;
+      }
+
+      console.error("SAVE RESULT ERROR:", error);
 
       message.error(
         error?.response?.data?.message || "Có lỗi xảy ra khi lưu điểm",
@@ -622,9 +871,9 @@ const ResultsPage = () => {
     }
   };
 
-  // =========================================================
+  // =======================================================
   // DELETE
-  // =========================================================
+  // =======================================================
 
   const handleDelete = async (id) => {
     if (!id) return;
@@ -633,6 +882,7 @@ const ResultsPage = () => {
       setDeletingId(id);
 
       const response = await deleteResult(id);
+
       const resData = response?.data || response;
 
       if (resData?.success === false) {
@@ -643,21 +893,23 @@ const ResultsPage = () => {
 
       message.success("Xóa điểm thành công");
 
-      await Promise.all([loadResults(), loadStatistics()]);
+      await loadData(classId);
 
       if (detailModalOpen && selectedStudent?.id) {
         await fetchStudentDetailsData(selectedStudent.id);
       }
     } catch (error) {
+      console.error("DELETE RESULT ERROR:", error);
+
       message.error(error?.response?.data?.message || "Không thể xóa điểm");
     } finally {
       setDeletingId(null);
     }
   };
 
-  // =========================================================
+  // =======================================================
   // TABLE COLUMNS
-  // =========================================================
+  // =======================================================
 
   const columns = [
     {
@@ -674,7 +926,7 @@ const ResultsPage = () => {
       width: 290,
 
       render: (_, record) => {
-        const student = studentsMap.get(record.student_id);
+        const student = studentsMap.get(Number(record.student_id));
 
         const name = getStudentName(record, studentsMap);
 
@@ -742,29 +994,6 @@ const ResultsPage = () => {
     },
 
     {
-      title: "Lớp",
-      key: "class",
-      width: 170,
-
-      render: (_, record) => (
-        <Tag
-          icon={<TeamOutlined />}
-          bordered={false}
-          style={{
-            margin: 0,
-            padding: "5px 10px",
-            borderRadius: 7,
-            background: COLORS.primaryLight,
-            color: COLORS.primary,
-            fontWeight: 600,
-          }}
-        >
-          {record.class_name || record.className || "Chưa xếp lớp"}
-        </Tag>
-      ),
-    },
-
-    {
       title: "Bài kiểm tra",
       dataIndex: "total_results",
       key: "total_results",
@@ -793,6 +1022,7 @@ const ResultsPage = () => {
 
       render: (score) => {
         const value = Number(score || 0);
+
         const status = getScoreStatus(value);
 
         return (
@@ -912,9 +1142,9 @@ const ResultsPage = () => {
     },
   ];
 
-  // =========================================================
+  // =======================================================
   // DETAIL COLUMNS
-  // =========================================================
+  // =======================================================
 
   const detailColumns = [
     {
@@ -1034,31 +1264,156 @@ const ResultsPage = () => {
     },
   ];
 
-  // =========================================================
+  // =======================================================
   // RENDER
-  // =========================================================
+  // =======================================================
 
   return (
     <div className="results-page">
-      {/* =====================================================
+      {/* ===================================================
           HEADER
-      ====================================================== */}
+      ==================================================== */}
 
       <PageHeroHeader
         icon={<TrophyOutlined />}
         badgeText="🌸 QUẢN LÝ ĐIỂM SỐ"
         title="Bảng điểm học viên"
-        description="Theo dõi và quản lý kết quả học tập của học viên"
+        description={
+          selectedClass
+            ? `Quản lý kết quả học tập — ${selectedClass.name}`
+            : "Chọn lớp để xem bảng điểm học viên"
+        }
         onRefresh={handleRefresh}
-        refreshLoading={loading || studentsLoading || statsLoading}
+        refreshLoading={
+          loading || studentsLoading || statsLoading || teacherClassesLoading
+        }
         primaryButtonText="Nhập điểm"
         primaryButtonIcon={<PlusOutlined />}
         onPrimaryClick={handleCreate}
       />
 
-      {/* =====================================================
+      {/* ===================================================
+          CLASS SELECT
+      ==================================================== */}
+
+      <Card
+        bordered={false}
+        className="results-class-card"
+        bodyStyle={{
+          padding: 18,
+        }}
+      >
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={14} lg={10}>
+            <div>
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  marginBottom: 7,
+                  color: COLORS.text,
+                }}
+              >
+                <TeamOutlined
+                  style={{
+                    marginRight: 7,
+                    color: COLORS.primary,
+                  }}
+                />
+                Lớp đang quản lý
+              </Text>
+
+              <Select
+                value={classId ? String(classId) : undefined}
+                onChange={(value) => {
+                  setClassId(value);
+                  setCurrentPage(1);
+                  setSearchText("");
+                }}
+                loading={teacherClassesLoading}
+                disabled={teacherClassesLoading || classList.length === 0}
+                style={{
+                  width: "100%",
+                  height: 44,
+                }}
+                placeholder={
+                  teacherClassesLoading
+                    ? "Đang tải lớp..."
+                    : "Chọn lớp giáo viên quản lý"
+                }
+                options={classList.map((item) => ({
+                  value: String(item.id),
+                  label: item.name,
+                }))}
+              />
+            </div>
+          </Col>
+
+          <Col xs={24} md={10} lg={14}>
+            <div className="selected-class-info">
+              {selectedClass ? (
+                <>
+                  <div className="selected-class-icon">
+                    <TeamOutlined />
+                  </div>
+
+                  <div>
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+                        fontSize: 11,
+                      }}
+                    >
+                      ĐANG XEM
+                    </Text>
+
+                    <Text
+                      strong
+                      style={{
+                        color: COLORS.text,
+                        fontSize: 15,
+                      }}
+                    >
+                      {selectedClass.name}
+                    </Text>
+                  </div>
+
+                  <Tag
+                    bordered={false}
+                    style={{
+                      marginLeft: "auto",
+                      borderRadius: 7,
+                      background: COLORS.primaryLight,
+                      color: COLORS.primary,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {results.length} học viên có điểm
+                  </Tag>
+                </>
+              ) : (
+                <>
+                  <TeamOutlined
+                    style={{
+                      fontSize: 24,
+                      color: COLORS.textSecondary,
+                    }}
+                  />
+
+                  <Text type="secondary">
+                    Vui lòng chọn một lớp để xem danh sách học viên và bảng điểm
+                  </Text>
+                </>
+              )}
+            </div>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* ===================================================
           KPI
-      ====================================================== */}
+      ==================================================== */}
 
       <Row gutter={[16, 16]} className="results-kpi-row">
         <Col xs={24} sm={12} lg={6}>
@@ -1068,7 +1423,7 @@ const ResultsPage = () => {
             loading={statsLoading}
             icon={<FileTextOutlined />}
             iconColor={primaryNavy}
-            description="Tổng số lượt kiểm tra"
+            description={selectedClass ? selectedClass.name : "Chọn lớp"}
           />
         </Col>
 
@@ -1133,100 +1488,83 @@ const ResultsPage = () => {
         </Col>
       </Row>
 
-      {/* =====================================================
+      {/* ===================================================
           FILTER
-      ====================================================== */}
+      ==================================================== */}
 
-      <Card
-        bordered={false}
-        className="results-filter-card"
-        bodyStyle={{
-          padding: 16,
-        }}
-      >
-        <Row gutter={[12, 12]} align="middle">
-          <Col xs={24} md={11} lg={9}>
-            <Input
-              allowClear
-              prefix={
-                <SearchOutlined
-                  style={{
-                    color: "#94A3B8",
-                  }}
-                />
-              }
-              placeholder="Tìm tên, mã học viên, lớp hoặc phụ huynh..."
-              value={searchText}
-              onChange={(e) => {
-                setSearchText(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{
-                height: 42,
-                borderRadius: 10,
-              }}
-            />
-          </Col>
-
-          <Col xs={24} md={7} lg={5}>
-            <Select
-              value={classId}
-              onChange={(value) => {
-                setClassId(value);
-                setCurrentPage(1);
-              }}
-              className="results-class-select"
-              style={{
-                width: "100%",
-                height: 42,
-              }}
-              placeholder="Chọn lớp"
-              options={[
-                {
-                  value: "all",
-                  label: "Tất cả các lớp",
-                },
-
-                ...classList.map((item) => ({
-                  value: item.id,
-                  label: item.name,
-                })),
-              ]}
-            />
-          </Col>
-
-          <Col xs={24} md={6} lg={10}>
-            <div className="results-found">
-              <TeamOutlined
+      {classId && (
+        <Card
+          bordered={false}
+          className="results-filter-card"
+          bodyStyle={{
+            padding: 16,
+          }}
+        >
+          <Row gutter={[12, 12]} align="middle">
+            <Col xs={24} md={14} lg={12}>
+              <Input
+                allowClear
+                prefix={
+                  <SearchOutlined
+                    style={{
+                      color: "#94A3B8",
+                    }}
+                  />
+                }
+                placeholder="Tìm tên, mã học viên hoặc phụ huynh..."
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  setCurrentPage(1);
+                }}
                 style={{
-                  color: COLORS.textSecondary,
+                  height: 42,
+                  borderRadius: 10,
                 }}
               />
+            </Col>
 
-              <Text
-                style={{
-                  color: COLORS.textSecondary,
-                  fontSize: 13,
-                }}
-              >
-                Tìm thấy{" "}
-                <strong
+            <Col xs={24} md={10} lg={12}>
+              <div className="results-found">
+                <TeamOutlined
                   style={{
-                    color: COLORS.text,
+                    color: COLORS.textSecondary,
+                  }}
+                />
+
+                <Text
+                  style={{
+                    color: COLORS.textSecondary,
+                    fontSize: 13,
                   }}
                 >
-                  {filteredResults.length}
-                </strong>{" "}
-                học viên
-              </Text>
-            </div>
-          </Col>
-        </Row>
-      </Card>
+                  Lớp{" "}
+                  <strong
+                    style={{
+                      color: COLORS.text,
+                    }}
+                  >
+                    {selectedClass?.name}
+                  </strong>{" "}
+                  — tìm thấy{" "}
+                  <strong
+                    style={{
+                      color: COLORS.text,
+                    }}
+                  >
+                    {filteredResults.length}
+                  </strong>{" "}
+                  học viên
+                </Text>
+              </div>
+            </Col>
+          </Row>
+        </Card>
+      )}
 
-      {/* =====================================================
+      {/* ===================================================
           MAIN TABLE
-      ====================================================== */}
+      ==================================================== */}
 
       <Card
         bordered={false}
@@ -1235,8 +1573,6 @@ const ResultsPage = () => {
           padding: 0,
         }}
       >
-        {/* TABLE HEADER */}
-
         <div className="results-table-header">
           <div className="results-table-title">
             <Text
@@ -1246,7 +1582,9 @@ const ResultsPage = () => {
                 color: COLORS.text,
               }}
             >
-              Danh sách kết quả
+              {selectedClass
+                ? `Danh sách kết quả — ${selectedClass.name}`
+                : "Danh sách kết quả"}
             </Text>
 
             <Text
@@ -1257,7 +1595,9 @@ const ResultsPage = () => {
                 fontSize: 12,
               }}
             >
-              Tổng hợp điểm theo từng học viên
+              {selectedClass
+                ? "Chỉ hiển thị học viên thuộc lớp bạn đang quản lý"
+                : "Chọn lớp để xem bảng điểm"}
             </Text>
           </div>
 
@@ -1275,9 +1615,14 @@ const ResultsPage = () => {
           </Tag>
         </div>
 
-        {/* LOADING */}
-
-        {loading ? (
+        {!classId ? (
+          <div className="results-empty">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="Vui lòng chọn lớp giáo viên đang quản lý"
+            />
+          </div>
+        ) : loading ? (
           <div className="results-loading">
             <Skeleton
               active
@@ -1287,25 +1632,23 @@ const ResultsPage = () => {
             />
           </div>
         ) : filteredResults.length === 0 ? (
-          /* EMPTY */
           <div className="results-empty">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               description={
-                searchText || classId !== "all"
+                searchText
                   ? "Không tìm thấy học viên phù hợp"
-                  : "Chưa có dữ liệu bảng điểm"
+                  : "Lớp chưa có dữ liệu bảng điểm"
               }
             >
-              {(searchText || classId !== "all") && (
+              {searchText && (
                 <Button
                   onClick={() => {
                     setSearchText("");
-                    setClassId("all");
                     setCurrentPage(1);
                   }}
                 >
-                  Xóa bộ lọc
+                  Xóa tìm kiếm
                 </Button>
               )}
             </Empty>
@@ -1330,8 +1673,6 @@ const ResultsPage = () => {
                 margin: 0,
               }}
             />
-
-            {/* PAGINATION */}
 
             <div className="results-pagination">
               <Text type="secondary" className="results-pagination-text">
@@ -1360,9 +1701,9 @@ const ResultsPage = () => {
         )}
       </Card>
 
-      {/* =====================================================
+      {/* ===================================================
           DETAIL MODAL
-      ====================================================== */}
+      ==================================================== */}
 
       <AppDetailModal
         open={detailModalOpen}
@@ -1374,7 +1715,7 @@ const ResultsPage = () => {
         subtitle={`Mã học viên: #${selectedStudent?.id || ""}`}
         onCancel={() => setDetailModalOpen(false)}
         showEdit={false}
-        showClose={true}
+        showClose
         closeText="Đóng"
       >
         {detailLoading ? (
@@ -1386,8 +1727,6 @@ const ResultsPage = () => {
           />
         ) : (
           <>
-            {/* DETAIL STATS */}
-
             <Row
               gutter={[12, 12]}
               style={{
@@ -1499,8 +1838,6 @@ const ResultsPage = () => {
               </Col>
             </Row>
 
-            {/* DETAIL TITLE */}
-
             <div className="detail-table-title">
               <div>
                 <Text
@@ -1520,7 +1857,9 @@ const ResultsPage = () => {
                     marginTop: 2,
                   }}
                 >
-                  Chi tiết các bài kiểm tra của học viên
+                  {selectedClass
+                    ? `Kết quả của ${selectedClass.name}`
+                    : "Chi tiết các bài kiểm tra"}
                 </Text>
               </div>
 
@@ -1533,8 +1872,6 @@ const ResultsPage = () => {
               />
             </div>
 
-            {/* DETAIL TABLE */}
-
             <div className="detail-table-wrapper">
               <Table
                 rowKey="id"
@@ -1546,7 +1883,7 @@ const ResultsPage = () => {
                   x: 700,
                 }}
                 locale={{
-                  emptyText: "Học viên chưa có điểm kiểm tra",
+                  emptyText: "Học viên chưa có điểm kiểm tra trong lớp này",
                 }}
               />
             </div>
@@ -1554,9 +1891,9 @@ const ResultsPage = () => {
         )}
       </AppDetailModal>
 
-      {/* =====================================================
-          CREATE / EDIT MODAL
-      ====================================================== */}
+      {/* ===================================================
+          CREATE / EDIT
+      ==================================================== */}
 
       <AppFormModal
         open={modalOpen}
@@ -1569,7 +1906,7 @@ const ResultsPage = () => {
         subtitle={
           editingResult
             ? `Chỉnh sửa kết quả #${editingResult.id}`
-            : "Thêm kết quả kiểm tra mới cho học viên"
+            : `Thêm kết quả — ${selectedClass?.name || ""}`
         }
         icon={<FormOutlined />}
         createText="Thêm điểm"
@@ -1586,16 +1923,12 @@ const ResultsPage = () => {
         />
       </AppFormModal>
 
-      {/* =====================================================
-          RESPONSIVE CSS
-      ====================================================== */}
+      {/* ===================================================
+          CSS
+      ==================================================== */}
 
       <style>
         {`
-          /* ==========================================
-             PAGE
-          ========================================== */
-
           .results-page {
             min-height: 100vh;
             padding: clamp(14px, 3vw, 28px)
@@ -1605,13 +1938,40 @@ const ResultsPage = () => {
             box-sizing: border-box;
           }
 
+          .results-class-card {
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow:
+              0 2px 10px rgba(15, 23, 42, 0.04);
+          }
+
           .results-kpi-row {
             margin-bottom: 24px;
           }
 
-          /* ==========================================
-             FILTER
-          ========================================== */
+          .selected-class-info {
+            min-height: 72px;
+            padding: 12px 15px;
+            border-radius: 12px;
+            background: #F8FAFC;
+            border: 1px solid ${COLORS.border};
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .selected-class-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            background: ${COLORS.primaryLight};
+            color: ${COLORS.primary};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 19px;
+          }
 
           .results-filter-card {
             border-radius: 16px;
@@ -1627,10 +1987,6 @@ const ResultsPage = () => {
             gap: 8px;
             min-height: 42px;
           }
-
-          /* ==========================================
-             MAIN CARD
-          ========================================== */
 
           .results-main-card {
             border-radius: 18px;
@@ -1666,10 +2022,6 @@ const ResultsPage = () => {
             overflow: hidden;
           }
 
-          /* ==========================================
-             STUDENT
-          ========================================== */
-
           .result-student-cell {
             display: flex;
             align-items: center;
@@ -1700,10 +2052,6 @@ const ResultsPage = () => {
             margin-top: 3px;
           }
 
-          /* ==========================================
-             RESULT COUNT
-          ========================================== */
-
           .result-count-cell {
             display: inline-flex;
             align-items: center;
@@ -1721,10 +2069,6 @@ const ResultsPage = () => {
             color: ${COLORS.primary};
           }
 
-          /* ==========================================
-             SCORE
-          ========================================== */
-
           .result-score-progress {
             min-width: 150px;
           }
@@ -1735,10 +2079,6 @@ const ResultsPage = () => {
             justify-content: space-between;
             margin-bottom: 4px;
           }
-
-          /* ==========================================
-             PAGINATION
-          ========================================== */
 
           .results-pagination {
             padding: 15px 22px;
@@ -1752,10 +2092,6 @@ const ResultsPage = () => {
           .results-pagination-text {
             font-size: 12px;
           }
-
-          /* ==========================================
-             DETAIL
-          ========================================== */
 
           .detail-stat-card {
             padding: 18px;
@@ -1787,10 +2123,6 @@ const ResultsPage = () => {
             width: 100%;
             overflow: hidden;
           }
-
-          /* ==========================================
-             ANT DESIGN
-          ========================================== */
 
           .result-table-row:hover > td {
             background: #F8FAFC !important;
@@ -1839,10 +2171,6 @@ const ResultsPage = () => {
             margin-bottom: 16px !important;
           }
 
-          /* ==========================================
-             TABLET
-          ========================================== */
-
           @media (max-width: 992px) {
             .results-page {
               padding-left: 20px;
@@ -1852,11 +2180,11 @@ const ResultsPage = () => {
             .results-found {
               justify-content: flex-start;
             }
-          }
 
-          /* ==========================================
-             MOBILE
-          ========================================== */
+            .selected-class-info {
+              min-height: auto;
+            }
+          }
 
           @media (max-width: 768px) {
             .results-page {
@@ -1865,6 +2193,10 @@ const ResultsPage = () => {
 
             .results-kpi-row {
               margin-bottom: 16px;
+            }
+
+            .results-class-card {
+              border-radius: 14px;
             }
 
             .results-filter-card {
@@ -1898,8 +2230,7 @@ const ResultsPage = () => {
               align-items: flex-start;
             }
 
-            .results-pagination
-              .ant-pagination {
+            .results-pagination .ant-pagination {
               width: 100%;
               display: flex;
               flex-wrap: wrap;
@@ -1941,21 +2272,20 @@ const ResultsPage = () => {
             }
           }
 
-          /* ==========================================
-             SMALL MOBILE
-          ========================================== */
-
           @media (max-width: 480px) {
             .results-page {
               padding: 10px 8px 20px;
+            }
+
+            .results-class-card .ant-card-body {
+              padding: 12px !important;
             }
 
             .results-filter-card {
               margin-bottom: 12px;
             }
 
-            .results-filter-card
-              .ant-card-body {
+            .results-filter-card .ant-card-body {
               padding: 12px !important;
             }
 
@@ -1966,8 +2296,7 @@ const ResultsPage = () => {
               gap: 10px;
             }
 
-            .results-table-header
-              .ant-tag {
+            .results-table-header .ant-tag {
               align-self: flex-start;
             }
 
@@ -1984,14 +2313,16 @@ const ResultsPage = () => {
               width: 100%;
             }
 
-            .results-pagination
-              .ant-pagination {
+            .results-pagination .ant-pagination {
               width: 100%;
             }
 
-            .results-pagination
-              .ant-pagination-options {
+            .results-pagination .ant-pagination-options {
               margin-inline-start: 0;
+            }
+
+            .selected-class-info {
+              padding: 11px;
             }
 
             .detail-stat-card {
@@ -2017,10 +2348,6 @@ const ResultsPage = () => {
             }
           }
 
-          /* ==========================================
-             VERY SMALL MOBILE
-          ========================================== */
-
           @media (max-width: 360px) {
             .results-page {
               padding-left: 6px;
@@ -2044,10 +2371,6 @@ const ResultsPage = () => {
               display: none;
             }
           }
-
-          /* ==========================================
-             REDUCE MOTION
-          ========================================== */
 
           @media (prefers-reduced-motion: reduce) {
             * {

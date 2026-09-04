@@ -5,7 +5,7 @@ const classApi = {
     const res = await axios.get("/classes");
     return res.data;
   },
-  getClassTeacher: async (id) => {
+  getClassTeacher: async () => {
     const res = await axios.get(`/classes/teacher-class`);
     return res.data;
   },
