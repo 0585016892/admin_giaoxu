@@ -450,12 +450,18 @@ export default function StudentManagement() {
       const { silent = false } = options;
 
       try {
+        // =====================================================
+        // LOADING
+        // =====================================================
         if (silent) {
           setRefreshing(true);
         } else {
           setLoading(true);
         }
 
+        // =====================================================
+        // CHỈ 2 REQUEST
+        // =====================================================
         const [studentRes, classRes] = await Promise.all([
           studentApi.getAll(),
           classApi.getAll(),
@@ -465,58 +471,74 @@ export default function StudentManagement() {
           return;
         }
 
+        // =====================================================
+        // DATA
+        // =====================================================
         const studentData = getResponseData(studentRes, ["students"]);
 
         const classData = getResponseData(classRes, ["classes"]);
 
+        // =====================================================
+        // FORMAT CLASSES
+        // =====================================================
         const formattedClasses = Array.isArray(classData)
           ? classData.map((item) => ({
               id: item.id,
               name: item.name || item.className || `Lớp #${item.id}`,
+              code: item.code || null,
             }))
           : [];
 
         setClasses(formattedClasses);
 
+        // =====================================================
+        // KHÔNG CÓ HỌC SINH
+        // =====================================================
         if (!Array.isArray(studentData)) {
           setStudents([]);
+          setSelectedRowKeys([]);
           return;
         }
 
-        const formattedStudents = await Promise.all(
-          studentData.map(async (student) => {
-            let relation = null;
+        // =====================================================
+        // FORMAT STUDENTS
+        //
+        // KHÔNG GỌI:
+        // classStudentApi.getByStudent()
+        //
+        // Vì /students đã trả:
+        // class_id
+        // class_name
+        // class_code
+        // class_student_status
+        // joined_at
+        // =====================================================
+        const formattedStudents = studentData.map((student) => {
+          const relation = {
+            class_id: student.class_id,
+            class_name: student.class_name,
+            class_code: student.class_code,
+            status: student.class_student_status,
+            joined_at: student.joined_at,
+          };
 
-            try {
-              const relationRes = await classStudentApi.getByStudent(
-                student.id,
-              );
+          return formatStudent(student, relation, formattedClasses);
+        });
 
-              const relationData = getResponseData(relationRes);
-
-              if (Array.isArray(relationData)) {
-                relation =
-                  relationData.find((item) => item.status === "studying") ||
-                  relationData[0] ||
-                  null;
-              } else if (relationData) {
-                relation = relationData;
-              }
-            } catch {
-              relation = null;
-            }
-
-            return formatStudent(student, relation, formattedClasses);
-          }),
-        );
-
+        // =====================================================
+        // SET DATA
+        // =====================================================
         if (!mountedRef.current) {
           return;
         }
 
         setStudents(formattedStudents);
+
+        // Reset checkbox
         setSelectedRowKeys([]);
       } catch (error) {
+        console.error("GET STUDENTS ERROR:", error);
+
         if (mountedRef.current) {
           message.error(
             error?.response?.data?.message ||
@@ -1259,6 +1281,14 @@ export default function StudentManagement() {
       },
 
       {
+        title: "Ngày sinh",
+        dataIndex: "date_of_birth",
+        width: 120,
+
+        render: (value) => formatDate(value),
+      },
+
+      {
         title: "Lớp",
         key: "class",
 
@@ -1283,21 +1313,6 @@ export default function StudentManagement() {
               Chưa xếp lớp
             </Text>
           ),
-      },
-
-      {
-        title: "Ngày sinh",
-        dataIndex: "date_of_birth",
-        width: 120,
-
-        render: (value) => formatDate(value),
-      },
-
-      {
-        title: "Giáo lý",
-        dataIndex: "catechism_status",
-
-        render: (value) => renderCatechismStatus(value),
       },
 
       {

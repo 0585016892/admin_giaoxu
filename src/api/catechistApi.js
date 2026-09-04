@@ -30,6 +30,10 @@ const catechistApi = {
   assignClass: (data) => {
     return axiosClient.post("/catechist/assign-class", data);
   },
+  removeClass: (data) =>
+    axiosClient.delete("/catechist/remove-class", {
+      data,
+    }),
 };
 
 export default catechistApi;

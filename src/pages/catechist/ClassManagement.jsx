@@ -50,6 +50,7 @@ import dayjs from "dayjs";
 import classApi from "../../api/classApi";
 import { useUser } from "../../context/UserContext";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
+import catechistApi from "../../api/catechistApi";
 const { Text } = Typography;
 
 /* =========================================================
@@ -252,7 +253,7 @@ const ClassCardSkeleton = () => {
    CATECHIST ITEM CHIBI
 ========================================================= */
 
-const CatechistItem = ({ catechist, index }) => {
+const CatechistItem = ({ catechist, index, classId, onRemove, removing }) => {
   return (
     <div
       style={{
@@ -282,7 +283,7 @@ const CatechistItem = ({ catechist, index }) => {
 
         <Col flex="auto">
           <Row justify="space-between" align="middle" gutter={[8, 8]}>
-            <Col>
+            <Col flex="auto">
               <Text
                 strong
                 style={{
@@ -319,41 +320,112 @@ const CatechistItem = ({ catechist, index }) => {
 
           <Space wrap size={[10, 4]} style={{ marginTop: 4 }}>
             {catechist.catechist_code && (
-              <Text style={{ fontSize: 11, color: "#94A3B8", fontWeight: 700 }}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: "#94A3B8",
+                  fontWeight: 700,
+                }}
+              >
                 <IdcardOutlined style={{ color: "#FF6B8B" }} />{" "}
                 {catechist.catechist_code}
               </Text>
             )}
 
             {catechist.level && (
-              <Text style={{ fontSize: 11, color: "#94A3B8", fontWeight: 700 }}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: "#94A3B8",
+                  fontWeight: 700,
+                }}
+              >
                 • Cấp: {catechist.level}
               </Text>
             )}
           </Space>
         </Col>
+
+        {/* NÚT XÓA */}
+        <Col>
+          <Button
+            danger
+            type="text"
+            size="small"
+            icon={<DeleteOutlined />}
+            loading={removing}
+            disabled={removing}
+            onClick={() => onRemove(catechist)}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          />
+        </Col>
       </Row>
 
-      <Divider style={{ margin: "12px 0", borderColor: "#FFE4E6" }} />
+      <Divider
+        style={{
+          margin: "12px 0",
+          borderColor: "#FFE4E6",
+        }}
+      />
 
       <Row gutter={[10, 8]}>
         <Col xs={24} sm={12}>
-          <Text style={{ fontSize: 11, color: "#64748B", fontWeight: 600 }}>
-            <PhoneOutlined style={{ marginRight: 6, color: "#FF6B8B" }} />
+          <Text
+            style={{
+              fontSize: 11,
+              color: "#64748B",
+              fontWeight: 600,
+            }}
+          >
+            <PhoneOutlined
+              style={{
+                marginRight: 6,
+                color: "#FF6B8B",
+              }}
+            />
             {catechist.phone || "Chưa cập nhật"}
           </Text>
         </Col>
 
         <Col xs={24} sm={12}>
-          <Text style={{ fontSize: 11, color: "#64748B", fontWeight: 600 }}>
-            <MailOutlined style={{ marginRight: 6, color: "#FF6B8B" }} />
+          <Text
+            style={{
+              fontSize: 11,
+              color: "#64748B",
+              fontWeight: 600,
+            }}
+          >
+            <MailOutlined
+              style={{
+                marginRight: 6,
+                color: "#FF6B8B",
+              }}
+            />
             {catechist.email || "Chưa cập nhật"}
           </Text>
         </Col>
 
         <Col span={24}>
-          <Text style={{ fontSize: 11, color: "#64748B", fontWeight: 600 }}>
-            <CalendarOutlined style={{ marginRight: 6, color: "#FFC048" }} />
+          <Text
+            style={{
+              fontSize: 11,
+              color: "#64748B",
+              fontWeight: 600,
+            }}
+          >
+            <CalendarOutlined
+              style={{
+                marginRight: 6,
+                color: "#FFC048",
+              }}
+            />
             Ngày phân công: {formatDate(catechist.assigned_date)}
           </Text>
         </Col>
@@ -449,6 +521,7 @@ const ClassManagement = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [classDetail, setClassDetail] = useState(null);
+  const [removingCatechistId, setRemovingCatechistId] = useState(null);
 
   const [form] = Form.useForm();
 
@@ -734,6 +807,123 @@ const ClassManagement = () => {
       setDetailLoading(false);
     }
   }, []);
+  const handleRemoveCatechist = useCallback(
+    (catechist) => {
+      const classId = classDetail?.id;
+
+      const catechistId = catechist?.catechist_id ?? catechist?.id;
+
+      if (!classId) {
+        message.error("Không xác định được lớp học");
+        return;
+      }
+
+      if (!catechistId) {
+        message.error("Không xác định được giáo lý viên");
+        return;
+      }
+
+      Modal.confirm({
+        title: "🌸 Xóa giáo lý viên khỏi lớp",
+
+        icon: (
+          <DeleteOutlined
+            style={{
+              color: "#FF6B8B",
+            }}
+          />
+        ),
+
+        content: (
+          <div style={{ marginTop: 10 }}>
+            <Text>
+              Bạn có chắc muốn xóa{" "}
+              <strong>
+                {catechist.holy_name ? `${catechist.holy_name} ` : ""}
+                {catechist.full_name}
+              </strong>{" "}
+              khỏi lớp <strong>{classDetail.name}</strong>?
+            </Text>
+
+            <div
+              style={{
+                marginTop: 12,
+                padding: 12,
+                borderRadius: 14,
+                background: "#FFF5F7",
+                border: "1px solid #FFE4E6",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#D97706",
+                }}
+              >
+                ⚠️ Giáo lý viên sẽ không còn được phân công phụ trách lớp này.
+              </Text>
+            </div>
+          </div>
+        ),
+
+        okText: "Xóa khỏi lớp",
+        cancelText: "Hủy",
+
+        okButtonProps: {
+          danger: true,
+          style: {
+            borderRadius: 12,
+            fontWeight: 700,
+          },
+        },
+
+        cancelButtonProps: {
+          style: {
+            borderRadius: 12,
+          },
+        },
+
+        onOk: async () => {
+          try {
+            setRemovingCatechistId(catechistId);
+
+            console.log("🚀 REMOVE API:", {
+              catechist_id: Number(catechistId),
+              class_id: Number(classId),
+            });
+
+            // 1. Xóa GLV khỏi lớp
+            await catechistApi.removeClass({
+              catechist_id: Number(catechistId),
+              class_id: Number(classId),
+            });
+
+            message.success(`✨ Đã xóa ${catechist.full_name} khỏi lớp`);
+
+            // 2. Reload chi tiết lớp
+            const response = await classApi.getById(classId);
+
+            setClassDetail(normalizeObjectResponse(response));
+
+            // 3. Reload danh sách lớp
+            await fetchClasses();
+          } catch (error) {
+            console.error("❌ REMOVE CATECHIST FROM CLASS ERROR:", error);
+
+            message.error(
+              error?.response?.data?.message ||
+                "Không thể xóa giáo lý viên khỏi lớp",
+            );
+          } finally {
+            setRemovingCatechistId(null);
+          }
+        },
+      });
+    },
+
+    // ⭐ CHỈ GIỮ CÁC DEPENDENCY THỰC SỰ
+    [classDetail, fetchClasses],
+  );
 
   /* =====================================================
      RENDER
@@ -1099,7 +1289,14 @@ const ClassManagement = () => {
 
             {classDetail.catechists?.length > 0 ? (
               classDetail.catechists.map((c, idx) => (
-                <CatechistItem key={c.id || idx} catechist={c} index={idx} />
+                <CatechistItem
+                  key={c.id || idx}
+                  catechist={c}
+                  index={idx}
+                  classId={classDetail.id}
+                  onRemove={handleRemoveCatechist}
+                  removing={removingCatechistId === c.id}
+                />
               ))
             ) : (
               <div
