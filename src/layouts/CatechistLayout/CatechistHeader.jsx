@@ -99,7 +99,7 @@ export default function AdminHeader() {
       return avatar;
     }
 
-    const normalized = avatar.startsWith("/") ? avatar : `/${avatar}`;
+    const normalized = avatar.startsWith("/catechist") ? avatar : `/${avatar}`;
 
     return `${API_URL}${normalized}`;
   }, [user?.avatar]);
@@ -193,7 +193,7 @@ export default function AdminHeader() {
         logout();
       }
     } finally {
-      navigate("/login");
+      navigate("/");
     }
   };
 
@@ -272,7 +272,7 @@ export default function AdminHeader() {
   const handleMenuClick = ({ key }) => {
     switch (key) {
       case "home":
-        navigate("/");
+        navigate("/catechist");
         break;
 
       case "profile":
@@ -314,13 +314,13 @@ export default function AdminHeader() {
 
           <div
             className="faith-brand"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/catechist")}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                navigate("/");
+                navigate("/catechist");
               }
             }}
           >

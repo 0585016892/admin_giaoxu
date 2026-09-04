@@ -57,7 +57,7 @@ export default function AdminSidebar({ collapsed }) {
       type: "group",
       children: [
         {
-          key: "/",
+          key: "/giao-xu",
           icon: <DashboardOutlined />,
           label: "Bảng điều khiển",
         },
@@ -333,7 +333,7 @@ export default function AdminSidebar({ collapsed }) {
               )
             }
             onClick={(e) => {
-              if (e.key === "go-home") window.open("/", "_blank");
+              if (e.key === "go-home") window.open("/giao-xu", "_blank");
               else navigate(e.key);
             }}
             items={menuItems}

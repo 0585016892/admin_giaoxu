@@ -97,7 +97,6 @@ export default function Login() {
   /* =========================================================
      LOGIN
   ========================================================= */
-
   const onFinish = async (values) => {
     setLoading(true);
 
@@ -107,50 +106,55 @@ export default function Login() {
         password: values.password,
       });
 
+      // ========================================================
+      // KIỂM TRA TOKEN
+      // ========================================================
+
       if (!res.data?.token) {
         message.error("Đăng nhập thất bại: Server không trả token");
-        setLoading(false);
         return;
       }
 
-      /* ==============================
-         REMEMBER ME
-      ============================== */
+      // ========================================================
+      // REMEMBER ME
+      // ========================================================
 
       if (values.remember) {
         localStorage.setItem(
           "remember_me",
           JSON.stringify({
             email: values.email,
-            password: values.password,
           }),
         );
       } else {
         localStorage.removeItem("remember_me");
       }
 
-      /* ==============================
-         LOGIN CONTEXT
-      ============================== */
+      // ========================================================
+      // LOGIN CONTEXT
+      // ========================================================
 
       try {
-        login(res.data.token);
+        await login(res.data.token);
       } catch (loginError) {
-        console.error(loginError);
+        console.error("Lỗi lưu phiên đăng nhập:", loginError);
 
         message.error("Không thể lưu phiên đăng nhập");
-        setLoading(false);
+
         return;
       }
 
-      /* ==============================
-         SUCCESS
-      ============================== */
+      // ========================================================
+      // SUCCESS
+      // ========================================================
 
       message.success("Chào mừng Huynh Trưởng / GLV trở lại!");
 
+      // Đợi Context cập nhật user rồi chuyển trang
       setTimeout(() => {
-        navigate("/");
+        navigate("/catechist", {
+          replace: true,
+        });
       }, 800);
     } catch (error) {
       const msg =
@@ -159,7 +163,7 @@ export default function Login() {
         "Đăng nhập thất bại!";
 
       message.error(msg);
-
+    } finally {
       setLoading(false);
     }
   };

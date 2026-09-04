@@ -81,16 +81,11 @@ export default function AppRoutes() {
           PUBLIC ROUTES
       ====================================================== */}
 
-      {/* ------------------------------------------------------
-          Đăng nhập hệ thống Giáo xứ
-          ------------------------------------------------------ */}
+      {/* Đăng nhập hệ thống Giáo xứ */}
       <Route path="/giao-xu/login" element={<Login />} />
 
-      {/* ------------------------------------------------------
-          Đăng nhập hệ thống Giáo lý đa giáo xứ
-          ------------------------------------------------------ */}
+      {/* Đăng nhập hệ thống Giáo lý */}
       <Route path="/" element={<CatechistLogin />} />
-
       {/* ------------------------------------------------------
           Xác thực chứng chỉ - Public
           ------------------------------------------------------ */}
@@ -100,13 +95,13 @@ export default function AppRoutes() {
           PARISH ADMIN SYSTEM
       ====================================================== */}
 
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute loginPath="/giao-xu/login" />}>
         <Route element={<RoleGuard allowedRoles={PARISH_ADMIN_ROLES} />}>
           <Route element={<AdminLayout />}>
             {/* --------------------------------------------------
                 Dashboard
                 -------------------------------------------------- */}
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/giao-xu" element={<Dashboard />} />
 
             {/* --------------------------------------------------
                 Prayer
@@ -216,7 +211,7 @@ export default function AppRoutes() {
           CATECHIST / GIÁO LÝ SYSTEM
       ====================================================== */}
 
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute loginPath="/" />}>
         <Route element={<RoleGuard allowedRoles={CATECHIST_ROLES} />}>
           <Route element={<CatechistLayout />}>
             {/* --------------------------------------------------

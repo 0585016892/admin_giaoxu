@@ -146,7 +146,7 @@ export function UserProvider({ children }) {
     setUser(null);
 
     if (currentRole === "catechist" || currentRole === "teacher") {
-      window.location.replace("/login");
+      window.location.replace("/");
       return;
     }
 

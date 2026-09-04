@@ -73,7 +73,7 @@ export default function Login() {
         message.success("Bản khai hợp lệ! Xin chào Quản trị viên.");
 
         // Delay nhẹ cho người dùng cảm nhận được phản hồi
-        setTimeout(() => navigate("/"), 800);
+        setTimeout(() => navigate("/giao-xu"), 800);
       }
     } catch (error) {
       const msg = error?.response?.data?.message || "Đăng nhập thất bại!";
