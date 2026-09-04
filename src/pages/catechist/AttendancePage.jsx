@@ -1114,7 +1114,6 @@ const AttendancePage = () => {
               }}
               size="large"
               showSearch
-              disabled={role === "teacher"}
               optionFilterProp="label"
               options={classes.map((item) => ({
                 value: Number(item.id || item.class_id),

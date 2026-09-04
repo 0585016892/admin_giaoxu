@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+
 import {
   Row,
   Col,
@@ -37,22 +38,41 @@ const { Title, Text } = Typography;
 const normalizeListResponse = (response) => {
   const data = response?.data;
 
-  if (Array.isArray(data)) {
-    return data;
-  }
-
+  /*
+   * Trường hợp API:
+   * {
+   *   success: true,
+   *   data: [...]
+   * }
+   */
   if (Array.isArray(data?.data)) {
     return data.data;
   }
 
+  /*
+   * Trường hợp API trả trực tiếp:
+   * [...]
+   */
+  if (Array.isArray(data)) {
+    return data;
+  }
+
   return [];
 };
+
+/* =========================================================
+   FORMAT TIME
+========================================================= */
 
 const formatTime = (time) => {
   if (!time) return "—";
 
   return String(time).slice(0, 5);
 };
+
+/* =========================================================
+   DAY NAME
+========================================================= */
 
 const getDayName = (day) => {
   const days = {
@@ -74,8 +94,16 @@ const getDayName = (day) => {
     sunday: "Chúa Nhật",
   };
 
+  if (day === null || day === undefined || day === "") {
+    return "Chưa cập nhật";
+  }
+
   return days[day] || day || "Chưa cập nhật";
 };
+
+/* =========================================================
+   STATUS CONFIG
+========================================================= */
 
 const getStatusConfig = (status) => {
   const configs = {
@@ -214,18 +242,345 @@ const InfoItem = ({ icon, label, value }) => {
 };
 
 /* =========================================================
+   CLASS CARD
+========================================================= */
+
+const ClassCard = ({ classData }) => {
+  return (
+    <Card
+      bordered={false}
+      style={{
+        marginBottom: 20,
+        borderRadius: "clamp(18px, 4vw, 24px)",
+        overflow: "hidden",
+        background: "#FFFFFF",
+        border: "2px solid #FFE4E6",
+        boxShadow: "0 10px 25px rgba(255, 182, 193, 0.15)",
+      }}
+      styles={{
+        body: {
+          padding: "clamp(16px, 4vw, 28px)",
+        },
+      }}
+    >
+      {/* =====================================================
+          CLASS HEADER
+      ===================================================== */}
+
+      <Row
+        align="middle"
+        gutter={[12, 14]}
+        style={{
+          marginBottom: 20,
+        }}
+      >
+        {/* ===================================================
+            CLASS NAME
+        =================================================== */}
+
+        <Col xs={24} sm={17} md={18}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              minWidth: 0,
+            }}
+          >
+            {/* ICON */}
+
+            <div
+              style={{
+                width: "clamp(44px, 12vw, 52px)",
+                height: "clamp(44px, 12vw, 52px)",
+                minWidth: "clamp(44px, 12vw, 52px)",
+                borderRadius: 15,
+                background: "#FFF5F7",
+                color: "#FF6B8B",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "clamp(20px, 5vw, 24px)",
+                border: "1.5px solid #FFD1D9",
+                flexShrink: 0,
+              }}
+            >
+              <BookOutlined />
+            </div>
+
+            {/* NAME */}
+
+            <div
+              style={{
+                minWidth: 0,
+                flex: 1,
+              }}
+            >
+              <Title
+                level={3}
+                style={{
+                  margin: 0,
+                  color: "#334155",
+                  fontWeight: 800,
+                  fontSize: "clamp(18px, 5vw, 26px)",
+                  lineHeight: 1.25,
+                  wordBreak: "break-word",
+                }}
+              >
+                {classData?.name || "Chưa có tên lớp"}
+              </Title>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginTop: 6,
+                }}
+              >
+                <Tag
+                  color="gold"
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 800,
+                    margin: 0,
+                  }}
+                >
+                  ✨ {classData?.code || "—"}
+                </Tag>
+
+                {classData?.category && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#FF6B8B",
+                      fontWeight: 700,
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {classData.category}
+                  </Text>
+                )}
+              </div>
+            </div>
+          </div>
+        </Col>
+
+        {/* ===================================================
+            STATUS
+        =================================================== */}
+
+        <Col xs={24} sm={7} md={6}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-start",
+            }}
+          >
+            <StatusTag status={classData?.status} />
+          </div>
+        </Col>
+      </Row>
+
+      {/* =====================================================
+          DIVIDER
+      ===================================================== */}
+
+      <Divider
+        style={{
+          borderColor: "#FFE4E6",
+          margin: "0 0 20px",
+        }}
+      />
+
+      {/* =====================================================
+          INFO GRID
+      ===================================================== */}
+
+      <Row
+        gutter={[
+          { xs: 8, sm: 12, md: 16 },
+          { xs: 8, sm: 12, md: 16 },
+        ]}
+        style={{
+          marginBottom: 16,
+        }}
+      >
+        {/* =================================================
+            NGÀY
+        ================================================= */}
+
+        <Col xs={24} sm={12} lg={6}>
+          <InfoItem
+            icon={<CalendarOutlined />}
+            label="Lịch học hàng tuần"
+            value={getDayName(classData?.day_of_week)}
+          />
+        </Col>
+
+        {/* =================================================
+            GIỜ
+        ================================================= */}
+
+        <Col xs={24} sm={12} lg={6}>
+          <InfoItem
+            icon={<ClockCircleOutlined />}
+            label="Khung giờ học"
+            value={`${formatTime(
+              classData?.start_time,
+            )} - ${formatTime(classData?.end_time)}`}
+          />
+        </Col>
+
+        {/* =================================================
+            PHÒNG
+        ================================================= */}
+
+        <Col xs={24} sm={12} lg={6}>
+          <InfoItem
+            icon={<EnvironmentOutlined />}
+            label="Địa điểm phòng học"
+            value={classData?.room || "Chưa cập nhật"}
+          />
+        </Col>
+
+        {/* =================================================
+            SĨ SỐ
+        ================================================= */}
+
+        <Col xs={24} sm={12} lg={6}>
+          <InfoItem
+            icon={<TeamOutlined />}
+            label="Sĩ số học viên"
+            value={`${classData?.studentsCount || 0} học viên`}
+          />
+        </Col>
+      </Row>
+
+      {/* =====================================================
+          THỜI GIAN KHÓA HỌC
+      ===================================================== */}
+
+      <div
+        style={{
+          padding: "clamp(12px, 3vw, 14px) clamp(14px, 4vw, 18px)",
+          borderRadius: 16,
+          background: "#FFF5F7",
+          border: "1px solid #FFE4E6",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 10,
+        }}
+      >
+        {/* DATE */}
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            minWidth: 0,
+            flex: 1,
+          }}
+        >
+          <CalendarOutlined
+            style={{
+              color: "#FF6B8B",
+              fontSize: 16,
+              marginTop: 2,
+              flexShrink: 0,
+            }}
+          />
+
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#64748B",
+              fontWeight: 700,
+              lineHeight: 1.6,
+            }}
+          >
+            Thời gian khóa học:{" "}
+            <span
+              style={{
+                color: "#334155",
+              }}
+            >
+              {classData?.start_date
+                ? dayjs(classData.start_date).format("DD/MM/YYYY")
+                : "—"}
+
+              {" đến "}
+
+              {classData?.end_date
+                ? dayjs(classData.end_date).format("DD/MM/YYYY")
+                : "—"}
+            </span>
+          </Text>
+        </div>
+
+        {/* ROLE */}
+
+        <Tag
+          color="pink"
+          style={{
+            borderRadius: 8,
+            fontWeight: 700,
+            margin: 0,
+            whiteSpace: "normal",
+            textAlign: "center",
+          }}
+        >
+          Vai trò: {classData?.catechist_role || "Giáo lý viên"}
+        </Tag>
+      </div>
+
+      {/* =====================================================
+          DESCRIPTION
+      ===================================================== */}
+
+      {classData?.description && (
+        <div
+          style={{
+            marginTop: 14,
+            padding: "14px clamp(12px, 3vw, 16px)",
+            borderRadius: 16,
+            background: "#FFF9FA",
+            border: "1px solid #FFE4E6",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#64748B",
+              lineHeight: 1.7,
+              wordBreak: "break-word",
+            }}
+          >
+            <strong>Ghi chú/Mô tả:</strong> {classData.description}
+          </Text>
+        </div>
+      )}
+    </Card>
+  );
+};
+
+/* =========================================================
    PAGE
 ========================================================= */
 
 const TeacherClassesPage = () => {
   const { user } = useUser();
 
-  const [classData, setClassData] = useState(null);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   /* =======================================================
-     FETCH CLASS
+     FETCH CLASSES
   ======================================================= */
 
   const fetchClasses = useCallback(async () => {
@@ -235,14 +590,26 @@ const TeacherClassesPage = () => {
 
       const response = await classApi.getClassTeacher();
 
+      console.log("========================================");
+      console.log("GET TEACHER CLASSES RESPONSE:", response);
+      console.log("========================================");
+
       const list = normalizeListResponse(response);
 
-      // Lấy lớp đầu tiên nếu có
-      setClassData(list.length > 0 ? list[0] : null);
+      console.log("NORMALIZED TEACHER CLASSES:", list);
+
+      /*
+       * Đảm bảo luôn là array
+       */
+      setClasses(Array.isArray(list) ? list : []);
     } catch (error) {
       console.error("GET TEACHER CLASS ERROR:", error);
 
-      setError("Bạn chưa được phân vào lớp học nào!");
+      setClasses([]);
+
+      setError(
+        error?.response?.data?.message || "Không thể tải danh sách lớp học!",
+      );
     } finally {
       setLoading(false);
     }
@@ -317,7 +684,9 @@ const TeacherClassesPage = () => {
                 minWidth: 0,
               }}
             >
-              {/* AVATAR */}
+              {/* =================================================
+                  AVATAR
+              ================================================= */}
 
               <div
                 style={{
@@ -338,7 +707,9 @@ const TeacherClassesPage = () => {
                 <UserOutlined />
               </div>
 
-              {/* INFORMATION */}
+              {/* =================================================
+                  INFORMATION
+              ================================================= */}
 
               <div
                 style={{
@@ -370,9 +741,7 @@ const TeacherClassesPage = () => {
                     wordBreak: "break-word",
                   }}
                 >
-                  {user?.full_name ||
-                    classData?.catechist_name ||
-                    "Khánh Hưng ( Admin )"}
+                  {user?.full_name || "Khánh Hưng ( Admin )"}
                 </Title>
 
                 {/* TAGS */}
@@ -384,6 +753,8 @@ const TeacherClassesPage = () => {
                     gap: 6,
                   }}
                 >
+                  {/* THÁNH DANH */}
+
                   <Tag
                     color="magenta"
                     style={{
@@ -397,6 +768,8 @@ const TeacherClassesPage = () => {
                     Thánh danh: {user?.holy_name || "Đaminh"}
                   </Tag>
 
+                  {/* MÃ GLV */}
+
                   <Tag
                     color="volcano"
                     style={{
@@ -407,7 +780,7 @@ const TeacherClassesPage = () => {
                       whiteSpace: "normal",
                     }}
                   >
-                    Mã GLV: {user?.catechist_code || "GLV20260028"}
+                    Mã GLV: {user?.catechist_code || "GLV20260035"}
                   </Tag>
                 </div>
               </div>
@@ -420,17 +793,43 @@ const TeacherClassesPage = () => {
           TITLE
       ===================================================== */}
 
-      <Text
-        strong
+      <div
         style={{
-          fontSize: "clamp(14px, 4vw, 16px)",
-          color: "#334155",
-          display: "block",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
           marginBottom: 14,
+          flexWrap: "wrap",
         }}
       >
-        📚 Lớp học được phân công
-      </Text>
+        <Text
+          strong
+          style={{
+            fontSize: "clamp(14px, 4vw, 16px)",
+            color: "#334155",
+            display: "block",
+          }}
+        >
+          📚 Lớp học được phân công
+        </Text>
+
+        {/* TOTAL CLASS */}
+
+        {!loading && classes.length > 0 && (
+          <Tag
+            color="pink"
+            style={{
+              margin: 0,
+              borderRadius: 10,
+              padding: "4px 10px",
+              fontWeight: 800,
+            }}
+          >
+            {classes.length} lớp
+          </Tag>
+        )}
+      </div>
 
       {/* =====================================================
           LOADING
@@ -456,321 +855,19 @@ const TeacherClassesPage = () => {
             }}
           />
         </Card>
-      ) : classData ? (
+      ) : classes.length > 0 ? (
         /* ===================================================
-           CLASS CARD
+           ALL CLASS CARDS
         =================================================== */
 
-        <Card
-          bordered={false}
-          style={{
-            borderRadius: "clamp(18px, 4vw, 24px)",
-            overflow: "hidden",
-            background: "#FFFFFF",
-            border: "2px solid #FFE4E6",
-            boxShadow: "0 10px 25px rgba(255, 182, 193, 0.15)",
-          }}
-          styles={{
-            body: {
-              padding: "clamp(16px, 4vw, 28px)",
-            },
-          }}
-        >
-          {/* =================================================
-              CLASS HEADER
-          ================================================= */}
-
-          <Row
-            align="middle"
-            gutter={[12, 14]}
-            style={{
-              marginBottom: 20,
-            }}
-          >
-            {/* CLASS NAME */}
-
-            <Col xs={24} sm={17} md={18}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  minWidth: 0,
-                }}
-              >
-                {/* ICON */}
-
-                <div
-                  style={{
-                    width: "clamp(44px, 12vw, 52px)",
-                    height: "clamp(44px, 12vw, 52px)",
-                    minWidth: "clamp(44px, 12vw, 52px)",
-                    borderRadius: 15,
-                    background: "#FFF5F7",
-                    color: "#FF6B8B",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "clamp(20px, 5vw, 24px)",
-                    border: "1.5px solid #FFD1D9",
-                    flexShrink: 0,
-                  }}
-                >
-                  <BookOutlined />
-                </div>
-
-                {/* NAME */}
-
-                <div
-                  style={{
-                    minWidth: 0,
-                    flex: 1,
-                  }}
-                >
-                  <Title
-                    level={3}
-                    style={{
-                      margin: 0,
-                      color: "#334155",
-                      fontWeight: 800,
-                      fontSize: "clamp(18px, 5vw, 26px)",
-                      lineHeight: 1.25,
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {classData.name || "Chưa có tên lớp"}
-                  </Title>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 6,
-                      marginTop: 6,
-                    }}
-                  >
-                    <Tag
-                      color="gold"
-                      style={{
-                        borderRadius: 8,
-                        fontWeight: 800,
-                        margin: 0,
-                      }}
-                    >
-                      ✨ {classData.code || "—"}
-                    </Tag>
-
-                    {classData.category && (
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: "#FF6B8B",
-                          fontWeight: 700,
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {classData.category}
-                      </Text>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Col>
-
-            {/* STATUS */}
-
-            <Col xs={24} sm={7} md={6}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent:
-                    window.innerWidth < 576 ? "flex-start" : "flex-end",
-                }}
-              >
-                <StatusTag status={classData.status} />
-              </div>
-            </Col>
-          </Row>
-
-          {/* =================================================
-              DIVIDER
-          ================================================= */}
-
-          <Divider
-            style={{
-              borderColor: "#FFE4E6",
-              margin: "0 0 20px",
-            }}
-          />
-
-          {/* =================================================
-              INFO GRID
-          ================================================= */}
-
-          {/* =================================================
-    INFO GRID
-================================================= */}
-
-          <Row
-            gutter={[
-              { xs: 8, sm: 12, md: 16 },
-              { xs: 8, sm: 12, md: 16 },
-            ]}
-            style={{
-              marginBottom: 16,
-            }}
-          >
-            {/* NGÀY */}
-
-            <Col xs={24} sm={12} lg={6}>
-              <InfoItem
-                icon={<CalendarOutlined />}
-                label="Lịch học hàng tuần"
-                value={getDayName(classData.day_of_week)}
-              />
-            </Col>
-
-            {/* GIỜ */}
-
-            <Col xs={24} sm={12} lg={6}>
-              <InfoItem
-                icon={<ClockCircleOutlined />}
-                label="Khung giờ học"
-                value={`${formatTime(classData.start_time)} - ${formatTime(
-                  classData.end_time,
-                )}`}
-              />
-            </Col>
-
-            {/* PHÒNG */}
-
-            <Col xs={24} sm={12} lg={6}>
-              <InfoItem
-                icon={<EnvironmentOutlined />}
-                label="Địa điểm phòng học"
-                value={classData.room || "Chưa cập nhật"}
-              />
-            </Col>
-
-            {/* SĨ SỐ */}
-
-            <Col xs={24} sm={12} lg={6}>
-              <InfoItem
-                icon={<TeamOutlined />}
-                label="Sĩ số học viên"
-                value={`${classData.studentsCount || 0} học viên`}
-              />
-            </Col>
-          </Row>
-
-          {/* =================================================
-              THỜI GIAN KHÓA HỌC
-          ================================================= */}
-
-          <div
-            style={{
-              padding: "clamp(12px, 3vw, 14px) clamp(14px, 4vw, 18px)",
-              borderRadius: 16,
-              background: "#FFF5F7",
-              border: "1px solid #FFE4E6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: 10,
-            }}
-          >
-            {/* DATE */}
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 8,
-                minWidth: 0,
-                flex: 1,
-              }}
-            >
-              <CalendarOutlined
-                style={{
-                  color: "#FF6B8B",
-                  fontSize: 16,
-                  marginTop: 2,
-                  flexShrink: 0,
-                }}
-              />
-
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: "#64748B",
-                  fontWeight: 700,
-                  lineHeight: 1.6,
-                }}
-              >
-                Thời gian khóa học:{" "}
-                <span
-                  style={{
-                    color: "#334155",
-                  }}
-                >
-                  {classData.start_date
-                    ? dayjs(classData.start_date).format("DD/MM/YYYY")
-                    : "—"}
-
-                  {" đến "}
-
-                  {classData.end_date
-                    ? dayjs(classData.end_date).format("DD/MM/YYYY")
-                    : "—"}
-                </span>
-              </Text>
-            </div>
-
-            {/* ROLE */}
-
-            <Tag
-              color="pink"
-              style={{
-                borderRadius: 8,
-                fontWeight: 700,
-                margin: 0,
-                whiteSpace: "normal",
-                textAlign: "center",
-              }}
-            >
-              Vai trò: {classData.catechist_role || "Giáo lý viên"}
-            </Tag>
-          </div>
-
-          {/* =================================================
-              DESCRIPTION
-          ================================================= */}
-
-          {classData.description && (
-            <div
-              style={{
-                marginTop: 14,
-                padding: "14px clamp(12px, 3vw, 16px)",
-                borderRadius: 16,
-                background: "#FFF9FA",
-                border: "1px solid #FFE4E6",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: "#64748B",
-                  lineHeight: 1.7,
-                  wordBreak: "break-word",
-                }}
-              >
-                <strong>Ghi chú/Mô tả:</strong> {classData.description}
-              </Text>
-            </div>
-          )}
-        </Card>
+        <div>
+          {classes.map((classData, index) => (
+            <ClassCard
+              key={classData?.assignment_id || classData?.id || index}
+              classData={classData}
+            />
+          ))}
+        </div>
       ) : (
         /* ===================================================
            EMPTY

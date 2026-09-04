@@ -90,8 +90,9 @@ export default function AdminHeader() {
       case "admin":
         return "Ban Quản Trị ✨";
       case "teacher":
-      case "catechist":
         return "Huynh Trưởng / GLV 💖";
+      case "catechist":
+        return "Ban Quản Trị";
       case "liturgy_manager":
         return "Ban Phụng Vụ ⛪";
       case "media_manager":
@@ -128,12 +129,7 @@ export default function AdminHeader() {
     };
   }, [user?.account_type]);
 
-  const userName =
-    user?.username ||
-    user?.full_name ||
-    user?.name ||
-    user?.email ||
-    "Huynh Trưởng";
+  const userName = user?.full_name || user?.email || "Huynh Trưởng";
 
   /* =========================================================
      MENU & NAVIGATE HANDLER
