@@ -89,7 +89,7 @@ export default function AppRoutes() {
       {/* ------------------------------------------------------
           Đăng nhập hệ thống Giáo lý đa giáo xứ
           ------------------------------------------------------ */}
-      <Route path="/login" element={<CatechistLogin />} />
+      <Route path="/" element={<CatechistLogin />} />
 
       {/* ------------------------------------------------------
           Xác thực chứng chỉ - Public
