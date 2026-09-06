@@ -540,7 +540,6 @@ const ClassManagement = () => {
         message.success("✨ Đã làm mới danh sách lớp học!");
       }
     } catch (error) {
-      console.error("❌ GET CLASSES ERROR:", error);
       message.error(
         error?.response?.data?.message || "Không thể tải danh sách lớp học",
       );
@@ -722,7 +721,6 @@ const ClassManagement = () => {
         form.resetFields();
         await fetchClasses();
       } catch (error) {
-        console.error("❌ SAVE CLASS ERROR:", error);
         message.error(
           error?.response?.data?.message || "Không thể lưu lớp học",
         );
@@ -777,7 +775,6 @@ const ClassManagement = () => {
             message.success("✨ Đã xóa lớp học thành công");
             await fetchClasses();
           } catch (error) {
-            console.error("❌ DELETE CLASS ERROR:", error);
             message.error(
               error?.response?.data?.message || "Không thể xóa lớp học",
             );
@@ -798,7 +795,6 @@ const ClassManagement = () => {
       const response = await classApi.getById(item.id);
       setClassDetail(normalizeObjectResponse(response));
     } catch (error) {
-      console.error("❌ GET CLASS DETAIL ERROR:", error);
       message.error(
         error?.response?.data?.message || "Không thể tải thông tin lớp học",
       );
@@ -887,11 +883,6 @@ const ClassManagement = () => {
           try {
             setRemovingCatechistId(catechistId);
 
-            console.log("🚀 REMOVE API:", {
-              catechist_id: Number(catechistId),
-              class_id: Number(classId),
-            });
-
             // 1. Xóa GLV khỏi lớp
             await catechistApi.removeClass({
               catechist_id: Number(catechistId),
@@ -908,8 +899,6 @@ const ClassManagement = () => {
             // 3. Reload danh sách lớp
             await fetchClasses();
           } catch (error) {
-            console.error("❌ REMOVE CATECHIST FROM CLASS ERROR:", error);
-
             message.error(
               error?.response?.data?.message ||
                 "Không thể xóa giáo lý viên khỏi lớp",

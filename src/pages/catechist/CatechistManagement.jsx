@@ -173,7 +173,6 @@ export default function CatechistManagement() {
         );
       }
     } catch (error) {
-      console.error("FETCH CATECHIST DATA ERROR:", error);
       message.error("Có lỗi xảy ra khi tải dữ liệu!");
     } finally {
       setLoading(false);
@@ -300,8 +299,6 @@ export default function CatechistManagement() {
 
       await fetchData();
     } catch (error) {
-      console.error("SAVE CATECHIST ERROR:", error);
-
       message.error(
         error?.response?.data?.message || "Đã xảy ra lỗi khi lưu thông tin!",
       );

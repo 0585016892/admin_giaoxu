@@ -85,7 +85,6 @@ const ParishSettingsPage = () => {
         setImageUrl(churchData.image || "");
       }
     } catch (error) {
-      console.error("Lỗi khi tải thông tin giáo xứ:", error);
       message.error("Lỗi khi tải thông tin giáo xứ!");
     } finally {
       setLoading(false);
@@ -138,8 +137,6 @@ const ParishSettingsPage = () => {
 
       await fetchParishInfo();
     } catch (error) {
-      console.error("Lỗi khi lưu thông tin:", error);
-
       message.error(
         error?.response?.data?.message ||
           "Có lỗi xảy ra khi lưu thông tin giáo xứ!",

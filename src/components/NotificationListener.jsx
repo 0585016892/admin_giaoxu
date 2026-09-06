@@ -100,19 +100,11 @@ const NotificationListener = () => {
     // ========================================================
 
     const handleNotification = (data = {}) => {
-      console.log("🔔 ====================================");
-
-      console.log("🔔 REALTIME NOTIFICATION RECEIVED:", data);
-
-      console.log("🔔 ====================================");
-
       // ------------------------------------------------------
       // PREVENT DUPLICATE
       // ------------------------------------------------------
 
       if (data.id && receivedIdsRef.current.has(data.id)) {
-        console.log("⚠️ Duplicate notification ignored:", data.id);
-
         return;
       }
 
@@ -162,16 +154,12 @@ const NotificationListener = () => {
 
     socket.on("notification", handleNotification);
 
-    console.log("👂 NotificationListener started");
-
     // ========================================================
     // CLEANUP
     // ========================================================
 
     return () => {
       socket.off("notification", handleNotification);
-
-      console.log("👋 NotificationListener stopped");
     };
   }, [api]);
 

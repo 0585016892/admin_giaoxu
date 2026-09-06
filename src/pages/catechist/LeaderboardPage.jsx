@@ -169,8 +169,6 @@ const LeaderboardGame = () => {
 
       setClassesList(data);
     } catch (error) {
-      console.error("GET CLASSES ERROR:", error);
-
       setClassesList([]);
 
       message.error(
@@ -206,8 +204,6 @@ const LeaderboardGame = () => {
         message.error(response?.message || "Không thể lấy bảng thành tích");
       }
     } catch (error) {
-      console.error("LOAD GLOBAL LEADERBOARD ERROR:", error);
-
       setStudents([]);
 
       message.error(
@@ -258,8 +254,6 @@ const LeaderboardGame = () => {
           );
         }
       } catch (error) {
-        console.error("LOAD CLASS LEADERBOARD ERROR:", error);
-
         setStudents([]);
 
         message.error(
@@ -353,7 +347,7 @@ const LeaderboardGame = () => {
         await Promise.all([fetchClasses(), loadGlobalLeaderboard()]);
       }
     } catch (error) {
-      console.error("REFRESH ERROR:", error);
+      message.error("REFRESH ERROR:", error);
     }
   };
 

@@ -30,8 +30,6 @@ import AppButton from "../../components/common/AppButton";
 
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 
-import { useUser } from "../../context/UserContext";
-
 const { Title, Text, Paragraph } = Typography;
 
 const { TextArea } = Input;
@@ -169,12 +167,6 @@ const getPriorityInfo = (value) => {
 const SendNotificationPage = () => {
   const navigate = useNavigate();
 
-  const { user } = useUser();
-
-  const email = user?.email;
-
-  console.log("Current user:", email);
-
   const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
@@ -234,21 +226,11 @@ const SendNotificationPage = () => {
         related_id: null,
       };
 
-      console.log("========================================");
-
-      console.log("📢 SEND NOTIFICATION");
-
-      console.log(payload);
-
-      console.log("========================================");
-
       /* ======================================================
          API
       ====================================================== */
 
       const response = await notificationApi.create(payload);
-
-      console.log("📢 NOTIFICATION RESPONSE:", response);
 
       /* ======================================================
          RECIPIENT COUNT
@@ -280,8 +262,6 @@ const SendNotificationPage = () => {
 
       form.setFieldsValue(defaultValues);
     } catch (error) {
-      console.error("❌ SEND NOTIFICATION ERROR:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.message ||

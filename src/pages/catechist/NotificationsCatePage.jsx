@@ -5,23 +5,23 @@ import {
   Badge,
   Empty,
   List,
+  Progress,
   Select,
   Space,
   Spin,
   Tag,
   Typography,
+  Tooltip,
   message,
 } from "antd";
 
 import {
   BellOutlined,
   CheckOutlined,
-  CheckCircleOutlined,
+  CheckCircleFilled,
   DeleteOutlined,
   EyeOutlined,
   ReloadOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
   CalendarOutlined,
   UserOutlined,
   BookOutlined,
@@ -30,7 +30,10 @@ import {
   TeamOutlined,
   SoundOutlined,
   SafetyOutlined,
-  FireOutlined,
+  ClockCircleOutlined,
+  ReadOutlined,
+  NotificationOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 
 import StatCard from "../../components/common/StatCard";
@@ -51,68 +54,72 @@ const { Text, Paragraph } = Typography;
 const TYPE_CONFIG = {
   system: {
     label: "Hệ thống",
-    color: "blue",
+    color: "#1677ff",
+    bg: "#e6f4ff",
     icon: <InfoCircleOutlined />,
   },
 
   announcement: {
     label: "Thông báo",
-    color: "gold",
+    color: "#d48806",
+    bg: "#fff7e6",
     icon: <SoundOutlined />,
   },
 
   class: {
     label: "Lớp học",
-    color: "green",
+    color: "#389e0d",
+    bg: "#f6ffed",
     icon: <BookOutlined />,
   },
 
   attendance: {
     label: "Điểm danh",
-    color: "purple",
+    color: "#722ed1",
+    bg: "#f9f0ff",
     icon: <CalendarOutlined />,
   },
 
   student: {
     label: "Học viên",
-    color: "cyan",
+    color: "#08979c",
+    bg: "#e6fffb",
     icon: <UserOutlined />,
   },
 
   catechist: {
     label: "Giáo lý viên",
-    color: "magenta",
+    color: "#c41d7f",
+    bg: "#fff0f6",
     icon: <TeamOutlined />,
   },
 
   exam: {
     label: "Bài thi",
-    color: "orange",
+    color: "#d46b08",
+    bg: "#fff7e6",
     icon: <TrophyOutlined />,
   },
 
   achievement: {
     label: "Thành tích",
-    color: "gold",
+    color: "#d4b106",
+    bg: "#fffbe6",
     icon: <TrophyOutlined />,
   },
 
   warning: {
     label: "Cảnh báo",
-    color: "red",
+    color: "#cf1322",
+    bg: "#fff1f0",
     icon: <WarningOutlined />,
   },
 
   security: {
     label: "Bảo mật",
-    color: "volcano",
+    color: "#531dab",
+    bg: "#f9f0ff",
     icon: <SafetyOutlined />,
-  },
-
-  urgent: {
-    label: "Khẩn cấp",
-    color: "red",
-    icon: <FireOutlined />,
   },
 };
 
@@ -123,22 +130,22 @@ const TYPE_CONFIG = {
 const PRIORITY_CONFIG = {
   low: {
     label: "Thấp",
-    color: "default",
+    color: "#8c8c8c",
   },
 
   normal: {
     label: "Bình thường",
-    color: "blue",
+    color: "#1677ff",
   },
 
   high: {
     label: "Quan trọng",
-    color: "orange",
+    color: "#fa8c16",
   },
 
   urgent: {
     label: "Khẩn cấp",
-    color: "red",
+    color: "#f5222d",
   },
 };
 
@@ -147,119 +154,72 @@ const PRIORITY_CONFIG = {
 ========================================================= */
 
 const getTypeConfig = (type) => {
-  const normalizedType = String(type || "system").toLowerCase();
-
   return (
-    TYPE_CONFIG[normalizedType] || {
-      label: "Hệ thống",
-      color: "blue",
-      icon: <BellOutlined />,
-    }
+    TYPE_CONFIG[String(type || "system").toLowerCase()] || TYPE_CONFIG.system
   );
 };
 
 const getPriorityConfig = (priority) => {
-  const normalizedPriority = String(priority || "normal").toLowerCase();
-
   return (
-    PRIORITY_CONFIG[normalizedPriority] || {
-      label: "Bình thường",
-      color: "blue",
-    }
+    PRIORITY_CONFIG[String(priority || "normal").toLowerCase()] ||
+    PRIORITY_CONFIG.normal
   );
 };
-
-/* =========================================================
-   NORMALIZE BACKEND DATA
-========================================================= */
 
 const normalizeNotification = (item) => {
   if (!item) return null;
 
-  const rawRead = item.is_read;
-
   const isRead =
-    rawRead === true || rawRead === 1 || rawRead === "1" || rawRead === "true";
+    item.is_read === true ||
+    item.is_read === 1 ||
+    item.is_read === "1" ||
+    item.is_read === "true";
 
   return {
     ...item,
 
     id: Number(item.id ?? item.notification_id),
 
-    church_id:
-      item.church_id !== null && item.church_id !== undefined
-        ? Number(item.church_id)
-        : null,
+    title: String(item.title || "Thông báo mới"),
 
-    created_by:
-      item.created_by !== null && item.created_by !== undefined
-        ? Number(item.created_by)
-        : null,
+    content: String(item.content || ""),
 
-    title: String(item.title || "Thông báo mới").trim(),
+    type: String(item.type || "system").toLowerCase(),
 
-    content: String(item.content || "").trim(),
-
-    type: String(item.type || "system")
-      .trim()
-      .toLowerCase(),
-
-    priority: String(item.priority || "normal")
-      .trim()
-      .toLowerCase(),
+    priority: String(item.priority || "normal").toLowerCase(),
 
     is_read: isRead,
 
-    read_at: item.read_at || null,
+    read_count: Number(item.read_count || 0),
+
+    unread_count: Number(item.unread_count || 0),
+
+    recipient_count: Number(item.recipient_count || 0),
+
+    read_percent: Number(item.read_percent || 0),
+
+    created_by_name: item.created_by_name || "Hệ thống",
 
     created_at: item.created_at || null,
 
     updated_at: item.updated_at || null,
 
-    action_url: item.action_url ? String(item.action_url).trim() : null,
-
-    related_id:
-      item.related_id !== null && item.related_id !== undefined
-        ? item.related_id
-        : null,
-
-    related_type:
-      item.related_type !== null && item.related_type !== undefined
-        ? String(item.related_type)
-        : null,
+    read_at: item.read_at || null,
   };
 };
-
-/* =========================================================
-   GET LIST
-========================================================= */
 
 const getNotificationList = (response) => {
   if (!response) return [];
 
-  if (Array.isArray(response)) {
-    return response;
-  }
+  if (Array.isArray(response)) return response;
 
-  if (Array.isArray(response.data)) {
-    return response.data;
-  }
+  if (Array.isArray(response.data)) return response.data;
 
   if (Array.isArray(response.notifications)) {
     return response.notifications;
   }
 
-  if (Array.isArray(response.items)) {
-    return response.items;
-  }
-
-  if (Array.isArray(response.data?.notifications)) {
-    return response.data.notifications;
-  }
-
-  if (Array.isArray(response.data?.items)) {
-    return response.data.items;
-  }
+  if (Array.isArray(response.items)) return response.items;
 
   if (Array.isArray(response.data?.data)) {
     return response.data.data;
@@ -268,24 +228,15 @@ const getNotificationList = (response) => {
   return [];
 };
 
-/* =========================================================
-   GET PAGINATION TOTAL
-========================================================= */
-
 const getPaginationTotal = (response) => {
   return (
     response?.pagination?.total ??
     response?.data?.pagination?.total ??
     response?.total ??
     response?.data?.total ??
-    response?.data?.data?.total ??
     null
   );
 };
-
-/* =========================================================
-   FORMAT DATE
-========================================================= */
 
 const formatDate = (date) => {
   if (!date) return "Không xác định";
@@ -305,32 +256,18 @@ const formatDate = (date) => {
   });
 };
 
-/* =========================================================
-   RELATIVE TIME
-========================================================= */
-
 const getRelativeTime = (date) => {
   if (!date) return "";
 
   const value = new Date(date);
 
-  if (Number.isNaN(value.getTime())) {
-    return "";
-  }
-
   const diff = Date.now() - value.getTime();
-
-  if (diff < 0) {
-    return "Vừa xong";
-  }
 
   const minute = 60 * 1000;
   const hour = 60 * minute;
   const day = 24 * hour;
 
-  if (diff < minute) {
-    return "Vừa xong";
-  }
+  if (diff < minute) return "Vừa xong";
 
   if (diff < hour) {
     return `${Math.floor(diff / minute)} phút trước`;
@@ -340,7 +277,7 @@ const getRelativeTime = (date) => {
     return `${Math.floor(diff / hour)} giờ trước`;
   }
 
-  if (diff < 7 * day) {
+  if (diff < day * 7) {
     return `${Math.floor(diff / day)} ngày trước`;
   }
 
@@ -348,23 +285,47 @@ const getRelativeTime = (date) => {
 };
 
 /* =========================================================
+   AVATAR COLOR
+========================================================= */
+
+const getAvatarColor = (name = "") => {
+  const colors = [
+    "#1677ff",
+    "#722ed1",
+    "#eb2f96",
+    "#13c2c2",
+    "#52c41a",
+    "#fa8c16",
+  ];
+
+  let hash = 0;
+
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  return colors[Math.abs(hash) % colors.length];
+};
+
+const getInitial = (name = "") => {
+  return String(name).charAt(0).toUpperCase();
+};
+
+/* =========================================================
    PAGE
 ========================================================= */
 
 const NotificationsCatePage = () => {
-  /* =========================================================
-     USER
-  ========================================================= */
-
   const { user } = useUser();
 
   const userRole = String(user?.role || "").toLowerCase();
 
-  const canDelete = userRole === "catechist";
+  const canDelete =
+    userRole === "catechist" ||
+    userRole === "admin" ||
+    userRole === "super_admin";
 
-  /* =========================================================
-     STATE
-  ========================================================= */
+  /* ================= STATE ================= */
 
   const [loading, setLoading] = useState(false);
 
@@ -386,7 +347,7 @@ const NotificationsCatePage = () => {
 
   const [pageSize, setPageSize] = useState(10);
 
-  const [paginationTotal, setPaginationTotal] = useState(null);
+  const [paginationTotal, setPaginationTotal] = useState(0);
 
   const [selectedNotification, setSelectedNotification] = useState(null);
 
@@ -395,19 +356,19 @@ const NotificationsCatePage = () => {
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
 
   /* =========================================================
-     TYPE OPTIONS
+     OPTIONS
   ========================================================= */
 
   const typeOptions = useMemo(
     () => [
       {
         value: "all",
-        label: "Tất cả loại",
+        label: "Tất cả loại thông báo",
       },
 
-      ...Object.entries(TYPE_CONFIG).map(([value, config]) => ({
-        value,
-        label: config.label,
+      ...Object.entries(TYPE_CONFIG).map(([key, value]) => ({
+        value: key,
+        label: value.label,
       })),
     ],
     [],
@@ -424,23 +385,17 @@ const NotificationsCatePage = () => {
       const data = response?.data ?? response ?? {};
 
       setStats({
-        total: Number(
-          data.total ?? data.total_notifications ?? data.count ?? 0,
-        ),
-
-        unread: Number(
-          data.unread ?? data.unread_count ?? data.total_unread ?? 0,
-        ),
-
-        read: Number(data.read ?? data.read_count ?? data.total_read ?? 0),
+        total: Number(data.total || 0),
+        unread: Number(data.unread || 0),
+        read: Number(data.read || data.read_count || 0),
       });
     } catch (error) {
-      console.error("GET NOTIFICATION STATS:", error);
+      message.error("Lỗi khi tải thống kê thông báo:", error);
     }
   }, []);
 
   /* =========================================================
-     LOAD NOTIFICATIONS
+     LOAD LIST
   ========================================================= */
 
   const loadNotifications = useCallback(async () => {
@@ -453,11 +408,7 @@ const NotificationsCatePage = () => {
       };
 
       if (filter === "unread") {
-        params.is_read = 0;
-      }
-
-      if (filter === "read") {
-        params.is_read = 1;
+        params.unread_only = true;
       }
 
       if (typeFilter !== "all") {
@@ -468,24 +419,12 @@ const NotificationsCatePage = () => {
 
       const list = getNotificationList(response)
         .map(normalizeNotification)
-        .filter((item) => item && Number.isFinite(item.id) && item.id > 0)
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
+        .filter(Boolean);
 
       setNotifications(list);
 
-      const total = getPaginationTotal(response);
-
-      if (total !== null) {
-        setPaginationTotal(Number(total));
-      } else {
-        setPaginationTotal(list.length);
-      }
+      setPaginationTotal(Number(getPaginationTotal(response) ?? list.length));
     } catch (error) {
-      console.error("GET NOTIFICATIONS:", error);
-
       message.error(
         error?.response?.data?.message || "Không thể tải danh sách thông báo",
       );
@@ -493,10 +432,6 @@ const NotificationsCatePage = () => {
       setLoading(false);
     }
   }, [page, pageSize, filter, typeFilter]);
-
-  /* =========================================================
-     INITIAL LOAD
-  ========================================================= */
 
   useEffect(() => {
     loadNotifications();
@@ -512,16 +447,16 @@ const NotificationsCatePage = () => {
 
   const handleRefresh = async () => {
     await Promise.all([loadNotifications(), loadStats()]);
+
+    message.success("Đã cập nhật thông báo mới nhất");
   };
 
   /* =========================================================
-     MARK ONE AS READ
+     MARK READ
   ========================================================= */
 
   const handleMarkRead = async (notification) => {
-    if (!notification?.id) return;
-
-    if (notification.is_read) return;
+    if (!notification?.id || notification.is_read) return;
 
     try {
       await notificationApi.markAsRead(notification.id);
@@ -538,17 +473,23 @@ const NotificationsCatePage = () => {
         ),
       );
 
+      setSelectedNotification((prev) =>
+        prev?.id === notification.id
+          ? {
+              ...prev,
+              is_read: true,
+              read_at: new Date().toISOString(),
+            }
+          : prev,
+      );
+
       setStats((prev) => ({
         ...prev,
         unread: Math.max(0, prev.unread - 1),
         read: prev.read + 1,
       }));
     } catch (error) {
-      console.error("MARK READ ERROR:", error);
-
-      message.error(
-        error?.response?.data?.message || "Không thể đánh dấu đã đọc",
-      );
+      message.error("Không thể đánh dấu đã đọc");
     }
   };
 
@@ -558,6 +499,7 @@ const NotificationsCatePage = () => {
 
   const handleOpenDetail = async (notification) => {
     setSelectedNotification(notification);
+
     setDetailOpen(true);
 
     if (!notification.is_read) {
@@ -566,12 +508,12 @@ const NotificationsCatePage = () => {
   };
 
   /* =========================================================
-     MARK ALL READ
+     MARK ALL
   ========================================================= */
 
   const handleMarkAllRead = async () => {
-    if (stats.unread <= 0) {
-      message.info("Không có thông báo chưa đọc");
+    if (stats.unread === 0) {
+      message.info("Bạn không còn thông báo chưa đọc");
       return;
     }
 
@@ -584,23 +526,18 @@ const NotificationsCatePage = () => {
         prev.map((item) => ({
           ...item,
           is_read: true,
-          read_at: item.read_at || new Date().toISOString(),
         })),
       );
 
       setStats((prev) => ({
-        total: prev.total,
-        unread: 0,
+        ...prev,
         read: prev.read + prev.unread,
+        unread: 0,
       }));
 
-      message.success("Đã đánh dấu tất cả thông báo là đã đọc");
+      message.success("Đã đánh dấu tất cả là đã đọc");
     } catch (error) {
-      console.error("MARK ALL READ ERROR:", error);
-
-      message.error(
-        error?.response?.data?.message || "Không thể đánh dấu tất cả đã đọc",
-      );
+      message.error("Không thể thực hiện thao tác");
     } finally {
       setActionLoading(false);
     }
@@ -611,13 +548,6 @@ const NotificationsCatePage = () => {
   ========================================================= */
 
   const handleDelete = async (notification) => {
-    if (!canDelete) {
-      message.warning("Chỉ giáo lý viên mới có quyền xóa thông báo");
-      return;
-    }
-
-    if (!notification?.id) return;
-
     try {
       setActionLoading(true);
 
@@ -629,26 +559,17 @@ const NotificationsCatePage = () => {
 
       setStats((prev) => ({
         total: Math.max(0, prev.total - 1),
-
         unread: notification.is_read
           ? prev.unread
           : Math.max(0, prev.unread - 1),
-
         read: notification.is_read ? Math.max(0, prev.read - 1) : prev.read,
       }));
 
-      if (selectedNotification?.id === notification.id) {
-        setSelectedNotification(null);
-        setDetailOpen(false);
-      }
+      setDetailOpen(false);
 
       message.success("Đã xóa thông báo");
     } catch (error) {
-      console.error("DELETE NOTIFICATION:", error);
-
-      message.error(
-        error?.response?.data?.message || "Không thể xóa thông báo",
-      );
+      message.error("Không thể xóa thông báo");
     } finally {
       setActionLoading(false);
     }
@@ -659,11 +580,6 @@ const NotificationsCatePage = () => {
   ========================================================= */
 
   const handleDeleteAll = async () => {
-    if (!canDelete) {
-      message.warning("Chỉ giáo lý viên mới có quyền xóa thông báo");
-      return;
-    }
-
     try {
       setActionLoading(true);
 
@@ -681,13 +597,9 @@ const NotificationsCatePage = () => {
 
       setDeleteAllOpen(false);
 
-      message.success("Đã xóa tất cả thông báo");
+      message.success("Đã xóa toàn bộ thông báo");
     } catch (error) {
-      console.error("DELETE ALL NOTIFICATIONS:", error);
-
-      message.error(
-        error?.response?.data?.message || "Không thể xóa tất cả thông báo",
-      );
+      message.error("Không thể xóa thông báo");
     } finally {
       setActionLoading(false);
     }
@@ -705,68 +617,22 @@ const NotificationsCatePage = () => {
 
       const list = getNotificationList(response)
         .map(normalizeNotification)
-        .filter((item) => item && Number.isFinite(item.id) && item.id > 0)
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
+        .filter(Boolean);
 
       setNotifications(list);
 
       setPaginationTotal(list.length);
 
-      message.success(`Có ${list.length} thông báo hôm nay`);
+      message.success(`Tìm thấy ${list.length} thông báo hôm nay`);
     } catch (error) {
-      console.error("GET TODAY:", error);
-
-      message.error(
-        error?.response?.data?.message || "Không thể tải thông báo hôm nay",
-      );
+      message.error("Không thể tải thông báo hôm nay");
     } finally {
       setLoading(false);
     }
   };
 
   /* =========================================================
-     PAGINATION
-  ========================================================= */
-
-  const handlePageChange = (nextPage, nextPageSize) => {
-    if (nextPageSize !== pageSize) {
-      setPageSize(nextPageSize);
-      setPage(1);
-      return;
-    }
-
-    setPage(nextPage);
-  };
-
-  /* =========================================================
-     STAT CARDS
-  ========================================================= */
-
-  const statCards = [
-    {
-      title: "Tổng thông báo",
-      value: stats.total,
-      icon: <BellOutlined />,
-    },
-
-    {
-      title: "Chưa đọc",
-      value: stats.unread,
-      icon: <BellOutlined />,
-    },
-
-    {
-      title: "Đã đọc",
-      value: stats.read,
-      icon: <CheckCircleOutlined />,
-    },
-  ];
-
-  /* =========================================================
-     RENDER NOTIFICATION
+     RENDER CARD
   ========================================================= */
 
   const renderNotification = (notification) => {
@@ -774,9 +640,15 @@ const NotificationsCatePage = () => {
 
     const priority = getPriorityConfig(notification.priority);
 
+    const readPercent =
+      notification.recipient_count > 0
+        ? Math.round(
+            (notification.read_count / notification.recipient_count) * 100,
+          )
+        : notification.read_percent || 0;
+
     return (
       <List.Item
-        key={notification.id}
         style={{
           padding: 0,
           border: 0,
@@ -784,201 +656,325 @@ const NotificationsCatePage = () => {
         }}
       >
         <div
+          className={`notification-card ${
+            !notification.is_read ? "notification-unread" : ""
+          }`}
           onClick={() => handleOpenDetail(notification)}
           style={{
             width: "100%",
-            padding: 18,
-            borderRadius: 18,
-
-            border: notification.is_read
-              ? "1px solid #E2E8F0"
-              : "1px solid #F1D48A",
-
-            background: notification.is_read ? "#FFFFFF" : "#FFFDF7",
-
+            position: "relative",
+            overflow: "hidden",
             cursor: "pointer",
 
-            boxShadow: notification.is_read
-              ? "0 2px 8px rgba(15,23,42,.03)"
-              : "0 4px 14px rgba(212,175,55,.08)",
+            background: notification.is_read ? "#fff" : "#f8fbff",
 
-            transition: "all .2s ease",
+            border: notification.is_read
+              ? "1px solid #eef1f5"
+              : `1px solid ${type.color}35`,
+
+            borderRadius: 18,
+
+            transition: "all .25s ease",
+
+            boxShadow: notification.is_read
+              ? "0 3px 12px rgba(0,0,0,.025)"
+              : "0 8px 24px rgba(22,119,255,.08)",
           }}
         >
+          {/* LEFT PRIORITY BAR */}
+
           <div
             style={{
-              display: "flex",
-              gap: 14,
-              alignItems: "flex-start",
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 5,
+              background: priority.color,
+            }}
+          />
+
+          <div
+            style={{
+              padding: 20,
+              paddingLeft: 24,
             }}
           >
-            {/* ICON */}
-
-            <Avatar
-              size={50}
-              icon={type.icon}
-              style={{
-                flexShrink: 0,
-
-                background: notification.is_read ? "#F1F5F9" : "#FFF4C2",
-
-                color: notification.is_read ? "#64748B" : "#B28A00",
-              }}
-            />
-
-            {/* CONTENT */}
-
             <div
               style={{
-                flex: 1,
-                minWidth: 0,
+                display: "flex",
+                gap: 16,
+                alignItems: "flex-start",
               }}
             >
-              {/* TITLE + ACTION */}
+              {/* TYPE ICON */}
 
               <div
                 style={{
+                  width: 52,
+                  height: 52,
+
+                  borderRadius: 16,
+
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 12,
+
+                  alignItems: "center",
+
+                  justifyContent: "center",
+
+                  flexShrink: 0,
+
+                  background: type.bg,
+
+                  color: type.color,
+
+                  fontSize: 22,
                 }}
               >
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  <Space wrap size={7}>
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 16,
-                        color: "#1E293B",
-                      }}
-                    >
-                      {notification.title}
-                    </Text>
-
-                    {!notification.is_read && (
-                      <Badge status="processing" text="Mới" />
-                    )}
-                  </Space>
-
-                  {/* TAGS */}
-
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 6,
-                    }}
-                  >
-                    <Tag
-                      color={type.color}
-                      icon={type.icon}
-                      style={{
-                        margin: 0,
-                      }}
-                    >
-                      {type.label}
-                    </Tag>
-
-                    {notification.priority !== "normal" && (
-                      <Tag
-                        color={priority.color}
-                        style={{
-                          margin: 0,
-                        }}
-                      >
-                        {priority.label}
-                      </Tag>
-                    )}
-                  </div>
-
-                  {/* CONTENT */}
-
-                  <Paragraph
-                    ellipsis={{
-                      rows: 3,
-                    }}
-                    style={{
-                      margin: "9px 0 0",
-                      color: "#64748B",
-                      lineHeight: 1.65,
-                    }}
-                  >
-                    {notification.content || "Không có nội dung"}
-                  </Paragraph>
-                </div>
-
-                {/* ACTIONS */}
-
-                <Space size={2} onClick={(event) => event.stopPropagation()}>
-                  <AppButton
-                    type="text"
-                    icon={<EyeOutlined />}
-                    onClick={() => handleOpenDetail(notification)}
-                  />
-
-                  {canDelete && (
-                    <AppButton
-                      danger
-                      type="text"
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDelete(notification)}
-                    />
-                  )}
-                </Space>
+                {type.icon}
               </div>
 
-              {/* META */}
+              {/* MAIN */}
 
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 14,
-                  marginTop: 10,
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
-                <Text
-                  type="secondary"
+                {/* TOP */}
+
+                <div
                   style={{
-                    fontSize: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 16,
                   }}
                 >
-                  <CalendarOutlined />{" "}
-                  {getRelativeTime(notification.created_at)}
-                </Text>
-
-                {notification.created_by && (
-                  <Text
-                    type="secondary"
+                  <div
                     style={{
-                      fontSize: 12,
+                      minWidth: 0,
+                      flex: 1,
                     }}
                   >
-                    <UserOutlined /> Người tạo: {notification.created_by}
-                  </Text>
-                )}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Text
+                        strong
+                        style={{
+                          fontSize: 17,
+                          color: "#1f2937",
+                        }}
+                      >
+                        {notification.title}
+                      </Text>
 
-                {notification.related_type && (
-                  <Text
-                    type="secondary"
+                      {!notification.is_read && (
+                        <Badge
+                          status="processing"
+                          text={
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: "#1677ff",
+                                fontWeight: 600,
+                              }}
+                            >
+                              CHƯA ĐỌC
+                            </span>
+                          }
+                        />
+                      )}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: "flex",
+                        gap: 7,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Tag
+                        style={{
+                          margin: 0,
+                          borderRadius: 20,
+                          border: 0,
+                          background: type.bg,
+                          color: type.color,
+                          padding: "3px 10px",
+                        }}
+                      >
+                        {type.icon} {type.label}
+                      </Tag>
+
+                      {notification.priority !== "normal" && (
+                        <Tag
+                          style={{
+                            margin: 0,
+                            borderRadius: 20,
+                            padding: "3px 10px",
+                          }}
+                          color={
+                            notification.priority === "urgent"
+                              ? "red"
+                              : "orange"
+                          }
+                        >
+                          {priority.label}
+                        </Tag>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* BUTTON */}
+
+                  <Tooltip title="Xem chi tiết">
+                    <AppButton
+                      type="text"
+                      icon={<EyeOutlined />}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenDetail(notification);
+                      }}
+                    />
+                  </Tooltip>
+                </div>
+
+                {/* CONTENT */}
+
+                <Paragraph
+                  ellipsis={{
+                    rows: 2,
+                  }}
+                  style={{
+                    marginTop: 12,
+                    marginBottom: 0,
+                    color: "#64748b",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {notification.content || "Không có nội dung"}
+                </Paragraph>
+
+                {/* READ PROGRESS */}
+
+                {notification.recipient_count > 0 && (
+                  <div
                     style={{
-                      fontSize: 12,
+                      marginTop: 16,
+                      padding: "12px 14px",
+                      background: "#fafafa",
+                      borderRadius: 12,
                     }}
                   >
-                    Liên kết: {notification.related_type}
-                    {notification.related_id
-                      ? ` #${notification.related_id}`
-                      : ""}
-                  </Text>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 7,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: "#64748b",
+                        }}
+                      >
+                        <EyeOutlined /> Người đã xem
+                      </Text>
+
+                      <Text
+                        strong
+                        style={{
+                          fontSize: 12,
+                        }}
+                      >
+                        {notification.read_count}/{notification.recipient_count}{" "}
+                        người
+                      </Text>
+                    </div>
+
+                    <Progress
+                      percent={readPercent}
+                      size="small"
+                      showInfo={false}
+                      strokeColor={type.color}
+                    />
+                  </div>
                 )}
+
+                {/* FOOTER */}
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    marginTop: 15,
+                  }}
+                >
+                  <Space size={14} wrap>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <Avatar
+                        size={22}
+                        style={{
+                          background: getAvatarColor(
+                            notification.created_by_name,
+                          ),
+                          fontSize: 10,
+                        }}
+                      >
+                        {getInitial(notification.created_by_name)}
+                      </Avatar>
+
+                      <Text
+                        type="secondary"
+                        style={{
+                          fontSize: 12,
+                        }}
+                      >
+                        {notification.created_by_name}
+                      </Text>
+                    </div>
+
+                    <Text
+                      type="secondary"
+                      style={{
+                        fontSize: 12,
+                      }}
+                    >
+                      <ClockCircleOutlined />{" "}
+                      {getRelativeTime(notification.created_at)}
+                    </Text>
+                  </Space>
+
+                  {!notification.is_read && (
+                    <Text
+                      style={{
+                        color: "#1677ff",
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Nhấn để xem
+                    </Text>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -995,16 +991,16 @@ const NotificationsCatePage = () => {
     <div
       style={{
         padding: 24,
+        maxWidth: 1500,
+        margin: "0 auto",
       }}
     >
-      {/* =====================================================
-          HERO
-      ===================================================== */}
+      {/* HERO */}
 
       <PageHeroHeader
-        icon={<BellOutlined />}
-        title="Thông báo"
-        description="Theo dõi và quản lý các thông báo trong hệ thống FaithEdu"
+        icon={<NotificationOutlined />}
+        title="Trung tâm thông báo"
+        description="Cập nhật những thông tin mới nhất từ FaithEdu"
         extra={
           <Space wrap>
             <AppButton icon={<ReloadOutlined />} onClick={handleRefresh}>
@@ -1018,18 +1014,17 @@ const NotificationsCatePage = () => {
             <AppButton
               type="primary"
               icon={<CheckOutlined />}
-              loading={actionLoading}
               disabled={stats.unread === 0}
+              loading={actionLoading}
               onClick={handleMarkAllRead}
             >
-              Đánh dấu đã đọc
+              Đọc tất cả
             </AppButton>
 
             {canDelete && (
               <AppButton
                 danger
                 icon={<DeleteOutlined />}
-                loading={actionLoading}
                 onClick={() => setDeleteAllOpen(true)}
               >
                 Xóa tất cả
@@ -1039,70 +1034,73 @@ const NotificationsCatePage = () => {
         }
       />
 
-      {/* =====================================================
-          UNREAD ALERT
-      ===================================================== */}
+      {/* ALERT */}
 
       {stats.unread > 0 && (
         <Alert
-          showIcon
           type="info"
+          showIcon
           icon={<BellOutlined />}
           message={
             <span>
-              Bạn đang có <strong>{stats.unread}</strong> thông báo chưa đọc.
+              Bạn có <strong style={{ fontSize: 16 }}>{stats.unread}</strong>{" "}
+              thông báo chưa đọc
             </span>
           }
+          description="Hãy kiểm tra các thông báo mới để không bỏ lỡ thông tin quan trọng."
           style={{
             marginTop: 20,
-            marginBottom: 20,
-            borderRadius: 14,
+            borderRadius: 16,
           }}
         />
       )}
 
-      {/* =====================================================
-          STATS
-      ===================================================== */}
+      {/* STATS */}
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
           gap: 16,
-          marginTop: stats.unread > 0 ? 0 : 20,
-          marginBottom: 20,
+          margin: "20px 0",
         }}
       >
-        {statCards.map((item) => (
-          <StatCard
-            key={item.title}
-            title={item.title}
-            value={item.value}
-            icon={item.icon}
-          />
-        ))}
+        <StatCard
+          title="Tổng thông báo"
+          value={stats.total}
+          icon={<BellOutlined />}
+        />
+
+        <StatCard
+          title="Chưa đọc"
+          value={stats.unread}
+          icon={<NotificationOutlined />}
+        />
+
+        <StatCard
+          title="Đã đọc"
+          value={stats.read}
+          icon={<CheckCircleFilled />}
+        />
       </div>
 
-      {/* =====================================================
-          FILTER
-      ===================================================== */}
+      {/* FILTER PANEL */}
 
       <div
         style={{
-          background: "#FFFFFF",
+          background: "#fff",
           borderRadius: 18,
+          border: "1px solid #edf0f3",
           padding: 16,
-          marginBottom: 16,
-          border: "1px solid #E2E8F0",
+          marginBottom: 18,
         }}
       >
         <div
           style={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
-            gap: 12,
+            alignItems: "center",
+            gap: 16,
             flexWrap: "wrap",
           }}
         >
@@ -1130,7 +1128,7 @@ const NotificationsCatePage = () => {
                   count={stats.unread}
                   size="small"
                   style={{
-                    marginLeft: 7,
+                    marginLeft: 8,
                   }}
                 />
               )}
@@ -1150,33 +1148,32 @@ const NotificationsCatePage = () => {
           <Select
             value={typeFilter}
             options={typeOptions}
-            style={{
-              width: 190,
-            }}
             onChange={(value) => {
               setTypeFilter(value);
               setPage(1);
+            }}
+            style={{
+              width: 210,
             }}
           />
         </div>
       </div>
 
-      {/* =====================================================
-          LIST
-      ===================================================== */}
+      {/* LIST */}
 
       <div
         style={{
-          background: "#FFFFFF",
-          borderRadius: 20,
+          background: "#fff",
+          borderRadius: 22,
           padding: 20,
-          border: "1px solid #E2E8F0",
+          border: "1px solid #edf0f3",
+          minHeight: 400,
         }}
       >
         {loading ? (
           <div
             style={{
-              minHeight: 320,
+              minHeight: 350,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1187,9 +1184,9 @@ const NotificationsCatePage = () => {
         ) : notifications.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Không có thông báo"
+            description="Chưa có thông báo nào"
             style={{
-              padding: "70px 20px",
+              padding: "90px 20px",
             }}
           />
         ) : (
@@ -1199,15 +1196,22 @@ const NotificationsCatePage = () => {
             pagination={{
               current: page,
               pageSize,
-              total: paginationTotal ?? notifications.length,
+              total: paginationTotal,
 
               showSizeChanger: true,
 
               pageSizeOptions: [10, 20, 50],
 
-              showTotal: (total) => `Tổng ${total} thông báo`,
+              showTotal: (total) => `Tổng cộng ${total} thông báo`,
 
-              onChange: handlePageChange,
+              onChange: (nextPage, nextPageSize) => {
+                if (nextPageSize !== pageSize) {
+                  setPageSize(nextPageSize);
+                  setPage(1);
+                } else {
+                  setPage(nextPage);
+                }
+              },
             }}
           />
         )}
@@ -1220,40 +1224,52 @@ const NotificationsCatePage = () => {
       <AppDetailModal
         open={detailOpen}
         title="Chi tiết thông báo"
+        showEdit={false}
         onCancel={() => {
           setDetailOpen(false);
           setSelectedNotification(null);
         }}
       >
-        {selectedNotification && (
-          <>
-            {(() => {
-              const type = getTypeConfig(selectedNotification.type);
+        {selectedNotification &&
+          (() => {
+            const type = getTypeConfig(selectedNotification.type);
 
-              const priority = getPriorityConfig(selectedNotification.priority);
+            const priority = getPriorityConfig(selectedNotification.priority);
 
-              return (
-                <>
-                  {/* HEADER */}
+            const readPercent =
+              selectedNotification.recipient_count > 0
+                ? Math.round(
+                    (selectedNotification.read_count /
+                      selectedNotification.recipient_count) *
+                      100,
+                  )
+                : selectedNotification.read_percent || 0;
 
+            return (
+              <div>
+                {/* HEADER */}
+
+                <div
+                  style={{
+                    padding: 22,
+                    borderRadius: 18,
+                    background: type.bg,
+                    border: `1px solid ${type.color}25`,
+                  }}
+                >
                   <div
                     style={{
                       display: "flex",
                       gap: 14,
-                      padding: 18,
-                      background: "#FFFDF7",
-                      border: "1px solid #F1E6B8",
-                      borderRadius: 16,
-                      marginBottom: 20,
                     }}
                   >
                     <Avatar
-                      size={54}
-                      icon={type.icon}
+                      size={56}
                       style={{
-                        background: "#FFF4C2",
-                        color: "#B28A00",
+                        background: type.color,
+                        fontSize: 22,
                       }}
+                      icon={type.icon}
                     />
 
                     <div
@@ -1265,166 +1281,276 @@ const NotificationsCatePage = () => {
                         strong
                         style={{
                           display: "block",
-                          fontSize: 19,
-                          color: "#1E293B",
+                          fontSize: 20,
+                          lineHeight: 1.45,
                         }}
                       >
                         {selectedNotification.title}
                       </Text>
 
-                      <div
+                      <Space
+                        wrap
                         style={{
-                          marginTop: 8,
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 6,
+                          marginTop: 10,
                         }}
                       >
-                        <Tag color={type.color} icon={type.icon}>
-                          {type.label}
-                        </Tag>
+                        <Tag color="blue">{type.label}</Tag>
 
-                        {selectedNotification.priority !== "normal" && (
-                          <Tag color={priority.color}>{priority.label}</Tag>
-                        )}
+                        <Tag color={priority.color}>{priority.label}</Tag>
 
                         <Tag
                           color={
-                            selectedNotification.is_read ? "green" : "orange"
+                            selectedNotification.is_read ? "success" : "warning"
                           }
                         >
                           {selectedNotification.is_read ? "Đã đọc" : "Chưa đọc"}
                         </Tag>
+                      </Space>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CONTENT */}
+
+                <div
+                  style={{
+                    padding: "24px 4px",
+                  }}
+                >
+                  <Paragraph
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      fontSize: 15,
+                      lineHeight: 1.9,
+                      color: "#334155",
+                      marginBottom: 0,
+                    }}
+                  >
+                    {selectedNotification.content}
+                  </Paragraph>
+                </div>
+
+                {/* VIEW STATS */}
+
+                {selectedNotification.recipient_count > 0 && (
+                  <div
+                    style={{
+                      background: "#fafafa",
+                      borderRadius: 16,
+                      padding: 18,
+                      marginBottom: 20,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <div>
+                        <Text strong>
+                          <EyeOutlined /> Tình trạng người xem
+                        </Text>
+
+                        <div
+                          style={{
+                            marginTop: 3,
+                          }}
+                        >
+                          <Text type="secondary">
+                            Theo dõi mức độ tiếp cận thông báo
+                          </Text>
+                        </div>
+                      </div>
+
+                      <Text
+                        strong
+                        style={{
+                          fontSize: 18,
+                        }}
+                      >
+                        {readPercent}%
+                      </Text>
+                    </div>
+
+                    <Progress percent={readPercent} strokeColor={type.color} />
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gap: 10,
+                        marginTop: 16,
+                      }}
+                    >
+                      <div>
+                        <Text type="secondary">Đã đọc</Text>
+
+                        <div>
+                          <Text
+                            strong
+                            style={{
+                              fontSize: 18,
+                              color: "#52c41a",
+                            }}
+                          >
+                            {selectedNotification.read_count}
+                          </Text>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Text type="secondary">Chưa đọc</Text>
+
+                        <div>
+                          <Text
+                            strong
+                            style={{
+                              fontSize: 18,
+                              color: "#fa8c16",
+                            }}
+                          >
+                            {selectedNotification.unread_count}
+                          </Text>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Text type="secondary">Người nhận</Text>
+
+                        <div>
+                          <Text
+                            strong
+                            style={{
+                              fontSize: 18,
+                            }}
+                          >
+                            {selectedNotification.recipient_count}
+                          </Text>
+                        </div>
                       </div>
                     </div>
                   </div>
+                )}
 
-                  {/* CONTENT */}
+                {/* META */}
 
-                  <Paragraph
+                <div
+                  style={{
+                    borderTop: "1px solid #f0f0f0",
+                    paddingTop: 18,
+                  }}
+                >
+                  <Space
+                    direction="vertical"
+                    size={12}
                     style={{
-                      fontSize: 15,
-                      lineHeight: 1.8,
-                      whiteSpace: "pre-wrap",
-                      color: "#334155",
+                      width: "100%",
                     }}
                   >
-                    {selectedNotification.content || "Không có nội dung"}
-                  </Paragraph>
-
-                  {/* META */}
-
-                  <div
-                    style={{
-                      borderTop: "1px solid #E2E8F0",
-                      paddingTop: 16,
-                      marginTop: 20,
-                    }}
-                  >
-                    <Space
-                      direction="vertical"
-                      size={9}
+                    <div
                       style={{
-                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
                       }}
                     >
-                      <Text type="secondary">
-                        ID thông báo:{" "}
-                        <Text strong>{selectedNotification.id}</Text>
-                      </Text>
+                      <Avatar
+                        size={30}
+                        style={{
+                          background: getAvatarColor(
+                            selectedNotification.created_by_name,
+                          ),
+                        }}
+                      >
+                        {getInitial(selectedNotification.created_by_name)}
+                      </Avatar>
 
-                      <Text type="secondary">
-                        Người tạo:{" "}
-                        <Text strong>
-                          {selectedNotification.created_by ?? "Không xác định"}
-                        </Text>
-                      </Text>
+                      <div>
+                        <Text type="secondary">Người tạo</Text>
 
-                      <Text type="secondary">
-                        Thời gian tạo:{" "}
-                        <Text strong>
-                          {formatDate(selectedNotification.created_at)}
+                        <div>
+                          <Text strong>
+                            {selectedNotification.created_by_name}
+                          </Text>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 30,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div>
+                        <Text type="secondary">
+                          <CalendarOutlined /> Thời gian tạo
                         </Text>
-                      </Text>
+
+                        <div>
+                          <Text strong>
+                            {formatDate(selectedNotification.created_at)}
+                          </Text>
+                        </div>
+                      </div>
 
                       {selectedNotification.read_at && (
-                        <Text type="secondary">
-                          Thời gian đọc:{" "}
-                          <Text strong>
-                            {formatDate(selectedNotification.read_at)}
+                        <div>
+                          <Text type="secondary">
+                            <ReadOutlined /> Bạn đã đọc lúc
                           </Text>
-                        </Text>
+
+                          <div>
+                            <Text strong>
+                              {formatDate(selectedNotification.read_at)}
+                            </Text>
+                          </div>
+                        </div>
                       )}
+                    </div>
+                  </Space>
+                </div>
 
-                      <Text type="secondary">
-                        Mức độ:{" "}
-                        <Tag color={priority.color}>{priority.label}</Tag>
-                      </Text>
+                {/* ACTION */}
 
-                      {selectedNotification.related_type && (
-                        <Text type="secondary">
-                          Loại liên kết:{" "}
-                          <Text strong>
-                            {selectedNotification.related_type}
-                          </Text>
-                        </Text>
-                      )}
-
-                      {selectedNotification.related_id && (
-                        <Text type="secondary">
-                          ID liên kết:{" "}
-                          <Text strong>{selectedNotification.related_id}</Text>
-                        </Text>
-                      )}
-
-                      <Text type="secondary">
-                        Đường dẫn:{" "}
-                        <Text strong>
-                          {selectedNotification.action_url || "Không có"}
-                        </Text>
-                      </Text>
-                    </Space>
-                  </div>
-
-                  {/* ACTION */}
-
+                {canDelete && (
                   <div
                     style={{
+                      marginTop: 24,
+                      paddingTop: 18,
+                      borderTop: "1px solid #f0f0f0",
                       display: "flex",
                       justifyContent: "flex-end",
-                      gap: 8,
-                      marginTop: 24,
                     }}
                   >
-                    {canDelete && (
-                      <AppButton
-                        danger
-                        icon={<DeleteOutlined />}
-                        loading={actionLoading}
-                        onClick={() => handleDelete(selectedNotification)}
-                      >
-                        Xóa thông báo
-                      </AppButton>
-                    )}
+                    <AppButton
+                      danger
+                      icon={<DeleteOutlined />}
+                      loading={actionLoading}
+                      onClick={() => handleDelete(selectedNotification)}
+                    >
+                      Xóa thông báo này
+                    </AppButton>
                   </div>
-                </>
-              );
-            })()}
-          </>
-        )}
+                )}
+              </div>
+            );
+          })()}
       </AppDetailModal>
 
-      {/* =====================================================
-          DELETE ALL MODAL
-      ===================================================== */}
+      {/* DELETE ALL */}
 
       <AppFormModal
         open={deleteAllOpen}
-        title="Xóa tất cả thông báo"
+        title="Xóa toàn bộ thông báo"
         onCancel={() => setDeleteAllOpen(false)}
         onOk={handleDeleteAll}
         confirmLoading={actionLoading}
-        okText="Xóa tất cả"
+        okText="Xóa toàn bộ"
         cancelText="Hủy"
         okButtonProps={{
           danger: true,
@@ -1433,11 +1559,32 @@ const NotificationsCatePage = () => {
         <Alert
           type="warning"
           showIcon
-          icon={<ExclamationCircleOutlined />}
-          message="Bạn có chắc chắn muốn xóa tất cả thông báo?"
-          description="Toàn bộ thông báo của tài khoản hiện tại sẽ bị xóa và không thể khôi phục."
+          message="Bạn có chắc chắn muốn xóa toàn bộ thông báo?"
+          description="Các thông báo sẽ bị xóa khỏi tài khoản của bạn."
+          style={{
+            borderRadius: 12,
+          }}
         />
       </AppFormModal>
+
+      {/* CSS */}
+
+      <style>
+        {`
+          .notification-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
+          }
+
+          @media (max-width: 768px) {
+
+            .notification-card {
+              border-radius: 14px !important;
+            }
+
+          }
+        `}
+      </style>
     </div>
   );
 };

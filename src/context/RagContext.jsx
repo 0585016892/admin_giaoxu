@@ -70,7 +70,6 @@ export const RagProvider = ({ children }) => {
       setStatusText("Đang khởi động đồng bộ...");
       await trainRAG();
     } catch (error) {
-      console.error(error);
       setLoading(false);
       setCurrentStep(null);
       message.error(error.response?.data?.message || "Lỗi đồng bộ dữ liệu");
@@ -90,7 +89,6 @@ export const RagProvider = ({ children }) => {
       setStatusText("Đang khởi tạo Vector Embeddings...");
       await trainEmbedding();
     } catch (error) {
-      console.error(error);
       setLoading(false);
       setCurrentStep(null);
       message.error(error.response?.data?.message || "Lỗi tạo embedding");

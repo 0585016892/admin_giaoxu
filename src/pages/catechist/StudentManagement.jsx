@@ -315,8 +315,6 @@ export default function StudentManagement() {
 
       message.success("Đã tải mã QR!");
     } catch (error) {
-      console.error("DOWNLOAD QR ERROR:", error);
-
       message.error("Không thể tải mã QR!");
     }
   }, [qrStudent]);
@@ -537,8 +535,6 @@ export default function StudentManagement() {
         // Reset checkbox
         setSelectedRowKeys([]);
       } catch (error) {
-        console.error("GET STUDENTS ERROR:", error);
-
         if (mountedRef.current) {
           message.error(
             error?.response?.data?.message ||

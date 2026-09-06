@@ -609,8 +609,6 @@ const GameManagementPage = ({ teacherId }) => {
         message.error(result?.message || "Không thể tải danh sách game");
       }
     } catch (error) {
-      console.error("loadGames error:", error);
-
       message.error(error?.message || "Không thể tải danh sách game");
     } finally {
       setLoading(false);
@@ -701,8 +699,6 @@ const GameManagementPage = ({ teacherId }) => {
 
             await loadGames();
           } catch (error) {
-            console.error("deleteGame error:", error);
-
             message.error(error?.message || "Không thể xóa game");
           }
         },
@@ -769,8 +765,6 @@ const GameManagementPage = ({ teacherId }) => {
          */
         setPlayingGame(loadedGame);
       } catch (error) {
-        console.error("handlePlayGame error:", error);
-
         message.error(error?.message || "Không thể mở game");
       } finally {
         setPlayerLoading(false);

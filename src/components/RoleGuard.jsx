@@ -14,11 +14,7 @@ export default function RoleGuard({ allowedRoles = [], children }) {
 
   // Không có role được phép
   if (!allowedRoles.includes(user.role)) {
-    if (user.role === "catechist") {
-      return <Navigate to="/catechist" replace />;
-    }
-
-    return <Navigate to="/" replace />;
+    return <Navigate to="/catechist" replace />;
   }
 
   return children;

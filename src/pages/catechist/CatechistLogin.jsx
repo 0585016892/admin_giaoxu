@@ -89,7 +89,7 @@ export default function Login() {
           remember: true,
         });
       } catch (e) {
-        console.error("Lỗi đọc ghi nhớ đăng nhập:", e);
+        message.error("Lỗi đọc thông tin đăng nhập đã lưu");
       }
     }
   }, [form]);
@@ -137,8 +137,6 @@ export default function Login() {
       try {
         await login(res.data.token);
       } catch (loginError) {
-        console.error("Lỗi lưu phiên đăng nhập:", loginError);
-
         message.error("Không thể lưu phiên đăng nhập");
 
         return;

@@ -155,7 +155,6 @@ export default function ProfilePageCate() {
         setFileList([]);
       }
     } catch (error) {
-      console.error("Lỗi tải thông tin cá nhân:", error);
       message.error("Không thể tải thông tin hồ sơ cá nhân!");
     } finally {
       setLoading(false);
@@ -203,7 +202,6 @@ export default function ProfilePageCate() {
       );
       fetchProfile();
     } catch (error) {
-      console.error("Error updating profile:", error);
       message.error(
         error?.response?.data?.message || "Cập nhật thông tin thất bại!",
       );
@@ -228,7 +226,6 @@ export default function ProfilePageCate() {
       message.success("Đổi mật khẩu thành công! 🔐");
       passwordForm.resetFields();
     } catch (error) {
-      console.error(error);
       message.error(
         error?.response?.data?.message ||
           "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại!",

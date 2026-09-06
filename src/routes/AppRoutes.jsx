@@ -26,6 +26,7 @@ import TeacherClassesPage from "../pages/catechist/TeacherClassesPage";
 import MyStudentsPage from "../pages/catechist/MyStudentsPage";
 import SendNotificationPage from "../pages/catechist/SendNotificationPage";
 import NotificationsCatePage from "../pages/catechist/NotificationsCatePage";
+import ErrorPage from "../pages/catechist/ErrorPage";
 import LandingPage from "../pages/LandingPage/LandingPage";
 
 // ============================================================
@@ -133,7 +134,7 @@ export default function AppRoutes() {
           FALLBACK
       ====================================================== */}
 
-      {/* <Route path="*" element={<NotFound />} /> */}
+      <Route path="*" element={<ErrorPage />} />
     </Routes>
   );
 }

@@ -258,8 +258,6 @@ export default function CatechistDashboard() {
 
       setDashboard(data);
     } catch (err) {
-      console.error("❌ GET DASHBOARD ERROR:", err);
-
       setError(true);
 
       message.error(
@@ -281,9 +279,7 @@ export default function CatechistDashboard() {
       if (response?.data?.success) {
         setDailyVerse(response.data.data);
       }
-    } catch (err) {
-      console.error("❌ GET DAILY VERSE ERROR:", err);
-    }
+    } catch (err) {}
   };
 
   // ===================================================

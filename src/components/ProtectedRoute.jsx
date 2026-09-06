@@ -87,15 +87,7 @@ export function RoleGuard({ allowedRoles = [], loginPath = "/" }) {
     // GIÁO LÝ VIÊN / GIÁO VIÊN
     // --------------------------------------------------------
 
-    if (user.role === "catechist" || user.role === "teacher") {
-      return <Navigate to="/catechist" replace />;
-    }
-
-    // --------------------------------------------------------
-    // ADMIN / PRIEST / CÁC ROLE GIÁO XỨ
-    // --------------------------------------------------------
-
-    return <Navigate to="/giao-xu" replace />;
+    return <Navigate to="/catechist" replace />;
   }
 
   return <Outlet />;

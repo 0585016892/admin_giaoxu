@@ -590,10 +590,6 @@ const TeacherClassesPage = () => {
 
       const response = await classApi.getClassTeacher();
 
-      console.log("========================================");
-      console.log("GET TEACHER CLASSES RESPONSE:", response);
-      console.log("========================================");
-
       const list = normalizeListResponse(response);
 
       console.log("NORMALIZED TEACHER CLASSES:", list);
@@ -603,8 +599,6 @@ const TeacherClassesPage = () => {
        */
       setClasses(Array.isArray(list) ? list : []);
     } catch (error) {
-      console.error("GET TEACHER CLASS ERROR:", error);
-
       setClasses([]);
 
       setError(

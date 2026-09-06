@@ -101,8 +101,6 @@ const MyStudentsPage = () => {
         }
       }
     } catch (error) {
-      console.error("GET STUDENT DETAIL ERROR:", error);
-
       message.warning("Đang hiển thị thông tin sẵn có của học sinh.");
     } finally {
       setDetailLoading(false);

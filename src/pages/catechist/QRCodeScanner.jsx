@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import { Button, Card, Modal, Space, Spin, Tag, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Modal,
+  Space,
+  Spin,
+  Tag,
+  Typography,
+  message,
+} from "antd";
 
 import {
   CameraOutlined,
@@ -184,7 +193,7 @@ const QRCodeScanner = ({
         navigator.vibrate(pattern);
       }
     } catch (error) {
-      console.warn("VIBRATE ERROR:", error);
+      message.error("VIBRATE ERROR:", error);
     }
   };
 
@@ -337,7 +346,7 @@ const QRCodeScanner = ({
         try {
           await onSuccess(data);
         } catch (callbackError) {
-          console.error("QR onSuccess ERROR:", callbackError);
+          message.error("QR onSuccess ERROR:", callbackError);
         }
       }
 
@@ -365,7 +374,7 @@ const QRCodeScanner = ({
 
       vibrate(120);
     } catch (error) {
-      console.error("QR SCAN ERROR:", error);
+      message.error("QR SCAN ERROR:", error);
 
       const status = error?.response?.status;
 
@@ -520,7 +529,7 @@ const QRCodeScanner = ({
       try {
         await onFinishAttendance();
       } catch (error) {
-        console.error("FINISH ATTENDANCE ERROR:", error);
+        message.error("FINISH ATTENDANCE ERROR:", error);
       }
 
       return;
