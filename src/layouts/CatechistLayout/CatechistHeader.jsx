@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Layout,
@@ -8,6 +8,8 @@ import {
   Tooltip,
   ConfigProvider,
   Tag,
+  Badge,
+  Spin,
 } from "antd";
 
 import {
@@ -20,15 +22,96 @@ import {
   SmileOutlined,
   DownOutlined,
   HomeOutlined,
+  BellOutlined,
+  CheckOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
+
+import { io } from "socket.io-client";
 
 import { useUser } from "../../context/UserContext";
 import HelpModalCate from "../../components/HelpModalCate";
+import notificationApi from "../../api/notificationApi";
 import logoWeb from "../../assets/images/logoweb.png";
 
 const { Header } = Layout;
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL;
+
+/* =========================================================
+   NOTIFICATION HELPERS
+========================================================= */
+
+const normalizeNotification = (item) => {
+  if (!item) return null;
+
+  return {
+    ...item,
+
+    id: Number(item?.id),
+
+    church_id:
+      item?.church_id !== null && item?.church_id !== undefined
+        ? Number(item.church_id)
+        : null,
+
+    created_by:
+      item?.created_by !== null && item?.created_by !== undefined
+        ? Number(item.created_by)
+        : null,
+
+    related_id:
+      item?.related_id !== null &&
+      item?.related_id !== undefined &&
+      item?.related_id !== ""
+        ? Number(item.related_id)
+        : null,
+
+    action_url:
+      item?.action_url !== null &&
+      item?.action_url !== undefined &&
+      String(item.action_url).trim() !== ""
+        ? String(item.action_url).trim()
+        : null,
+
+    related_type:
+      item?.related_type !== null &&
+      item?.related_type !== undefined &&
+      String(item.related_type).trim() !== ""
+        ? String(item.related_type).trim()
+        : null,
+
+    is_read:
+      item?.is_read === true ||
+      item?.is_read === 1 ||
+      item?.is_read === "1" ||
+      item?.is_read === "true",
+  };
+};
+
+const getNotificationList = (res) => {
+  if (Array.isArray(res)) {
+    return res;
+  }
+
+  if (Array.isArray(res?.data)) {
+    return res.data;
+  }
+
+  if (Array.isArray(res?.notifications)) {
+    return res.notifications;
+  }
+
+  if (Array.isArray(res?.data?.notifications)) {
+    return res.data.notifications;
+  }
+
+  return [];
+};
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function AdminHeader() {
   const navigate = useNavigate();
@@ -39,6 +122,14 @@ export default function AdminHeader() {
   const [helpOpen, setHelpOpen] = useState(false);
 
   /* =========================================================
+     NOTIFICATIONS STATE
+  ========================================================= */
+
+  const [notifications, setNotifications] = useState([]);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+
+  /* =========================================================
      PAGE TITLE
   ========================================================= */
 
@@ -47,12 +138,23 @@ export default function AdminHeader() {
 
     let title = "Tổng quan";
 
-    if (path === "/catechist") {
-      title = "Tổng quan";
+    /*
+     * IMPORTANT:
+     * Các route dài phải kiểm tra trước route ngắn
+     */
+
+    if (path === "/catechist/classes-teacher") {
+      title = "Lớp học của bạn";
+    } else if (path === "/catechist/student-class") {
+      title = "Học sinh của bạn";
+    } else if (path === "/catechist-management") {
+      title = "Quản lý giáo lý viên";
     } else if (path === "/catechist/classes") {
       title = "Quản lý lớp học";
     } else if (path === "/catechist/students") {
       title = "Quản lý học sinh";
+    } else if (path === "/attendance") {
+      title = "Điểm danh";
     } else if (path === "/catechist/games") {
       title = "Kho trò chơi";
     } else if (path === "/catechist/results") {
@@ -61,22 +163,18 @@ export default function AdminHeader() {
       title = "Bảng thành tích";
     } else if (path === "/catechist/lessons") {
       title = "Bài học & Câu hỏi";
-    } else if (path === "/catechist-management") {
-      title = "Quản lý giáo lý viên";
+    } else if (path === "/catechist/notifications") {
+      title = "Gửi thông báo";
+    } else if (path === "/catechist/my-notifications") {
+      title = "Thông báo của giáo xứ";
     } else if (path === "/catechist/profile") {
       title = "Trang cá nhân";
     } else if (path === "/catechist/settings") {
       title = "Thiết lập hệ thống";
-    } else if (path === "/catechist/classes-teacher") {
-      title = "Lớp học của bạn";
-    } else if (path === "/catechist/student-class") {
-      title = "Học sinh của bạn";
-    } else if (path === "/attendance") {
-      title = "Điểm danh";
-    } else if (path === "/catechist") {
-      title = "Trang cá nhân";
     } else if (path === "/login") {
       title = "Đăng nhập";
+    } else if (path === "/catechist") {
+      title = "Tổng quan";
     }
 
     document.title = `${title} | FaithEdu`;
@@ -172,7 +270,615 @@ export default function AdminHeader() {
   const userRole = translateRole(user?.role);
 
   /* =========================================================
-     HELP MODAL
+     LOAD TODAY NOTIFICATIONS
+  ========================================================= */
+
+  const loadNotifications = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      setNotificationLoading(true);
+
+      const res = await notificationApi.getToday();
+
+      const list = getNotificationList(res)
+        .map(normalizeNotification)
+        .filter((item) => item && item.id);
+
+      // Mới nhất lên đầu
+      list.sort((a, b) => {
+        const timeA = new Date(a.created_at || 0).getTime();
+        const timeB = new Date(b.created_at || 0).getTime();
+
+        return timeB - timeA;
+      });
+
+      setNotifications(list);
+    } catch (error) {
+      console.error("GET TODAY NOTIFICATIONS ERROR:", error);
+    } finally {
+      setNotificationLoading(false);
+    }
+  }, [user?.id]);
+
+  /* =========================================================
+     UNREAD COUNT
+  ========================================================= */
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter((item) => !item.is_read).length;
+  }, [notifications]);
+
+  /* =========================================================
+     INITIAL LOAD
+  ========================================================= */
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    loadNotifications();
+  }, [user?.id, loadNotifications]);
+
+  /* =========================================================
+     SOCKET REALTIME
+  ========================================================= */
+
+  useEffect(() => {
+    if (!user?.id || !API_URL) return;
+
+    const socket = io(API_URL, {
+      transports: ["websocket"],
+      reconnection: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("🔌 Notification socket connected:", socket.id);
+
+      socket.emit("join:user", {
+        userId: user.id,
+        churchId: user.church_id,
+      });
+    });
+
+    socket.on("notification", (notification) => {
+      console.log("🔔 NEW NOTIFICATION:", notification);
+
+      const newNotification = normalizeNotification(notification);
+
+      if (!newNotification?.id) return;
+
+      setNotifications((prev) => {
+        const exists = prev.some(
+          (item) => Number(item.id) === Number(newNotification.id),
+        );
+
+        if (exists) {
+          return prev;
+        }
+
+        return [newNotification, ...prev].slice(0, 50);
+      });
+
+      /*
+       * Browser notification
+       */
+
+      if (
+        typeof window !== "undefined" &&
+        document.hidden &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        try {
+          new Notification(newNotification.title || "Thông báo mới", {
+            body:
+              newNotification.content ||
+              "Bạn có một thông báo mới từ FaithEdu.",
+            icon: logoWeb,
+          });
+        } catch (error) {
+          console.warn("Browser notification error:", error);
+        }
+      }
+
+      /*
+       * Update browser title
+       */
+
+      const currentTitle = document.title;
+
+      if (!currentTitle.startsWith("🔔")) {
+        document.title = `🔔 ${currentTitle}`;
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("🔌 Notification socket disconnected");
+    });
+
+    socket.on("connect_error", (error) => {
+      console.warn("Notification socket error:", error?.message);
+    });
+
+    return () => {
+      socket.emit("leave:user", {
+        userId: user.id,
+        churchId: user.church_id,
+      });
+
+      socket.disconnect();
+    };
+  }, [user?.id, user?.church_id]);
+
+  /* =========================================================
+     BROWSER NOTIFICATION PERMISSION
+  ========================================================= */
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return;
+    }
+
+    if (Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  /* =========================================================
+     NOTIFICATION ICON
+  ========================================================= */
+
+  const getNotificationIcon = (type) => {
+    switch (String(type || "").toLowerCase()) {
+      case "attendance":
+        return "📋";
+
+      case "class":
+        return "🏫";
+
+      case "student":
+        return "👨‍🎓";
+
+      case "exam":
+        return "📝";
+
+      case "game":
+        return "🎮";
+
+      case "achievement":
+        return "🏆";
+
+      case "catechist":
+        return "👨‍🏫";
+
+      case "schedule":
+        return "📅";
+
+      case "announcement":
+        return "📢";
+
+      case "security":
+        return "🔐";
+
+      case "system":
+        return "⚙️";
+
+      default:
+        return "🔔";
+    }
+  };
+
+  /* =========================================================
+     NOTIFICATION TYPE LABEL
+  ========================================================= */
+
+  const getNotificationTypeLabel = (type) => {
+    switch (String(type || "").toLowerCase()) {
+      case "attendance":
+        return "Điểm danh";
+
+      case "class":
+        return "Lớp học";
+
+      case "student":
+        return "Học sinh";
+
+      case "exam":
+        return "Bài kiểm tra";
+
+      case "game":
+        return "Trò chơi";
+
+      case "achievement":
+        return "Thành tích";
+
+      case "catechist":
+        return "Giáo lý viên";
+
+      case "schedule":
+        return "Lịch học";
+
+      case "announcement":
+        return "Thông báo";
+
+      case "security":
+        return "Bảo mật";
+
+      case "system":
+        return "Hệ thống";
+
+      default:
+        return "Thông báo";
+    }
+  };
+
+  /* =========================================================
+     PRIORITY
+  ========================================================= */
+
+  const getPriorityConfig = (priority) => {
+    switch (String(priority || "").toLowerCase()) {
+      case "urgent":
+        return {
+          label: "Khẩn cấp",
+          className: "urgent",
+        };
+
+      case "high":
+        return {
+          label: "Quan trọng",
+          className: "high",
+        };
+
+      case "low":
+        return {
+          label: "Thấp",
+          className: "low",
+        };
+
+      default:
+        return {
+          label: "Bình thường",
+          className: "normal",
+        };
+    }
+  };
+
+  /* =========================================================
+     FORMAT TIME
+  ========================================================= */
+
+  const formatNotificationTime = (date) => {
+    if (!date) return "";
+
+    const parsed = new Date(date);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return "";
+    }
+
+    const now = new Date();
+
+    const diff = Math.floor((now.getTime() - parsed.getTime()) / 1000);
+
+    if (diff < 0) {
+      return "Vừa xong";
+    }
+
+    if (diff < 60) {
+      return "Vừa xong";
+    }
+
+    if (diff < 3600) {
+      return `${Math.floor(diff / 60)} phút trước`;
+    }
+
+    if (diff < 86400) {
+      return `${Math.floor(diff / 3600)} giờ trước`;
+    }
+
+    if (diff < 172800) {
+      return "Hôm qua";
+    }
+
+    return parsed.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  /* =========================================================
+     MARK ONE AS READ
+  ========================================================= */
+
+  const handleNotificationRead = async (notification) => {
+    if (!notification?.id) return;
+
+    try {
+      /*
+       * Chỉ gọi API nếu chưa đọc
+       */
+      if (!notification.is_read) {
+        await notificationApi.markAsRead(notification.id);
+
+        setNotifications((prev) =>
+          prev.map((item) =>
+            Number(item.id) === Number(notification.id)
+              ? {
+                  ...item,
+                  is_read: true,
+                  read_at: new Date().toISOString(),
+                }
+              : item,
+          ),
+        );
+      }
+
+      setNotificationOpen(false);
+
+      /*
+       * Nếu notification có action_url
+       * thì mới điều hướng.
+       *
+       * Data hiện tại của m:
+       *
+       * action_url: null
+       *
+       * => chỉ đánh dấu đã đọc,
+       * không navigate.
+       */
+
+      if (notification.action_url) {
+        const actionUrl = String(notification.action_url).trim();
+
+        if (actionUrl.startsWith("http")) {
+          window.location.href = actionUrl;
+        } else {
+          navigate(actionUrl);
+        }
+
+        return;
+      }
+
+      /*
+       * Không có action_url
+       * => không điều hướng.
+       */
+    } catch (error) {
+      console.error("MARK NOTIFICATION READ ERROR:", error);
+    }
+  };
+
+  /* =========================================================
+     MARK ALL AS READ
+  ========================================================= */
+
+  const handleMarkAllAsRead = async () => {
+    if (unreadCount <= 0) return;
+
+    try {
+      await notificationApi.markAllAsRead();
+
+      const now = new Date().toISOString();
+
+      setNotifications((prev) =>
+        prev.map((item) => ({
+          ...item,
+          is_read: true,
+          read_at: item.read_at || now,
+        })),
+      );
+    } catch (error) {
+      console.error("MARK ALL NOTIFICATIONS READ ERROR:", error);
+    }
+  };
+
+  /* =========================================================
+     OPEN NOTIFICATION DROPDOWN
+  ========================================================= */
+
+  const handleNotificationOpenChange = async (open) => {
+    setNotificationOpen(open);
+
+    if (open) {
+      await loadNotifications();
+    }
+  };
+
+  /* =========================================================
+     NOTIFICATION DROPDOWN
+  ========================================================= */
+
+  const notificationDropdownContent = (
+    <div className="faith-notification-dropdown">
+      {/* =====================================================
+         HEADER
+      ===================================================== */}
+
+      <div className="faith-notification-header">
+        <div className="faith-notification-header-left">
+          <div className="faith-notification-header-icon">
+            <BellOutlined />
+          </div>
+
+          <div className="faith-notification-header-info">
+            <div className="faith-notification-title-row">
+              <h3 className="faith-notification-title">Thông báo</h3>
+
+              {unreadCount > 0 && (
+                <span className="faith-notification-count">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </div>
+
+            <div className="faith-notification-subtitle">
+              {unreadCount > 0
+                ? `Bạn có ${unreadCount} thông báo chưa đọc`
+                : "Bạn đã xem tất cả thông báo"}
+            </div>
+          </div>
+        </div>
+
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            className="faith-notification-read-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMarkAllAsRead();
+            }}
+          >
+            <CheckOutlined />
+            <span>Đọc tất cả</span>
+          </button>
+        )}
+      </div>
+
+      {/* =====================================================
+         DIVIDER
+      ===================================================== */}
+
+      <div className="faith-notification-divider" />
+
+      {/* =====================================================
+         LIST
+      ===================================================== */}
+
+      <div className="faith-notification-list">
+        {notificationLoading ? (
+          <div className="faith-notification-loading">
+            <Spin size="small" />
+
+            <span>Đang tải thông báo...</span>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="faith-notification-empty">
+            <div className="faith-notification-empty-icon">
+              <BellOutlined />
+            </div>
+
+            <div className="faith-notification-empty-title">
+              Chưa có thông báo
+            </div>
+
+            <div className="faith-notification-empty-description">
+              Các thông báo mới từ giáo xứ sẽ xuất hiện tại đây.
+            </div>
+          </div>
+        ) : (
+          notifications.slice(0, 8).map((notification) => {
+            const priority = getPriorityConfig(notification.priority);
+
+            return (
+              <div
+                key={notification.id}
+                role="button"
+                tabIndex={0}
+                className={`faith-notification-item ${
+                  notification.is_read ? "read" : "unread"
+                }`}
+                onClick={() => handleNotificationRead(notification)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+
+                    handleNotificationRead(notification);
+                  }
+                }}
+              >
+                {/* =========================================
+                     ICON
+                  ========================================= */}
+
+                <div
+                  className={`faith-notification-item-icon ${priority.className}`}
+                >
+                  {getNotificationIcon(notification.type)}
+                </div>
+
+                {/* =========================================
+                     CONTENT
+                  ========================================= */}
+
+                <div className="faith-notification-item-content">
+                  <div className="faith-notification-item-top">
+                    <div className="faith-notification-type-wrap">
+                      <span className="faith-notification-item-type">
+                        {getNotificationTypeLabel(notification.type)}
+                      </span>
+
+                      {!notification.is_read && (
+                        <span className="faith-notification-unread-dot" />
+                      )}
+                    </div>
+
+                    <span className="faith-notification-item-time">
+                      {formatNotificationTime(notification.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="faith-notification-item-title">
+                    {notification.title || "Thông báo mới"}
+                  </div>
+
+                  {notification.content && (
+                    <div className="faith-notification-item-description">
+                      {notification.content}
+                    </div>
+                  )}
+
+                  {notification.priority &&
+                    notification.priority !== "normal" && (
+                      <div className="faith-notification-item-bottom">
+                        <span
+                          className={`faith-notification-priority ${priority.className}`}
+                        >
+                          <span className="faith-notification-priority-dot" />
+
+                          {priority.label}
+                        </span>
+                      </div>
+                    )}
+                </div>
+
+                {/* =========================================
+                     ARROW
+                  ========================================= */}
+
+                <RightOutlined className="faith-notification-arrow" />
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* =====================================================
+         FOOTER
+      ===================================================== */}
+
+      <div className="faith-notification-footer">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+
+            setNotificationOpen(false);
+
+            navigate("/catechist/my-notifications");
+          }}
+        >
+          <span>Xem tất cả thông báo</span>
+
+          <RightOutlined />
+        </button>
+      </div>
+    </div>
+  );
+
+  /* =========================================================
+     HELP
   ========================================================= */
 
   const handleOpenHelp = () => {
@@ -300,7 +1006,7 @@ export default function AdminHeader() {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#FF6B8B",
+          colorPrimary: "#F4729A",
           borderRadius: 16,
           fontFamily: "'Quicksand', 'Be Vietnam Pro', sans-serif",
         },
@@ -309,7 +1015,7 @@ export default function AdminHeader() {
       <div className="faith-header-wrapper">
         <Header className="faith-header">
           {/* =================================================
-              BRAND
+             BRAND
           ================================================= */}
 
           <div
@@ -320,6 +1026,7 @@ export default function AdminHeader() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
+
                 navigate("/catechist");
               }
             }}
@@ -340,12 +1047,12 @@ export default function AdminHeader() {
           </div>
 
           {/* =================================================
-              RIGHT AREA
+             RIGHT
           ================================================= */}
 
           <Space className="faith-header-right" size={10} align="center">
             {/* =================================================
-                HELP BUTTON
+               HELP
             ================================================= */}
 
             <Tooltip title="Khám phá FaithEdu" placement="bottom">
@@ -364,7 +1071,41 @@ export default function AdminHeader() {
             </Tooltip>
 
             {/* =================================================
-                USER DROPDOWN
+               NOTIFICATION
+            ================================================= */}
+
+            <Dropdown
+              open={notificationOpen}
+              onOpenChange={handleNotificationOpenChange}
+              dropdownRender={() => notificationDropdownContent}
+              placement="bottomRight"
+              trigger={["click"]}
+              overlayClassName="faith-notification-overlay"
+            >
+              <Tooltip title="Thông báo" placement="bottom">
+                <button
+                  type="button"
+                  className={`faith-notification-button ${
+                    unreadCount > 0 ? "has-unread" : ""
+                  }`}
+                  aria-label="Thông báo"
+                >
+                  <Badge
+                    count={unreadCount}
+                    overflowCount={99}
+                    size="small"
+                    offset={[-1, 2]}
+                  >
+                    <span className="faith-notification-icon">
+                      <BellOutlined />
+                    </span>
+                  </Badge>
+                </button>
+              </Tooltip>
+            </Dropdown>
+
+            {/* =================================================
+               USER
             ================================================= */}
 
             <Dropdown
@@ -377,8 +1118,6 @@ export default function AdminHeader() {
               overlayClassName="faith-dropdown"
             >
               <div className="faith-user" role="button" tabIndex={0}>
-                {/* AVATAR */}
-
                 <div className="faith-avatar-wrapper">
                   <Avatar
                     size={38}
@@ -396,15 +1135,11 @@ export default function AdminHeader() {
                   </span>
                 </div>
 
-                {/* USER INFO */}
-
                 <div className="faith-user-info">
                   <div className="faith-user-name">{userName}</div>
 
                   <div className="faith-user-role">{userRole}</div>
                 </div>
-
-                {/* ARROW */}
 
                 <DownOutlined className="faith-user-arrow" />
               </div>
@@ -412,10 +1147,7 @@ export default function AdminHeader() {
           </Space>
 
           {/* =================================================
-              HELP MODAL
-
-              QUAN TRỌNG:
-              Chỉ truyền open + onCancel.
+             HELP MODAL
           ================================================= */}
 
           <HelpModalCate open={helpOpen} onClose={handleCloseHelp} />
@@ -423,7 +1155,7 @@ export default function AdminHeader() {
       </div>
 
       {/* =====================================================
-          STYLES
+         STYLES
       ===================================================== */}
 
       <style>{`
@@ -433,7 +1165,7 @@ export default function AdminHeader() {
         );
 
         /* =====================================================
-           WRAPPER
+           HEADER WRAPPER
         ===================================================== */
 
         .faith-header-wrapper {
@@ -467,11 +1199,11 @@ export default function AdminHeader() {
           background:
             linear-gradient(
               135deg,
-              rgba(255,255,255,.96),
-              rgba(255,249,252,.94)
+              rgba(255,255,255,.97),
+              rgba(255,249,252,.95)
             ) !important;
 
-          border: 1px solid rgba(248,194,208,.65);
+          border: 1px solid rgba(248,194,208,.7);
 
           box-shadow:
             0 8px 25px rgba(224,136,164,.10),
@@ -606,13 +1338,11 @@ export default function AdminHeader() {
           font-size: 9.5px;
           font-weight: 700;
 
-          letter-spacing: .05px;
-
           white-space: nowrap;
         }
 
         /* =====================================================
-           RIGHT AREA
+           RIGHT
         ===================================================== */
 
         .faith-header-right {
@@ -621,7 +1351,7 @@ export default function AdminHeader() {
         }
 
         /* =====================================================
-           HELP BUTTON
+           HELP
         ===================================================== */
 
         .faith-help-button {
@@ -655,11 +1385,7 @@ export default function AdminHeader() {
           box-shadow:
             0 3px 8px rgba(168,132,35,.07);
 
-          transition:
-            transform .2s ease,
-            box-shadow .2s ease,
-            border-color .2s ease,
-            background .2s ease;
+          transition: all .2s ease;
         }
 
         .faith-help-button:hover {
@@ -676,10 +1402,6 @@ export default function AdminHeader() {
 
           box-shadow:
             0 6px 14px rgba(168,132,35,.12);
-        }
-
-        .faith-help-button:active {
-          transform: translateY(0);
         }
 
         .faith-help-icon {
@@ -709,6 +1431,759 @@ export default function AdminHeader() {
         }
 
         /* =====================================================
+           NOTIFICATION BUTTON
+        ===================================================== */
+
+        .faith-notification-button {
+          width: 40px;
+          height: 40px;
+
+          padding: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 13px;
+
+          border: 1px solid #f3c9d8;
+
+          background:
+            linear-gradient(
+              135deg,
+              #fff3f7,
+              #fff9fb
+            );
+
+          color: #e26b91;
+
+          cursor: pointer;
+
+          box-shadow:
+            0 3px 8px rgba(217,107,140,.07);
+
+          transition: all .2s ease;
+        }
+
+        .faith-notification-button:hover {
+          transform: translateY(-1px);
+
+          border-color: #efaac1;
+
+          background:
+            linear-gradient(
+              135deg,
+              #ffe9f0,
+              #fff4f8
+            );
+
+          box-shadow:
+            0 7px 16px rgba(217,107,140,.14);
+        }
+
+        .faith-notification-button.has-unread {
+          border-color: #eea5be;
+
+          background:
+            linear-gradient(
+              135deg,
+              #ffeaf1,
+              #fff4f8
+            );
+
+          color: #df5e86;
+        }
+
+        .faith-notification-icon {
+          width: 27px;
+          height: 27px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          font-size: 17px;
+        }
+
+        .faith-notification-button .ant-badge-count {
+          min-width: 17px;
+          height: 17px;
+
+          padding: 0 4px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 9px;
+
+          color: #fff;
+
+          background: #ed6f94;
+
+          font-size: 9px;
+          font-weight: 800;
+
+          box-shadow:
+            0 0 0 2px #fff;
+        }
+
+        /* =====================================================
+           NOTIFICATION DROPDOWN
+        ===================================================== */
+
+        .faith-notification-dropdown {
+          width: 420px;
+          max-width: calc(100vw - 24px);
+
+          overflow: hidden;
+
+          border-radius: 20px;
+
+          background: #fff;
+
+          border: 1px solid #f4dce5;
+
+          box-shadow:
+            0 24px 65px rgba(107,72,88,.16),
+            0 6px 20px rgba(107,72,88,.08);
+        }
+
+        /* =====================================================
+           NOTIFICATION HEADER
+        ===================================================== */
+
+        .faith-notification-header {
+          min-height: 82px;
+
+          padding: 17px 18px;
+
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          gap: 12px;
+
+          background:
+            linear-gradient(
+              135deg,
+              #fff3f7,
+              #fff9fb 58%,
+              #fdf8ff
+            );
+        }
+
+        .faith-notification-header-left {
+          min-width: 0;
+
+          display: flex;
+          align-items: center;
+
+          gap: 11px;
+        }
+
+        .faith-notification-header-icon {
+          width: 43px;
+          height: 43px;
+
+          flex-shrink: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 14px;
+
+          color: #e66c92;
+
+          background:
+            linear-gradient(
+              135deg,
+              #ffe1eb,
+              #fff0f5
+            );
+
+          border: 1px solid #f5c5d5;
+
+          font-size: 18px;
+
+          box-shadow:
+            0 5px 12px rgba(226,107,145,.10);
+        }
+
+        .faith-notification-header-info {
+          min-width: 0;
+        }
+
+        .faith-notification-title-row {
+          display: flex;
+          align-items: center;
+
+          gap: 7px;
+        }
+
+        .faith-notification-title {
+          margin: 0;
+
+          color: #543845;
+
+          font-size: 17px;
+          font-weight: 800;
+
+          line-height: 1.2;
+        }
+
+        .faith-notification-count {
+          min-width: 20px;
+          height: 20px;
+
+          padding: 0 6px;
+
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 20px;
+
+          color: #fff;
+
+          background: #ed6f94;
+
+          font-size: 10px;
+          font-weight: 800;
+
+          box-shadow:
+            0 3px 7px rgba(237,111,148,.20);
+        }
+
+        .faith-notification-subtitle {
+          margin-top: 4px;
+
+          color: #a27f8d;
+
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        /* =====================================================
+           READ ALL
+        ===================================================== */
+
+        .faith-notification-read-all {
+          height: 33px;
+
+          padding: 0 10px;
+
+          flex-shrink: 0;
+
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+
+          gap: 5px;
+
+          border: 1px solid #f2cad8;
+
+          border-radius: 10px;
+
+          background: #fff;
+
+          color: #d85e84;
+
+          font-family: inherit;
+
+          font-size: 10px;
+          font-weight: 800;
+
+          cursor: pointer;
+
+          transition: all .2s ease;
+        }
+
+        .faith-notification-read-all:hover {
+          color: #fff;
+
+          border-color: #ed6f94;
+
+          background: #ed6f94;
+
+          box-shadow:
+            0 5px 12px rgba(237,111,148,.18);
+        }
+
+        .faith-notification-divider {
+          height: 1px;
+
+          background: #f8e8ee;
+        }
+
+        /* =====================================================
+           LIST
+        ===================================================== */
+
+        .faith-notification-list {
+          max-height: 500px;
+
+          overflow-y: auto;
+
+          background: #fff;
+        }
+
+        .faith-notification-list::-webkit-scrollbar {
+          width: 5px;
+        }
+
+        .faith-notification-list::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .faith-notification-list::-webkit-scrollbar-thumb {
+          border-radius: 10px;
+
+          background: #efd5df;
+        }
+
+        .faith-notification-list::-webkit-scrollbar-thumb:hover {
+          background: #e4b9ca;
+        }
+
+        /* =====================================================
+           ITEM
+        ===================================================== */
+
+        .faith-notification-item {
+          position: relative;
+
+          padding: 14px 16px;
+
+          display: flex;
+          align-items: flex-start;
+
+          gap: 11px;
+
+          border-bottom: 1px solid #f7edf1;
+
+          background: #fff;
+
+          cursor: pointer;
+
+          transition:
+            background .2s ease,
+            transform .2s ease;
+        }
+
+        .faith-notification-item:last-child {
+          border-bottom: none;
+        }
+
+        .faith-notification-item:hover {
+          background: #fff7fa;
+        }
+
+        .faith-notification-item.unread {
+          background:
+            linear-gradient(
+              90deg,
+              #fff4f8 0%,
+              #fffafb 65%,
+              #fff 100%
+            );
+        }
+
+        .faith-notification-item.unread::before {
+          content: "";
+
+          position: absolute;
+
+          left: 0;
+          top: 13px;
+          bottom: 13px;
+
+          width: 3px;
+
+          border-radius: 0 5px 5px 0;
+
+          background: #ed6f94;
+        }
+
+        .faith-notification-item.read {
+          opacity: .88;
+        }
+
+        /* =====================================================
+           ITEM ICON
+        ===================================================== */
+
+        .faith-notification-item-icon {
+          width: 40px;
+          height: 40px;
+
+          flex-shrink: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 12px;
+
+          font-size: 17px;
+
+          border: 1px solid transparent;
+        }
+
+        .faith-notification-item-icon.normal {
+          background: #fff0f5;
+          border-color: #f8d4e0;
+        }
+
+        .faith-notification-item-icon.low {
+          background: #f7f5fa;
+          border-color: #ebe6ef;
+        }
+
+        .faith-notification-item-icon.high {
+          background: #fff7e6;
+          border-color: #f6dfae;
+        }
+
+        .faith-notification-item-icon.urgent {
+          background: #fff0f0;
+          border-color: #f5cccc;
+        }
+
+        /* =====================================================
+           ITEM CONTENT
+        ===================================================== */
+
+        .faith-notification-item-content {
+          min-width: 0;
+
+          flex: 1;
+        }
+
+        .faith-notification-item-top {
+          min-width: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          gap: 8px;
+
+          margin-bottom: 3px;
+        }
+
+        .faith-notification-type-wrap {
+          min-width: 0;
+
+          display: flex;
+          align-items: center;
+
+          gap: 6px;
+        }
+
+        .faith-notification-item-type {
+          overflow: hidden;
+
+          text-overflow: ellipsis;
+
+          white-space: nowrap;
+
+          color: #b36f87;
+
+          font-size: 8px;
+          font-weight: 800;
+
+          text-transform: uppercase;
+
+          letter-spacing: .45px;
+        }
+
+        .faith-notification-unread-dot {
+          width: 6px;
+          height: 6px;
+
+          flex-shrink: 0;
+
+          border-radius: 50%;
+
+          background: #ed6f94;
+
+          box-shadow:
+            0 0 0 3px rgba(237,111,148,.11);
+        }
+
+        .faith-notification-item-time {
+          flex-shrink: 0;
+
+          color: #b59da7;
+
+          font-size: 8px;
+          font-weight: 600;
+
+          white-space: nowrap;
+        }
+
+        .faith-notification-item-title {
+          overflow: hidden;
+
+          display: -webkit-box;
+
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+
+          color: #4a303b;
+
+          font-size: 12px;
+          font-weight: 800;
+
+          line-height: 1.4;
+        }
+
+        .faith-notification-item-description {
+          margin-top: 3px;
+
+          overflow: hidden;
+
+          display: -webkit-box;
+
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+
+          color: #806c76;
+
+          font-size: 10px;
+          font-weight: 500;
+
+          line-height: 1.5;
+        }
+
+        /* =====================================================
+           PRIORITY
+        ===================================================== */
+
+        .faith-notification-item-bottom {
+          margin-top: 6px;
+
+          display: flex;
+          align-items: center;
+        }
+
+        .faith-notification-priority {
+          display: inline-flex;
+          align-items: center;
+
+          gap: 5px;
+
+          padding: 3px 7px;
+
+          border-radius: 7px;
+
+          font-size: 7px;
+          font-weight: 800;
+        }
+
+        .faith-notification-priority-dot {
+          width: 5px;
+          height: 5px;
+
+          border-radius: 50%;
+
+          background: currentColor;
+        }
+
+        .faith-notification-priority.normal {
+          color: #c25e82;
+          background: #fff0f5;
+        }
+
+        .faith-notification-priority.low {
+          color: #718096;
+          background: #f1f5f9;
+        }
+
+        .faith-notification-priority.high {
+          color: #a8750b;
+          background: #fff5d9;
+        }
+
+        .faith-notification-priority.urgent {
+          color: #c24141;
+          background: #fff0f0;
+        }
+
+        /* =====================================================
+           ARROW
+        ===================================================== */
+
+        .faith-notification-arrow {
+          align-self: center;
+
+          flex-shrink: 0;
+
+          color: #d8bac6;
+
+          font-size: 9px;
+
+          transition:
+            transform .2s ease,
+            color .2s ease;
+        }
+
+        .faith-notification-item:hover
+          .faith-notification-arrow {
+          color: #ed6f94;
+
+          transform: translateX(2px);
+        }
+
+        /* =====================================================
+           LOADING
+        ===================================================== */
+
+        .faith-notification-loading {
+          min-height: 190px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          flex-direction: column;
+
+          gap: 9px;
+
+          color: #a78391;
+
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        .faith-notification-loading
+          .ant-spin-dot-item {
+          background: #ed6f94;
+        }
+
+        /* =====================================================
+           EMPTY
+        ===================================================== */
+
+        .faith-notification-empty {
+          min-height: 230px;
+
+          padding: 30px 20px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          flex-direction: column;
+
+          text-align: center;
+        }
+
+        .faith-notification-empty-icon {
+          width: 60px;
+          height: 60px;
+
+          margin-bottom: 12px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 19px;
+
+          color: #e56b91;
+
+          background:
+            linear-gradient(
+              135deg,
+              #ffe9f0,
+              #fff3f7
+            );
+
+          border: 1px solid #f6cedb;
+
+          font-size: 23px;
+        }
+
+        .faith-notification-empty-title {
+          color: #59404c;
+
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .faith-notification-empty-description {
+          max-width: 245px;
+
+          margin-top: 5px;
+
+          color: #a58d98;
+
+          font-size: 10px;
+          font-weight: 500;
+
+          line-height: 1.6;
+        }
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        .faith-notification-footer {
+          padding: 10px;
+
+          border-top: 1px solid #f6e8ed;
+
+          background: #fffafd;
+        }
+
+        .faith-notification-footer button {
+          width: 100%;
+          height: 36px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          gap: 7px;
+
+          border: none;
+
+          border-radius: 10px;
+
+          background: #fff0f5;
+
+          color: #d45f82;
+
+          font-family: inherit;
+
+          font-size: 10px;
+          font-weight: 800;
+
+          cursor: pointer;
+
+          transition: all .2s ease;
+        }
+
+        .faith-notification-footer button:hover {
+          color: #c84e75;
+
+          background: #ffe3ec;
+        }
+
+        .faith-notification-footer button svg {
+          font-size: 9px;
+
+          transition: transform .2s ease;
+        }
+
+        .faith-notification-footer button:hover svg {
+          transform: translateX(3px);
+        }
+
+        /* =====================================================
            USER
         ===================================================== */
 
@@ -735,11 +2210,7 @@ export default function AdminHeader() {
 
           cursor: pointer;
 
-          transition:
-            transform .2s ease,
-            background .2s ease,
-            border-color .2s ease,
-            box-shadow .2s ease;
+          transition: all .2s ease;
         }
 
         .faith-user:hover {
@@ -773,8 +2244,6 @@ export default function AdminHeader() {
           display: flex;
           align-items: center;
           justify-content: center;
-
-          line-height: 0;
         }
 
         .faith-avatar {
@@ -787,10 +2256,6 @@ export default function AdminHeader() {
 
           margin: 0 !important;
           padding: 0 !important;
-
-          vertical-align: middle !important;
-
-          line-height: 1 !important;
 
           background: #f28caf !important;
 
@@ -902,7 +2367,7 @@ export default function AdminHeader() {
         }
 
         /* =====================================================
-           DROPDOWN
+           USER DROPDOWN
         ===================================================== */
 
         .faith-dropdown .ant-dropdown-menu {
@@ -918,10 +2383,11 @@ export default function AdminHeader() {
             0 15px 35px rgba(115,73,140,.13) !important;
         }
 
-        .faith-dropdown .ant-dropdown-menu-item {
-          border-radius: 11px;
-
+        .faith-dropdown
+          .ant-dropdown-menu-item {
           min-height: 40px;
+
+          border-radius: 11px;
 
           font-family:
             "Quicksand",
@@ -944,13 +2410,13 @@ export default function AdminHeader() {
         }
 
         /* =====================================================
-           MENU HEADER
+           USER MENU HEADER
         ===================================================== */
 
         .faith-user-menu-header {
-          padding: 5px 6px 8px;
-
           min-width: 215px;
+
+          padding: 5px 6px 8px;
         }
 
         .faith-user-menu-caption {
@@ -966,16 +2432,16 @@ export default function AdminHeader() {
           margin-top: 3px;
           margin-bottom: 7px;
 
-          color: #1e293b;
-
-          font-size: 15px;
-          font-weight: 800;
-
           overflow: hidden;
 
           text-overflow: ellipsis;
 
           white-space: nowrap;
+
+          color: #1e293b;
+
+          font-size: 15px;
+          font-weight: 800;
         }
 
         .faith-user-menu-tags {
@@ -999,7 +2465,6 @@ export default function AdminHeader() {
           color: #9333ea !important;
 
           font-size: 9px !important;
-
           font-weight: 800 !important;
         }
 
@@ -1009,7 +2474,6 @@ export default function AdminHeader() {
           border-radius: 8px !important;
 
           font-size: 9px !important;
-
           font-weight: 800 !important;
         }
 
@@ -1069,6 +2533,13 @@ export default function AdminHeader() {
             height: 26px;
           }
 
+          .faith-notification-button {
+            width: 38px;
+            height: 38px;
+
+            border-radius: 11px;
+          }
+
           .faith-user {
             padding: 3px;
 
@@ -1085,10 +2556,17 @@ export default function AdminHeader() {
             width: 38px !important;
             height: 38px !important;
           }
+
+          .faith-notification-dropdown {
+            width: min(
+              390px,
+              calc(100vw - 20px)
+            );
+          }
         }
 
         /* =====================================================
-           VERY SMALL SCREEN
+           SMALL MOBILE
         ===================================================== */
 
         @media (max-width: 400px) {
@@ -1106,6 +2584,11 @@ export default function AdminHeader() {
             height: 36px;
           }
 
+          .faith-notification-button {
+            width: 36px;
+            height: 36px;
+          }
+
           .faith-user {
             padding: 2px;
           }
@@ -1113,6 +2596,28 @@ export default function AdminHeader() {
           .faith-brand-logo {
             width: 36px;
             height: 36px;
+          }
+
+          .faith-notification-dropdown {
+            width: calc(100vw - 16px);
+          }
+
+          .faith-notification-header {
+            padding: 14px;
+          }
+
+          .faith-notification-item {
+            padding: 13px;
+          }
+
+          .faith-notification-read-all {
+            width: 33px;
+
+            padding: 0;
+          }
+
+          .faith-notification-read-all span {
+            display: none;
           }
         }
 

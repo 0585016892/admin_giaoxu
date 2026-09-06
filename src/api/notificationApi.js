@@ -1,46 +1,107 @@
-import axiosClient from "./axios"; // Hoặc đường dẫn file axios config của bạn
+import axiosClient from "./axios";
 
-// 1. Lấy thông báo hôm nay
-export const getNotificationsToday = () => {
-  return axiosClient.get("/notifications/today");
+const notificationApi = {
+  // ==========================================================
+  // CREATE
+  // ==========================================================
+
+  create: async (data) => {
+    const response = await axiosClient.post("/notifications", data);
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // GET LIST
+  // ==========================================================
+
+  getAll: async (params = {}) => {
+    const response = await axiosClient.get("/notifications", {
+      params,
+    });
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // GET TODAY
+  // ==========================================================
+
+  getToday: async () => {
+    const response = await axiosClient.get("/notifications/today");
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // GET DETAIL
+  // ==========================================================
+
+  getById: async (id) => {
+    const response = await axiosClient.get(`/notifications/${id}`);
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // MARK ONE READ
+  // ==========================================================
+
+  markAsRead: async (id) => {
+    const response = await axiosClient.put(`/notifications/${id}/read`);
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // MARK ALL READ
+  // ==========================================================
+
+  markAllAsRead: async () => {
+    const response = await axiosClient.put("/notifications/read-all");
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // DELETE ONE
+  // ==========================================================
+
+  delete: async (id) => {
+    const response = await axiosClient.delete(`/notifications/${id}`);
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // DELETE ALL
+  // ==========================================================
+
+  deleteAll: async () => {
+    const response = await axiosClient.delete("/notifications/my/all");
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // STATS
+  // ==========================================================
+
+  getStats: async () => {
+    const response = await axiosClient.get("/notifications/stats");
+
+    return response.data;
+  },
+
+  // ==========================================================
+  // UNREAD COUNT
+  // ==========================================================
+
+  getUnreadCount: async () => {
+    const response = await axiosClient.get("/notifications/unread-count");
+
+    return response.data;
+  },
 };
 
-// 2. Lấy toàn bộ danh sách thông báo (có thể kèm query params nếu có)
-export const getNotifications = (params) => {
-  return axiosClient.get("/notifications", { params });
-};
-
-// 3. Lấy thống kê thông báo
-export const getNotificationStats = () => {
-  return axiosClient.get("/notifications/stats");
-};
-
-// 4. Lấy chi tiết 1 thông báo
-export const getNotificationById = (id) => {
-  return axiosClient.get(`/notifications/${id}`);
-};
-
-// 5. Tạo thông báo mới (Admin)
-export const createNotification = (data) => {
-  return axiosClient.post("/notifications", data);
-};
-
-// 6. Đánh dấu TẤT CẢ đã đọc (Cần auth header token)
-export const markAllNotificationsAsRead = () => {
-  return axiosClient.put("/notifications/read-all");
-};
-
-// 7. Đánh dấu 1 thông báo là ĐÃ ĐỌC
-export const markNotificationAsRead = (id) => {
-  return axiosClient.put(`/notifications/${id}/read`);
-};
-
-// 8. Xóa 1 thông báo
-export const deleteNotification = (id) => {
-  return axiosClient.delete(`/notifications/${id}`);
-};
-
-// XÓA TẤT CẢ THÔNG BÁO (HÀM MỚI THÊM)
-export const deleteAllNotifications = () => {
-  return axiosClient.delete("/notifications/delete-all");
-};
+export default notificationApi;

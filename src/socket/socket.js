@@ -1,31 +1,53 @@
 import { io } from "socket.io-client";
 
-const URL = process.env.REACT_APP_API_URL;
+// ============================================================
+// SOCKET URL
+// ============================================================
 
-let socket;
+const SOCKET_URL = process.env.REACT_APP_API_URL;
 
-if (!socket) {
-  socket = io(URL, {
-    transports: ["websocket"],
+// ============================================================
+// CREATE SOCKET
+// ============================================================
 
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
+const socket = io(SOCKET_URL, {
+  transports: ["websocket", "polling"],
 
-    timeout: 20000,
-  });
+  reconnection: true,
 
-  socket.on("connect", () => {
-    console.log("🟢 CONNECT:", socket.id);
-  });
+  reconnectionAttempts: Infinity,
 
-  socket.on("disconnect", () => {
-    console.log("🔴 DISCONNECT");
-  });
+  reconnectionDelay: 1000,
 
-  socket.on("connect_error", (err) => {
-    console.log("❌ SOCKET ERROR:", err.message);
-  });
-}
+  reconnectionDelayMax: 5000,
+
+  timeout: 20000,
+
+  autoConnect: true,
+});
+
+// ============================================================
+// DEBUG
+// ============================================================
+
+socket.on("connect", () => {
+  console.log("🟢 SOCKET CONNECTED:", socket.id);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("🔴 SOCKET DISCONNECTED:", reason);
+});
+
+socket.on("connect_error", (error) => {
+  console.error("❌ SOCKET CONNECT ERROR:", error.message);
+});
+
+socket.io.on("reconnect_attempt", () => {
+  console.log("🔄 SOCKET RECONNECTING...");
+});
+
+socket.io.on("reconnect", () => {
+  console.log("🟢 SOCKET RECONNECTED:", socket.id);
+});
 
 export default socket;

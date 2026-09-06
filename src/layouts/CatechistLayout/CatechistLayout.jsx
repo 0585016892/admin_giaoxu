@@ -79,7 +79,7 @@ export default function CatechistLayout() {
             <div className="chibi-footer-pill">
               <SmileOutlined className="chibi-footer-sparkle" />
 
-              <Text className="chibi-footer-text">Giáo lý công giáo</Text>
+              <Text className="chibi-footer-text">FaithEdu - Giáo Lý Số</Text>
 
               <HeartFilled className="chibi-footer-heart" />
             </div>

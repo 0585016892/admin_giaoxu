@@ -1224,7 +1224,7 @@ export default function StudentManagement() {
       {
         title: "Học sinh",
         key: "student",
-        width: 270,
+        width: 300,
 
         render: (_, record) => (
           <div
@@ -1258,7 +1258,7 @@ export default function StudentManagement() {
                 ellipsis
                 style={{
                   display: "block",
-                  maxWidth: 200,
+                  maxWidth: 250,
                   cursor: "pointer",
                 }}
                 onClick={() => handleOpenDetail(record)}
@@ -1291,6 +1291,7 @@ export default function StudentManagement() {
       {
         title: "Lớp",
         key: "class",
+        width: 140,
 
         render: (_, record) =>
           record.classId ? (
