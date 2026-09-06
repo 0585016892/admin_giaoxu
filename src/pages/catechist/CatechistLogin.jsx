@@ -146,14 +146,13 @@ export default function Login() {
       // SUCCESS
       // ========================================================
 
-      message.success("Chào mừng Huynh Trưởng / GLV trở lại!");
-
       // Đợi Context cập nhật user rồi chuyển trang
       setTimeout(() => {
         navigate("/catechist", {
           replace: true,
         });
       }, 800);
+      message.success("Chào mừng Huynh Trưởng / GLV trở lại!");
     } catch (error) {
       const msg =
         error?.response?.data?.message ||

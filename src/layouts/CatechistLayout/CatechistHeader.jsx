@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
 import {
   Layout,
   Dropdown,
@@ -25,6 +26,8 @@ import {
   BellOutlined,
   CheckOutlined,
   RightOutlined,
+  MenuOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 
 import { io } from "socket.io-client";
@@ -113,7 +116,7 @@ const getNotificationList = (res) => {
    COMPONENT
 ========================================================= */
 
-export default function AdminHeader() {
+export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -137,11 +140,6 @@ export default function AdminHeader() {
     const path = location.pathname;
 
     let title = "Tổng quan";
-
-    /*
-     * IMPORTANT:
-     * Các route dài phải kiểm tra trước route ngắn
-     */
 
     if (path === "/catechist/classes-teacher") {
       title = "Lớp học của bạn";
@@ -206,7 +204,7 @@ export default function AdminHeader() {
      ROLE
   ========================================================= */
 
-  const translateRole = (role) => {
+  const translateRole = useCallback((role) => {
     switch (role) {
       case "priest":
         return "Linh mục Chánh xứ";
@@ -229,7 +227,7 @@ export default function AdminHeader() {
       default:
         return "Hội đồng Mục vụ";
     }
-  };
+  }, []);
 
   /* =========================================================
      ACCOUNT TYPE
@@ -285,9 +283,9 @@ export default function AdminHeader() {
         .map(normalizeNotification)
         .filter((item) => item && item.id);
 
-      // Mới nhất lên đầu
       list.sort((a, b) => {
         const timeA = new Date(a.created_at || 0).getTime();
+
         const timeB = new Date(b.created_at || 0).getTime();
 
         return timeB - timeA;
@@ -359,9 +357,7 @@ export default function AdminHeader() {
         return [newNotification, ...prev].slice(0, 50);
       });
 
-      /*
-       * Browser notification
-       */
+      /* Browser notification */
 
       if (
         typeof window !== "undefined" &&
@@ -381,9 +377,7 @@ export default function AdminHeader() {
         }
       }
 
-      /*
-       * Update browser title
-       */
+      /* Browser title */
 
       const currentTitle = document.title;
 
@@ -428,7 +422,7 @@ export default function AdminHeader() {
      NOTIFICATION ICON
   ========================================================= */
 
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = useCallback((type) => {
     switch (String(type || "").toLowerCase()) {
       case "attendance":
         return "📋";
@@ -466,13 +460,13 @@ export default function AdminHeader() {
       default:
         return "🔔";
     }
-  };
+  }, []);
 
   /* =========================================================
      NOTIFICATION TYPE LABEL
   ========================================================= */
 
-  const getNotificationTypeLabel = (type) => {
+  const getNotificationTypeLabel = useCallback((type) => {
     switch (String(type || "").toLowerCase()) {
       case "attendance":
         return "Điểm danh";
@@ -510,13 +504,13 @@ export default function AdminHeader() {
       default:
         return "Thông báo";
     }
-  };
+  }, []);
 
   /* =========================================================
      PRIORITY
   ========================================================= */
 
-  const getPriorityConfig = (priority) => {
+  const getPriorityConfig = useCallback((priority) => {
     switch (String(priority || "").toLowerCase()) {
       case "urgent":
         return {
@@ -542,13 +536,13 @@ export default function AdminHeader() {
           className: "normal",
         };
     }
-  };
+  }, []);
 
   /* =========================================================
      FORMAT TIME
   ========================================================= */
 
-  const formatNotificationTime = (date) => {
+  const formatNotificationTime = useCallback((date) => {
     if (!date) return "";
 
     const parsed = new Date(date);
@@ -586,7 +580,7 @@ export default function AdminHeader() {
       month: "2-digit",
       year: "numeric",
     });
-  };
+  }, []);
 
   /* =========================================================
      MARK ONE AS READ
@@ -596,9 +590,6 @@ export default function AdminHeader() {
     if (!notification?.id) return;
 
     try {
-      /*
-       * Chỉ gọi API nếu chưa đọc
-       */
       if (!notification.is_read) {
         await notificationApi.markAsRead(notification.id);
 
@@ -617,18 +608,6 @@ export default function AdminHeader() {
 
       setNotificationOpen(false);
 
-      /*
-       * Nếu notification có action_url
-       * thì mới điều hướng.
-       *
-       * Data hiện tại của m:
-       *
-       * action_url: null
-       *
-       * => chỉ đánh dấu đã đọc,
-       * không navigate.
-       */
-
       if (notification.action_url) {
         const actionUrl = String(notification.action_url).trim();
 
@@ -637,14 +616,7 @@ export default function AdminHeader() {
         } else {
           navigate(actionUrl);
         }
-
-        return;
       }
-
-      /*
-       * Không có action_url
-       * => không điều hướng.
-       */
     } catch (error) {
       console.error("MARK NOTIFICATION READ ERROR:", error);
     }
@@ -675,7 +647,7 @@ export default function AdminHeader() {
   };
 
   /* =========================================================
-     OPEN NOTIFICATION DROPDOWN
+     OPEN NOTIFICATION
   ========================================================= */
 
   const handleNotificationOpenChange = async (open) => {
@@ -685,197 +657,6 @@ export default function AdminHeader() {
       await loadNotifications();
     }
   };
-
-  /* =========================================================
-     NOTIFICATION DROPDOWN
-  ========================================================= */
-
-  const notificationDropdownContent = (
-    <div className="faith-notification-dropdown">
-      {/* =====================================================
-         HEADER
-      ===================================================== */}
-
-      <div className="faith-notification-header">
-        <div className="faith-notification-header-left">
-          <div className="faith-notification-header-icon">
-            <BellOutlined />
-          </div>
-
-          <div className="faith-notification-header-info">
-            <div className="faith-notification-title-row">
-              <h3 className="faith-notification-title">Thông báo</h3>
-
-              {unreadCount > 0 && (
-                <span className="faith-notification-count">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </div>
-
-            <div className="faith-notification-subtitle">
-              {unreadCount > 0
-                ? `Bạn có ${unreadCount} thông báo chưa đọc`
-                : "Bạn đã xem tất cả thông báo"}
-            </div>
-          </div>
-        </div>
-
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            className="faith-notification-read-all"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleMarkAllAsRead();
-            }}
-          >
-            <CheckOutlined />
-            <span>Đọc tất cả</span>
-          </button>
-        )}
-      </div>
-
-      {/* =====================================================
-         DIVIDER
-      ===================================================== */}
-
-      <div className="faith-notification-divider" />
-
-      {/* =====================================================
-         LIST
-      ===================================================== */}
-
-      <div className="faith-notification-list">
-        {notificationLoading ? (
-          <div className="faith-notification-loading">
-            <Spin size="small" />
-
-            <span>Đang tải thông báo...</span>
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="faith-notification-empty">
-            <div className="faith-notification-empty-icon">
-              <BellOutlined />
-            </div>
-
-            <div className="faith-notification-empty-title">
-              Chưa có thông báo
-            </div>
-
-            <div className="faith-notification-empty-description">
-              Các thông báo mới từ giáo xứ sẽ xuất hiện tại đây.
-            </div>
-          </div>
-        ) : (
-          notifications.slice(0, 8).map((notification) => {
-            const priority = getPriorityConfig(notification.priority);
-
-            return (
-              <div
-                key={notification.id}
-                role="button"
-                tabIndex={0}
-                className={`faith-notification-item ${
-                  notification.is_read ? "read" : "unread"
-                }`}
-                onClick={() => handleNotificationRead(notification)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-
-                    handleNotificationRead(notification);
-                  }
-                }}
-              >
-                {/* =========================================
-                     ICON
-                  ========================================= */}
-
-                <div
-                  className={`faith-notification-item-icon ${priority.className}`}
-                >
-                  {getNotificationIcon(notification.type)}
-                </div>
-
-                {/* =========================================
-                     CONTENT
-                  ========================================= */}
-
-                <div className="faith-notification-item-content">
-                  <div className="faith-notification-item-top">
-                    <div className="faith-notification-type-wrap">
-                      <span className="faith-notification-item-type">
-                        {getNotificationTypeLabel(notification.type)}
-                      </span>
-
-                      {!notification.is_read && (
-                        <span className="faith-notification-unread-dot" />
-                      )}
-                    </div>
-
-                    <span className="faith-notification-item-time">
-                      {formatNotificationTime(notification.created_at)}
-                    </span>
-                  </div>
-
-                  <div className="faith-notification-item-title">
-                    {notification.title || "Thông báo mới"}
-                  </div>
-
-                  {notification.content && (
-                    <div className="faith-notification-item-description">
-                      {notification.content}
-                    </div>
-                  )}
-
-                  {notification.priority &&
-                    notification.priority !== "normal" && (
-                      <div className="faith-notification-item-bottom">
-                        <span
-                          className={`faith-notification-priority ${priority.className}`}
-                        >
-                          <span className="faith-notification-priority-dot" />
-
-                          {priority.label}
-                        </span>
-                      </div>
-                    )}
-                </div>
-
-                {/* =========================================
-                     ARROW
-                  ========================================= */}
-
-                <RightOutlined className="faith-notification-arrow" />
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* =====================================================
-         FOOTER
-      ===================================================== */}
-
-      <div className="faith-notification-footer">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-
-            setNotificationOpen(false);
-
-            navigate("/catechist/my-notifications");
-          }}
-        >
-          <span>Xem tất cả thông báo</span>
-
-          <RightOutlined />
-        </button>
-      </div>
-    </div>
-  );
 
   /* =========================================================
      HELP
@@ -999,6 +780,175 @@ export default function AdminHeader() {
   };
 
   /* =========================================================
+     NOTIFICATION DROPDOWN
+  ========================================================= */
+
+  const notificationDropdownContent = (
+    <div className="faith-notification-dropdown">
+      {/* HEADER */}
+
+      <div className="faith-notification-header">
+        <div className="faith-notification-header-left">
+          <div className="faith-notification-header-icon">
+            <BellOutlined />
+          </div>
+
+          <div className="faith-notification-header-info">
+            <div className="faith-notification-title-row">
+              <h3 className="faith-notification-title">Thông báo</h3>
+
+              {unreadCount > 0 && (
+                <span className="faith-notification-count">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </div>
+
+            <div className="faith-notification-subtitle">
+              {unreadCount > 0
+                ? `Bạn có ${unreadCount} thông báo chưa đọc`
+                : "Bạn đã xem tất cả thông báo"}
+            </div>
+          </div>
+        </div>
+
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            className="faith-notification-read-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMarkAllAsRead();
+            }}
+          >
+            <CheckOutlined />
+
+            <span>Đọc tất cả</span>
+          </button>
+        )}
+      </div>
+
+      <div className="faith-notification-divider" />
+
+      {/* LIST */}
+
+      <div className="faith-notification-list">
+        {notificationLoading ? (
+          <div className="faith-notification-loading">
+            <Spin size="small" />
+            <span>Đang tải thông báo...</span>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="faith-notification-empty">
+            <div className="faith-notification-empty-icon">
+              <BellOutlined />
+            </div>
+
+            <div className="faith-notification-empty-title">
+              Chưa có thông báo
+            </div>
+
+            <div className="faith-notification-empty-description">
+              Các thông báo mới từ giáo xứ sẽ xuất hiện tại đây.
+            </div>
+          </div>
+        ) : (
+          notifications.slice(0, 8).map((notification) => {
+            const priority = getPriorityConfig(notification.priority);
+
+            return (
+              <div
+                key={notification.id}
+                role="button"
+                tabIndex={0}
+                className={`faith-notification-item ${
+                  notification.is_read ? "read" : "unread"
+                }`}
+                onClick={() => handleNotificationRead(notification)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+
+                    handleNotificationRead(notification);
+                  }
+                }}
+              >
+                <div
+                  className={`faith-notification-item-icon ${priority.className}`}
+                >
+                  {getNotificationIcon(notification.type)}
+                </div>
+
+                <div className="faith-notification-item-content">
+                  <div className="faith-notification-item-top">
+                    <div className="faith-notification-type-wrap">
+                      <span className="faith-notification-item-type">
+                        {getNotificationTypeLabel(notification.type)}
+                      </span>
+
+                      {!notification.is_read && (
+                        <span className="faith-notification-unread-dot" />
+                      )}
+                    </div>
+
+                    <span className="faith-notification-item-time">
+                      {formatNotificationTime(notification.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="faith-notification-item-title">
+                    {notification.title || "Thông báo mới"}
+                  </div>
+
+                  {notification.content && (
+                    <div className="faith-notification-item-description">
+                      {notification.content}
+                    </div>
+                  )}
+
+                  {notification.priority &&
+                    notification.priority !== "normal" && (
+                      <div className="faith-notification-item-bottom">
+                        <span
+                          className={`faith-notification-priority ${priority.className}`}
+                        >
+                          <span className="faith-notification-priority-dot" />
+
+                          {priority.label}
+                        </span>
+                      </div>
+                    )}
+                </div>
+
+                <RightOutlined className="faith-notification-arrow" />
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* FOOTER */}
+
+      <div className="faith-notification-footer">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+
+            setNotificationOpen(false);
+
+            navigate("/catechist/my-notifications");
+          }}
+        >
+          <span>Xem tất cả thông báo</span>
+
+          <RightOutlined />
+        </button>
+      </div>
+    </div>
+  );
+
+  /* =========================================================
      RENDER
   ========================================================= */
 
@@ -1014,6 +964,22 @@ export default function AdminHeader() {
     >
       <div className="faith-header-wrapper">
         <Header className="faith-header">
+          {/* =================================================
+             MOBILE MENU
+          ================================================= */}
+
+          <button
+            type="button"
+            className={`faith-mobile-menu-button ${
+              mobileOpen ? "is-open" : ""
+            }`}
+            onClick={() => setMobileOpen((prev) => !prev)}
+            aria-label={mobileOpen ? "Đóng menu" : "Mở menu"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <CloseOutlined /> : <MenuOutlined />}
+          </button>
+
           {/* =================================================
              BRAND
           ================================================= */}
@@ -1051,9 +1017,7 @@ export default function AdminHeader() {
           ================================================= */}
 
           <Space className="faith-header-right" size={10} align="center">
-            {/* =================================================
-               HELP
-            ================================================= */}
+            {/* HELP */}
 
             <Tooltip title="Khám phá FaithEdu" placement="bottom">
               <button
@@ -1070,9 +1034,7 @@ export default function AdminHeader() {
               </button>
             </Tooltip>
 
-            {/* =================================================
-               NOTIFICATION
-            ================================================= */}
+            {/* NOTIFICATION */}
 
             <Dropdown
               open={notificationOpen}
@@ -1104,9 +1066,7 @@ export default function AdminHeader() {
               </Tooltip>
             </Dropdown>
 
-            {/* =================================================
-               USER
-            ================================================= */}
+            {/* USER */}
 
             <Dropdown
               menu={{
@@ -1146,9 +1106,7 @@ export default function AdminHeader() {
             </Dropdown>
           </Space>
 
-          {/* =================================================
-             HELP MODAL
-          ================================================= */}
+          {/* HELP MODAL */}
 
           <HelpModalCate open={helpOpen} onClose={handleCloseHelp} />
         </Header>
@@ -1185,6 +1143,7 @@ export default function AdminHeader() {
         .faith-header {
           position: relative;
 
+          width: 100%;
           height: 64px !important;
           min-height: 64px !important;
 
@@ -1192,7 +1151,8 @@ export default function AdminHeader() {
 
           display: flex;
           align-items: center;
-          justify-content: space-between;
+
+          gap: 10px;
 
           border-radius: 22px;
 
@@ -1214,10 +1174,87 @@ export default function AdminHeader() {
         }
 
         /* =====================================================
+           MOBILE MENU BUTTON
+        ===================================================== */
+
+        .faith-mobile-menu-button {
+          display: none;
+
+          width: 40px;
+          height: 40px;
+
+          flex: 0 0 40px;
+
+          align-items: center;
+          justify-content: center;
+
+          padding: 0;
+
+          border: 1px solid #f3c9d8;
+          border-radius: 13px;
+
+          background:
+            linear-gradient(
+              135deg,
+              #fff0f5,
+              #fff8fb
+            );
+
+          color: #e66b91;
+
+          font-size: 17px;
+
+          cursor: pointer;
+
+          box-shadow:
+            0 3px 8px rgba(217,107,140,.08);
+
+          transition:
+            transform .2s ease,
+            background .2s ease,
+            border-color .2s ease,
+            color .2s ease,
+            box-shadow .2s ease;
+        }
+
+        .faith-mobile-menu-button:hover {
+          transform: translateY(-1px);
+
+          background:
+            linear-gradient(
+              135deg,
+              #ffe6ef,
+              #fff2f7
+            );
+
+          border-color: #efaac1;
+
+          color: #d95880;
+
+          box-shadow:
+            0 6px 14px rgba(217,107,140,.14);
+        }
+
+        .faith-mobile-menu-button:active {
+          transform: scale(.94);
+        }
+
+        .faith-mobile-menu-button.is-open {
+          background: #FF6B8B;
+          border-color: #FF6B8B;
+          color: #fff;
+
+          box-shadow:
+            0 6px 15px rgba(255,107,139,.25);
+        }
+
+        /* =====================================================
            BRAND
         ===================================================== */
 
         .faith-brand {
+          min-width: 0;
+
           display: flex;
           align-items: center;
 
@@ -1267,15 +1304,11 @@ export default function AdminHeader() {
           transform: translateY(0);
         }
 
-        /* =====================================================
-           LOGO
-        ===================================================== */
-
         .faith-brand-logo {
           width: 42px;
           height: 42px;
 
-          flex-shrink: 0;
+          flex: 0 0 42px;
 
           display: flex;
           align-items: center;
@@ -1309,6 +1342,8 @@ export default function AdminHeader() {
         ===================================================== */
 
         .faith-brand-content {
+          min-width: 0;
+
           display: flex;
           flex-direction: column;
 
@@ -1346,8 +1381,12 @@ export default function AdminHeader() {
         ===================================================== */
 
         .faith-header-right {
+          margin-left: auto;
+
           display: flex;
           align-items: center;
+
+          flex-shrink: 0;
         }
 
         /* =====================================================
@@ -1549,10 +1588,6 @@ export default function AdminHeader() {
             0 6px 20px rgba(107,72,88,.08);
         }
 
-        /* =====================================================
-           NOTIFICATION HEADER
-        ===================================================== */
-
         .faith-notification-header {
           min-height: 82px;
 
@@ -1713,7 +1748,6 @@ export default function AdminHeader() {
 
         .faith-notification-divider {
           height: 1px;
-
           background: #f8e8ee;
         }
 
@@ -1739,12 +1773,7 @@ export default function AdminHeader() {
 
         .faith-notification-list::-webkit-scrollbar-thumb {
           border-radius: 10px;
-
           background: #efd5df;
-        }
-
-        .faith-notification-list::-webkit-scrollbar-thumb:hover {
-          background: #e4b9ca;
         }
 
         /* =====================================================
@@ -1857,7 +1886,6 @@ export default function AdminHeader() {
 
         .faith-notification-item-content {
           min-width: 0;
-
           flex: 1;
         }
 
@@ -2169,7 +2197,6 @@ export default function AdminHeader() {
 
         .faith-notification-footer button:hover {
           color: #c84e75;
-
           background: #ffe3ec;
         }
 
@@ -2478,6 +2505,31 @@ export default function AdminHeader() {
         }
 
         /* =====================================================
+           TABLET
+        ===================================================== */
+
+        @media (max-width: 900px) {
+
+          .faith-header-wrapper {
+            padding-left: 10px;
+            padding-right: 10px;
+          }
+
+          .faith-brand-slogan {
+            display: none;
+          }
+
+          .faith-user-name {
+            max-width: 90px;
+          }
+
+          .faith-user-role {
+            max-width: 100px;
+          }
+
+        }
+
+        /* =====================================================
            MOBILE
         ===================================================== */
 
@@ -2493,10 +2545,22 @@ export default function AdminHeader() {
 
             padding: 0 7px !important;
 
+            gap: 7px;
+
             border-radius: 18px;
           }
 
+          /* Hamburger */
+
+          .faith-mobile-menu-button {
+            display: flex;
+          }
+
+          /* Brand */
+
           .faith-brand {
+            flex: 0 0 auto;
+
             gap: 0;
 
             padding: 3px;
@@ -2512,8 +2576,20 @@ export default function AdminHeader() {
             width: 38px;
             height: 38px;
 
+            flex-basis: 38px;
+
             border-radius: 13px;
           }
+
+          /* Right */
+
+          .faith-header-right {
+            margin-left: auto;
+
+            gap: 6px !important;
+          }
+
+          /* Help */
 
           .faith-help-button {
             width: 38px;
@@ -2533,12 +2609,16 @@ export default function AdminHeader() {
             height: 26px;
           }
 
+          /* Notification */
+
           .faith-notification-button {
             width: 38px;
             height: 38px;
 
             border-radius: 11px;
           }
+
+          /* User */
 
           .faith-user {
             padding: 3px;
@@ -2557,12 +2637,15 @@ export default function AdminHeader() {
             height: 38px !important;
           }
 
+          /* Notification popup */
+
           .faith-notification-dropdown {
             width: min(
-              390px,
+              350px,
               calc(100vw - 20px)
             );
           }
+
         }
 
         /* =====================================================
@@ -2573,10 +2656,22 @@ export default function AdminHeader() {
 
           .faith-header {
             padding: 0 5px !important;
+            gap: 5px;
+          }
+
+          .faith-mobile-menu-button {
+            width: 36px;
+            height: 36px;
+
+            flex-basis: 36px;
+
+            border-radius: 11px;
+
+            font-size: 15px;
           }
 
           .faith-header-right {
-            gap: 5px !important;
+            gap: 4px !important;
           }
 
           .faith-help-button {
@@ -2596,6 +2691,8 @@ export default function AdminHeader() {
           .faith-brand-logo {
             width: 36px;
             height: 36px;
+
+            flex-basis: 36px;
           }
 
           .faith-notification-dropdown {
@@ -2619,6 +2716,7 @@ export default function AdminHeader() {
           .faith-notification-read-all span {
             display: none;
           }
+
         }
 
       `}</style>
