@@ -11,6 +11,7 @@ import {
   Tag,
   Badge,
   Spin,
+  message,
 } from "antd";
 
 import {
@@ -195,7 +196,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
       return avatar;
     }
 
-    const normalized = avatar.startsWith("/catechist") ? avatar : `/${avatar}`;
+    const normalized = avatar.startsWith("/catechist") ? avatar : `${avatar}`;
 
     return `${API_URL}${normalized}`;
   }, [user?.avatar]);
@@ -293,7 +294,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
 
       setNotifications(list);
     } catch (error) {
-      console.error("GET TODAY NOTIFICATIONS ERROR:", error);
+      message.error("GET TODAY NOTIFICATIONS ERROR:", error);
     } finally {
       setNotificationLoading(false);
     }
@@ -330,8 +331,6 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
     });
 
     socket.on("connect", () => {
-      console.log("🔌 Notification socket connected:", socket.id);
-
       socket.emit("join:user", {
         userId: user.id,
         churchId: user.church_id,
@@ -339,8 +338,6 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
     });
 
     socket.on("notification", (notification) => {
-      console.log("🔔 NEW NOTIFICATION:", notification);
-
       const newNotification = normalizeNotification(notification);
 
       if (!newNotification?.id) return;
@@ -373,7 +370,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
             icon: logoWeb,
           });
         } catch (error) {
-          console.warn("Browser notification error:", error);
+          message.error("Browser notification error:", error);
         }
       }
 
@@ -618,7 +615,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
         }
       }
     } catch (error) {
-      console.error("MARK NOTIFICATION READ ERROR:", error);
+      message.error("MARK NOTIFICATION READ ERROR:", error);
     }
   };
 
@@ -642,7 +639,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
         })),
       );
     } catch (error) {
-      console.error("MARK ALL NOTIFICATIONS READ ERROR:", error);
+      message.error("MARK ALL NOTIFICATIONS READ ERROR:", error);
     }
   };
 
