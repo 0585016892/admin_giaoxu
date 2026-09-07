@@ -263,7 +263,7 @@ export default function Login() {
 
             <div className="brand-divider" />
 
-            <span className="brand-tag">CỔNG THIẾU NHI THANH THỂ</span>
+            <span className="brand-tag">CỔNG THIẾU NHI THÁNH THỂ</span>
           </div>
 
           <div className="header-status">
@@ -372,19 +372,16 @@ export default function Login() {
                   </Checkbox>
                 </Form.Item>
 
-                <button
-                  type="button"
-                  className="neo-forgot"
-                  onClick={() => {
-                    message.info(
-                      "Vui lòng liên hệ Ban Quản Trị Hệ Thống để cấp lại mật khẩu!",
-                    );
-                  }}
-                >
-                  Quên mật khẩu?
-                </button>
+                <div className="auth-actions">
+                  <button
+                    type="button"
+                    className="neo-forgot"
+                    onClick={() => navigate("/register")}
+                  >
+                    Đăng ký FaithEdu
+                  </button>
+                </div>
               </div>
-
               {/* LOGIN BUTTON */}
 
               <Form.Item
@@ -732,6 +729,7 @@ export default function Login() {
           /* =================================================
              CARD HEADER
           ================================================== */
+          
 
           .card-header {
             margin-bottom: 24px;

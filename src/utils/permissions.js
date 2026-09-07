@@ -8,6 +8,7 @@ export const ROLES = {
   MEDIA_MANAGER: "media_manager",
 
   CATECHIST: "catechist",
+  ADMIN_CATECHIST: "admin_catechist",
 
   TEACHER: "teacher",
 };
@@ -37,7 +38,12 @@ export const hasRole = (user, roles = []) => {
  * teacher
  */
 export const canViewAttendance = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST, ROLES.TEACHER].includes(user?.role);
+  return [
+    ROLES.ADMIN,
+    ROLES.ADMIN_CATECHIST,
+    ROLES.CATECHIST,
+    ROLES.TEACHER,
+  ].includes(user?.role);
 };
 
 /**
@@ -47,7 +53,12 @@ export const canViewAttendance = (user) => {
  * teacher
  */
 export const canEditAttendance = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST, ROLES.TEACHER].includes(user?.role);
+  return [
+    ROLES.ADMIN,
+    ROLES.ADMIN_CATECHIST,
+    ROLES.CATECHIST,
+    ROLES.TEACHER,
+  ].includes(user?.role);
 };
 
 /**
@@ -72,7 +83,9 @@ export const canDeleteAttendance = (user) => {
  * teacher
  */
 export const canViewClass = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -82,7 +95,9 @@ export const canViewClass = (user) => {
  * catechist
  */
 export const canCreateClass = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -92,7 +107,9 @@ export const canCreateClass = (user) => {
  * catechist
  */
 export const canEditClass = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -117,7 +134,9 @@ export const canDeleteClass = (user) => {
  * catechist
  */
 export const canViewStudents = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -127,7 +146,9 @@ export const canViewStudents = (user) => {
  * catechist
  */
 export const canCreateStudent = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -137,7 +158,9 @@ export const canCreateStudent = (user) => {
  * catechist
  */
 export const canEditStudent = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -162,7 +185,9 @@ export const canDeleteStudent = (user) => {
  * catechist
  */
 export const canViewCatechists = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -172,7 +197,9 @@ export const canViewCatechists = (user) => {
  * catechist
  */
 export const canCreateCatechist = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -182,7 +209,9 @@ export const canCreateCatechist = (user) => {
  * catechist
  */
 export const canEditCatechist = (user) => {
-  return [ROLES.ADMIN, ROLES.CATECHIST].includes(user?.role);
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**

@@ -9,7 +9,7 @@ export default function RoleGuard({ allowedRoles = [], children }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Không có role được phép

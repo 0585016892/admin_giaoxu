@@ -1,26 +1,40 @@
 import axios from "axios";
 
-const axiosClient = axios.create({
-  baseURL: `${process.env.REACT_APP_API_URL}/api`,
-  headers: {
-    "ngrok-skip-browser-warning": "true",
+const instance = axios.create({
+  baseURL: `${process.env.REACT_APP_API_URL}/api` || "http://localhost:5000",
+  timeout: 15000,
+});
+
+instance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
   },
-});
+  (error) => Promise.reject(error),
+);
 
-// interceptor token
-axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+instance.interceptors.response.use(
+  (response) => response,
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  (error) => {
+    const status = error?.response?.status;
 
-  // ❌ KHÔNG set application/json cho FormData
-  if (config.data instanceof FormData) {
-    delete config.headers["Content-Type"];
-  }
+    const errorCode = error?.response?.data?.code;
 
-  return config;
-});
+    if (status === 402 && errorCode === "FAITHEDU_LICENSE_EXPIRED") {
+      localStorage.setItem("faidedu_license_expired", "true");
 
-export default axiosClient;
+      // Phát event để LicenseContext bắt được
+      window.dispatchEvent(new CustomEvent("faidedu-license-expired"));
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+export default instance;

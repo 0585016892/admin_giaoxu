@@ -27,6 +27,8 @@ import MyStudentsPage from "../pages/catechist/MyStudentsPage";
 import SendNotificationPage from "../pages/catechist/SendNotificationPage";
 import NotificationsCatePage from "../pages/catechist/NotificationsCatePage";
 import ErrorPage from "../pages/catechist/ErrorPage";
+import FaithEduRegister from "../pages/catechist/FaithEduRegister";
+
 import LandingPage from "../pages/LandingPage/LandingPage";
 
 // ============================================================
@@ -34,7 +36,7 @@ import LandingPage from "../pages/LandingPage/LandingPage";
 // ============================================================
 
 // Giáo lý viên
-const CATECHIST_ROLES = ["catechist", "teacher"];
+const CATECHIST_ROLES = ["catechist", "teacher", "admin_catechist"];
 
 export default function AppRoutes() {
   return (
@@ -45,6 +47,8 @@ export default function AppRoutes() {
 
       {/* Đăng nhập hệ thống Giáo lý */}
       <Route path="/" element={<CatechistLogin />} />
+
+      <Route path="/register" element={<FaithEduRegister />} />
 
       <Route path="/intro" element={<LandingPage />} />
       {/* ------------------------------------------------------

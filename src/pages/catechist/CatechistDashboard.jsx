@@ -44,7 +44,7 @@ import {
 
 import { Gamepad2, Sparkles, Heart, Trophy } from "lucide-react";
 
-import { getDashboardCate } from "../../api/dashboardApi";
+import { getDashboardCate, getMyLicense } from "../../api/dashboardApi";
 import dailyVerseApi from "../../api/dailyVerseApi";
 
 import dash1 from "../../assets/images/dash1.png";
@@ -222,7 +222,7 @@ const ClassChartTooltip = ({ active, payload, label, mode }) => {
 
 export default function CatechistDashboard() {
   const navigate = useNavigate();
-
+  const [license, setLicense] = useState(null);
   // ===================================================
   // STATE
   // ===================================================
@@ -242,7 +242,30 @@ export default function CatechistDashboard() {
   // ===================================================
   // FETCH DASHBOARD
   // ===================================================
+  useEffect(() => {
+    const loadLicense = async () => {
+      try {
+        const data = await getMyLicense();
+        console.log("getMyLicense:::", data);
 
+        if (data.success) {
+          setLicense(data);
+        }
+      } catch (error) {
+        console.error("\n==========================================");
+        console.error("❌ GET MY LICENSE ERROR");
+        console.error("==========================================");
+
+        console.error("Message:", error.message);
+        console.error("Code:", error.code);
+        console.error("SQL State:", error.sqlState);
+        console.error("SQL Message:", error.sqlMessage);
+        console.error("Stack:", error.stack);
+      }
+    };
+
+    loadLicense();
+  }, []);
   const fetchDashboard = async () => {
     try {
       setLoading(true);
@@ -311,14 +334,6 @@ export default function CatechistDashboard() {
   const activeClasses = Number(metrics?.classes?.active ?? 0);
 
   const totalLessons = Number(metrics?.lessons?.total ?? 0);
-
-  const newLessons = Number(metrics?.lessons?.new_this_month ?? 0);
-
-  const completionRate = Number(metrics?.completion_rate?.value_pct ?? 0);
-
-  const completionCompare = Number(
-    metrics?.completion_rate?.compare_last_month_pct ?? 0,
-  );
 
   // ===================================================
   // WEEKLY DATA
@@ -884,7 +899,7 @@ export default function CatechistDashboard() {
                       padding: "3px 8px",
                     }}
                   >
-                    Bài học
+                    {license?.church.type === "GIAO_XU" ? "Giáo xứ" : "Giáo họ"}
                   </Tag>
                 </Flex>
 
@@ -898,7 +913,7 @@ export default function CatechistDashboard() {
                       marginBottom: 2,
                     }}
                   >
-                    Bài học đã soạn
+                    Giáo Xứ Của Bạn
                   </Text>
 
                   <Title
@@ -907,11 +922,11 @@ export default function CatechistDashboard() {
                       margin: 0,
                       color: "#9333EA",
                       fontWeight: 800,
-                      fontSize: 30,
+                      fontSize: 25,
                       lineHeight: 1.2,
                     }}
                   >
-                    {totalLessons}
+                    {license?.church.name ?? totalLessons}
                   </Title>
 
                   <Text
@@ -927,9 +942,9 @@ export default function CatechistDashboard() {
                         fontWeight: 800,
                       }}
                     >
-                      +{newLessons}
+                      Địa chỉ:
                     </span>{" "}
-                    bài mới tháng này
+                    {license?.church.address ?? "Chưa có địa chỉ"}
                   </Text>
                 </div>
               </Flex>
@@ -965,7 +980,7 @@ export default function CatechistDashboard() {
                   >
                     <img
                       src={IMAGE_ASSETS.achievements}
-                      alt="completion"
+                      alt="license"
                       style={{
                         width: 42,
                         height: 42,
@@ -979,14 +994,28 @@ export default function CatechistDashboard() {
                       margin: 0,
                       border: "none",
                       borderRadius: 10,
-                      background: "#FEF3C7",
-                      color: "#B45309",
+                      background:
+                        license?.license?.status === "active"
+                          ? "#DCFCE7"
+                          : license?.license?.status === "expired"
+                            ? "#FEE2E2"
+                            : "#FEF3C7",
+                      color:
+                        license?.license?.status === "active"
+                          ? "#15803D"
+                          : license?.license?.status === "expired"
+                            ? "#B91C1C"
+                            : "#B45309",
                       fontSize: 11,
                       fontWeight: 700,
                       padding: "3px 8px",
                     }}
                   >
-                    Tiến độ
+                    {license?.license?.status === "active"
+                      ? "Đang hoạt động"
+                      : license?.license?.status === "expired"
+                        ? "Đã hết hạn"
+                        : "Dùng thử"}
                   </Tag>
                 </Flex>
 
@@ -1000,26 +1029,38 @@ export default function CatechistDashboard() {
                       marginBottom: 2,
                     }}
                   >
-                    Tỷ lệ hoàn thành
+                    Gói FaithEdu
                   </Text>
 
                   <Title
                     level={2}
                     style={{
                       margin: 0,
-                      color: "#D97706",
+                      color:
+                        license?.license?.status === "expired"
+                          ? "#DC2626"
+                          : license?.license?.status === "active"
+                            ? "#16A34A"
+                            : "#D97706",
                       fontWeight: 800,
                       fontSize: 30,
                       lineHeight: 1.2,
                     }}
                   >
-                    {completionRate}%
+                    {license?.license?.status === "active"
+                      ? "Vĩnh viễn"
+                      : license?.license?.status === "expired"
+                        ? "Đã hết hạn"
+                        : `${license?.license?.days_remaining ?? 0} ngày`}
                   </Title>
 
                   <Flex align="center" gap={5}>
                     <RiseOutlined
                       style={{
-                        color: "#D97706",
+                        color:
+                          license?.license?.status === "expired"
+                            ? "#DC2626"
+                            : "#D97706",
                         fontSize: 12,
                       }}
                     />
@@ -1027,11 +1068,18 @@ export default function CatechistDashboard() {
                     <Text
                       style={{
                         fontSize: 11,
-                        color: "#92400E",
+                        color:
+                          license?.license?.status === "expired"
+                            ? "#B91C1C"
+                            : "#92400E",
                         fontWeight: 700,
                       }}
                     >
-                      +{completionCompare}% so với trước
+                      {license?.license?.status === "trial"
+                        ? "Thời gian dùng thử còn lại"
+                        : license?.license?.status === "active"
+                          ? "Đã kích hoạt FaithEdu"
+                          : "Vui lòng kích hoạt để tiếp tục"}
                     </Text>
                   </Flex>
                 </div>
