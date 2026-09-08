@@ -39,12 +39,16 @@ const borderColor = "#E8ECF1";
 
 const categoryOptions = [
   {
-    value: "Lớn Lên Trong Chúa Thánh Thần",
-    label: "Lớn Lên Trong Chúa Thánh Thần",
+    value: "Giáo lý Khai Tâm",
+    label: "Giáo lý Khai Tâm",
   },
   {
-    value: "Đến Bàn Tiệc Thánh",
-    label: "Đến Bàn Tiệc Thánh",
+    value: "Giáo lý Đến Bàn Tiệc Thánh",
+    label: "Giáo lý Đến Bàn Tiệc Thánh",
+  },
+  {
+    value: "Giáo lý Lớn Lên Trong Chúa Thánh Thần",
+    label: "Giáo lý Lớn Lên Trong Chúa Thánh Thần",
   },
   {
     value: "Giáo lý Sống Đạo",
@@ -55,8 +59,32 @@ const categoryOptions = [
     label: "Giáo lý Vào Đời",
   },
   {
+    value: "Giáo lý Huynh Trưởng",
+    label: "Giáo lý Huynh Trưởng",
+  },
+  {
     value: "Giáo lý Hôn Nhân",
     label: "Giáo lý Hôn Nhân",
+  },
+  {
+    value: "Giáo lý Dự Tòng",
+    label: "Giáo lý Dự Tòng",
+  },
+  {
+    value: "Giáo lý Người Lớn",
+    label: "Giáo lý Người Lớn",
+  },
+  {
+    value: "Lớp Kinh Thánh",
+    label: "Lớp Kinh Thánh",
+  },
+  {
+    value: "Giáo lý Mùa Chay",
+    label: "Giáo lý Mùa Chay",
+  },
+  {
+    value: "Giáo lý Mùa Hè",
+    label: "Giáo lý Mùa Hè",
   },
 ];
 
