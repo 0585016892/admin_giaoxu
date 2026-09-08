@@ -1,6 +1,5 @@
-import React from "react";
-import { Modal, Row, Col, Divider } from "antd";
-
+import React, { useState } from "react";
+import { Modal, Row, Col, Tabs, Tag } from "antd";
 import {
   BookOutlined,
   TeamOutlined,
@@ -11,22 +10,198 @@ import {
   TrophyOutlined,
   CheckCircleFilled,
   SafetyCertificateOutlined,
+  HeartFilled,
+  GlobalOutlined,
+  RocketOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 
 import logoWeb from "../assets/images/logoweb.png";
 
-const HelpModal = ({ open, onClose }) => {
-  const FeatureCard = ({ icon, title, description }) => (
-    <div className="faith-feature-card">
-      <div className="faith-feature-icon">{icon}</div>
+const HelpModalCate = ({ open, onClose }) => {
+  const [activeTab, setActiveTab] = useState("1");
 
-      <div className="faith-feature-content">
-        <div className="faith-feature-title">{title}</div>
-
-        <div className="faith-feature-description">{description}</div>
+  const FeatureCard = ({ icon, title, description, tag }) => (
+    <div className="faith-h-card">
+      <div className="faith-h-card-icon">{icon}</div>
+      <div className="faith-h-card-body">
+        <div className="faith-h-card-header">
+          <span className="faith-h-card-title">{title}</span>
+          {tag && (
+            <Tag color="pink" className="faith-h-card-tag">
+              {tag}
+            </Tag>
+          )}
+        </div>
+        <p className="faith-h-card-desc">{description}</p>
       </div>
     </div>
   );
+
+  const tabItems = [
+    {
+      key: "1",
+      label: (
+        <span>
+          <BookOutlined /> Tính năng chính
+        </span>
+      ),
+      children: (
+        <div className="faith-tab-pane">
+          <div className="faith-pane-header">
+            <h3>Nền tảng hỗ trợ toàn diện</h3>
+            <p>
+              Giảm thiểu 80% công việc thủ công, giúp bạn tập trung vào sứ mạng
+              đồng hành.
+            </p>
+          </div>
+          <Row gutter={[14, 14]}>
+            <Col xs={24} sm={12}>
+              <FeatureCard
+                icon={<TeamOutlined />}
+                title="Quản lý lớp học"
+                description="Phân công giáo lý viên, sắp xếp thời khóa biểu và phòng học trực quan."
+              />
+            </Col>
+            <Col xs={24} sm={12}>
+              <FeatureCard
+                icon={<UserOutlined />}
+                title="Sơ yếu học sinh"
+                description="Lưu trữ hồ sơ, tên thánh, phụ huynh và tiến trình linh đạo từng em."
+              />
+            </Col>
+            <Col xs={24} sm={12}>
+              <FeatureCard
+                icon={<ScanOutlined />}
+                title="Điểm danh QR"
+                description="Quét mã tốc độ cao, tự động tổng hợp tỷ lệ chuyên cần hàng tuần."
+                tag="Nổi bật"
+              />
+            </Col>
+            <Col xs={24} sm={12}>
+              <FeatureCard
+                icon={<PlayCircleOutlined />}
+                title="Trò chơi tương tác"
+                description="Kho câu hỏi Kinh Thánh, trắc nghiệm vui giúp giờ học sinh động."
+              />
+            </Col>
+            <Col xs={24} sm={12}>
+              <FeatureCard
+                icon={<BarChartOutlined />}
+                title="Báo cáo kết quả"
+                description="Tự động tính điểm trung bình, xuất sổ điểm và phiếu liên lạc."
+              />
+            </Col>
+            <Col xs={24} sm={12}>
+              <FeatureCard
+                icon={<TrophyOutlined />}
+                title="Bảng thành tích"
+                description="Tuyên dương các cá nhân, tập thể xuất sắc để tạo động lực."
+              />
+            </Col>
+          </Row>
+        </div>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <span>
+          <SafetyCertificateOutlined /> Điểm nổi bật
+        </span>
+      ),
+      children: (
+        <div className="faith-tab-pane">
+          <div className="faith-pane-header">
+            <h3>Tại sao chọn FaithEdu?</h3>
+            <p>Giải pháp tối ưu hóa dành riêng cho các Giáo xứ tại Việt Nam.</p>
+          </div>
+          <div className="faith-highlights-grid">
+            <div className="faith-hl-item">
+              <div className="faith-hl-check">
+                <CheckCircleFilled />
+              </div>
+              <div>
+                <h4>Tập trung & Đồng bộ</h4>
+                <p>
+                  Mọi dữ liệu từ điểm danh, điểm số đến gia cảnh đều lưu trữ an
+                  toàn trên Cloud.
+                </p>
+              </div>
+            </div>
+            <div className="faith-hl-item">
+              <div className="faith-hl-check">
+                <CheckCircleFilled />
+              </div>
+              <div>
+                <h4>Điểm danh siêu tốc với Mã QR</h4>
+                <p>
+                  Tiết kiệm 15-20 phút mỗi đầu giờ học, tránh sai sót thủ công.
+                </p>
+              </div>
+            </div>
+            <div className="faith-hl-item">
+              <div className="faith-hl-check">
+                <CheckCircleFilled />
+              </div>
+              <div>
+                <h4>Tương tác thế hệ Gen Z & Alpha</h4>
+                <p>
+                  Ứng dụng công nghệ vào bài giảng qua trò chơi giúp thiếu nhi
+                  hăng hái đi học.
+                </p>
+              </div>
+            </div>
+            <div className="faith-hl-item">
+              <div className="faith-hl-check">
+                <CheckCircleFilled />
+              </div>
+              <div>
+                <h4>Giao diện thân thiện mọi lứa tuổi</h4>
+                <p>
+                  Được thiết kế tối giản, dễ thao tác kể cả với Giáo lý viên lớn
+                  tuổi.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "3",
+      label: (
+        <span>
+          <HeartFilled /> Dành cho GLV
+        </span>
+      ),
+      children: (
+        <div className="faith-tab-pane">
+          <div className="faith-role-banner">
+            <div className="faith-role-badge">
+              <RocketOutlined /> Sứ mạng đồng hành
+            </div>
+            <h2>"Người gieo mầm đức tin"</h2>
+            <p>
+              FaithEdu được xây dựng không chỉ là một công cụ quản lý, mà còn là
+              người bạn đồng hành đắc lực giúp các Giáo lý viên giảm bớt gánh
+              nặng hành chính, dành trọn tâm huyết cho việc giảng dạy Lời Chúa
+              và yêu thương thiếu nhi.
+            </p>
+          </div>
+          <div className="faith-footer-info">
+            <div className="faith-info-link">
+              <GlobalOutlined /> Website chính thức:{" "}
+              <strong>giaolyso.site</strong>
+            </div>
+            <div className="faith-info-version">
+              Phiên bản 2.5.0 • Build với HT Deverloper
+            </div>
+          </div>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <Modal
@@ -34,928 +209,430 @@ const HelpModal = ({ open, onClose }) => {
       onCancel={onClose}
       footer={null}
       centered
-      width={900}
+      width={960}
       destroyOnClose
-      className="faithedu-help-modal"
-      styles={{
-        body: {
-          padding: 0,
-        },
-      }}
+      className="faithedu-help-modal-horizontal"
+      styles={{ body: { padding: 0 } }}
     >
-      {/* =====================================================
-          HERO
-      ===================================================== */}
-      <div className="faith-hero">
-        <div className="faith-hero-decoration faith-hero-decoration-1" />
-        <div className="faith-hero-decoration faith-hero-decoration-2" />
-        <div className="faith-hero-decoration faith-hero-decoration-3" />
+      <div className="faith-modal-layout">
+        {/* ================= LEFT SIDEBAR (HERO) ================= */}
+        <div className="faith-modal-sidebar">
+          <div className="faith-sidebar-bg-glow" />
 
-        <div className="faith-hero-logo">
-          <img src={logoWeb} alt="FaithEdu" />
+          <div className="faith-sidebar-top">
+            <div className="faith-brand-badge">
+              <StarOutlined /> Hệ thống Giáo lý số
+            </div>
+            <div className="faith-sidebar-logo">
+              <img src={logoWeb} alt="FaithEdu" />
+            </div>
+            <h1 className="faith-sidebar-title">
+              Faith<span>Edu</span>
+            </h1>
+            <p className="faith-sidebar-tagline">
+              Số hóa giáo lý • Kết nối đức tin
+            </p>
+          </div>
+
+          <div className="faith-sidebar-bottom">
+            <div className="faith-sidebar-stat">
+              <div className="stat-value">100%</div>
+              <div className="stat-label">Tự động hóa báo cáo</div>
+            </div>
+            <div className="faith-sidebar-divider" />
+            <div className="faith-sidebar-stat">
+              <div className="stat-value">Nhanh chóng</div>
+              <div className="stat-label">Điểm danh QR</div>
+            </div>
+          </div>
         </div>
 
-        <div className="faith-hero-content">
-          <div className="faith-hero-title">Chào mừng đến với FaithEdu</div>
-
-          <div className="faith-hero-subtitle">
-            Số hóa giáo lý, kết nối đức tin
-          </div>
-
-          <p>
-            FaithEdu là nền tảng hỗ trợ số hóa và quản lý hoạt động giáo lý
-            trong giáo xứ, giúp giáo lý viên quản lý lớp học, học sinh và quá
-            trình học tập thuận tiện hơn.
-          </p>
-        </div>
-      </div>
-
-      <Divider />
-
-      {/* =====================================================
-          TỔNG QUAN
-      ===================================================== */}
-      <div className="faith-section">
-        <div className="faith-section-title">
-          <div className="faith-title-icon">
-            <BookOutlined />
-          </div>
-
-          <span>FaithEdu giúp bạn làm gì?</span>
-        </div>
-
-        <p className="faith-section-description">
-          FaithEdu giúp giáo lý viên giảm bớt những công việc quản lý thủ công
-          và có thêm thời gian để tập trung vào việc giảng dạy, đồng hành cùng
-          các em.
-        </p>
-
-        <Row gutter={[16, 16]}>
-          <Col xs={24} md={12}>
-            <FeatureCard
-              icon={<TeamOutlined />}
-              title="Quản lý lớp học"
-              description="Quản lý các lớp giáo lý, thông tin lớp học và giáo lý viên phụ trách."
-            />
-          </Col>
-
-          <Col xs={24} md={12}>
-            <FeatureCard
-              icon={<UserOutlined />}
-              title="Quản lý học sinh"
-              description="Theo dõi danh sách học sinh và thông tin học tập của từng em."
-            />
-          </Col>
-
-          <Col xs={24} md={12}>
-            <FeatureCard
-              icon={<ScanOutlined />}
-              title="Điểm danh bằng QR"
-              description="Mỗi học sinh có một mã QR riêng giúp điểm danh nhanh chóng và chính xác."
-            />
-          </Col>
-
-          <Col xs={24} md={12}>
-            <FeatureCard
-              icon={<PlayCircleOutlined />}
-              title="Học tập tương tác"
-              description="Tạo trải nghiệm học giáo lý sinh động thông qua các trò chơi tương tác."
-            />
-          </Col>
-
-          <Col xs={24} md={12}>
-            <FeatureCard
-              icon={<BarChartOutlined />}
-              title="Kết quả học tập"
-              description="Theo dõi kết quả học tập và quá trình tiến bộ của học sinh."
-            />
-          </Col>
-
-          <Col xs={24} md={12}>
-            <FeatureCard
-              icon={<TrophyOutlined />}
-              title="Bảng thành tích"
-              description="Ghi nhận sự cố gắng và tạo động lực học tập cho các em."
-            />
-          </Col>
-        </Row>
-      </div>
-
-      <Divider />
-
-      {/* =====================================================
-          ĐIỂM NỔI BẬT
-      ===================================================== */}
-      <div className="faith-section faith-highlight-section">
-        <div className="faith-section-title">
-          <div className="faith-title-icon pink">
-            <SafetyCertificateOutlined />
-          </div>
-
-          <span>Điểm nổi bật</span>
-        </div>
-
-        <div className="faith-check-list">
-          <div>
-            <CheckCircleFilled />
-            <span>Quản lý giáo lý tập trung trên một nền tảng.</span>
-          </div>
-
-          <div>
-            <CheckCircleFilled />
-            <span>Điểm danh học sinh nhanh chóng bằng mã QR.</span>
-          </div>
-
-          <div>
-            <CheckCircleFilled />
-            <span>Hỗ trợ nhiều hình thức học tập và trò chơi tương tác.</span>
-          </div>
-
-          <div>
-            <CheckCircleFilled />
-            <span>Theo dõi kết quả và thành tích học tập của học sinh.</span>
-          </div>
-
-          <div>
-            <CheckCircleFilled />
-            <span>Giúp giáo lý viên tiết kiệm thời gian quản lý.</span>
-          </div>
+        {/* ================= RIGHT MAIN CONTENT ================= */}
+        <div className="faith-modal-content-area">
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={tabItems}
+            className="faith-horizontal-tabs"
+          />
         </div>
       </div>
 
-      <Divider />
-
-      {/* =====================================================
-          DÀNH CHO GIÁO LÝ VIÊN
-      ===================================================== */}
-      <div className="faith-role-box">
-        <div className="faith-role-logo">
-          <img src={logoWeb} alt="FaithEdu" />
-        </div>
-
-        <div className="faith-role-content">
-          <div className="faith-role-title">Dành cho giáo lý viên</div>
-
-          <div className="faith-role-description">
-            FaithEdu được xây dựng với mục tiêu trở thành công cụ hỗ trợ giáo lý
-            viên trong công tác giảng dạy, quản lý lớp học và đồng hành cùng học
-            sinh.
-          </div>
-        </div>
-      </div>
-
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
-      <div className="faith-footer">
-        <div className="faith-footer-decoration faith-footer-decoration-1" />
-        <div className="faith-footer-decoration faith-footer-decoration-2" />
-
-        <div className="faith-footer-brand">
-          <div className="faith-footer-logo">
-            <img src={logoWeb} alt="FaithEdu" />
-          </div>
-
-          <span>FaithEdu</span>
-        </div>
-
-        <div className="faith-footer-slogan">
-          Số hóa giáo lý, kết nối đức tin.
-        </div>
-
-        <div className="faith-footer-domain">giaolyso.site</div>
-      </div>
-
-      {/* =====================================================
-          CSS
-      ===================================================== */}
+      {/* ================= STYLES ================= */}
       <style>{`
-        /* =====================================================
-           MODAL
-        ===================================================== */
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
-        .faithedu-help-modal .ant-modal-content {
-          padding: 0 !important;
-          overflow: hidden;
-
-          border-radius: 26px !important;
-
-          background: #fffdfd;
-
-          box-shadow:
-            0 30px 80px rgba(189, 115, 145, 0.20),
-            0 10px 30px rgba(180, 130, 150, 0.10);
+        .faithedu-help-modal-horizontal {
+          font-family: 'Plus Jakarta Sans', sans-serif !important;
         }
 
-        .faithedu-help-modal .ant-modal-close {
+        .faithedu-help-modal-horizontal .ant-modal-content {
+          padding: 0 !important;
+          overflow: hidden;
+          border-radius: 24px !important;
+          background: #ffffff;
+          box-shadow: 0 25px 50px -12px rgba(244, 114, 154, 0.25) !important;
+        }
+
+        .faithedu-help-modal-horizontal .ant-modal-close {
           top: 16px;
           right: 16px;
-
-          z-index: 30;
-
-          width: 34px;
-          height: 34px;
-
+          z-index: 50;
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
+          background: #f1f5f9;
+          color: #64748b;
+          transition: all 0.2s;
+        }
 
-          background: rgba(255, 255, 255, 0.88);
+        .faithedu-help-modal-horizontal .ant-modal-close:hover {
+          background: #ffe4e6;
+          color: #e11d48;
+        }
 
-          color: #c9839d;
+        /* LAYOUT MAIN */
+        .faith-modal-layout {
+          display: flex;
+          min-height: 560px;
+        }
 
+        /* LEFT SIDEBAR */
+        .faith-modal-sidebar {
+          width: 310px;
+          flex-shrink: 0;
+          background: linear-gradient(160deg, #fff0f5 0%, #ffe4e6 50%, #fecdd3 100%);
+          padding: 40px 28px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          position: relative;
+          overflow: hidden;
+          border-right: 1px solid #ffe4e6;
+        }
+
+        .faith-sidebar-bg-glow {
+          position: absolute;
+          width: 200px;
+          height: 200px;
+          background: rgba(244, 114, 154, 0.2);
+          filter: blur(50px);
+          border-radius: 50%;
+          top: -50px;
+          left: -50px;
+          pointer-events: none;
+        }
+
+        .faith-brand-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 12px;
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(8px);
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #be123c;
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          margin-bottom: 24px;
+        }
+
+        .faith-sidebar-logo {
+          width: 72px;
+          height: 72px;
+          background: #ffffff;
+          border-radius: 20px;
+          padding: 10px;
+          box-shadow: 0 10px 25px -5px rgba(225, 29, 72, 0.15);
+          margin-bottom: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .faith-sidebar-logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .faith-sidebar-title {
+          font-size: 32px;
+          font-weight: 800;
+          color: #0f172a;
+          line-height: 1;
+          margin: 0 0 8px 0;
+          letter-spacing: -1px;
+        }
+
+        .faith-sidebar-title span {
+          color: #e11d48;
+        }
+
+        .faith-sidebar-tagline {
+          font-size: 13px;
+          font-weight: 600;
+          color: #9f1239;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        .faith-sidebar-bottom {
+          background: rgba(255, 255, 255, 0.55);
+          backdrop-filter: blur(10px);
+          border-radius: 16px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .faith-sidebar-stat {
+          flex: 1;
+        }
+
+        .stat-value {
+          font-size: 14px;
+          font-weight: 800;
+          color: #be123c;
+        }
+
+        .stat-label {
+          font-size: 10px;
+          font-weight: 600;
+          color: #881337;
+        }
+
+        .faith-sidebar-divider {
+          width: 1px;
+          height: 28px;
+          background: #fecdd3;
+          margin: 0 12px;
+        }
+
+        /* RIGHT CONTENT AREA */
+        .faith-modal-content-area {
+          flex: 1;
+          padding: 28px 32px;
+          display: flex;
+          flex-direction: column;
+          background: #ffffff;
+        }
+
+        /* TABS OVERRIDE */
+        .faith-horizontal-tabs .ant-tabs-nav {
+          margin-bottom: 20px !important;
+        }
+
+        .faith-horizontal-tabs .ant-tabs-tab {
+          padding: 8px 12px !important;
+          font-size: 13px !important;
+          font-weight: 600 !important;
+          color: #64748b !important;
+          transition: all 0.2s;
+        }
+
+        .faith-horizontal-tabs .ant-tabs-tab-active {
+          color: #e11d48 !important;
+        }
+
+        .faith-horizontal-tabs .ant-tabs-ink-bar {
+          background: #e11d48 !important;
+          height: 3px !important;
+          border-radius: 3px !important;
+        }
+
+        /* PANE HEADER */
+        .faith-pane-header {
+          margin-bottom: 18px;
+        }
+
+        .faith-pane-header h3 {
+          font-size: 18px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0 0 4px 0;
+        }
+
+        .faith-pane-header p {
+          font-size: 12.5px;
+          color: #64748b;
+          margin: 0;
+        }
+
+        /* CARDS */
+        .faith-h-card {
+          display: flex;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 14px;
+          border: 1px solid #f1f5f9;
+          background: #f8fafc;
+          height: 100%;
           transition: all 0.2s ease;
         }
 
-        .faithedu-help-modal .ant-modal-close:hover {
+        .faith-h-card:hover {
           background: #ffffff;
-
-          color: #b96786;
-
-          transform: scale(1.05);
+          border-color: #fecdd3;
+          box-shadow: 0 10px 20px -5px rgba(244, 114, 154, 0.12);
+          transform: translateY(-2px);
         }
 
-        /* =====================================================
-           HERO
-        ===================================================== */
-
-        .faith-hero {
-          position: relative;
-
-          display: flex;
-          align-items: center;
-
-          gap: 22px;
-
-          min-height: 175px;
-
-          padding: 32px 42px;
-
-          overflow: hidden;
-
-          background:
-            radial-gradient(
-              circle at 8% 15%,
-              rgba(255,255,255,.95) 0,
-              rgba(255,255,255,0) 28%
-            ),
-            radial-gradient(
-              circle at 90% 10%,
-              rgba(255,218,231,.85) 0,
-              rgba(255,218,231,0) 32%
-            ),
-            linear-gradient(
-              135deg,
-              #fff6f9 0%,
-              #fffaf5 50%,
-              #fff0f5 100%
-            );
-
-          border-bottom: 1px solid #f5dfe6;
-        }
-
-        .faith-hero::before {
-          content: "";
-
-          position: absolute;
-
-          width: 260px;
-          height: 260px;
-
-          right: -120px;
-          bottom: -180px;
-
-          border-radius: 50%;
-
-          background: rgba(246, 194, 211, 0.22);
-        }
-
-        .faith-hero::after {
-          content: "";
-
-          position: absolute;
-
-          width: 110px;
-          height: 110px;
-
-          left: -55px;
-          top: -55px;
-
-          border-radius: 50%;
-
-          border: 1px solid rgba(224, 157, 180, 0.25);
-        }
-
-        /* =====================================================
-           HERO LOGO
-        ===================================================== */
-
-        .faith-hero-logo {
-          position: relative;
-
-          z-index: 5;
-
-          width: 82px;
-          height: 82px;
-
-          flex-shrink: 0;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          padding: 10px;
-
-          border-radius: 24px;
-
-          background: rgba(255,255,255,.9);
-
-          border: 1px solid #f1cad7;
-
-          box-shadow:
-            0 10px 24px rgba(206, 125, 153, 0.14);
-        }
-
-        .faith-hero-logo img {
-          display: block;
-
-          width: 100%;
-          height: 100%;
-
-          object-fit: contain;
-        }
-
-        /* =====================================================
-           HERO CONTENT
-        ===================================================== */
-
-        .faith-hero-content {
-          position: relative;
-
-          z-index: 5;
-        }
-
-        .faith-hero-title {
-          margin-bottom: 5px;
-
-          color: #70465a;
-
-          font-size: 27px;
-          font-weight: 800;
-
-          letter-spacing: -0.5px;
-        }
-
-        .faith-hero-subtitle {
-          display: inline-flex;
-
-          align-items: center;
-
-          margin-bottom: 9px;
-
-          color: #cc7898;
-
-          font-size: 14px;
-          font-weight: 700;
-        }
-
-        .faith-hero-subtitle::before {
-          content: "";
-
-          width: 24px;
-          height: 2px;
-
-          margin-right: 8px;
-
-          border-radius: 10px;
-
-          background: #df9bb2;
-        }
-
-        .faith-hero-content p {
-          max-width: 670px;
-
-          margin: 0;
-
-          color: #806e77;
-
-          font-size: 13.5px;
-
-          line-height: 1.7;
-        }
-
-        /* =====================================================
-           DECORATION
-        ===================================================== */
-
-        .faith-hero-decoration {
-          position: absolute;
-
-          pointer-events: none;
-
-          border-radius: 50%;
-        }
-
-        .faith-hero-decoration-1 {
-          width: 9px;
-          height: 9px;
-
-          right: 155px;
-          top: 28px;
-
-          background: #e4bd6e;
-
-          opacity: .7;
-        }
-
-        .faith-hero-decoration-2 {
-          width: 6px;
-          height: 6px;
-
-          right: 110px;
-          top: 55px;
-
-          background: #dfa0b7;
-
-          opacity: .65;
-        }
-
-        .faith-hero-decoration-3 {
-          width: 14px;
-          height: 14px;
-
-          right: 58px;
-          bottom: 28px;
-
-          border: 2px solid #e5b7c7;
-
-          opacity: .65;
-        }
-
-        /* =====================================================
-           DIVIDER
-        ===================================================== */
-
-        .faithedu-help-modal .ant-divider {
-          margin: 0;
-
-          border-color: #f4e4e9;
-        }
-
-        /* =====================================================
-           SECTION
-        ===================================================== */
-
-        .faith-section {
-          padding: 26px 34px 28px;
-        }
-
-        .faith-section-title {
-          display: flex;
-          align-items: center;
-
-          gap: 10px;
-
-          margin-bottom: 9px;
-
-          color: #70495a;
-
-          font-size: 18px;
-          font-weight: 800;
-        }
-
-        .faith-title-icon {
+        .faith-h-card-icon {
           width: 36px;
           height: 36px;
-
-          flex-shrink: 0;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 12px;
-
-          background: #fff0f5;
-
-          border: 1px solid #f2d4df;
-
-          color: #cf7898;
-
-          font-size: 17px;
-        }
-
-        .faith-title-icon.pink {
-          background: #fff1f5;
-
-          color: #d384a0;
-        }
-
-        .faith-section-description {
-          margin: 0 0 20px;
-
-          color: #8b787f;
-
-          font-size: 13.5px;
-
-          line-height: 1.65;
-        }
-
-        /* =====================================================
-           FEATURE CARDS
-        ===================================================== */
-
-        .faith-feature-card {
-          position: relative;
-
-          display: flex;
-          align-items: flex-start;
-
-          gap: 13px;
-
-          height: 100%;
-
-          padding: 16px;
-
-          border: 1px solid #f1dfe5;
-
-          border-radius: 18px;
-
-          background: #ffffff;
-
-          box-shadow:
-            0 5px 16px rgba(211, 139, 164, 0.055);
-
-          transition:
-            transform .2s ease,
-            box-shadow .2s ease,
-            border-color .2s ease;
-        }
-
-        .faith-feature-card:hover {
-          transform: translateY(-3px);
-
-          border-color: #ebbed0;
-
-          box-shadow:
-            0 12px 25px rgba(208, 123, 153, 0.12);
-        }
-
-        .faith-feature-card::after {
-          content: "";
-
-          position: absolute;
-
-          right: 12px;
-          top: 10px;
-
-          width: 6px;
-          height: 6px;
-
-          border-radius: 50%;
-
-          background: #e7bdca;
-
-          opacity: .7;
-        }
-
-        .faith-feature-icon {
-          width: 44px;
-          height: 44px;
-
-          flex-shrink: 0;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 14px;
-
-          background:
-            linear-gradient(
-              145deg,
-              #fff4f7,
-              #ffe9f1
-            );
-
-          border: 1px solid #f2d2de;
-
-          color: #ce7897;
-
-          font-size: 20px;
-        }
-
-        .faith-feature-title {
-          margin-bottom: 4px;
-
-          color: #765162;
-
-          font-size: 14px;
-          font-weight: 800;
-        }
-
-        .faith-feature-description {
-          color: #8c7981;
-
-          font-size: 12.5px;
-
-          line-height: 1.6;
-        }
-
-        /* =====================================================
-           HIGHLIGHT
-        ===================================================== */
-
-        .faith-check-list {
-          display: flex;
-
-          flex-direction: column;
-
-          gap: 11px;
-
-          padding: 17px 19px;
-
-          border-radius: 18px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #fff8fa,
-              #fffaf6
-            );
-
-          border: 1px solid #f3e0e6;
-        }
-
-        .faith-check-list > div {
-          display: flex;
-          align-items: center;
-
-          gap: 10px;
-
-          color: #7f6d75;
-
-          font-size: 13.5px;
-        }
-
-        .faith-check-list .anticon {
-          flex-shrink: 0;
-
-          color: #dc8ba7;
-
-          font-size: 16px;
-        }
-
-        /* =====================================================
-           ROLE BOX
-        ===================================================== */
-
-        .faith-role-box {
-          display: flex;
-          align-items: center;
-
-          gap: 16px;
-
-          margin: 25px 34px;
-
-          padding: 18px 20px;
-
-          border: 1px solid #f0d9e1;
-
-          border-radius: 20px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #fff7fa,
-              #fffaf5
-            );
-
-          box-shadow:
-            0 6px 18px rgba(211, 135, 160, 0.07);
-        }
-
-        .faith-role-logo {
-          width: 56px;
-          height: 56px;
-
-          flex-shrink: 0;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          padding: 7px;
-
-          border-radius: 17px;
-
-          background: #ffffff;
-
-          border: 1px solid #f0d0dc;
-
-          box-shadow:
-            0 5px 12px rgba(211, 130, 158, .09);
-        }
-
-        .faith-role-logo img {
-          width: 100%;
-          height: 100%;
-
-          object-fit: contain;
-        }
-
-        .faith-role-title {
-          margin-bottom: 5px;
-
-          color: #71495a;
-
-          font-size: 15px;
-          font-weight: 800;
-        }
-
-        .faith-role-description {
-          color: #88757d;
-
-          font-size: 13px;
-
-          line-height: 1.65;
-        }
-
-        /* =====================================================
-           FOOTER
-        ===================================================== */
-
-        .faith-footer {
-          position: relative;
-
-          overflow: hidden;
-
-          padding: 25px 20px 23px;
-
-          text-align: center;
-
-          background:
-            radial-gradient(
-              circle at 15% 80%,
-              rgba(255,255,255,.65),
-              transparent 25%
-            ),
-            linear-gradient(
-              135deg,
-              #fff0f5,
-              #ffe7ef
-            );
-
-          border-top: 1px solid #f3d9e1;
-        }
-
-        .faith-footer-decoration {
-          position: absolute;
-
-          width: 90px;
-          height: 90px;
-
-          border: 1px solid rgba(215, 137, 163, .16);
-
-          border-radius: 50%;
-
-          pointer-events: none;
-        }
-
-        .faith-footer-decoration-1 {
-          left: -45px;
-          top: -45px;
-        }
-
-        .faith-footer-decoration-2 {
-          right: -45px;
-          bottom: -45px;
-        }
-
-        .faith-footer-brand {
-          position: relative;
-
-          z-index: 2;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          gap: 9px;
-
-          color: #70475a;
-
-          font-size: 22px;
-          font-weight: 900;
-        }
-
-        .faith-footer-logo {
-          width: 34px;
-          height: 34px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          padding: 4px;
-
           border-radius: 10px;
-
-          background: #ffffff;
-
-          border: 1px solid #f1d2dc;
-
-          box-shadow:
-            0 4px 10px rgba(208, 125, 151, .10);
+          background: #ffe4e6;
+          color: #e11d48;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          flex-shrink: 0;
         }
 
-        .faith-footer-logo img {
-          width: 100%;
-          height: 100%;
-
-          object-fit: contain;
+        .faith-h-card-body {
+          flex: 1;
+          min-width: 0;
         }
 
-        .faith-footer-slogan {
-          position: relative;
+        .faith-h-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 2px;
+        }
 
-          z-index: 2;
-
-          margin-top: 6px;
-
-          color: #c17693;
-
+        .faith-h-card-title {
           font-size: 13px;
-
           font-weight: 700;
+          color: #1e293b;
         }
 
-        .faith-footer-domain {
-          position: relative;
+        .faith-h-card-tag {
+          font-size: 9px !important;
+          line-height: 14px !important;
+          padding: 0 6px !important;
+          border-radius: 10px !important;
+        }
 
-          z-index: 2;
-
-          margin-top: 5px;
-
-          color: #b69aa4;
-
+        .faith-h-card-desc {
           font-size: 11.5px;
+          color: #64748b;
+          margin: 0;
+          line-height: 1.4;
         }
 
-        /* =====================================================
-           MOBILE
-        ===================================================== */
+        /* HIGHLIGHTS TAB */
+        .faith-highlights-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
 
-        @media (max-width: 576px) {
-          .faithedu-help-modal .ant-modal-content {
-            border-radius: 20px !important;
-          }
+        .faith-hl-item {
+          display: flex;
+          gap: 12px;
+          padding: 12px 16px;
+          background: #fff1f2;
+          border-radius: 12px;
+          border: 1px solid #ffe4e6;
+        }
 
-          .faith-hero {
+        .faith-hl-check {
+          color: #e11d48;
+          font-size: 18px;
+          margin-top: 1px;
+        }
+
+        .faith-hl-item h4 {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #9f1239;
+          margin: 0 0 2px 0;
+        }
+
+        .faith-hl-item p {
+          font-size: 12px;
+          color: #475569;
+          margin: 0;
+        }
+
+        /* ROLE TAB */
+        .faith-role-banner {
+          background: linear-gradient(135deg, #fff1f2 0%, #fff0f5 100%);
+          border: 1px dashed #fecdd3;
+          border-radius: 16px;
+          padding: 24px;
+          margin-bottom: 20px;
+        }
+
+        .faith-role-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #be123c;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        }
+
+        .faith-role-banner h2 {
+          font-size: 20px;
+          font-weight: 800;
+          color: #881337;
+          margin: 0 0 10px 0;
+        }
+
+        .faith-role-banner p {
+          font-size: 13px;
+          color: #475569;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .faith-footer-info {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-top: 12px;
+          border-top: 1px solid #f1f5f9;
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .faith-info-link {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .faith-info-link strong {
+          color: #e11d48;
+        }
+
+        /* RESPONSIVE MOBILE */
+        @media (max-width: 768px) {
+          .faith-modal-layout {
             flex-direction: column;
-
-            text-align: center;
-
-            padding: 30px 22px 26px;
           }
 
-          .faith-hero-logo {
-            width: 70px;
-            height: 70px;
+          .faith-modal-sidebar {
+            width: 100%;
+            padding: 24px;
           }
 
-          .faith-hero-title {
-            font-size: 21px;
+          .faith-sidebar-bottom {
+            margin-top: 16px;
           }
 
-          .faith-hero-subtitle {
-            justify-content: center;
-
-            font-size: 12.5px;
-          }
-
-          .faith-hero-content p {
-            font-size: 13px;
-          }
-
-          .faith-section {
-            padding: 22px 20px;
-          }
-
-          .faith-role-box {
-            margin: 20px;
-            padding: 16px;
-          }
-
-          .faith-role-logo {
-            width: 50px;
-            height: 50px;
-          }
-
-          .faith-role-description {
-            font-size: 12.5px;
-          }
-
-          .faith-feature-card {
-            padding: 14px;
+          .faith-modal-content-area {
+            padding: 20px;
           }
         }
       `}</style>
@@ -963,4 +640,4 @@ const HelpModal = ({ open, onClose }) => {
   );
 };
 
-export default HelpModal;
+export default HelpModalCate;

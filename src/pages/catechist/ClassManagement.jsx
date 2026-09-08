@@ -922,8 +922,6 @@ const ClassManagement = () => {
     <div
       style={{
         minHeight: "100vh",
-        padding: "24px",
-        backgroundColor: "#FFF9FA",
       }}
     >
       {/* HERO HEADER CHIBI */}

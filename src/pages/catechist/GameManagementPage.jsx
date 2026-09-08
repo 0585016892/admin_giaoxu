@@ -1168,7 +1168,6 @@ const GameManagementPage = ({ teacherId }) => {
     <div
       style={{
         minHeight: "100vh",
-        padding: "clamp(18px, 3vw, 36px) clamp(14px, 4vw, 48px)",
         fontFamily: "'Quicksand', 'Plus Jakarta Sans', sans-serif",
       }}
     >

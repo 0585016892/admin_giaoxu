@@ -20,7 +20,6 @@ export const getResultsByClass = async (classId) => {
   }
 
   const response = await axiosClient.get(`/results/class/${classId}`);
-  console.log("getResultsByClass:::", getResultsByClass);
 
   return response.data;
 };

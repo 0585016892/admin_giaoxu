@@ -1,35 +1,67 @@
-import React, { useCallback, useEffect, useState } from "react";
-
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Row,
-  Col,
+  Avatar,
   Card,
-  Typography,
+  Col,
   Empty,
+  Input,
+  Row,
+  Select,
   Skeleton,
+  Space,
   Tag,
-  Divider,
+  Typography,
 } from "antd";
-
 import {
   BookOutlined,
-  TeamOutlined,
   CalendarOutlined,
+  CheckCircleOutlined,
   ClockCircleOutlined,
   EnvironmentOutlined,
-  CheckCircleOutlined,
+  IdcardOutlined,
   PauseCircleOutlined,
+  ReadOutlined,
+  SearchOutlined,
   StopOutlined,
+  TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-
 import dayjs from "dayjs";
 
 import classApi from "../../api/classApi";
 import { useUser } from "../../context/UserContext";
+import PageHeroHeader from "../../components/common/PageHeroHeader";
+import StatCard from "../../components/common/StatCard";
 import ErrorPage from "./ErrorPage";
 
 const { Title, Text } = Typography;
+
+/* =========================================================
+   DESIGN SYSTEM COLORS (FaithEdu Soft Pastel)
+========================================================= */
+
+const COLORS = {
+  primary: "#F4729A",
+  primaryDark: "#E85D87",
+  primaryLight: "#FFF0F5",
+  primaryBorder: "#F8C8D8",
+
+  lavender: "#B98AE8",
+  lavenderLight: "#F6EEFF",
+
+  green: "#10B981",
+  greenLight: "#ECFDF5",
+
+  amber: "#F59E0B",
+  amberLight: "#FEF3C7",
+
+  slate: "#64748B",
+  slateLight: "#F8FAFC",
+
+  textMain: "#334155",
+  textMuted: "#94A3B8",
+  cardBg: "#FFFFFF",
+};
 
 /* =========================================================
    HELPERS
@@ -37,42 +69,12 @@ const { Title, Text } = Typography;
 
 const normalizeListResponse = (response) => {
   const data = response?.data;
-
-  /*
-   * Trường hợp API:
-   * {
-   *   success: true,
-   *   data: [...]
-   * }
-   */
-  if (Array.isArray(data?.data)) {
-    return data.data;
-  }
-
-  /*
-   * Trường hợp API trả trực tiếp:
-   * [...]
-   */
-  if (Array.isArray(data)) {
-    return data;
-  }
-
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data)) return data;
   return [];
 };
 
-/* =========================================================
-   FORMAT TIME
-========================================================= */
-
-const formatTime = (time) => {
-  if (!time) return "—";
-
-  return String(time).slice(0, 5);
-};
-
-/* =========================================================
-   DAY NAME
-========================================================= */
+const formatTime = (time) => (time ? String(time).slice(0, 5) : "—");
 
 const getDayName = (day) => {
   const days = {
@@ -84,492 +86,285 @@ const getDayName = (day) => {
     5: "Thứ Sáu",
     6: "Thứ Bảy",
     7: "Chúa Nhật",
-
+    sunday: "Chúa Nhật",
     monday: "Thứ Hai",
     tuesday: "Thứ Ba",
     wednesday: "Thứ Tư",
     thursday: "Thứ Năm",
     friday: "Thứ Sáu",
     saturday: "Thứ Bảy",
-    sunday: "Chúa Nhật",
   };
-
-  if (day === null || day === undefined || day === "") {
-    return "Chưa cập nhật";
-  }
-
   return days[day] || day || "Chưa cập nhật";
 };
-
-/* =========================================================
-   STATUS CONFIG
-========================================================= */
 
 const getStatusConfig = (status) => {
   const configs = {
     active: {
-      label: "Đang hoạt động",
-      color: "#0284C7",
-      bg: "#E0F2FE",
+      label: "Đang học",
+      color: COLORS.green,
+      bg: COLORS.greenLight,
       icon: <CheckCircleOutlined />,
     },
-
     paused: {
       label: "Tạm dừng",
-      color: "#D97706",
-      bg: "#FEF3C7",
+      color: COLORS.amber,
+      bg: COLORS.amberLight,
       icon: <PauseCircleOutlined />,
     },
-
     completed: {
-      label: "Đã kết thúc",
-      color: "#64748B",
-      bg: "#F1F5F9",
+      label: "Đã hoàn thành",
+      color: COLORS.slate,
+      bg: COLORS.slateLight,
       icon: <StopOutlined />,
     },
   };
-
   return configs[status] || configs.active;
 };
 
 /* =========================================================
-   STATUS TAG
+   SUB-COMPONENTS
 ========================================================= */
 
-const StatusTag = ({ status }) => {
-  const config = getStatusConfig(status);
-
-  return (
-    <Tag
-      bordered={false}
-      style={{
-        margin: 0,
-        borderRadius: 12,
-        padding: "6px 12px",
-        fontSize: 12,
-        fontWeight: 800,
-        color: config.color,
-        background: config.bg,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {config.icon}
-
-      {config.label}
-    </Tag>
-  );
-};
-
-/* =========================================================
-   INFO ITEM
-========================================================= */
-
-const InfoItem = ({ icon, label, value }) => {
-  return (
+// Item hiển thị thông tin chi tiết trong thẻ lớp học
+const InfoBlock = ({ icon, label, value }) => (
+  <div
+    style={{
+      padding: "12px 14px",
+      borderRadius: 14,
+      background: COLORS.primaryLight,
+      border: `1px solid ${COLORS.primaryBorder}60`,
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+    }}
+  >
     <div
       style={{
-        padding: "14px 16px",
-        borderRadius: 18,
-        background: "#FFF9FA",
-        border: "1px solid #FFE4E6",
+        fontSize: 16,
+        color: COLORS.primary,
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        height: "100%",
-        minWidth: 0,
       }}
     >
-      {/* ICON */}
-
-      <div
-        style={{
-          width: 38,
-          height: 38,
-          minWidth: 38,
-          borderRadius: 12,
-          background: "#FFF5F7",
-          color: "#FF6B8B",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 16,
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-
-      {/* CONTENT */}
-
-      <div
-        style={{
-          minWidth: 0,
-          flex: 1,
-        }}
-      >
-        <Text
-          style={{
-            display: "block",
-            fontSize: 11,
-            color: "#94A3B8",
-            fontWeight: 700,
-            lineHeight: 1.4,
-          }}
-        >
-          {label}
-        </Text>
-
-        <Text
-          strong
-          ellipsis
-          style={{
-            display: "block",
-            fontSize: 14,
-            color: "#334155",
-            marginTop: 2,
-            lineHeight: 1.4,
-          }}
-        >
-          {value}
-        </Text>
-      </div>
+      {icon}
     </div>
-  );
-};
+    <div style={{ minWidth: 0, flex: 1 }}>
+      <Text
+        style={{
+          display: "block",
+          fontSize: 10,
+          color: COLORS.textMuted,
+          fontWeight: 700,
+        }}
+      >
+        {label}
+      </Text>
+      <Text strong ellipsis style={{ fontSize: 13, color: COLORS.textMain }}>
+        {value}
+      </Text>
+    </div>
+  </div>
+);
 
 /* =========================================================
-   CLASS CARD
+   CLASS CARD COMPONENT
 ========================================================= */
 
 const ClassCard = ({ classData }) => {
+  const statusCfg = getStatusConfig(classData?.status);
+  const isMainRole =
+    classData?.catechist_role?.toLowerCase()?.includes("chủ nhiệm") ||
+    classData?.catechist_role?.toLowerCase()?.includes("trưởng");
+
   return (
     <Card
       bordered={false}
       style={{
-        marginBottom: 20,
-        borderRadius: "clamp(18px, 4vw, 24px)",
-        overflow: "hidden",
-        background: "#FFFFFF",
-        border: "2px solid #FFE4E6",
-        boxShadow: "0 10px 25px rgba(255, 182, 193, 0.15)",
+        borderRadius: 22,
+        background: COLORS.cardBg,
+        border: `1px solid ${COLORS.primaryBorder}`,
+        boxShadow: "0 8px 24px rgba(244, 114, 154, 0.06)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
       }}
-      styles={{
-        body: {
-          padding: "clamp(16px, 4vw, 28px)",
-        },
-      }}
+      bodyStyle={{ padding: "20px 24px" }}
     >
-      {/* =====================================================
-          CLASS HEADER
-      ===================================================== */}
-
-      <Row
-        align="middle"
-        gutter={[12, 14]}
+      {/* HEADER LỚP HỌC */}
+      <div
         style={{
-          marginBottom: 20,
-        }}
-      >
-        {/* ===================================================
-            CLASS NAME
-        =================================================== */}
-
-        <Col xs={24} sm={17} md={18}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              minWidth: 0,
-            }}
-          >
-            {/* ICON */}
-
-            <div
-              style={{
-                width: "clamp(44px, 12vw, 52px)",
-                height: "clamp(44px, 12vw, 52px)",
-                minWidth: "clamp(44px, 12vw, 52px)",
-                borderRadius: 15,
-                background: "#FFF5F7",
-                color: "#FF6B8B",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "clamp(20px, 5vw, 24px)",
-                border: "1.5px solid #FFD1D9",
-                flexShrink: 0,
-              }}
-            >
-              <BookOutlined />
-            </div>
-
-            {/* NAME */}
-
-            <div
-              style={{
-                minWidth: 0,
-                flex: 1,
-              }}
-            >
-              <Title
-                level={3}
-                style={{
-                  margin: 0,
-                  color: "#334155",
-                  fontWeight: 800,
-                  fontSize: "clamp(18px, 5vw, 26px)",
-                  lineHeight: 1.25,
-                  wordBreak: "break-word",
-                }}
-              >
-                {classData?.name || "Chưa có tên lớp"}
-              </Title>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  marginTop: 6,
-                }}
-              >
-                <Tag
-                  color="gold"
-                  style={{
-                    borderRadius: 8,
-                    fontWeight: 800,
-                    margin: 0,
-                  }}
-                >
-                  ✨ {classData?.code || "—"}
-                </Tag>
-
-                {classData?.category && (
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: "#FF6B8B",
-                      fontWeight: 700,
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {classData.category}
-                  </Text>
-                )}
-              </div>
-            </div>
-          </div>
-        </Col>
-
-        {/* ===================================================
-            STATUS
-        =================================================== */}
-
-        <Col xs={24} sm={7} md={6}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-start",
-            }}
-          >
-            <StatusTag status={classData?.status} />
-          </div>
-        </Col>
-      </Row>
-
-      {/* =====================================================
-          DIVIDER
-      ===================================================== */}
-
-      <Divider
-        style={{
-          borderColor: "#FFE4E6",
-          margin: "0 0 20px",
-        }}
-      />
-
-      {/* =====================================================
-          INFO GRID
-      ===================================================== */}
-
-      <Row
-        gutter={[
-          { xs: 8, sm: 12, md: 16 },
-          { xs: 8, sm: 12, md: 16 },
-        ]}
-        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 12,
           marginBottom: 16,
         }}
       >
-        {/* =================================================
-            NGÀY
-        ================================================= */}
+        <Space size={12} align="start">
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #FFF0F5 0%, #F6EEFF 100%)",
+              color: COLORS.primary,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 22,
+              border: `1px solid ${COLORS.primaryBorder}`,
+              flexShrink: 0,
+            }}
+          >
+            <ReadOutlined />
+          </div>
+          <div>
+            <Space size={8} wrap style={{ marginBottom: 4 }}>
+              <Tag
+                bordered={false}
+                style={{
+                  borderRadius: 6,
+                  fontWeight: 800,
+                  color: COLORS.primaryDark,
+                  background: COLORS.primaryLight,
+                  margin: 0,
+                }}
+              >
+                MÃ: {classData?.code || "N/A"}
+              </Tag>
+              {classData?.category && (
+                <Tag
+                  color="purple"
+                  style={{ borderRadius: 6, fontWeight: 700, margin: 0 }}
+                >
+                  {classData.category}
+                </Tag>
+              )}
+            </Space>
+            <Title
+              level={4}
+              style={{ margin: 0, color: COLORS.textMain, fontWeight: 800 }}
+            >
+              {classData?.name || "Chưa đặt tên lớp"}
+            </Title>
+          </div>
+        </Space>
 
-        <Col xs={24} sm={12} lg={6}>
-          <InfoItem
+        <Tag
+          bordered={false}
+          style={{
+            margin: 0,
+            borderRadius: 20,
+            padding: "4px 12px",
+            fontSize: 12,
+            fontWeight: 700,
+            color: statusCfg.color,
+            background: statusCfg.bg,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          {statusCfg.icon}
+          {statusCfg.label}
+        </Tag>
+      </div>
+
+      {/* GRID LỊCH HỌC VÀ ĐỊA ĐIỂM */}
+      <Row gutter={[10, 10]} style={{ marginBottom: 16 }}>
+        <Col xs={12} sm={6}>
+          <InfoBlock
             icon={<CalendarOutlined />}
-            label="Lịch học hàng tuần"
+            label="Thứ học"
             value={getDayName(classData?.day_of_week)}
           />
         </Col>
-
-        {/* =================================================
-            GIỜ
-        ================================================= */}
-
-        <Col xs={24} sm={12} lg={6}>
-          <InfoItem
+        <Col xs={12} sm={6}>
+          <InfoBlock
             icon={<ClockCircleOutlined />}
-            label="Khung giờ học"
-            value={`${formatTime(
-              classData?.start_time,
-            )} - ${formatTime(classData?.end_time)}`}
+            label="Giờ học"
+            value={`${formatTime(classData?.start_time)} - ${formatTime(classData?.end_time)}`}
           />
         </Col>
-
-        {/* =================================================
-            PHÒNG
-        ================================================= */}
-
-        <Col xs={24} sm={12} lg={6}>
-          <InfoItem
+        <Col xs={12} sm={6}>
+          <InfoBlock
             icon={<EnvironmentOutlined />}
-            label="Địa điểm phòng học"
-            value={classData?.room || "Chưa cập nhật"}
+            label="Phòng học"
+            value={classData?.room || "Chưa xếp"}
           />
         </Col>
-
-        {/* =================================================
-            SĨ SỐ
-        ================================================= */}
-
-        <Col xs={24} sm={12} lg={6}>
-          <InfoItem
+        <Col xs={12} sm={6}>
+          <InfoBlock
             icon={<TeamOutlined />}
-            label="Sĩ số học viên"
-            value={`${classData?.studentsCount || 0} học viên`}
+            label="Sĩ số lớp"
+            value={`${classData?.studentsCount || 0} Học viên`}
           />
         </Col>
       </Row>
 
-      {/* =====================================================
-          THỜI GIAN KHÓA HỌC
-      ===================================================== */}
-
+      {/* FOOTER CHỨA THỜI GIAN VÀ VAI TRÒ */}
       <div
         style={{
-          padding: "clamp(12px, 3vw, 14px) clamp(14px, 4vw, 18px)",
-          borderRadius: 16,
-          background: "#FFF5F7",
-          border: "1px solid #FFE4E6",
+          padding: "10px 16px",
+          borderRadius: 14,
+          background: "#FAF8FA",
+          border: `1px solid ${COLORS.primaryBorder}40`,
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
+          alignItems: "center",
           flexWrap: "wrap",
           gap: 10,
         }}
       >
-        {/* DATE */}
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 8,
-            minWidth: 0,
-            flex: 1,
-          }}
-        >
-          <CalendarOutlined
-            style={{
-              color: "#FF6B8B",
-              fontSize: 16,
-              marginTop: 2,
-              flexShrink: 0,
-            }}
-          />
-
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#64748B",
-              fontWeight: 700,
-              lineHeight: 1.6,
-            }}
-          >
-            Thời gian khóa học:{" "}
-            <span
-              style={{
-                color: "#334155",
-              }}
-            >
+        <Space size={6}>
+          <CalendarOutlined style={{ color: COLORS.slate }} />
+          <Text style={{ fontSize: 12, color: COLORS.slate, fontWeight: 600 }}>
+            Thời gian:{" "}
+            <span style={{ color: COLORS.textMain }}>
               {classData?.start_date
                 ? dayjs(classData.start_date).format("DD/MM/YYYY")
                 : "—"}
-
-              {" đến "}
-
+              {" ~ "}
               {classData?.end_date
                 ? dayjs(classData.end_date).format("DD/MM/YYYY")
                 : "—"}
             </span>
           </Text>
-        </div>
-
-        {/* ROLE */}
+        </Space>
 
         <Tag
-          color="pink"
+          bordered={false}
           style={{
+            margin: 0,
             borderRadius: 8,
             fontWeight: 700,
-            margin: 0,
-            whiteSpace: "normal",
-            textAlign: "center",
+            color: isMainRole ? COLORS.primaryDark : COLORS.lavender,
+            background: isMainRole ? COLORS.primaryLight : COLORS.lavenderLight,
+            padding: "2px 10px",
           }}
         >
           Vai trò: {classData?.catechist_role || "Giáo lý viên"}
         </Tag>
       </div>
 
-      {/* =====================================================
-          DESCRIPTION
-      ===================================================== */}
-
       {classData?.description && (
-        <div
+        <Text
+          type="secondary"
           style={{
-            marginTop: 14,
-            padding: "14px clamp(12px, 3vw, 16px)",
-            borderRadius: 16,
-            background: "#FFF9FA",
-            border: "1px solid #FFE4E6",
+            display: "block",
+            fontSize: 12,
+            marginTop: 10,
+            paddingLeft: 4,
+            fontStyle: "italic",
           }}
         >
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#64748B",
-              lineHeight: 1.7,
-              wordBreak: "break-word",
-            }}
-          >
-            <strong>Ghi chú/Mô tả:</strong> {classData.description}
-          </Text>
-        </div>
+          💬 {classData.description}
+        </Text>
       )}
     </Card>
   );
 };
 
 /* =========================================================
-   PAGE
+   MAIN PAGE
 ========================================================= */
 
 const TeacherClassesPage = () => {
@@ -579,318 +374,248 @@ const TeacherClassesPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /* =======================================================
-     FETCH CLASSES
-  ======================================================= */
+  // Filters
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetchClasses = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
       const response = await classApi.getClassTeacher();
-
       const list = normalizeListResponse(response);
-
-      console.log("NORMALIZED TEACHER CLASSES:", list);
-
-      /*
-       * Đảm bảo luôn là array
-       */
       setClasses(Array.isArray(list) ? list : []);
-    } catch (error) {
+    } catch (err) {
       setClasses([]);
-
       setError(
-        error?.response?.data?.message || "Không thể tải danh sách lớp học!",
+        err?.response?.data?.message ||
+          "Không thể tải danh sách lớp học phụ trách!",
       );
     } finally {
       setLoading(false);
     }
   }, []);
 
-  /* =======================================================
-     EFFECT
-  ======================================================= */
-
   useEffect(() => {
     fetchClasses();
   }, [fetchClasses]);
 
-  /* =======================================================
-     ERROR
-  ======================================================= */
+  // Lọc danh sách lớp học
+  const filteredClasses = useMemo(() => {
+    return classes.filter((item) => {
+      const matchSearch =
+        !searchText.trim() ||
+        item?.name?.toLowerCase().includes(searchText.trim().toLowerCase()) ||
+        item?.code?.toLowerCase().includes(searchText.trim().toLowerCase());
+
+      const matchStatus =
+        statusFilter === "all" || (item?.status || "active") === statusFilter;
+
+      return matchSearch && matchStatus;
+    });
+  }, [classes, searchText, statusFilter]);
+
+  // Tính tổng sĩ số học viên
+  const totalStudents = useMemo(() => {
+    return classes.reduce(
+      (sum, item) => sum + Number(item?.studentsCount || 0),
+      0,
+    );
+  }, [classes]);
 
   if (error) {
     return (
       <ErrorPage
-        title="Không thể tải danh sách lớp học"
+        title="Không thể lấy danh sách lớp"
         message={error}
-        onRetry={() => {
-          setError(null);
-          fetchClasses();
-        }}
+        onRetry={fetchClasses}
       />
     );
   }
 
-  /* =======================================================
-     RENDER
-  ======================================================= */
-
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: "clamp(12px, 3vw, 24px)",
-        background: "#FFF9FA",
-        width: "100%",
-        overflowX: "hidden",
-      }}
-    >
-      {/* =====================================================
-          HEADER GIÁO LÝ VIÊN
-      ===================================================== */}
+    <div style={{ maxWidth: 1250, margin: "0 auto", paddingBottom: 40 }}>
+      {/* PAGE HERO HEADER */}
+      <PageHeroHeader
+        icon={<BookOutlined />}
+        title="Lớp Học Phụ Trách"
+        description="Danh sách các lớp Giáo lý được phân công quản lý và giảng dạy"
+        onRefresh={fetchClasses}
+        refreshLoading={loading}
+      />
 
+      {/* STAT CARDS ROW */}
+      <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
+        <Col xs={24} sm={8}>
+          <StatCard
+            title="Tổng số lớp"
+            value={classes.length}
+            suffix="lớp"
+            icon={<BookOutlined />}
+            color={COLORS.primary}
+            bg={COLORS.primaryLight}
+          />
+        </Col>
+        <Col xs={24} sm={8}>
+          <StatCard
+            title="Tổng sĩ số"
+            value={totalStudents}
+            suffix="học viên"
+            icon={<TeamOutlined />}
+            color={COLORS.lavender}
+            bg={COLORS.lavenderLight}
+          />
+        </Col>
+        <Col xs={24} sm={8}>
+          <StatCard
+            title="Sĩ số trung bình"
+            value={
+              classes.length ? Math.round(totalStudents / classes.length) : 0
+            }
+            suffix="em / lớp"
+            icon={<IdcardOutlined />}
+            color={COLORS.green}
+            bg={COLORS.greenLight}
+          />
+        </Col>
+      </Row>
+
+      {/* CATECHIST PROFILE BANNER */}
       <Card
         bordered={false}
         style={{
-          marginBottom: 20,
-          borderRadius: "clamp(18px, 4vw, 26px)",
-          overflow: "hidden",
-          background: "linear-gradient(135deg, #FFF5F7 0%, #FFFFFF 100%)",
-          border: "2px solid #FFE4E6",
-          boxShadow: "0 10px 25px rgba(255, 182, 193, 0.15)",
+          borderRadius: 20,
+          background: "linear-gradient(135deg, #FFF0F5 0%, #F6EEFF 100%)",
+          border: `1px solid ${COLORS.primaryBorder}`,
+          boxShadow: "0 6px 20px rgba(244, 114, 154, 0.06)",
+          marginTop: 20,
         }}
-        styles={{
-          body: {
-            padding: "clamp(16px, 4vw, 24px)",
-          },
-        }}
+        bodyStyle={{ padding: "20px 24px" }}
       >
-        <Row align="middle" gutter={[16, 16]}>
-          <Col span={24}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                minWidth: 0,
-              }}
-            >
-              {/* =================================================
-                  AVATAR
-              ================================================= */}
-
-              <div
+        <Row align="middle" justify="space-between" gutter={[16, 16]}>
+          <Col xs={24} sm={18}>
+            <Space size={16} align="center">
+              <Avatar
+                size={54}
+                icon={<UserOutlined />}
                 style={{
-                  width: "clamp(48px, 14vw, 60px)",
-                  height: "clamp(48px, 14vw, 60px)",
-                  minWidth: "clamp(48px, 14vw, 60px)",
-                  borderRadius: "clamp(15px, 4vw, 20px)",
-                  background: "#FF6B8B",
-                  color: "#FFFFFF",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "clamp(22px, 6vw, 28px)",
-                  boxShadow: "0 7px 16px rgba(255, 107, 139, 0.25)",
-                  flexShrink: 0,
+                  backgroundColor: COLORS.primary,
+                  boxShadow: "0 4px 12px rgba(244, 114, 154, 0.25)",
+                  border: "2px solid #FFFFFF",
                 }}
-              >
-                <UserOutlined />
-              </div>
-
-              {/* =================================================
-                  INFORMATION
-              ================================================= */}
-
-              <div
-                style={{
-                  minWidth: 0,
-                  flex: 1,
-                }}
-              >
+              />
+              <div>
                 <Text
                   style={{
-                    display: "block",
-                    fontSize: "clamp(9px, 2.5vw, 11px)",
-                    color: "#FF6B8B",
+                    fontSize: 11,
+                    color: COLORS.primaryDark,
                     fontWeight: 800,
                     letterSpacing: 0.8,
-                    lineHeight: 1.4,
+                    textTransform: "uppercase",
                   }}
                 >
-                  🌸 GIÁO LÝ VIÊN PHỤ TRÁCH
+                  GIÁO LÝ VIÊN PHỤ TRÁCH
                 </Text>
-
                 <Title
-                  level={3}
+                  level={4}
                   style={{
-                    margin: "4px 0 8px",
-                    color: "#334155",
+                    margin: "2px 0 4px",
+                    color: COLORS.textMain,
                     fontWeight: 800,
-                    fontSize: "clamp(19px, 5vw, 28px)",
-                    lineHeight: 1.25,
-                    wordBreak: "break-word",
                   }}
                 >
-                  {user?.full_name || "Khánh Hưng ( Admin )"}
+                  {user?.full_name || "Khánh Hưng"}
                 </Title>
-
-                {/* TAGS */}
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 6,
-                  }}
-                >
-                  {/* THÁNH DANH */}
-
+                <Space wrap size={8}>
                   <Tag
                     color="magenta"
-                    style={{
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      margin: 0,
-                      maxWidth: "100%",
-                      whiteSpace: "normal",
-                    }}
+                    style={{ borderRadius: 8, fontWeight: 700, margin: 0 }}
                   >
-                    Thánh danh: {user?.holy_name || "Đaminh"}
+                    Thánh danh: {user?.holy_name || "Chưa cập nhật"}
                   </Tag>
-
-                  {/* MÃ GLV */}
-
                   <Tag
                     color="volcano"
-                    style={{
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      margin: 0,
-                      maxWidth: "100%",
-                      whiteSpace: "normal",
-                    }}
+                    style={{ borderRadius: 8, fontWeight: 700, margin: 0 }}
                   >
-                    Mã GLV: {user?.catechist_code || "GLV20260035"}
+                    Mã GLV: {user?.catechist_code || "N/A"}
                   </Tag>
-                </div>
+                </Space>
               </div>
-            </div>
+            </Space>
           </Col>
         </Row>
       </Card>
 
-      {/* =====================================================
-          TITLE
-      ===================================================== */}
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          marginBottom: 14,
-          flexWrap: "wrap",
-        }}
+      {/* FILTER & SEARCH BAR */}
+      <Row
+        gutter={[16, 16]}
+        align="middle"
+        style={{ marginTop: 20, marginBottom: 20 }}
       >
-        <Text
-          strong
-          style={{
-            fontSize: "clamp(14px, 4vw, 16px)",
-            color: "#334155",
-            display: "block",
-          }}
-        >
-          📚 Lớp học được phân công
-        </Text>
-
-        {/* TOTAL CLASS */}
-
-        {!loading && classes.length > 0 && (
-          <Tag
-            color="pink"
-            style={{
-              margin: 0,
-              borderRadius: 10,
-              padding: "4px 10px",
-              fontWeight: 800,
-            }}
-          >
-            {classes.length} lớp
-          </Tag>
-        )}
-      </div>
-
-      {/* =====================================================
-          LOADING
-      ===================================================== */}
-
-      {loading ? (
-        <Card
-          bordered={false}
-          style={{
-            borderRadius: 22,
-            border: "2px solid #FFE4E6",
-          }}
-          styles={{
-            body: {
-              padding: "clamp(16px, 4vw, 24px)",
-            },
-          }}
-        >
-          <Skeleton
-            active
-            paragraph={{
-              rows: 5,
-            }}
+        <Col xs={24} sm={14} md={16}>
+          <Input
+            prefix={<SearchOutlined style={{ color: COLORS.primary }} />}
+            placeholder="Tìm kiếm theo tên lớp hoặc mã lớp..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+            size="large"
+            style={{ borderRadius: 14 }}
           />
-        </Card>
-      ) : classes.length > 0 ? (
-        /* ===================================================
-           ALL CLASS CARDS
-        =================================================== */
+        </Col>
+        <Col xs={24} sm={10} md={8}>
+          <Select
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
+            style={{ width: "100%" }}
+            size="large"
+            options={[
+              { value: "all", label: "🔍 Tất cả trạng thái" },
+              { value: "active", label: "🟢 Đang học" },
+              { value: "paused", label: "🟠 Tạm dừng" },
+              { value: "completed", label: "⚪ Đã hoàn thành" },
+            ]}
+          />
+        </Col>
+      </Row>
 
-        <div>
-          {classes.map((classData, index) => (
+      {/* CLASS CARDS GRID */}
+      {loading ? (
+        <Row gutter={[16, 16]}>
+          {[1, 2].map((k) => (
+            <Col span={24} key={k}>
+              <Card style={{ borderRadius: 22 }}>
+                <Skeleton active paragraph={{ rows: 4 }} />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ) : filteredClasses.length > 0 ? (
+        <Space direction="vertical" size={16} style={{ width: "100%" }}>
+          {filteredClasses.map((item, index) => (
             <ClassCard
-              key={classData?.assignment_id || classData?.id || index}
-              classData={classData}
+              key={item?.assignment_id || item?.id || index}
+              classData={item}
             />
           ))}
-        </div>
+        </Space>
       ) : (
-        /* ===================================================
-           EMPTY
-        =================================================== */
-
         <Card
           bordered={false}
           style={{
             borderRadius: 22,
-            border: "2px solid #FFE4E6",
+            border: `1px solid ${COLORS.primaryBorder}`,
             textAlign: "center",
           }}
-          styles={{
-            body: {
-              padding: "clamp(28px, 8vw, 40px) 20px",
-            },
-          }}
+          bodyStyle={{ padding: "40px 20px" }}
         >
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
-              <Text
-                style={{
-                  color: "#94A3B8",
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                Bạn chưa được phân công lớp học nào 🌸
+              <Text style={{ color: COLORS.textMuted, fontWeight: 600 }}>
+                {searchText || statusFilter !== "all"
+                  ? "Không tìm thấy lớp học phù hợp với bộ lọc"
+                  : "Bạn chưa được phân công quản lý lớp học nào 🌸"}
               </Text>
             }
           />

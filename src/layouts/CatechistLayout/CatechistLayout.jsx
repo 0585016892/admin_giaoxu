@@ -251,9 +251,8 @@ export default function CatechistLayout() {
             flex: 1 1 auto;
 
             min-width: 0;
-            width: 100%;
 
-            margin: 16px 20px 8px;
+            margin: 25px ;
 
             padding: 0;
 

@@ -47,11 +47,11 @@ import {
 } from "@ant-design/icons";
 
 // Import Custom Common Components
-import StatCard from "../../components/common/StatCard";
 import AppButton from "../../components/common/AppButton";
 import AppFormModal from "../../components/common/AppFormModal";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
+import StatCard from "../../components/common/StatCard";
 
 import catechistApi from "../../api/catechistApi";
 import classApi from "../../api/classApi";
@@ -1246,8 +1246,6 @@ export default function CatechistManagement() {
 
           .chibi-catechist-container {
             min-height: 100vh;
-            background: #FFF5F7;
-            padding: 24px;
             font-family: 'Quicksand', 'Be Vietnam Pro', sans-serif;
           }
 

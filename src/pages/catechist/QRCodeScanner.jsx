@@ -23,9 +23,7 @@ const { Text } = Typography;
 ========================================================= */
 
 const COLORS = {
-  primary: "#6366F1",
-
-  accentYellow: "#FBBF24",
+  primary: "#FF8FAB",
 
   success: "#059669",
   successBg: "#ECFDF5",
@@ -51,7 +49,7 @@ const DISPLAY_TIME = {
 };
 
 /* =========================================================
-   DUPLICATE
+   DUPLICATE SCAN
 ========================================================= */
 
 const DUPLICATE_SCAN_TIME = 2500;
@@ -61,17 +59,8 @@ const DUPLICATE_SCAN_TIME = 2500;
 ========================================================= */
 
 const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
-  /* =======================================================
-     STATE
-  ======================================================= */
-
   const [processing, setProcessing] = useState(false);
-
   const [scanMessage, setScanMessage] = useState(null);
-
-  /* =======================================================
-     REFS
-  ======================================================= */
 
   const processingRef = useRef(false);
 
@@ -85,13 +74,12 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
   const mountedRef = useRef(false);
 
   /* =======================================================
-     CLEAR MESSAGE TIMEOUT
+     CLEAR TIMEOUT
   ======================================================= */
 
   const clearMessageTimeout = useCallback(() => {
     if (messageTimeoutRef.current) {
       clearTimeout(messageTimeoutRef.current);
-
       messageTimeoutRef.current = null;
     }
   }, []);
@@ -106,7 +94,6 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
     processingRef.current = false;
 
     setProcessing(false);
-
     setScanMessage(null);
 
     lastScanRef.current = {
@@ -132,7 +119,7 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
   }, [clearMessageTimeout]);
 
   /* =======================================================
-     RESET WHEN CAMERA OFF
+     CAMERA OFF
   ======================================================= */
 
   useEffect(() => {
@@ -154,12 +141,12 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
         navigator.vibrate(pattern);
       }
     } catch {
-      // Ignore vibration errors
+      // Ignore
     }
   }, []);
 
   /* =======================================================
-     SHOW RESULT
+     SHOW MESSAGE
   ======================================================= */
 
   const showMessage = useCallback(
@@ -180,7 +167,6 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
         setScanMessage(null);
 
         processingRef.current = false;
-
         setProcessing(false);
 
         messageTimeoutRef.current = null;
@@ -219,9 +205,9 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
         return;
       }
 
-      /* ==========================
-           CLASS
-        ========================== */
+      /* =====================================================
+         CLASS
+      ===================================================== */
 
       if (!classId) {
         processingRef.current = true;
@@ -229,12 +215,9 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
         showMessage(
           {
             type: "error",
-
-            title: "Chưa chọn lớp nha!",
-
-            message: "Vui lòng chọn lớp trước khi quét mã QR nhé.",
+            title: "Chưa chọn lớp",
+            message: "Vui lòng chọn lớp trước khi quét mã QR.",
           },
-
           DISPLAY_TIME.error,
         );
 
@@ -243,9 +226,9 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
         return;
       }
 
-      /* ==========================
-           DUPLICATE
-        ========================== */
+      /* =====================================================
+         DUPLICATE CAMERA SCAN
+      ===================================================== */
 
       const now = Date.now();
 
@@ -262,54 +245,52 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
         time: now,
       };
 
-      /* ==========================
-           PROCESSING
-        ========================== */
+      /* =====================================================
+         PROCESSING
+      ===================================================== */
 
       processingRef.current = true;
 
       setProcessing(true);
 
       clearMessageTimeout();
-
       setScanMessage(null);
 
       try {
-        /* ========================
-             API
-          ======================== */
+        /* ===================================================
+           API
+        =================================================== */
 
         const response = await scanQRCode({
           qr_token: qrToken,
-
           class_id: Number(classId),
         });
 
         const data = response?.data || response;
 
-        /* ========================
-             UPDATE PARENT
-          ======================== */
+        /* ===================================================
+           PARENT
+        =================================================== */
 
         if (typeof onSuccess === "function") {
           try {
             await onSuccess(data);
           } catch {
-            // Không làm hỏng flow scan
+            // Parent error should not break scanner
           }
         }
 
-        /* ========================
-             SUCCESS
-          ======================== */
+        /* ===================================================
+           SUCCESS
+        =================================================== */
 
         showMessage(
           {
             type: "success",
 
-            title: "Điểm danh siêu đỉnh! 🎉",
+            title: "Điểm danh thành công",
 
-            message: data?.message || "Học sinh đã điểm danh thành công.",
+            message: data?.message || "Học sinh đã được ghi nhận.",
 
             student: data?.student || null,
 
@@ -327,19 +308,20 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
 
         const data = error?.response?.data || {};
 
-        /* ========================
-             ALREADY ATTENDED
-          ======================== */
+        /* ===================================================
+           ALREADY ATTENDED
+        =================================================== */
 
         if (status === 409 || data?.code === "ALREADY_ATTENDED") {
           showMessage(
             {
               type: "warning",
 
-              title: "Ái chà, điểm danh rồi! ⏰",
+              title: "Học sinh đã điểm danh",
 
               message:
-                data?.message || "Học sinh này đã điểm danh hôm nay rồi.",
+                data?.message ||
+                "Học sinh này đã được điểm danh và không thể thay đổi.",
 
               student: data?.student || null,
 
@@ -356,9 +338,9 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
           return;
         }
 
-        /* ========================
-             WRONG CLASS
-          ======================== */
+        /* ===================================================
+           WRONG CLASS
+        =================================================== */
 
         if (
           data?.code === "STUDENT_NOT_IN_CLASS" ||
@@ -368,7 +350,7 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
             {
               type: "class_error",
 
-              title: "Nhầm lớp mất rồi! 🎒",
+              title: "Học sinh không thuộc lớp",
 
               message:
                 data?.message || "Học sinh này không thuộc lớp đang chọn.",
@@ -386,18 +368,19 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
           return;
         }
 
-        /* ========================
-             INVALID QR
-          ======================== */
+        /* ===================================================
+           INVALID QR
+        =================================================== */
 
         if (data?.code === "INVALID_QR" || data?.code === "INVALID_QR_TOKEN") {
           showMessage(
             {
               type: "error",
 
-              title: "Mã QR lạ quá! ❓",
+              title: "Mã QR không hợp lệ",
 
-              message: data?.message || "Mã QR không hợp lệ hoặc đã cũ.",
+              message:
+                data?.message || "Mã QR không hợp lệ hoặc đã hết hiệu lực.",
             },
 
             DISPLAY_TIME.error,
@@ -408,16 +391,16 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
           return;
         }
 
-        /* ========================
-             STUDENT NOT FOUND
-          ======================== */
+        /* ===================================================
+           STUDENT NOT FOUND
+        =================================================== */
 
         if (status === 404 || data?.code === "STUDENT_NOT_FOUND") {
           showMessage(
             {
               type: "error",
 
-              title: "Không tìm thấy bé! 🔍",
+              title: "Không tìm thấy học sinh",
 
               message: data?.message || "Không tìm thấy học sinh từ mã QR này.",
 
@@ -432,18 +415,18 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
           return;
         }
 
-        /* ========================
-             OTHER ERROR
-          ======================== */
+        /* ===================================================
+           OTHER ERROR
+        =================================================== */
 
         showMessage(
           {
             type: "error",
 
-            title: "Có chút trục trặc! 🥺",
+            title: "Không thể điểm danh",
 
             message:
-              data?.message || error?.message || "Không thể điểm danh lúc này.",
+              data?.message || error?.message || "Đã xảy ra lỗi khi điểm danh.",
 
             student: data?.student || null,
 
@@ -460,10 +443,6 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
   );
 
   /* =======================================================
-     FINISH
-  ======================================================= */
-
-  /* =======================================================
      RESULT CONFIG
   ======================================================= */
 
@@ -476,33 +455,24 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
       case "success":
         return {
           color: COLORS.success,
-
           background: COLORS.successBg,
-
           border: COLORS.successBorder,
-
           icon: <CheckCircleFilled />,
         };
 
       case "warning":
         return {
           color: COLORS.warning,
-
           background: COLORS.warningBg,
-
           border: COLORS.warningBorder,
-
           icon: <WarningFilled />,
         };
 
       default:
         return {
           color: COLORS.danger,
-
           background: COLORS.dangerBg,
-
           border: COLORS.dangerBorder,
-
           icon: <CloseCircleFilled />,
         };
     }
@@ -561,7 +531,7 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
 
               {student?.name && (
                 <Text strong className="inline-qr-student-name">
-                  ✨ {student.name}
+                  {student.name}
                 </Text>
               )}
 
@@ -616,19 +586,17 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
 
         <strong>Camera đang tắt</strong>
 
-        <span>Bật công tắc phía trên để bắt đầu quét mã QR học viên.</span>
+        <span>Bật quét QR để bắt đầu điểm danh học viên.</span>
       </div>
     );
   }
 
   /* =======================================================
-     RENDER CAMERA
+     CAMERA
   ======================================================= */
 
   return (
     <div className="inline-qr-scanner">
-      {/* CAMERA */}
-
       <div className="inline-qr-camera">
         <Scanner
           onScan={handleScan}
@@ -651,18 +619,12 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
           }}
         />
 
-        {/* DARK OVERLAY */}
-
         <div className="inline-qr-overlay" />
-
-        {/* LIVE */}
 
         <div className="inline-qr-live">
           <span />
           Camera đang hoạt động
         </div>
-
-        {/* FRAME */}
 
         <div className="inline-qr-frame-wrapper">
           <div className="inline-qr-frame">
@@ -673,8 +635,6 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
           </div>
         </div>
 
-        {/* FRAME TEXT */}
-
         {!processing && !scanMessage && (
           <div className="inline-qr-hint">
             <ScanOutlined />
@@ -682,8 +642,6 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
             <span>Đưa mã QR vào khung</span>
           </div>
         )}
-
-        {/* PROCESSING */}
 
         {processing && !scanMessage && (
           <div className="inline-qr-processing">
@@ -705,12 +663,8 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
           </div>
         )}
 
-        {/* RESULT */}
-
         {renderResult()}
       </div>
-
-      {/* STATUS */}
 
       <div className="inline-qr-status">
         <span
@@ -727,6 +681,13 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
               : "Sẵn sàng quét học viên tiếp theo"}
         </span>
       </div>
+
+      {typeof onFinishAttendance === "function" && (
+        <div className="qr-finish-note">
+          Khi tắt camera, hệ thống sẽ tự động ghi <b>Vắng</b> cho học sinh chưa
+          được điểm danh.
+        </div>
+      )}
     </div>
   );
 };

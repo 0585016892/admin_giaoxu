@@ -64,6 +64,7 @@ const MyStudentsPage = () => {
 
       const response = await studentApi.getStudentClass();
       const data = response?.data;
+      console.log(data);
 
       if (Array.isArray(data)) {
         setStudents(data);
@@ -913,8 +914,6 @@ const MyStudentsPage = () => {
 
         .my-students-page {
           min-height: 100vh;
-          padding: 24px;
-          background: #FFF9FA;
           overflow-x: hidden;
         }
 

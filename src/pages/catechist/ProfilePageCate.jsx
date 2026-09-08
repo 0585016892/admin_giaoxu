@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
 import {
   Card,
   Row,
@@ -14,9 +14,9 @@ import {
   Divider,
   message,
   ConfigProvider,
-  Spin,
   Descriptions,
   DatePicker,
+  Skeleton,
 } from "antd";
 import {
   UserOutlined,
@@ -41,53 +41,172 @@ import { getAdminById, updateAdmin, changePassword } from "../../api/adminApi";
 
 const { Title, Text } = Typography;
 
+// =====================================================
+// HELPER FUNCTIONS & STYLES
+// =====================================================
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+const translateRole = (role) => {
+  const roleMap = {
+    priest: "Linh mục Chánh xứ ✝️",
+    admin: "Ban Quản Trị ✨",
+    teacher: "Giáo lý viên / Huynh trưởng 🌸",
+    admin_catechist: "Quản trị viên Giáo lý 🌸",
+    catechist: "Huấn luyện viên Giáo lý 🌸",
+    liturgy_manager: "Ban Phụng Vụ ⛪",
+    media_manager: "Ban Truyền Thông 📸",
+  };
+  return roleMap[role] || "Hội đồng Mục vụ 🌿";
+};
+
+// =====================================================
+// SUB-COMPONENTS (MEMOIZED FOR PERFORMANCE)
+// =====================================================
+
+// 1. Sidebar Thẻ Tóm Tắt Profile
+const ProfileSidebar = memo(
+  ({ profileData, accountType, fileList, onAvatarChange }) => {
+    const userName =
+      profileData?.full_name || profileData?.username || "Huynh Trưởng";
+    const avatarUrl =
+      fileList.length > 0 ? fileList[0].url || fileList[0].thumbUrl : null;
+
+    return (
+      <Card bordered={false} className="chibi-card">
+        <div className="chibi-avatar-upload-box">
+          <div className="chibi-avatar-ring">
+            <Avatar
+              size={116}
+              src={avatarUrl}
+              icon={<UserOutlined />}
+              className="chibi-main-avatar"
+            />
+            <span className={`chibi-star-badge ${accountType.key}`}>
+              {accountType.key === "vip" ? <CrownFilled /> : <StarFilled />}
+            </span>
+          </div>
+
+          <Upload showUploadList={false} beforeUpload={onAvatarChange}>
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<CameraOutlined />}
+              className="chibi-upload-btn"
+            />
+          </Upload>
+        </div>
+
+        <div className="chibi-user-id-box">
+          <Title level={4} className="chibi-full-name">
+            {profileData?.saint_name && (
+              <span className="chibi-saint">{profileData.saint_name} </span>
+            )}
+            {userName}
+          </Title>
+
+          <Text type="secondary" className="chibi-username-text">
+            @{profileData?.username || "username"}
+          </Text>
+
+          <div className="chibi-tags-group">
+            <Tag className="chibi-tag-role">
+              {translateRole(profileData?.role)}
+            </Tag>
+            <Tag
+              icon={accountType.icon}
+              style={{
+                color: accountType.color,
+                background: accountType.bg,
+                borderColor: accountType.border,
+              }}
+              className="chibi-tag-account"
+            >
+              {accountType.label}
+            </Tag>
+          </div>
+        </div>
+
+        <Divider style={{ margin: "16px 0", borderColor: "#FFE4E6" }} />
+
+        <Descriptions column={1} size="small" className="chibi-quick-desc">
+          <Descriptions.Item label="ID Hệ thống">
+            <strong style={{ color: "#FF6B8B" }}>
+              #{profileData?.id || "—"}
+            </strong>
+          </Descriptions.Item>
+          <Descriptions.Item label="Chức danh">
+            <span style={{ color: "#475569", fontWeight: 700 }}>
+              {profileData?.position || "Chưa cập nhật"}
+            </span>
+          </Descriptions.Item>
+          <Descriptions.Item label="Email">
+            {profileData?.email || "—"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Điện thoại">
+            {profileData?.phone || "—"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Trạng thái">
+            <Tag color="green" className="chibi-status-tag">
+              ● Đang hoạt động
+            </Tag>
+          </Descriptions.Item>
+        </Descriptions>
+      </Card>
+    );
+  },
+);
+
+// 2. Skeleton Loading Component
+const ProfileSkeleton = () => (
+  <Row gutter={[20, 20]}>
+    <Col xs={24} lg={8}>
+      <Card bordered={false} className="chibi-card">
+        <Space
+          vertical
+          align="center"
+          style={{ width: "100%", padding: "20px 0" }}
+        >
+          <Skeleton.Avatar active size={116} shape="circle" />
+          <Skeleton.Input active style={{ width: 160 }} size="small" />
+          <Skeleton.Input active style={{ width: 100 }} size="small" />
+        </Space>
+        <Skeleton active paragraph={{ rows: 5 }} />
+      </Card>
+    </Col>
+    <Col xs={24} lg={16}>
+      <Card bordered={false} className="chibi-card">
+        <Skeleton active paragraph={{ rows: 10 }} />
+      </Card>
+    </Col>
+  </Row>
+);
+
+// =====================================================
+// MAIN COMPONENT
+// =====================================================
+
 export default function ProfilePageCate() {
   const { user } = useUser();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
-
-  // Avatar Upload State
   const [fileList, setFileList] = useState([]);
 
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-  /* =========================================================
-     ROLE HELPER
-  ========================================================= */
-  const translateRole = (role) => {
-    switch (role) {
-      case "priest":
-        return "Linh mục Chánh xứ ✝️";
-      case "admin":
-        return "Ban Quản Trị ✨";
-      case "teacher":
-      case "catechist":
-        return "Huynh Trưởng / GLV 💖";
-      case "liturgy_manager":
-        return "Ban Phụng Vụ ⛪";
-      case "media_manager":
-        return "Ban Truyền Thông 📸";
-      default:
-        return "Hội đồng Mục vụ 🌿";
-    }
-  };
-
-  /* =========================================================
-     ACCOUNT TYPE CONFIG (VIP / MEMBER)
-  ========================================================= */
+  // Cấu hình loại tài khoản (VIP/Member)
   const accountType = useMemo(() => {
     const type = String(profileData?.account_type || user?.account_type || "")
       .trim()
       .toLowerCase();
+
     if (type === "vip") {
       return {
         key: "vip",
-        label: "Tài Khoản Thành viên VIP",
+        label: "Thành viên VIP",
         icon: <CrownFilled />,
         color: "#D97706",
         bg: "#FEF3C7",
@@ -96,7 +215,7 @@ export default function ProfilePageCate() {
     }
     return {
       key: "member",
-      label: "Tài Khoản Thành viên",
+      label: "Thành viên",
       icon: <StarFilled />,
       color: "#64748B",
       bg: "#F1F5F9",
@@ -104,9 +223,7 @@ export default function ProfilePageCate() {
     };
   }, [profileData?.account_type, user?.account_type]);
 
-  /* =========================================================
-     1. TẢI THÔNG TIN HỒ SƠ DỰA VÀO user.id
-  ========================================================= */
+  // Tải dữ liệu hồ sơ từ API
   const fetchProfile = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -116,7 +233,6 @@ export default function ProfilePageCate() {
 
       setProfileData(data);
 
-      // Set giá trị vào Form (chuyển đổi chuỗi ngày ISO sang dayjs)
       profileForm.setFieldsValue({
         saint_name: data.saint_name || "",
         full_name: data.full_name || "",
@@ -134,7 +250,6 @@ export default function ProfilePageCate() {
         role: data.role || "catechist",
       });
 
-      // Xử lý URL Avatar chuẩn
       if (data.avatar) {
         const fullAvatarUrl =
           data.avatar.startsWith("http://") ||
@@ -144,12 +259,7 @@ export default function ProfilePageCate() {
             : `${API_URL}${data.avatar.startsWith("/") ? "" : "/"}${data.avatar}`;
 
         setFileList([
-          {
-            uid: "-1",
-            name: "avatar.png",
-            status: "done",
-            url: fullAvatarUrl,
-          },
+          { uid: "-1", name: "avatar.png", status: "done", url: fullAvatarUrl },
         ]);
       } else {
         setFileList([]);
@@ -159,15 +269,31 @@ export default function ProfilePageCate() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, profileForm, API_URL]);
+  }, [user?.id, profileForm]);
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
-  /* =========================================================
-     2. XỬ LÝ CẬP NHẬT HỒ SƠ CÁ NHÂN
-  ========================================================= */
+  // Xử lý xem trước ảnh khi người dùng chọn file mới
+  const handleBeforeUploadAvatar = (file) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setFileList([
+        {
+          uid: "-1",
+          name: file.name,
+          status: "done",
+          url: reader.result,
+          originFileObj: file,
+        },
+      ]);
+    };
+    return false;
+  };
+
+  // Cập nhật thông tin hồ sơ
   const handleUpdateProfile = async () => {
     try {
       const values = await profileForm.validateFields();
@@ -177,7 +303,6 @@ export default function ProfilePageCate() {
 
       Object.keys(values).forEach((key) => {
         if (key === "avatar") return;
-
         const val = values[key];
         if (val !== undefined && val !== null) {
           if (key === "birthday" || key === "ordination_date") {
@@ -210,9 +335,7 @@ export default function ProfilePageCate() {
     }
   };
 
-  /* =========================================================
-     3. XỬ LÝ ĐỔI MẬT KHẨU
-  ========================================================= */
+  // Đổi mật khẩu
   const handleChangePassword = async () => {
     try {
       const values = await passwordForm.validateFields();
@@ -235,30 +358,6 @@ export default function ProfilePageCate() {
     }
   };
 
-  if (loading) {
-    return (
-      <div
-        className="chibi-loading-screen"
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <Space direction="vertical" align="center" size="middle">
-          <Spin size="large" />
-          <Text className="chibi-loading-text">
-            Đang tải hồ sơ của bạn... 💕
-          </Text>
-        </Space>
-      </div>
-    );
-  }
-
-  const userName =
-    profileData?.full_name || profileData?.username || "Huynh Trưởng";
-
   return (
     <ConfigProvider
       theme={{
@@ -272,496 +371,391 @@ export default function ProfilePageCate() {
     >
       <div className="chibi-profile-layout">
         <div className="chibi-profile-container">
-          {/* HEADER BAR */}
+          {/* HEADER BANNER */}
           <div className="chibi-header-banner">
             <PageHeroHeader
               icon={<UserOutlined />}
               badgeText="🌸 THÔNG TIN HỒ SƠ CÁ NHÂN"
-              title="Hồ Sơ Của Bạn "
-              description=" Quản lý thông tin lý lịch, chức vụ giáo lý và bảo mật mật khẩu tài
-              khoản."
+              title="Hồ Sơ Của Bạn"
+              description="Quản lý thông tin lý lịch, chức vụ giáo lý và bảo mật mật khẩu tài khoản."
             />
           </div>
 
-          <Row gutter={[20, 20]}>
-            {/* CỘT TRÁI: AVATAR & TÓM TẮT TÀI KHOẢN */}
-            <Col xs={24} lg={8}>
-              <Card bordered={false} className="chibi-card chibi-card-left">
-                <div className="chibi-avatar-upload-box">
-                  <div className="chibi-avatar-ring">
-                    <Avatar
-                      size={116}
-                      src={
-                        fileList.length > 0
-                          ? fileList[0].url || fileList[0].thumbUrl
-                          : null
-                      }
-                      icon={<UserOutlined />}
-                      className="chibi-main-avatar"
-                    />
-                    <span className={`chibi-star-badge ${accountType.key}`}>
-                      {accountType.key === "vip" ? (
-                        <CrownFilled />
-                      ) : (
-                        <StarFilled />
-                      )}
-                    </span>
-                  </div>
+          {loading ? (
+            <ProfileSkeleton />
+          ) : (
+            <Row gutter={[20, 20]}>
+              {/* CỘT TRÁI: AVATAR & TÓM TẮT */}
+              <Col xs={24} lg={8}>
+                <ProfileSidebar
+                  profileData={profileData}
+                  accountType={accountType}
+                  fileList={fileList}
+                  onAvatarChange={handleBeforeUploadAvatar}
+                />
+              </Col>
 
-                  <Upload
-                    showUploadList={false}
-                    beforeUpload={(file) => {
-                      const reader = new FileReader();
-                      reader.readAsDataURL(file);
-                      reader.onload = () => {
-                        setFileList([
-                          {
-                            uid: "-1",
-                            name: file.name,
-                            status: "done",
-                            url: reader.result,
-                            originFileObj: file,
-                          },
-                        ]);
-                      };
-                      return false;
-                    }}
-                  >
-                    <Button
-                      type="primary"
-                      shape="circle"
-                      icon={<CameraOutlined />}
-                      className="chibi-upload-btn"
-                    />
-                  </Upload>
-                </div>
-
-                <div className="chibi-user-id-box">
-                  <Title level={4} className="chibi-full-name">
-                    {profileData?.saint_name && (
-                      <span className="chibi-saint">
-                        {profileData.saint_name}{" "}
-                      </span>
-                    )}
-                    {userName}
-                  </Title>
-
-                  <Text type="secondary" className="chibi-username-text">
-                    @{profileData?.username || "username"}
-                  </Text>
-
-                  <div className="chibi-tags-group">
-                    <Tag className="chibi-tag-role">
-                      {translateRole(profileData?.role)}
-                    </Tag>
-                    <Tag
-                      icon={accountType.icon}
-                      style={{
-                        color: accountType.color,
-                        background: accountType.bg,
-                        borderColor: accountType.border,
-                      }}
-                      className="chibi-tag-account"
-                    >
-                      {accountType.label}
-                    </Tag>
-                  </div>
-                </div>
-
-                <Divider style={{ margin: "16px 0", borderColor: "#FFE4E6" }} />
-
-                <Descriptions
-                  column={1}
-                  size="small"
-                  className="chibi-quick-desc"
-                >
-                  <Descriptions.Item label="ID Hệ thống">
-                    <strong style={{ color: "#FF6B8B" }}>
-                      #{profileData?.id}
-                    </strong>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Chức danh">
-                    <span style={{ color: "#475569", fontWeight: 700 }}>
-                      {profileData?.position || "Chưa cập nhật"}
-                    </span>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Email">
-                    {profileData?.email || "—"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Điện thoại">
-                    {profileData?.phone || "—"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái">
-                    <Tag color="green" className="chibi-status-tag">
-                      ● Đang hoạt động
-                    </Tag>
-                  </Descriptions.Item>
-                </Descriptions>
-              </Card>
-            </Col>
-
-            {/* CỘT PHẢI: FORM CHỈNH SỬA & ĐỔI MẬT KHẨU */}
-            <Col xs={24} lg={16}>
-              <Space direction="vertical" size={20} style={{ width: "100%" }}>
-                {/* 1. FORM CẬP NHẬT THÔNG TIN */}
-                <Card
-                  bordered={false}
-                  className="chibi-card"
-                  title={
-                    <div className="chibi-card-header">
-                      <IdcardOutlined style={{ color: "#FF6B8B" }} />
-                      <span>Cập Nhật Thông Tin Hồ Sơ</span>
-                    </div>
-                  }
-                >
-                  <Form
-                    form={profileForm}
-                    layout="vertical"
-                    onFinish={handleUpdateProfile}
-                    className="chibi-form"
-                  >
-                    <Form.Item name="role" hidden>
-                      <Input />
-                    </Form.Item>
-
-                    <Row gutter={16}>
-                      <Col xs={24} sm={8}>
-                        <Form.Item
-                          label={<span className="chibi-label">Tên Thánh</span>}
-                          name="saint_name"
-                        >
-                          <Input
-                            placeholder="Ví dụ: Giuse, Maria..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-
-                      <Col xs={24} sm={16}>
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">Họ và tên *</span>
-                          }
-                          name="full_name"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Vui lòng nhập họ tên đầy đủ",
-                            },
-                          ]}
-                        >
-                          <Input
-                            placeholder="Nhập họ và tên..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    <Row gutter={16}>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">Email liên hệ *</span>
-                          }
-                          name="email"
-                          rules={[
-                            {
-                              required: true,
-                              type: "email",
-                              message: "Email không hợp lệ",
-                            },
-                          ]}
-                        >
-                          <Input
-                            prefix={
-                              <MailOutlined style={{ color: "#FF85A1" }} />
-                            }
-                            placeholder="email@example.com"
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">Số điện thoại</span>
-                          }
-                          name="phone"
-                        >
-                          <Input
-                            prefix={
-                              <PhoneOutlined style={{ color: "#FF85A1" }} />
-                            }
-                            placeholder="09xxxx..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    <Row gutter={16}>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">
-                              Chức danh / Nhiệm vụ
-                            </span>
-                          }
-                          name="position"
-                        >
-                          <Input
-                            placeholder="Ví dụ: Huynh trưởng, GLV Lớp Chiên..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={<span className="chibi-label">Ngày sinh</span>}
-                          name="birthday"
-                        >
-                          <DatePicker
-                            style={{ width: "100%" }}
-                            format="YYYY-MM-DD"
-                            placeholder="Chọn ngày sinh..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    <Row gutter={16}>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={<span className="chibi-label">Quê quán</span>}
-                          name="hometown"
-                        >
-                          <Input
-                            prefix={
-                              <HomeOutlined style={{ color: "#FF85A1" }} />
-                            }
-                            placeholder="Quê hương..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">
-                              Địa chỉ hiện tại
-                            </span>
-                          }
-                          name="address"
-                        >
-                          <Input
-                            prefix={
-                              <HomeOutlined style={{ color: "#FF85A1" }} />
-                            }
-                            placeholder="Nơi cư trú..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    {/* DÀNH RIÊNG CHO LINH MỤC */}
-                    {profileData?.role === "priest" && (
-                      <div className="chibi-priest-box">
-                        <Divider
-                          orientation="left"
-                          style={{ borderColor: "#FDE68A" }}
-                        >
-                          <span
-                            style={{
-                              color: "#D97706",
-                              fontWeight: 700,
-                              fontSize: 13,
-                            }}
-                          >
-                            <SafetyCertificateOutlined /> Chức Thánh Mục Vụ
-                          </span>
-                        </Divider>
-
-                        <Row gutter={16}>
-                          <Col xs={24} sm={12}>
-                            <Form.Item
-                              label={
-                                <span className="chibi-label">
-                                  Ngày thụ phong
-                                </span>
-                              }
-                              name="ordination_date"
-                            >
-                              <DatePicker
-                                style={{ width: "100%" }}
-                                format="YYYY-MM-DD"
-                                placeholder="Ngày thụ phong..."
-                                className="chibi-input"
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          <Col xs={24} sm={12}>
-                            <Form.Item
-                              label={
-                                <span className="chibi-label">
-                                  Khẩu hiệu Mục vụ
-                                </span>
-                              }
-                              name="motto"
-                            >
-                              <Input
-                                prefix={
-                                  <BookOutlined style={{ color: "#F59E0B" }} />
-                                }
-                                placeholder="Châm ngôn dâng hiến..."
-                                className="chibi-input"
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">Tiểu sử tóm tắt</span>
-                          }
-                          name="bio"
-                        >
-                          <Input.TextArea
-                            rows={3}
-                            placeholder="Đoạn giới thiệu ngắn..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
+              {/* CỘT PHẢI: FORM CẬP NHẬT & ĐỔI MẬT KHẨU */}
+              <Col xs={24} lg={16}>
+                <Space direction="vertical" size={20} style={{ width: "100%" }}>
+                  {/* 1. FORM CẬP NHẬT THÔNG TIN */}
+                  <Card
+                    bordered={false}
+                    className="chibi-card"
+                    title={
+                      <div className="chibi-card-header">
+                        <IdcardOutlined style={{ color: "#FF6B8B" }} />
+                        <span>Cập Nhật Thông Tin Hồ Sơ</span>
                       </div>
-                    )}
-
-                    <div style={{ textAlign: "right", marginTop: 12 }}>
-                      <AppButton
-                        key="submit"
-                        icon={<SaveOutlined />}
-                        type="primary"
-                        loading={submitLoading}
-                        onClick={handleUpdateProfile}
-                        size="middle"
-                      >
-                        Lưu Thay Đổi ✨
-                      </AppButton>
-                      ,
-                    </div>
-                  </Form>
-                </Card>
-
-                {/* 2. FORM ĐỔI MẬT KHẨU */}
-                <Card
-                  bordered={false}
-                  className="chibi-card"
-                  title={
-                    <div className="chibi-card-header">
-                      <KeyOutlined style={{ color: "#A855F7" }} />
-                      <span>Đổi Mật Khẩu Bảo Mật</span>
-                    </div>
-                  }
-                >
-                  <Form
-                    form={passwordForm}
-                    layout="vertical"
-                    onFinish={handleChangePassword}
-                    className="chibi-form"
+                    }
                   >
-                    <Row gutter={16}>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">
-                              Mật khẩu hiện tại *
+                    <Form
+                      form={profileForm}
+                      layout="vertical"
+                      onFinish={handleUpdateProfile}
+                    >
+                      <Form.Item name="role" hidden>
+                        <Input />
+                      </Form.Item>
+
+                      <Row gutter={16}>
+                        <Col xs={24} sm={8}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">Tên Thánh</span>
+                            }
+                            name="saint_name"
+                          >
+                            <Input
+                              placeholder="Ví dụ: Giuse, Maria..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={16}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">Họ và tên *</span>
+                            }
+                            name="full_name"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Vui lòng nhập họ tên đầy đủ",
+                              },
+                            ]}
+                          >
+                            <Input
+                              placeholder="Nhập họ và tên..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                      <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">
+                                Email liên hệ *
+                              </span>
+                            }
+                            name="email"
+                            rules={[
+                              {
+                                required: true,
+                                type: "email",
+                                message: "Email không hợp lệ",
+                              },
+                            ]}
+                          >
+                            <Input
+                              prefix={
+                                <MailOutlined style={{ color: "#FF85A1" }} />
+                              }
+                              placeholder="email@example.com"
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">Số điện thoại</span>
+                            }
+                            name="phone"
+                          >
+                            <Input
+                              prefix={
+                                <PhoneOutlined style={{ color: "#FF85A1" }} />
+                              }
+                              placeholder="09xxxx..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                      <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">
+                                Chức danh / Nhiệm vụ
+                              </span>
+                            }
+                            name="position"
+                          >
+                            <Input
+                              placeholder="Ví dụ: Huynh trưởng, GLV Lớp Chiên..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">Ngày sinh</span>
+                            }
+                            name="birthday"
+                          >
+                            <DatePicker
+                              style={{ width: "100%" }}
+                              format="YYYY-MM-DD"
+                              placeholder="Chọn ngày sinh..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                      <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">Quê quán</span>
+                            }
+                            name="hometown"
+                          >
+                            <Input
+                              prefix={
+                                <HomeOutlined style={{ color: "#FF85A1" }} />
+                              }
+                              placeholder="Quê hương..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">
+                                Địa chỉ hiện tại
+                              </span>
+                            }
+                            name="address"
+                          >
+                            <Input
+                              prefix={
+                                <HomeOutlined style={{ color: "#FF85A1" }} />
+                              }
+                              placeholder="Nơi cư trú..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                      {/* KHỐI DÀNH RIÊNG CHO LINH MỤC */}
+                      {profileData?.role === "priest" && (
+                        <div className="chibi-priest-box">
+                          <Divider
+                            orientation="left"
+                            style={{ borderColor: "#FDE68A" }}
+                          >
+                            <span
+                              style={{
+                                color: "#D97706",
+                                fontWeight: 700,
+                                fontSize: 13,
+                              }}
+                            >
+                              <SafetyCertificateOutlined /> Chức Thánh Mục Vụ
                             </span>
-                          }
-                          name="oldPassword"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Nhập mật khẩu hiện tại",
-                            },
-                          ]}
-                        >
-                          <Input.Password
-                            prefix={
-                              <LockOutlined style={{ color: "#C084FC" }} />
-                            }
-                            placeholder="Mật khẩu cũ..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
+                          </Divider>
 
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label={
-                            <span className="chibi-label">Mật khẩu mới *</span>
-                          }
-                          name="newPassword"
-                          rules={[
-                            { required: true, message: "Nhập mật khẩu mới" },
-                            { min: 6, message: "Mật khẩu tối thiểu 6 ký tự" },
-                          ]}
-                        >
-                          <Input.Password
-                            prefix={
-                              <LockOutlined style={{ color: "#C084FC" }} />
-                            }
-                            placeholder="Mật khẩu mới..."
-                            className="chibi-input"
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
+                          <Row gutter={16}>
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label={
+                                  <span className="chibi-label">
+                                    Ngày thụ phong
+                                  </span>
+                                }
+                                name="ordination_date"
+                              >
+                                <DatePicker
+                                  style={{ width: "100%" }}
+                                  format="YYYY-MM-DD"
+                                  placeholder="Ngày thụ phong..."
+                                  className="chibi-input"
+                                />
+                              </Form.Item>
+                            </Col>
 
-                    <div style={{ textAlign: "right" }}>
-                      <AppButton
-                        key="submit"
-                        icon={<KeyOutlined />}
-                        type="primary"
-                        loading={passwordLoading}
-                        onClick={handleChangePassword}
-                        size="middle"
-                      >
-                        Cập Nhật Mật Khẩu 🔐
-                      </AppButton>
-                    </div>
-                  </Form>
-                </Card>
-              </Space>
-            </Col>
-          </Row>
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label={
+                                  <span className="chibi-label">
+                                    Khẩu hiệu Mục vụ
+                                  </span>
+                                }
+                                name="motto"
+                              >
+                                <Input
+                                  prefix={
+                                    <BookOutlined
+                                      style={{ color: "#F59E0B" }}
+                                    />
+                                  }
+                                  placeholder="Châm ngôn dâng hiến..."
+                                  className="chibi-input"
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">
+                                Tiểu sử tóm tắt
+                              </span>
+                            }
+                            name="bio"
+                          >
+                            <Input.TextArea
+                              rows={3}
+                              placeholder="Đoạn giới thiệu ngắn..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </div>
+                      )}
+
+                      <div style={{ textAlign: "right", marginTop: 12 }}>
+                        <AppButton
+                          key="submit"
+                          icon={<SaveOutlined />}
+                          type="primary"
+                          loading={submitLoading}
+                          onClick={handleUpdateProfile}
+                          size="middle"
+                        >
+                          Lưu Thay Đổi ✨
+                        </AppButton>
+                      </div>
+                    </Form>
+                  </Card>
+
+                  {/* 2. FORM ĐỔI MẬT KHẨU */}
+                  <Card
+                    bordered={false}
+                    className="chibi-card"
+                    title={
+                      <div className="chibi-card-header">
+                        <KeyOutlined style={{ color: "#A855F7" }} />
+                        <span>Đổi Mật Khẩu Bảo Mật</span>
+                      </div>
+                    }
+                  >
+                    <Form
+                      form={passwordForm}
+                      layout="vertical"
+                      onFinish={handleChangePassword}
+                    >
+                      <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">
+                                Mật khẩu hiện tại *
+                              </span>
+                            }
+                            name="oldPassword"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Nhập mật khẩu hiện tại",
+                              },
+                            ]}
+                          >
+                            <Input.Password
+                              prefix={
+                                <LockOutlined style={{ color: "#C084FC" }} />
+                              }
+                              placeholder="Mật khẩu cũ..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label={
+                              <span className="chibi-label">
+                                Mật khẩu mới *
+                              </span>
+                            }
+                            name="newPassword"
+                            rules={[
+                              { required: true, message: "Nhập mật khẩu mới" },
+                              { min: 6, message: "Mật khẩu tối thiểu 6 ký tự" },
+                            ]}
+                          >
+                            <Input.Password
+                              prefix={
+                                <LockOutlined style={{ color: "#C084FC" }} />
+                              }
+                              placeholder="Mật khẩu mới..."
+                              className="chibi-input"
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                      <div style={{ textAlign: "right" }}>
+                        <AppButton
+                          key="submit-password"
+                          icon={<KeyOutlined />}
+                          type="primary"
+                          loading={passwordLoading}
+                          onClick={handleChangePassword}
+                          size="middle"
+                        >
+                          Cập Nhật Mật Khẩu 🔐
+                        </AppButton>
+                      </div>
+                    </Form>
+                  </Card>
+                </Space>
+              </Col>
+            </Row>
+          )}
         </div>
 
-        {/* STYLES SCSS/CSS IN JS */}
+        {/* STYLES CSS IN JS */}
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 
-          .chibi-loading-screen {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 75vh;
-            background: #FFF5F7;
-          }
-          .chibi-loading-text {
-            color: #FF6B8B;
-            font-weight: 700;
-            font-size: 15px;
-          }
-
           .chibi-profile-layout {
             min-height: 100vh;
-            padding: 24px 16px 60px;
             font-family: 'Quicksand', 'Be Vietnam Pro', sans-serif;
+            padding: 12px 0;
           }
 
           .chibi-profile-container {
@@ -769,47 +763,15 @@ export default function ProfilePageCate() {
             margin: 0 auto;
           }
 
-          /* HEADER BANNER */
           .chibi-header-banner {
             margin-bottom: 20px;
           }
 
-          .chibi-badge-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 14px;
-            background: #FFE4E6;
-            color: #E11D48;
-            border: 1px solid #FECDD3;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-          }
-
-          .chibi-main-title {
-            color: #334155 !important;
-            font-weight: 800 !important;
-            margin: 0 !important;
-            font-size: clamp(22px, 3vw, 28px) !important;
-          }
-
-          .chibi-sub-title {
-            color: #64748B;
-            margin: 4px 0 0 0 !important;
-            font-size: 13px;
-            font-weight: 600;
-          }
-
-          /* CARD SYSTEM */
           .chibi-card {
             background: rgba(255, 255, 255, 0.95) !important;
             border-radius: 20px !important;
             border: 1.5px solid #FFE4E6 !important;
-            box-shadow: 0 10px 25px -5px rgba(255, 182, 193, 0.3) !important;
-            padding: 12px;
+            box-shadow: 0 10px 25px -5px rgba(255, 182, 193, 0.2) !important;
           }
 
           .chibi-card-header {
@@ -821,7 +783,6 @@ export default function ProfilePageCate() {
             font-weight: 800;
           }
 
-          /* AVATAR UPLOAD */
           .chibi-avatar-upload-box {
             position: relative;
             width: 120px;
@@ -867,7 +828,6 @@ export default function ProfilePageCate() {
             box-shadow: 0 4px 10px rgba(255, 107, 139, 0.3);
           }
 
-          /* USER ID BOX */
           .chibi-user-id-box {
             text-align: center;
           }
@@ -927,7 +887,6 @@ export default function ProfilePageCate() {
             font-size: 10px;
           }
 
-          /* FORM ELEMENTS */
           .chibi-label {
             font-weight: 700;
             color: #475569;
@@ -952,35 +911,6 @@ export default function ProfilePageCate() {
             padding: 14px;
             border-radius: 16px;
             margin-bottom: 16px;
-          }
-
-          /* BUTTONS */
-          .chibi-btn-submit {
-            background: linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%) !important;
-            border: none !important;
-            height: 40px !important;
-            border-radius: 12px !important;
-            font-weight: 800 !important;
-            padding: 0 24px !important;
-            box-shadow: 0 4px 12px rgba(255, 107, 139, 0.3) !important;
-          }
-          .chibi-btn-submit:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(255, 107, 139, 0.4) !important;
-          }
-
-          .chibi-btn-purple {
-            background: linear-gradient(135deg, #A855F7 0%, #C084FC 100%) !important;
-            border: none !important;
-            height: 40px !important;
-            border-radius: 12px !important;
-            font-weight: 800 !important;
-            padding: 0 24px !important;
-            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3) !important;
-          }
-          .chibi-btn-purple:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(168, 85, 247, 0.4) !important;
           }
         `}</style>
       </div>

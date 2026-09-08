@@ -1736,7 +1736,6 @@ export default function StudentManagement() {
 
           .student-management-page {
             min-height: 100vh;
-            padding: 28px;
             box-sizing: border-box;
             overflow-x: hidden;
           }

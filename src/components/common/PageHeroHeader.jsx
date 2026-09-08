@@ -1,7 +1,7 @@
 import React from "react";
 import { Row, Col, Space, Typography, Tooltip, Button, Popconfirm } from "antd";
 import { ReloadOutlined, DeleteOutlined } from "@ant-design/icons";
-import AppButton from "./AppButton"; // Đường dẫn AppButton trong project của bạn
+import AppButton from "./AppButton";
 
 const { Title, Text } = Typography;
 
@@ -11,7 +11,7 @@ const PageHeroHeader = ({
   title,
   description,
 
-  // --- Props cho Bulk Delete (Xóa hàng loạt) ---
+  // --- Props cho Bulk Delete ---
   selectedCount = 0,
   onBulkDelete,
   bulkDeleting = false,
@@ -23,7 +23,7 @@ const PageHeroHeader = ({
   refreshLoading = false,
   refreshTooltip = "Làm mới dữ liệu",
 
-  // --- Props cho Action chính (Tạo mới/Thêm) ---
+  // --- Props cho Action chính ---
   primaryButtonText,
   primaryButtonIcon,
   onPrimaryClick,
@@ -34,127 +34,46 @@ const PageHeroHeader = ({
   extra,
 }) => {
   return (
-    <div
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        padding: "20px 20px",
-        marginBottom: 20,
-        borderRadius: 24,
-        background:
-          "linear-gradient(135deg, #FFFFFF 0%, #FFF5F7 50%, #FFE4E6 100%)",
-        border: "2px solid #FFE4E6",
-        boxShadow: "0 12px 28px rgba(255, 182, 193, 0.2)",
-      }}
-    >
-      {/* Hiệu ứng bong bóng Chibi mờ */}
-      <div
-        style={{
-          position: "absolute",
-          width: 160,
-          height: 160,
-          borderRadius: "50%",
-          background: "rgba(255, 255, 255, 0.6)",
-          right: -40,
-          top: -60,
-          pointerEvents: "none",
-        }}
-      />
+    <div className="hero-header-wrapper">
+      {/* Họa tiết trang trí */}
+      <div className="hero-decor-circle-1" />
+      <div className="hero-decor-circle-2" />
+      <div className="hero-decor-sparkle">✨</div>
 
       <Row
         justify="space-between"
         align="middle"
         gutter={[16, 16]}
-        style={{ position: "relative", zIndex: 1 }}
+        style={{ position: "relative", zIndex: 2 }}
       >
         {/* BÊN TRÁI: Icon, Badge, Title, Description */}
         <Col xs={24} md={14} lg={16}>
-          <Space align="start" size={14} style={{ width: "100%" }}>
-            {icon && (
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 18,
-                  background: "#FF6B8B",
-                  color: "#FFFFFF",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 22,
-                  flexShrink: 0,
-                  boxShadow: "0 8px 20px rgba(255, 107, 139, 0.35)",
-                }}
-              >
-                {icon}
-              </div>
-            )}
+          <div className="hero-left-content">
+            {icon && <div className="hero-icon-box">{icon}</div>}
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {badgeText && (
-                <Text
-                  style={{
-                    display: "block",
-                    color: "#FF6B8B",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: 1.5,
-                    marginBottom: 2,
-                    fontFamily: "'Quicksand', sans-serif",
-                  }}
-                >
-                  {badgeText}
-                </Text>
-              )}
+            <div className="hero-text-group">
+              {badgeText && <Text className="hero-badge">{badgeText}</Text>}
 
-              <Title
-                level={2}
-                style={{
-                  margin: 0,
-                  color: "#334155",
-                  fontWeight: 900,
-                  fontSize: "calc(1.2rem + 0.4vw)",
-                  lineHeight: 1.3,
-                  fontFamily: "'Fredoka', 'Quicksand', sans-serif",
-                  wordBreak: "break-word",
-                }}
-              >
+              <Title level={2} className="hero-title">
                 {title}
               </Title>
 
               {description && (
-                <Text
-                  style={{
-                    display: "block",
-                    marginTop: 4,
-                    fontSize: 13,
-                    color: "#94A3B8",
-                    fontWeight: 600,
-                  }}
-                >
-                  {description}
-                </Text>
+                <Text className="hero-description">{description}</Text>
               )}
             </div>
-          </Space>
+          </div>
         </Col>
 
         {/* BÊN PHẢI: Các nút hành động */}
         <Col xs={24} md={10} lg={8}>
-          <Space
-            size={10}
-            wrap
-            style={{
-              width: "100%",
-              justifyContent: "flex-end",
-            }}
-          >
+          <Space size={10} wrap className="hero-actions-group">
             {/* 1. Nút Xóa hàng loạt */}
             {selectedCount > 0 && onBulkDelete && (
               <Popconfirm
                 title={bulkDeleteTitle || `Xóa ${selectedCount} mục đã chọn?`}
                 description={bulkDeleteConfirmText}
-                okText="Xóa"
+                okText="Xóa ngay"
                 cancelText="Hủy"
                 okButtonProps={{
                   danger: true,
@@ -173,12 +92,7 @@ const PageHeroHeader = ({
                   icon={<DeleteOutlined />}
                   loading={bulkDeleting}
                   disabled={primaryDisabled || bulkDeleting}
-                  style={{
-                    height: 40,
-                    borderRadius: 14,
-                    fontWeight: 800,
-                    boxShadow: "0 6px 16px rgba(239, 68, 68, 0.25)",
-                  }}
+                  className="hero-btn-delete"
                 >
                   {bulkDeleting ? "Đang xóa..." : `Xóa (${selectedCount})`}
                 </Button>
@@ -189,18 +103,11 @@ const PageHeroHeader = ({
             {onRefresh && (
               <Tooltip title={refreshTooltip}>
                 <Button
-                  icon={<ReloadOutlined style={{ color: "#FF6B8B" }} />}
+                  icon={<ReloadOutlined className="hero-refresh-icon" />}
                   loading={refreshLoading}
                   onClick={onRefresh}
                   disabled={bulkDeleting}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 14,
-                    background: "#FFFFFF",
-                    border: "1.5px solid #FFE4E6",
-                    boxShadow: "0 4px 10px rgba(255, 182, 193, 0.15)",
-                  }}
+                  className="hero-btn-refresh"
                 />
               </Tooltip>
             )}
@@ -213,25 +120,192 @@ const PageHeroHeader = ({
                 onClick={onPrimaryClick}
                 disabled={primaryDisabled || bulkDeleting}
                 loading={primaryLoading}
-                style={{
-                  borderRadius: 14,
-                  background: "#FF6B8B",
-                  borderColor: "#FF6B8B",
-                  height: 40,
-                  padding: "0 16px",
-                  fontWeight: 800,
-                  boxShadow: "0 8px 18px rgba(255, 107, 139, 0.3)",
-                }}
+                className="hero-btn-primary"
               >
                 {primaryButtonText}
               </AppButton>
             )}
 
-            {/* 4. Tuỳ chọn thêm các nút khác */}
+            {/* 4. Tuỳ chọn thêm */}
             {extra}
           </Space>
         </Col>
       </Row>
+
+      {/* Style CSS-in-JS với Font chữ Tiếng Việt hiện đại */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,500;0,600;0,700;0,800;0,900;1,600&family=Plus+Jakarta+Sans:wght@700;800&display=swap');
+
+        .hero-header-wrapper {
+          position: relative;
+          overflow: hidden;
+          padding: 22px 24px;
+          margin-bottom: 20px;
+          border-radius: 24px;
+          background: linear-gradient(135deg, #FFFFFF 0%, #FFF0F3 50%, #FFE4E6 100%);
+          border: 1.5px solid #FFCCD5;
+          box-shadow: 0 12px 32px -4px rgba(255, 182, 193, 0.3);
+          font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Họa tiết phông nền */
+        .hero-decor-circle-1 {
+          position: absolute;
+          width: 180px;
+          height: 180px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,228,230,0) 70%);
+          right: -30px;
+          top: -50px;
+          pointer-events: none;
+        }
+
+        .hero-decor-circle-2 {
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          background: rgba(255, 107, 139, 0.08);
+          left: 40%;
+          bottom: -40px;
+          pointer-events: none;
+        }
+
+        .hero-decor-sparkle {
+          position: absolute;
+          right: 20px;
+          bottom: 12px;
+          font-size: 18px;
+          opacity: 0.6;
+          user-select: none;
+          pointer-events: none;
+        }
+
+        /* Khối bên trái */
+        .hero-left-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .hero-icon-box {
+          width: 56px;
+          height: 56px;
+          border-radius: 18px;
+          background: linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%);
+          color: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          flex-shrink: 0;
+          box-shadow: 0 8px 20px rgba(255, 107, 139, 0.35);
+          border: 2px solid #FFFFFF;
+        }
+
+        .hero-text-group {
+          flex: 1;
+          min-width: 0;
+        }
+
+        /* Badge phụ */
+        .hero-badge {
+          display: inline-block;
+          color: #E11D48;
+          background: rgba(255, 228, 230, 0.85);
+          padding: 2px 10px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.6px;
+          margin-bottom: 4px;
+          border: 1px solid #FECDD3;
+          font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
+          text-transform: uppercase;
+        }
+
+        /* Tiêu đề chính */
+        .hero-title {
+          margin: 0 !important;
+          color: #0F172A !important;
+          font-weight: 800 !important;
+          font-size: clamp(1.25rem, 2vw, 1.6rem) !important;
+          line-height: 1.3 !important;
+          font-family: 'Be Vietnam Pro', sans-serif !important;
+          letter-spacing: -0.3px;
+          word-break: break-word;
+        }
+
+        /* Mô tả bên dưới */
+        .hero-description {
+          display: block;
+          margin-top: 4px;
+          font-size: 13px;
+          color: #64748B;
+          font-weight: 500;
+          line-height: 1.45;
+          font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        /* Khối nút bấm bên phải */
+        .hero-actions-group {
+          width: 100%;
+          justify-content: flex-end;
+        }
+
+        .hero-btn-delete {
+          height: 42px;
+          border-radius: 14px;
+          font-weight: 700;
+          padding: 0 16px;
+          font-family: 'Be Vietnam Pro', sans-serif;
+          box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25);
+        }
+
+        .hero-btn-refresh {
+          width: 42px;
+          height: 42px;
+          border-radius: 14px;
+          background: #FFFFFF !important;
+          border: 1.5px solid #FFE4E6 !important;
+          box-shadow: 0 4px 12px rgba(255, 182, 193, 0.2);
+          transition: all 0.2s ease;
+        }
+
+        .hero-btn-refresh:hover {
+          border-color: #FF6B8B !important;
+          transform: rotate(45deg);
+        }
+
+        .hero-refresh-icon {
+          color: #FF6B8B;
+          font-size: 16px;
+        }
+
+        .hero-btn-primary {
+          border-radius: 14px !important;
+          background: linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%) !important;
+          border: none !important;
+          height: 42px !important;
+          padding: 0 20px !important;
+          font-weight: 700 !important;
+          font-family: 'Be Vietnam Pro', sans-serif !important;
+          box-shadow: 0 8px 20px rgba(255, 107, 139, 0.35) !important;
+          transition: all 0.2s ease !important;
+        }
+
+        .hero-btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 24px rgba(255, 107, 139, 0.45) !important;
+        }
+
+        @media (max-width: 768px) {
+          .hero-actions-group {
+            justify-content: flex-start;
+            margin-top: 8px;
+          }
+        }
+      `}</style>
     </div>
   );
 };

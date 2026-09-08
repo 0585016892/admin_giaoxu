@@ -1,161 +1,221 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   Alert,
   Avatar,
+  Button,
+  Card,
+  Col,
+  ConfigProvider,
   DatePicker,
   Empty,
   Input,
   Modal,
+  Pagination,
+  Row,
   Select,
-  Spin,
   Statistic,
+  Table,
   Tag,
   Tooltip,
-  Row,
-  Col,
-  Divider,
+  Typography,
   message,
 } from "antd";
 
 import {
   CalendarOutlined,
-  CheckCircleOutlined,
+  CameraOutlined,
+  CheckCircleFilled,
+  CheckOutlined,
   ClockCircleOutlined,
-  CloseCircleOutlined,
+  CloseCircleFilled,
+  CloseOutlined,
   ExclamationCircleOutlined,
-  EyeOutlined,
-  LockOutlined,
-  MoreOutlined,
+  HistoryOutlined,
   QrcodeOutlined,
-  ReloadOutlined,
   SearchOutlined,
-  TeamOutlined,
+  StopOutlined,
   UserOutlined,
-  BookOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
 
+import PageHeroHeader from "../../components/common/PageHeroHeader";
 import QRCodeScanner from "./QRCodeScanner";
 
-import {
-  getAttendance,
-  saveBulkAttendance,
-  getStudentAttendance,
-} from "../../api/attendanceApi";
-
+import attendanceApi from "../../api/attendanceApi";
 import classApi from "../../api/classApi";
 
-import { useUser } from "../../context/UserContext";
-
-import PageHeroHeader from "../../components/common/PageHeroHeader";
-import TablePagination from "../../components/common/TablePagination";
+const { Text, Title } = Typography;
 
 /* =========================================================
-   STATUS CONFIG
+   STATUS
 ========================================================= */
 
 const STATUS_CONFIG = {
   present: {
     label: "Có mặt",
-    color: "#269653",
-    bg: "#EFFAF2",
-    border: "#BFE6CA",
-    icon: <CheckCircleOutlined />,
+    color: "success",
+    icon: <CheckCircleFilled />,
   },
 
   absent: {
     label: "Vắng",
-    color: "#E44848",
-    bg: "#FFF1F1",
-    border: "#FFCCCC",
-    icon: <CloseCircleOutlined />,
+    color: "error",
+    icon: <CloseCircleFilled />,
   },
 
   late: {
-    label: "Muộn",
-    color: "#C58A13",
-    bg: "#FFF9E9",
-    border: "#FFE4A5",
+    label: "Đi muộn",
+    color: "warning",
     icon: <ClockCircleOutlined />,
   },
 
   excused: {
     label: "Có phép",
-    color: "#3979C6",
-    bg: "#EEF6FF",
-    border: "#C9DFFF",
+    color: "processing",
     icon: <ExclamationCircleOutlined />,
   },
+
+  not_attended: {
+    label: "Chưa điểm danh",
+    color: "default",
+    icon: <ExclamationCircleOutlined />,
+  },
+};
+
+/* =========================================================
+   DEFAULT
+========================================================= */
+
+const DEFAULT_PAGINATION = {
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPrevPage: false,
+};
+
+const DEFAULT_STATISTICS = {
+  total: 0,
+  present: 0,
+  absent: 0,
+  late: 0,
+  excused: 0,
+  not_attended: 0,
+  notMarked: 0,
+  attended: 0,
+  attendance_rate: 0,
+  rate: 0,
 };
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-const isPastDate = (date) => {
-  if (!date) return false;
+const getApiBody = (response) => {
+  if (!response) {
+    return {};
+  }
 
-  return date.isBefore(dayjs().startOf("day"), "day");
+  return response?.data || response;
 };
 
-const normalizeClassList = (response) => {
-  if (!response) return [];
+const normalizeClasses = (response) => {
+  const body = getApiBody(response);
 
-  if (Array.isArray(response)) {
-    return response;
+  const list = body?.data || body?.classes || (Array.isArray(body) ? body : []);
+
+  return list.map((item) => ({
+    ...item,
+
+    id: item.id ?? item.class_id,
+
+    name:
+      item.name ?? item.class_name ?? item.class?.name ?? "Lớp chưa đặt tên",
+  }));
+};
+
+const getStudentsFromResponse = (response) => {
+  const body = getApiBody(response);
+
+  if (Array.isArray(body?.data)) {
+    return body.data;
   }
 
-  if (Array.isArray(response.data)) {
-    return response.data;
+  if (Array.isArray(body?.students)) {
+    return body.students;
   }
 
-  if (Array.isArray(response.data?.classes)) {
-    return response.data.classes;
-  }
-
-  if (response.id || response.class_id) {
-    return [response];
-  }
-
-  if (response.data?.id || response.data?.class_id) {
-    return [response.data];
+  if (Array.isArray(body)) {
+    return body;
   }
 
   return [];
 };
 
-const normalizeStudent = (student) => {
-  const status = student.attendance_status || student.status || null;
+const getPaginationFromResponse = (response) => {
+  const body = getApiBody(response);
+
+  const pg = body?.pagination || response?.pagination || {};
 
   return {
-    ...student,
+    page: Number(pg?.page) || 1,
 
-    student_id: Number(student.student_id || student.id),
+    limit: Number(pg?.limit) || 10,
 
-    student_name:
-      student.student_name ||
-      student.name ||
-      student.full_name ||
-      "Không có tên",
+    total: Number(pg?.total) || 0,
 
-    code: student.code || student.student_code || null,
+    totalPages: Number(pg?.totalPages) || 1,
 
-    status,
+    hasNextPage: Boolean(pg?.hasNextPage),
 
-    attendance_status: status,
-
-    attendance_id: student.attendance_id ? Number(student.attendance_id) : null,
-
-    attendance_date: student.attendance_date || null,
-
-    check_in_time: student.check_in_time || null,
-
-    note: student.note || "",
-
-    student_status: student.student_status || "active",
+    hasPrevPage: Boolean(pg?.hasPrevPage),
   };
+};
+
+const getStatisticsFromResponse = (response) => {
+  const body = getApiBody(response);
+
+  const st = body?.statistics || response?.statistics || {};
+
+  return {
+    total: Number(st?.total) || 0,
+
+    present: Number(st?.present) || 0,
+
+    absent: Number(st?.absent) || 0,
+
+    late: Number(st?.late) || 0,
+
+    excused: Number(st?.excused) || 0,
+
+    not_attended: Number(st?.not_attended ?? st?.notMarked) || 0,
+
+    notMarked: Number(st?.notMarked) || 0,
+
+    attended: Number(st?.attended) || 0,
+
+    attendance_rate: Number(st?.attendance_rate ?? st?.rate) || 0,
+
+    rate: Number(st?.rate) || 0,
+  };
+};
+
+const normalizeAttendanceStatus = (status) => {
+  if (!status || !STATUS_CONFIG[status]) {
+    return "not_attended";
+  }
+
+  return status;
 };
 
 /* =========================================================
@@ -163,12 +223,8 @@ const normalizeStudent = (student) => {
 ========================================================= */
 
 const AttendancePage = () => {
-  const { user } = useUser();
-
-  const role = user?.role;
-
   /* =======================================================
-     CLASS
+     STATE
   ======================================================= */
 
   const [classes, setClasses] = useState([]);
@@ -177,61 +233,73 @@ const AttendancePage = () => {
 
   const [selectedDate, setSelectedDate] = useState(dayjs());
 
-  /* =======================================================
-     ATTENDANCE
-  ======================================================= */
+  const [searchInput, setSearchInput] = useState("");
+
+  const [search, setSearch] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [page, setPage] = useState(1);
+
+  const [pageSize, setPageSize] = useState(10);
 
   const [students, setStudents] = useState([]);
 
-  const [classInfo, setClassInfo] = useState(null);
+  const [statistics, setStatistics] = useState(DEFAULT_STATISTICS);
+
+  const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
 
   const [loadingClasses, setLoadingClasses] = useState(false);
 
   const [loadingAttendance, setLoadingAttendance] = useState(false);
 
-  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const [isQrOpen, setIsQrOpen] = useState(false);
+
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const [historyStudent, setHistoryStudent] = useState(null);
+
+  const [historyData, setHistoryData] = useState([]);
+
+  const requestIdRef = useRef(0);
 
   /* =======================================================
-     SEARCH / FILTER
+     USER ROLE
   ======================================================= */
 
-  const [searchText, setSearchText] = useState("");
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  }, []);
 
-  const [statusFilter, setStatusFilter] = useState("all");
+  const role = user?.role || user?.user?.role || localStorage.getItem("role");
 
   /* =======================================================
-     PAGINATION
+     DATE
   ======================================================= */
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const dateString = useMemo(
+    () => selectedDate.format("YYYY-MM-DD"),
+    [selectedDate],
+  );
 
-  const [pageSize, setPageSize] = useState(10);
+  const isLocked = selectedDate.isBefore(dayjs(), "day");
 
   /* =======================================================
-     QR CAMERA
+     SELECTED CLASS
   ======================================================= */
 
-  const [qrScannerOpen, setQrScannerOpen] = useState(false);
-
-  /* =======================================================
-     STUDENT DETAIL
-  ======================================================= */
-
-  const [studentDetailOpen, setStudentDetailOpen] = useState(false);
-
-  const [selectedStudent, setSelectedStudent] = useState(null);
-
-  const [studentHistory, setStudentHistory] = useState([]);
-
-  const [loadingStudentHistory, setLoadingStudentHistory] = useState(false);
-
-  /* =======================================================
-     DATE LOCK
-  ======================================================= */
-
-  const attendanceLocked = useMemo(() => {
-    return isPastDate(selectedDate);
-  }, [selectedDate]);
+  const selectedClass = useMemo(
+    () => classes.find((item) => Number(item.id) === Number(selectedClassId)),
+    [classes, selectedClassId],
+  );
 
   /* =======================================================
      LOAD CLASSES
@@ -241,8 +309,6 @@ const AttendancePage = () => {
     try {
       setLoadingClasses(true);
 
-      setError("");
-
       let response;
 
       if (role === "teacher") {
@@ -251,26 +317,21 @@ const AttendancePage = () => {
         response = await classApi.getAll();
       }
 
-      const list = normalizeClassList(response);
+      const list = normalizeClasses(response);
 
       setClasses(list);
 
-      if (list.length > 0) {
-        const firstId = Number(list[0].id || list[0].class_id);
-
-        setSelectedClassId(firstId);
+      if (list.length > 0 && !selectedClassId) {
+        setSelectedClassId(list[0].id);
       }
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message || "Không thể tải danh sách lớp.";
+    } catch (error) {
+      console.error("Load classes error:", error);
 
-      setError(msg);
-
-      message.error(msg);
+      message.error("Không thể tải danh sách lớp");
     } finally {
       setLoadingClasses(false);
     }
-  }, [role]);
+  }, [role, selectedClassId]);
 
   /* =======================================================
      LOAD ATTENDANCE
@@ -279,2382 +340,1682 @@ const AttendancePage = () => {
   const loadAttendance = useCallback(async () => {
     if (!selectedClassId) {
       setStudents([]);
-      setClassInfo(null);
-
+      setStatistics(DEFAULT_STATISTICS);
+      setPagination(DEFAULT_PAGINATION);
       return;
     }
+
+    const requestId = ++requestIdRef.current;
 
     try {
       setLoadingAttendance(true);
 
-      setError("");
+      const response = await attendanceApi.getAttendance({
+        class_id: selectedClassId,
 
-      const response = await getAttendance({
-        class_id: Number(selectedClassId),
+        date: dateString,
 
-        date: selectedDate.format("YYYY-MM-DD"),
+        page,
+
+        limit: pageSize,
+
+        search: search.trim(),
+
+        status: statusFilter,
       });
 
-      let rawStudents = [];
-
-      let classData = null;
-
-      if (Array.isArray(response?.data)) {
-        rawStudents = response.data;
-      } else if (Array.isArray(response?.data?.students)) {
-        rawStudents = response.data.students;
-
-        classData = response.data.class || null;
-      } else if (Array.isArray(response)) {
-        rawStudents = response;
-      } else if (Array.isArray(response?.students)) {
-        rawStudents = response.students;
-
-        classData = response.class || null;
+      if (requestId !== requestIdRef.current) {
+        return;
       }
 
-      setClassInfo(classData);
+      setStudents(getStudentsFromResponse(response));
 
-      setStudents(rawStudents.map(normalizeStudent));
+      setPagination(getPaginationFromResponse(response));
 
-      setCurrentPage(1);
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message || "Không thể tải dữ liệu điểm danh.";
+      setStatistics(getStatisticsFromResponse(response));
+    } catch (error) {
+      console.error("Load attendance error:", error);
 
-      setError(msg);
-
-      message.error(msg);
-
-      setStudents([]);
+      if (requestId === requestIdRef.current) {
+        message.error("Không thể tải danh sách điểm danh");
+      }
     } finally {
-      setLoadingAttendance(false);
+      if (requestId === requestIdRef.current) {
+        setLoadingAttendance(false);
+      }
     }
-  }, [selectedClassId, selectedDate]);
+  }, [selectedClassId, dateString, page, pageSize, search, statusFilter]);
 
   /* =======================================================
-     INITIAL LOAD
+     EFFECT - CLASSES
   ======================================================= */
 
   useEffect(() => {
     loadClasses();
   }, [loadClasses]);
 
-  useEffect(() => {
-    if (selectedClassId) {
-      loadAttendance();
-    }
-  }, [selectedClassId, selectedDate, loadAttendance]);
-
   /* =======================================================
-     RESET PAGE WHEN FILTER
+     EFFECT - ATTENDANCE
   ======================================================= */
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchText, statusFilter, selectedClassId, selectedDate]);
+    loadAttendance();
+  }, [loadAttendance]);
 
   /* =======================================================
-     SELECTED CLASS
+     SEARCH DEBOUNCE
   ======================================================= */
 
-  const selectedClass = useMemo(() => {
-    return (
-      classes.find(
-        (item) => Number(item.id || item.class_id) === Number(selectedClassId),
-      ) ||
-      classInfo ||
-      null
-    );
-  }, [classes, selectedClassId, classInfo]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+
+      setPage(1);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   /* =======================================================
-     STATISTICS
+     RESET PAGE
   ======================================================= */
 
-  const statistics = useMemo(() => {
-    const total = students.length;
+  useEffect(() => {
+    setPage(1);
+  }, [selectedClassId, dateString, statusFilter]);
 
-    const present = students.filter((item) => item.status === "present").length;
+  /* =======================================================
+     TABLE DATA
+  ======================================================= */
 
-    const absent = students.filter((item) => item.status === "absent").length;
+  const tableData = useMemo(() => {
+    return students.map((student) => ({
+      ...student,
 
-    const late = students.filter((item) => item.status === "late").length;
+      key: student.student_id ?? student.id,
 
-    const excused = students.filter((item) => item.status === "excused").length;
-
-    const attended = present + late;
-
-    const notMarked = students.filter(
-      (item) => !item.status && !item.attendance_status && !item.attendance_id,
-    ).length;
-
-    const rate = total > 0 ? Math.round((attended / total) * 100) : 0;
-
-    return {
-      total,
-      present,
-      absent,
-      late,
-      excused,
-      attended,
-      notMarked,
-      rate,
-    };
+      currentStatus: normalizeAttendanceStatus(
+        student.attendance_status ?? student.status,
+      ),
+    }));
   }, [students]);
 
   /* =======================================================
-     FILTER STUDENTS
+     UPDATE ATTENDANCE
+     
+     QUAN TRỌNG:
+     Đã có trạng thái => KHÔNG CHO UPDATE
   ======================================================= */
 
-  const filteredStudents = useMemo(() => {
-    let result = [...students];
+  const updateAttendance = useCallback(
+    async (student, status) => {
+      if (isLocked) {
+        message.warning("Ngày này đã khóa, không thể thay đổi điểm danh.");
 
-    /* STATUS */
-
-    if (statusFilter !== "all") {
-      if (statusFilter === "unmarked") {
-        result = result.filter(
-          (student) =>
-            !student.status &&
-            !student.attendance_status &&
-            !student.attendance_id,
-        );
-      } else {
-        result = result.filter(
-          (student) =>
-            (student.status || student.attendance_status) === statusFilter,
-        );
+        return;
       }
-    }
 
-    /* SEARCH */
+      if (!student?.student_id) {
+        return;
+      }
 
-    if (searchText.trim()) {
-      const keyword = searchText.trim().toLowerCase();
+      const currentStatus = normalizeAttendanceStatus(
+        student.attendance_status ?? student.status,
+      );
 
-      result = result.filter((student) => {
-        const name = (student.student_name || "").toLowerCase();
+      /* ===============================================
+           ĐÃ ĐIỂM DANH
+        =============================================== */
 
-        const code = (student.code || "").toLowerCase();
-
-        const id = String(student.student_id || "");
-
-        return (
-          name.includes(keyword) ||
-          code.includes(keyword) ||
-          id.includes(keyword)
+      if (["present", "late", "absent", "excused"].includes(currentStatus)) {
+        message.info(
+          "Học sinh này đã được điểm danh và không thể thay đổi trạng thái.",
         );
-      });
-    }
 
-    return result;
-  }, [students, statusFilter, searchText]);
+        return;
+      }
 
-  /* =======================================================
-     PAGINATION
-  ======================================================= */
+      /* ===============================================
+           SAVE
+        =============================================== */
 
-  const paginatedStudents = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+      try {
+        setSaving(true);
 
-    return filteredStudents.slice(start, start + pageSize);
-  }, [filteredStudents, currentPage, pageSize]);
+        const checkInTime =
+          status === "present" || status === "late"
+            ? dayjs().format("HH:mm:ss")
+            : null;
 
-  const paginationStart =
-    filteredStudents.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        await attendanceApi.saveBulkAttendance({
+          class_id: selectedClassId,
 
-  const paginationEnd = Math.min(
-    currentPage * pageSize,
-    filteredStudents.length,
+          date: dateString,
+
+          students: [
+            {
+              student_id: student.student_id,
+
+              status,
+
+              check_in_time: checkInTime,
+
+              note: null,
+            },
+          ],
+        });
+
+        message.success("Đã cập nhật điểm danh");
+
+        await loadAttendance();
+      } catch (error) {
+        const statusCode = error?.response?.status;
+
+        const body = error?.response?.data;
+
+        if (statusCode === 409 || body?.code === "ALREADY_ATTENDED") {
+          message.warning("Học sinh này đã được điểm danh trước đó.");
+        } else {
+          message.error(body?.message || "Không thể cập nhật điểm danh");
+        }
+      } finally {
+        setSaving(false);
+      }
+    },
+    [isLocked, selectedClassId, dateString, loadAttendance],
   );
-
-  /* =======================================================
-     QR CAMERA TOGGLE
-  ======================================================= */
 
   /* =======================================================
      QR SUCCESS
   ======================================================= */
 
-  const handleQRSuccess = async (data) => {
-    const student = data?.student;
+  const handleQRSuccess = useCallback(
+    async (data) => {
+      /*
+       * QR API đã lưu attendance rồi.
+       * Chỉ reload danh sách.
+       */
 
-    if (!student?.id) {
       await loadAttendance();
 
-      return;
-    }
-
-    const attendance = data?.attendance;
-
-    const studentId = Number(student.id);
-
-    const nextStatus =
-      attendance?.status || data?.attendance_status || "present";
-
-    setStudents((prev) =>
-      prev.map((item) =>
-        Number(item.student_id) === studentId
-          ? {
-              ...item,
-
-              attendance_id: attendance?.id || item.attendance_id || null,
-
-              status: nextStatus,
-
-              attendance_status: nextStatus,
-
-              check_in_time:
-                attendance?.check_in_time || item.check_in_time || null,
-
-              attendance_date:
-                attendance?.attendance_date ||
-                selectedDate.format("YYYY-MM-DD"),
-            }
-          : item,
-      ),
-    );
-
-    message.success(`${student.name || "Học viên"} điểm danh thành công.`);
-  };
+      return data;
+    },
+    [loadAttendance],
+  );
 
   /* =======================================================
      FINISH QR ATTENDANCE
+     
+     Khi tắt camera:
+     chưa điểm danh -> absent
   ======================================================= */
 
-  const handleFinishQRScan = async () => {
+  const handleFinishQRAttendance = useCallback(async () => {
     if (!selectedClassId) {
-      setQrScannerOpen(false);
-
+      setIsQrOpen(false);
       return;
     }
 
-    const unmarked = students.filter((student) => {
-      const status = student.status ?? student.attendance_status ?? null;
-
-      const hasAttendance = Boolean(student.attendance_id) || Boolean(status);
-
-      return !hasAttendance;
-    });
-
-    if (unmarked.length === 0) {
-      setQrScannerOpen(false);
-
-      message.success("Tất cả học viên đã được điểm danh.");
-
+    if (isLocked) {
+      setIsQrOpen(false);
       return;
     }
 
-    Modal.confirm({
-      title: "Kết thúc điểm danh?",
-
-      icon: <ExclamationCircleOutlined />,
-
-      content: (
-        <div>
-          <p>
-            Còn <strong>{unmarked.length}</strong> học viên chưa được điểm danh.
-          </p>
-
-          <p>
-            Nếu kết thúc, hệ thống sẽ đánh dấu các học viên này là{" "}
-            <strong
-              style={{
-                color: "#E44848",
-              }}
-            >
-              Vắng
-            </strong>
-            .
-          </p>
-        </div>
-      ),
-
-      okText: "Xác nhận kết thúc",
-
-      cancelText: "Quay lại",
-
-      okButtonProps: {
-        danger: true,
-      },
-
-      async onOk() {
-        try {
-          const payload = {
-            class_id: Number(selectedClassId),
-
-            attendance_date: selectedDate.format("YYYY-MM-DD"),
-
-            students: unmarked.map((student) => ({
-              student_id: Number(student.student_id),
-
-              status: "absent",
-
-              check_in_time: null,
-
-              note: "Không điểm danh",
-            })),
-          };
-
-          await saveBulkAttendance(payload);
-
-          message.success(`Đã đánh dấu ${unmarked.length} học viên vắng.`);
-
-          setQrScannerOpen(false);
-
-          await loadAttendance();
-        } catch (err) {
-          message.error(
-            err?.response?.data?.message || "Không thể cập nhật trạng thái.",
-          );
-        }
-      },
-    });
-  };
-
-  /* =======================================================
-     STUDENT HISTORY
-  ======================================================= */
-
-  const handleViewStudent = async (student) => {
     try {
-      setSelectedStudent(student);
+      setSaving(true);
 
-      setStudentDetailOpen(true);
+      await attendanceApi.finishAttendance({
+        class_id: selectedClassId,
 
-      setLoadingStudentHistory(true);
+        attendance_date: dateString,
+      });
 
-      setStudentHistory([]);
+      setIsQrOpen(false);
 
-      const response = await getStudentAttendance(Number(student.student_id));
+      message.success(
+        "Đã kết thúc điểm danh. Các học sinh chưa điểm danh đã được ghi nhận vắng.",
+      );
 
-      const attendances =
-        response?.data?.attendances || response?.attendances || [];
+      await loadAttendance();
+    } catch (error) {
+      console.error("Finish attendance error:", error);
 
-      setStudentHistory(Array.isArray(attendances) ? attendances : []);
-    } catch (err) {
       message.error(
-        err?.response?.data?.message || "Không thể tải lịch sử điểm danh.",
+        error?.response?.data?.message || "Không thể kết thúc điểm danh",
       );
     } finally {
-      setLoadingStudentHistory(false);
+      setSaving(false);
     }
-  };
+  }, [selectedClassId, dateString, isLocked, loadAttendance]);
 
   /* =======================================================
-     MONTH HISTORY
+     TOGGLE QR
   ======================================================= */
 
-  const monthlyHistory = useMemo(() => {
-    return studentHistory
-      .filter((item) => {
-        if (!item.attendance_date) {
-          return false;
-        }
+  const handleToggleQR = useCallback(() => {
+    if (!selectedClassId) {
+      message.warning("Vui lòng chọn lớp trước.");
 
-        const date = dayjs(item.attendance_date);
+      return;
+    }
+
+    if (isLocked) {
+      message.warning("Ngày này đã khóa điểm danh.");
+
+      return;
+    }
+
+    if (isQrOpen) {
+      /*
+       * KHÔNG được chỉ set false.
+       *
+       * Phải finish để:
+       * chưa điểm danh -> absent
+       */
+
+      handleFinishQRAttendance();
+
+      return;
+    }
+
+    setIsQrOpen(true);
+  }, [selectedClassId, isLocked, isQrOpen, handleFinishQRAttendance]);
+
+  /* =======================================================
+     HISTORY
+  ======================================================= */
+
+  const openHistory = useCallback(async (student) => {
+    if (!student?.student_id) {
+      return;
+    }
+
+    setHistoryStudent(student);
+
+    setHistoryOpen(true);
+
+    try {
+      setHistoryLoading(true);
+
+      const response = await attendanceApi.getStudentHistory(
+        student.student_id,
+      );
+
+      const body = getApiBody(response);
+
+      const list = Array.isArray(body?.data)
+        ? body.data
+        : Array.isArray(body)
+          ? body
+          : [];
+
+      setHistoryData(list);
+    } catch (error) {
+      console.error("History error:", error);
+
+      message.error("Không thể tải lịch sử điểm danh");
+
+      setHistoryData([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  /* =======================================================
+     STATISTICS
+  ======================================================= */
+
+  const {
+    total,
+    present,
+    absent,
+    late,
+    excused,
+    not_attended: notAttended,
+    attendance_rate: attendanceRate,
+  } = statistics;
+
+  /* =======================================================
+     TABLE COLUMNS
+  ======================================================= */
+
+  const columns = useMemo(
+    () => [
+      {
+        title: "HỌC SINH",
+        key: "student",
+        width: 280,
+
+        render: (_, record) => {
+          const avatar =
+            record.avatar || record.avatar_url || record.student_avatar;
+
+          return (
+            <div className="student-cell">
+              <Avatar
+                size={44}
+                src={avatar}
+                icon={<UserOutlined />}
+                className="student-avatar"
+              />
+
+              <div className="student-info">
+                <Text strong className="student-name">
+                  {record.name || record.student_name || "Chưa có tên"}
+                </Text>
+
+                <Text type="secondary" className="student-code">
+                  {record.code ||
+                    record.student_code ||
+                    `ID #${record.student_id}`}
+                </Text>
+              </div>
+            </div>
+          );
+        },
+      },
+
+      {
+        title: "TRẠNG THÁI",
+        key: "status",
+        width: 170,
+        align: "center",
+
+        render: (_, record) => {
+          const config =
+            STATUS_CONFIG[record.currentStatus] || STATUS_CONFIG.not_attended;
+
+          return (
+            <Tag
+              color={config.color}
+              icon={config.icon}
+              className="attendance-status-tag"
+            >
+              {config.label}
+            </Tag>
+          );
+        },
+      },
+
+      {
+        title: "GIỜ VÀO",
+        key: "check_in_time",
+        width: 120,
+        align: "center",
+
+        render: (_, record) => {
+          if (!record.check_in_time) {
+            return <Text type="secondary">—</Text>;
+          }
+
+          return <Text strong>{String(record.check_in_time).slice(0, 5)}</Text>;
+        },
+      },
+
+      {
+        title: "ĐIỂM DANH",
+        key: "actions",
+        width: 260,
+        align: "center",
+
+        render: (_, record) => {
+          const current = record.currentStatus;
+
+          /*
+           * ĐÃ CÓ TRẠNG THÁI
+           * => KHÔNG CHO ĐỔI
+           */
+
+          const hasAttendance = [
+            "present",
+            "late",
+            "absent",
+            "excused",
+          ].includes(current);
+
+          const disabled = isLocked || saving || hasAttendance;
+
+          const getTooltip = (status) => {
+            if (current === status) {
+              return `Đã ghi nhận: ${STATUS_CONFIG[status].label}`;
+            }
+
+            if (hasAttendance) {
+              return "Học sinh đã được điểm danh";
+            }
+
+            return `Đánh dấu ${STATUS_CONFIG[status].label.toLowerCase()}`;
+          };
+
+          return (
+            <div className="attendance-actions">
+              {/* PRESENT */}
+
+              <Tooltip title={getTooltip("present")}>
+                <Button
+                  shape="circle"
+                  className={`action-btn present ${
+                    current === "present" ? "active" : ""
+                  }`}
+                  icon={<CheckOutlined />}
+                  disabled={disabled}
+                  onClick={() => updateAttendance(record, "present")}
+                />
+              </Tooltip>
+
+              {/* LATE */}
+
+              <Tooltip title={getTooltip("late")}>
+                <Button
+                  shape="circle"
+                  className={`action-btn late ${
+                    current === "late" ? "active" : ""
+                  }`}
+                  icon={<ClockCircleOutlined />}
+                  disabled={disabled}
+                  onClick={() => updateAttendance(record, "late")}
+                />
+              </Tooltip>
+
+              {/* ABSENT */}
+
+              <Tooltip title={getTooltip("absent")}>
+                <Button
+                  shape="circle"
+                  className={`action-btn absent ${
+                    current === "absent" ? "active" : ""
+                  }`}
+                  icon={<CloseOutlined />}
+                  disabled={disabled}
+                  onClick={() => updateAttendance(record, "absent")}
+                />
+              </Tooltip>
+
+              {/* EXCUSED */}
+
+              <Tooltip title={getTooltip("excused")}>
+                <Button
+                  shape="circle"
+                  className={`action-btn excused ${
+                    current === "excused" ? "active" : ""
+                  }`}
+                  icon={<ExclamationCircleOutlined />}
+                  disabled={disabled}
+                  onClick={() => updateAttendance(record, "excused")}
+                />
+              </Tooltip>
+            </div>
+          );
+        },
+      },
+
+      {
+        title: "",
+        key: "history",
+        width: 60,
+        align: "center",
+
+        render: (_, record) => (
+          <Tooltip title="Xem lịch sử">
+            <Button
+              type="text"
+              shape="circle"
+              icon={<HistoryOutlined />}
+              className="history-btn"
+              onClick={() => openHistory(record)}
+            />
+          </Tooltip>
+        ),
+      },
+    ],
+    [isLocked, saving, updateAttendance, openHistory],
+  );
+
+  /* =======================================================
+     HISTORY COLUMNS
+  ======================================================= */
+
+  const historyColumns = [
+    {
+      title: "NGÀY",
+      dataIndex: "attendance_date",
+
+      render: (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "—"),
+    },
+
+    {
+      title: "TRẠNG THÁI",
+      dataIndex: "status",
+
+      render: (status) => {
+        const config = STATUS_CONFIG[status] || STATUS_CONFIG.not_attended;
 
         return (
-          date.year() === selectedDate.year() &&
-          date.month() === selectedDate.month()
+          <Tag color={config.color} icon={config.icon}>
+            {config.label}
+          </Tag>
         );
-      })
-      .sort(
-        (a, b) =>
-          dayjs(b.attendance_date).valueOf() -
-          dayjs(a.attendance_date).valueOf(),
-      );
-  }, [studentHistory, selectedDate]);
+      },
+    },
 
-  /* =======================================================
-     MONTH STUDENT STATISTICS
-  ======================================================= */
+    {
+      title: "GIỜ VÀO",
+      dataIndex: "check_in_time",
 
-  const monthlyStatistics = useMemo(() => {
-    const total = monthlyHistory.length;
-
-    const present = monthlyHistory.filter(
-      (item) => item.status === "present",
-    ).length;
-
-    const absent = monthlyHistory.filter(
-      (item) => item.status === "absent",
-    ).length;
-
-    const late = monthlyHistory.filter((item) => item.status === "late").length;
-
-    return {
-      total,
-      present,
-      absent,
-      late,
-    };
-  }, [monthlyHistory]);
+      render: (value) => (value ? String(value).slice(0, 5) : "—"),
+    },
+  ];
 
   /* =======================================================
      RENDER
   ======================================================= */
 
   return (
-    <div className="attendance-page">
-      {/* =================================================
-          GLOBAL CSS
-      ================================================= */}
-
-      <style>
-        {`
-
-        /* =================================================
-           RESET
-        ================================================= */
-
-        .attendance-page,
-        .attendance-page * {
-          box-sizing: border-box;
-        }
-
-        .attendance-page {
-          width: 100%;
-          min-height: 100vh;
-
-          padding:
-            20px
-            clamp(12px, 2vw, 28px)
-            80px;
-
-          background:
-            #fffafb;
-
-          color:
-            #334155;
-
-          overflow-x: hidden;
-        }
-
-
-        /* =================================================
-           HERO
-        ================================================= */
-
-        .attendance-hero {
-          width: 100%;
-          margin-bottom: 18px;
-        }
-
-
-        /* =================================================
-           ALERT
-        ================================================= */
-
-        .attendance-alert {
-          margin-bottom: 18px;
-          border-radius: 14px;
-        }
-
-
-        /* =================================================
-           FILTER
-        ================================================= */
-
-        .attendance-filter {
-          width: 100%;
-
-          display: grid;
-
-          grid-template-columns:
-            minmax(260px, 1.5fr)
-            minmax(220px, .8fr)
-            110px;
-
-          gap: 14px;
-
-          align-items: end;
-
-          padding: 17px;
-
-          margin-bottom: 18px;
-
-          background: #ffffff;
-
-          border:
-            1px solid #e8edf3;
-
-          border-radius: 20px;
-
-          box-shadow:
-            0 5px 20px
-            rgba(148,163,184,.07);
-        }
-
-
-        .attendance-filter-item {
-          min-width: 0;
-
-          display: flex;
-
-          flex-direction: column;
-
-          gap: 7px;
-        }
-
-
-        .attendance-filter-label {
-          color: #334155;
-
-          font-size: 13px;
-
-          font-weight: 700;
-        }
-
-
-        .attendance-filter
-        .ant-select,
-        .attendance-filter
-        .ant-picker {
-          width: 100%;
-        }
-
-
-        .attendance-filter
-        .ant-select-selector,
-        .attendance-filter
-        .ant-picker {
-          border-radius: 11px !important;
-        }
-
-
-        .attendance-reload {
-          height: 40px;
-
-          border:
-            1px solid #dfe5ec;
-
-          border-radius: 11px;
-
-          background: #ffffff;
-
-          color: #526175;
-
-          font-size: 12px;
-
-          font-weight: 700;
-
-          cursor: pointer;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          gap: 7px;
-
-          transition: .18s;
-        }
-
-
-        .attendance-reload:hover {
-          border-color: #f45b7a;
-
-          color: #f45b7a;
-
-          background: #fff4f7;
-        }
-
-
-        /* =================================================
-           MAIN TWO COLUMN
-        ================================================= */
-
-        .attendance-workspace {
-          width: 100%;
-
-          display: grid;
-
-          grid-template-columns:
-            minmax(0, 1.38fr)
-            minmax(360px, .72fr);
-
-          gap: 18px;
-
-          align-items: start;
-        }
-
-
-        .attendance-panel {
-          min-width: 0;
-
-          background: #ffffff;
-
-          border:
-            1px solid #e7ecf2;
-
-          border-radius: 22px;
-
-          overflow: hidden;
-
-          box-shadow:
-            0 7px 28px
-            rgba(148,163,184,.07);
-        }
-
-
-        /* =================================================
-           PANEL HEADER
-        ================================================= */
-
-        .attendance-panel-header {
-          min-width: 0;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: space-between;
-
-          gap: 15px;
-
-          padding:
-            18px 20px 15px;
-
-          border-bottom:
-            1px solid #f0f2f5;
-        }
-
-
-        .attendance-title-group {
-          min-width: 0;
-
-          display: flex;
-
-          align-items: center;
-
-          gap: 11px;
-        }
-
-
-        .attendance-icon {
-          width: 43px;
-          height: 43px;
-
-          min-width: 43px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          border-radius: 13px;
-
-          font-size: 19px;
-        }
-
-
-        .attendance-icon.pink {
-          color: #f45b7a;
-          background: #ffe9ef;
-        }
-
-
-        .attendance-icon.qr {
-          color: #f45b7a;
-          background: #ffe9ef;
-        }
-
-
-        .attendance-title-text {
-          min-width: 0;
-        }
-
-
-        .attendance-title-text h2 {
-          margin: 0;
-
-          color: #334155;
-
-          font-size: 17px;
-
-          line-height: 1.3;
-
-          font-weight: 750;
-        }
-
-
-        .attendance-title-text p {
-          margin:
-            3px 0 0;
-
-          color: #98a3b2;
-
-          font-size: 11px;
-
-          line-height: 1.4;
-        }
-
-
-        /* =================================================
-           SEARCH
-        ================================================= */
-
-        .attendance-search {
-          width: 270px;
-
-          flex-shrink: 0;
-        }
-
-
-        .attendance-search.ant-input-affix-wrapper {
-          height: 39px;
-
-          border-radius: 10px;
-        }
-
-
-        /* =================================================
-           STATUS FILTER
-        ================================================= */
-
-        .attendance-status-tabs {
-          width: 100%;
-
-          display: flex;
-
-          gap: 7px;
-
-          padding:
-            12px 18px;
-
-          overflow-x: auto;
-
-          scrollbar-width: thin;
-
-          border-bottom:
-            1px solid #f1f3f6;
-        }
-
-
-        .attendance-status-tabs::-webkit-scrollbar {
-          height: 3px;
-        }
-
-
-        .attendance-status-tab {
-          flex-shrink: 0;
-
-          height: 32px;
-
-          padding:
-            0 12px;
-
-          border:
-            1px solid #e7ebf0;
-
-          border-radius: 9px;
-
-          background: #ffffff;
-
-          color: #718096;
-
-          font-size: 11px;
-
-          font-weight: 650;
-
-          white-space: nowrap;
-
-          cursor: pointer;
-
-          transition: .18s;
-        }
-
-
-        .attendance-status-tab:hover {
-          border-color: #ffc0cd;
-
-          color: #f45b7a;
-
-          background: #fff8fa;
-        }
-
-
-        .attendance-status-tab.active {
-          color: #f45b7a;
-
-          border-color: #ffb1c1;
-
-          background: #fff1f5;
-        }
-
-
-        .attendance-status-tab.present.active {
-          color: #269653;
-
-          border-color: #bfe6ca;
-
-          background: #effaf2;
-        }
-
-
-        .attendance-status-tab.absent.active {
-          color: #e44848;
-
-          border-color: #ffcccc;
-
-          background: #fff1f1;
-        }
-
-
-        .attendance-status-tab.late.active {
-          color: #c58a13;
-
-          border-color: #ffe4a5;
-
-          background: #fff9e9;
-        }
-
-
-        .attendance-status-tab.excused.active {
-          color: #3979c6;
-
-          border-color: #c9dfff;
-
-          background: #eef6ff;
-        }
-
-
-        /* =================================================
-           TABLE WRAPPER
-        ================================================= */
-
-        .attendance-table-wrapper {
-          width: 100%;
-
-          overflow-x: auto;
-
-          overflow-y: hidden;
-
-          -webkit-overflow-scrolling: touch;
-
-          scrollbar-width: thin;
-        }
-
-
-        .attendance-table-inner {
-          min-width: 680px;
-        }
-
-
-        /* =================================================
-           TABLE HEADER / ROW
-        ================================================= */
-
-        .attendance-table-head,
-        .attendance-table-row {
-          display: grid;
-
-          grid-template-columns:
-            35px
-            minmax(180px, 1.7fr)
-            105px
-            110px
-            65px
-            30px;
-
-          gap: 8px;
-
-          align-items: center;
-
-          padding:
-            0 18px;
-        }
-
-
-        .attendance-table-head {
-          height: 43px;
-
-          background: #f8fafc;
-
-          color: #8490a0;
-
-          font-size: 10px;
-
-          font-weight: 750;
-
-          text-transform: uppercase;
-        }
-
-
-        .attendance-table-row {
-          min-height: 70px;
-
-          border-bottom:
-            1px solid #f0f2f5;
-
-          transition:
-            background .16s ease;
-        }
-
-
-        .attendance-table-row:hover {
-          background: #fff9fb;
-        }
-
-
-        /* =================================================
-           NUMBER
-        ================================================= */
-
-        .attendance-number {
-          width: 26px;
-          height: 26px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          border-radius: 8px;
-
-          background: #f3f6fa;
-
-          color: #64748b;
-
-          font-size: 10px;
-
-          font-weight: 700;
-        }
-
-
-        /* =================================================
-           STUDENT
-        ================================================= */
-
-        .attendance-student {
-          min-width: 0;
-
-          display: flex;
-
-          align-items: center;
-
-          gap: 9px;
-        }
-
-
-        .attendance-avatar {
-          flex-shrink: 0 !important;
-
-          background:
-            linear-gradient(
-              135deg,
-              #ff7692,
-              #ec4a70
-            ) !important;
-
-          color: #ffffff !important;
-
-          font-weight: 750;
-        }
-
-
-        .attendance-student-info {
-          min-width: 0;
-        }
-
-
-        .attendance-student-name {
-          display: flex;
-
-          align-items: center;
-
-          gap: 4px;
-
-          min-width: 0;
-
-          color: #334155;
-
-          font-size: 12px;
-
-          font-weight: 700;
-
-          white-space: nowrap;
-
-          overflow: hidden;
-
-          text-overflow: ellipsis;
-        }
-
-
-        .attendance-student-eye {
-          width: 23px;
-          height: 23px;
-
-          flex-shrink: 0;
-
-          display: inline-flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          padding: 0;
-
-          border: none;
-
-          border-radius: 7px;
-
-          background: transparent;
-
-          color: #5b8fe7;
-
-          cursor: pointer;
-        }
-
-
-        .attendance-student-eye:hover {
-          background: #eef5ff;
-        }
-
-
-        .attendance-student-meta {
-          display: flex;
-
-          align-items: center;
-
-          gap: 6px;
-
-          margin-top: 3px;
-
-          color: #9aa5b3;
-
-          font-size: 9px;
-        }
-
-
-        .attendance-checked {
-          padding:
-            2px 5px;
-
-          border-radius: 5px;
-
-          background: #effaf2;
-
-          color: #42a55b;
-
-          font-weight: 600;
-        }
-
-
-        /* =================================================
-           CODE
-        ================================================= */
-
-        .attendance-code {
-          color: #64748b;
-
-          font-size: 11px;
-
-          white-space: nowrap;
-        }
-
-
-        /* =================================================
-           STATUS
-        ================================================= */
-
-        .attendance-status {
-          width: fit-content;
-
-          display: inline-flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          gap: 4px;
-
-          padding:
-            5px 8px;
-
-          border: 1px solid;
-
-          border-radius: 8px;
-
-          font-size: 10px;
-
-          font-weight: 700;
-
-          white-space: nowrap;
-        }
-
-
-        .attendance-status-empty {
-          padding:
-            5px 8px;
-
-          border:
-            1px solid #e4e8ed;
-
-          border-radius: 8px;
-
-          background: #f8fafc;
-
-          color: #a0a9b5;
-
-          font-size: 10px;
-
-          white-space: nowrap;
-        }
-
-
-        /* =================================================
-           TIME
-        ================================================= */
-
-        .attendance-time {
-          color: #4c7dbc;
-
-          font-size: 11px;
-
-          font-weight: 650;
-        }
-
-
-        .attendance-time.empty {
-          color: #cbd5e1;
-
-          font-weight: 400;
-        }
-
-
-        /* =================================================
-           MORE
-        ================================================= */
-
-        .attendance-more {
-          width: 28px;
-          height: 28px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          padding: 0;
-
-          border: none;
-
-          border-radius: 8px;
-
-          background: transparent;
-
-          color: #9aa5b3;
-
-          cursor: pointer;
-        }
-
-
-        .attendance-more:hover {
-          background: #fff1f5;
-
-          color: #f45b7a;
-        }
-
-
-        /* =================================================
-           TABLE FOOTER
-        ================================================= */
-
-        .attendance-table-footer {
-          display: flex;
-
-          align-items: center;
-
-          justify-content: space-between;
-
-          gap: 12px;
-
-          padding:
-            13px 18px;
-
-          color: #9aa4b1;
-
-          font-size: 10px;
-        }
-
-
-        .attendance-table-footer strong {
-          color: #475569;
-        }
-
-
-        /* =================================================
-           CAMERA PANEL
-        ================================================= */
-
-        .qr-panel {
-          background:
-            linear-gradient(
-              180deg,
-              #fffafb 0%,
-              #ffffff 65%
-            );
-        }
-
-
-        /* =================================================
-           CAMERA TOGGLE
-        ================================================= */
-
-        .qr-toggle {
-          position: relative;
-
-          width: 108px;
-          height: 38px;
-
-          min-width: 108px;
-
-          padding:
-            0 10px 0 38px;
-
-          border:
-            1px solid #e2e7ed;
-
-          border-radius: 22px;
-
-          background: #f2f4f6;
-
-          color: #99a3af;
-
-          font-size: 10px;
-
-          font-weight: 750;
-
-          cursor: pointer;
-
-          transition: .2s;
-        }
-
-
-        .qr-toggle-circle {
-          position: absolute;
-
-          top: 4px;
-          left: 4px;
-
-          width: 30px;
-          height: 30px;
-
-          border-radius: 50%;
-
-          background: #ffffff;
-
-          box-shadow:
-            0 2px 7px
-            rgba(0,0,0,.12);
-
-          transition: .2s;
-        }
-
-
-        .qr-toggle.enabled {
-          padding:
-            0 37px 0 8px;
-
-          background: #f45b7a;
-
-          border-color: #f45b7a;
-
-          color: #ffffff;
-        }
-
-
-        .qr-toggle.enabled
-        .qr-toggle-circle {
-          left: auto;
-
-          right: 4px;
-        }
-
-
-        /* =================================================
-           CAMERA AREA
-        ================================================= */
-
-        .qr-camera-area {
-          padding:
-            18px 18px 17px;
-        }
-
-
-        /* =================================================
-           CAMERA OFF
-        ================================================= */
-
-        .qr-camera-off {
-          min-height: 330px;
-
-          width: 100%;
-
-          padding: 30px 20px;
-
-          display: flex;
-
-          flex-direction: column;
-
-          align-items: center;
-
-          justify-content: center;
-
-          text-align: center;
-
-          border:
-            1px dashed #dfe5ec;
-
-          border-radius: 18px;
-
-          background: #fafbfd;
-        }
-
-
-        .qr-camera-off-icon {
-          width: 68px;
-          height: 68px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          margin-bottom: 13px;
-
-          border-radius: 18px;
-
-          background: #f1f4f7;
-
-          color: #a5afbc;
-
-          font-size: 30px;
-        }
-
-
-        .qr-camera-off strong {
-          margin-bottom: 6px;
-
-          color: #475569;
-
-          font-size: 15px;
-        }
-
-
-        .qr-camera-off-text {
-          max-width: 270px;
-
-          margin-bottom: 18px;
-
-          color: #98a3b2;
-
-          font-size: 11px;
-
-          line-height: 1.6;
-        }
-
-
-        /* =================================================
-           START BUTTON
-        ================================================= */
-
-        .qr-start-button {
-          height: 42px;
-
-          padding:
-            0 20px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          gap: 7px;
-
-          border: none;
-
-          border-radius: 10px;
-
-          background: #f45b7a;
-
-          color: #ffffff;
-
-          font-size: 11px;
-
-          font-weight: 750;
-
-          cursor: pointer;
-
-          transition: .18s;
-        }
-
-
-        .qr-start-button:hover {
-          background: #ec4c70;
-        }
-
-
-        /* =================================================
-           CAMERA ACTIVE
-        ================================================= */
-
-        .qr-camera-active {
-          min-height: 330px;
-
-          width: 100%;
-
-          padding: 18px;
-
-          display: flex;
-
-          flex-direction: column;
-
-          align-items: center;
-
-          justify-content: center;
-
-          position: relative;
-
-          overflow: hidden;
-
-          border-radius: 18px;
-
-          background: #182231;
-        }
-
-
-        .qr-camera-live {
-          position: absolute;
-
-          top: 13px;
-          left: 13px;
-
-          z-index: 2;
-
-          display: flex;
-
-          align-items: center;
-
-          gap: 6px;
-
-          padding:
-            6px 9px;
-
-          border-radius: 20px;
-
-          background:
-            rgba(255,255,255,.10);
-
-          color: #ffffff;
-
-          font-size: 9px;
-
-          font-weight: 700;
-        }
-
-
-        .camera-live-dot {
-          width: 7px;
-          height: 7px;
-
-          border-radius: 50%;
-
-          background: #ff5577;
-
-          animation:
-            cameraPulse 1.5s infinite;
-        }
-
-
-        @keyframes cameraPulse {
-          0% {
-            opacity: 1;
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#FF8FAB",
+
+          colorInfo: "#FF8FAB",
+
+          borderRadius: 14,
+
+          fontFamily: "'Quicksand', sans-serif",
+        },
+
+        components: {
+          Table: {
+            headerBg: "#FFF4F7",
+
+            headerColor: "#7A4050",
+
+            rowHoverBg: "#FFF9FB",
+          },
+
+          Select: {
+            optionSelectedBg: "#FFF0F4",
+          },
+
+          Pagination: {
+            itemActiveBg: "#FF8FAB",
+          },
+        },
+      }}
+    >
+      <div className="attendance-page">
+        {/* =================================================
+            HERO
+        ================================================= */}
+
+        <PageHeroHeader
+          icon={<CheckCircleFilled />}
+          badgeText="QUẢN LÝ ĐIỂM DANH"
+          title="Điểm Danh Học Viên"
+          description="Theo dõi, ghi nhận sự hiện diện và quản lý chuyên cần của học viên theo từng lớp học."
+          // Refresh Props
+          onRefresh={loadAttendance}
+          refreshLoading={loadingAttendance}
+        />
+
+        {/* =================================================
+            FILTER BAR
+        ================================================= */}
+
+        <Card bordered={false} className="attendance-filter-card">
+          <div className="attendance-filter">
+            <div className="filter-item class-filter">
+              <Text className="filter-label">Lớp học</Text>
+
+              <Select
+                value={selectedClassId}
+                loading={loadingClasses}
+                placeholder="Chọn lớp"
+                className="attendance-select"
+                onChange={(value) => {
+                  setSelectedClassId(value);
+
+                  setPage(1);
+                }}
+                options={classes.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))}
+              />
+            </div>
+
+            <div className="filter-item">
+              <Text className="filter-label">Ngày điểm danh</Text>
+
+              <DatePicker
+                value={selectedDate}
+                format="DD/MM/YYYY"
+                allowClear={false}
+                className="attendance-date"
+                suffixIcon={<CalendarOutlined />}
+                onChange={(date) => {
+                  if (!date) {
+                    return;
+                  }
+
+                  setSelectedDate(date);
+
+                  setPage(1);
+                }}
+              />
+            </div>
+
+            <div className="filter-item search-filter">
+              <Text className="filter-label">Tìm học sinh</Text>
+
+              <Input
+                value={searchInput}
+                allowClear
+                prefix={<SearchOutlined />}
+                placeholder="Tên hoặc mã học viên..."
+                className="attendance-search"
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
+
+            <div className="filter-item">
+              <Text className="filter-label">Trạng thái</Text>
+
+              <Select
+                value={statusFilter}
+                className="attendance-status-filter"
+                onChange={(value) => {
+                  setStatusFilter(value);
+
+                  setPage(1);
+                }}
+                options={[
+                  {
+                    value: "all",
+                    label: "Tất cả",
+                  },
+                  {
+                    value: "present",
+                    label: "Có mặt",
+                  },
+                  {
+                    value: "late",
+                    label: "Đi muộn",
+                  },
+                  {
+                    value: "absent",
+                    label: "Vắng",
+                  },
+                  {
+                    value: "excused",
+                    label: "Có phép",
+                  },
+                  {
+                    value: "not_attended",
+                    label: "Chưa điểm danh",
+                  },
+                ]}
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* =================================================
+            LOCK NOTICE
+        ================================================= */}
+
+        {isLocked && (
+          <Alert
+            className="attendance-lock-alert"
+            type="warning"
+            showIcon
+            message="Ngày điểm danh đã khóa"
+            description="Bạn chỉ có thể xem dữ liệu của ngày này, không thể thay đổi trạng thái điểm danh."
+          />
+        )}
+
+        {/* =================================================
+            STATISTICS
+        ================================================= */}
+
+        <Row gutter={[16, 16]} className="attendance-stat-row">
+          <Col xs={24} sm={12} lg={8} xl={4}>
+            <Card bordered={false} className="stat-card pink">
+              <div className="stat-icon">
+                <TeamOutlined />
+              </div>
+
+              <Statistic title="Tổng học sinh" value={total} />
+
+              <Text type="secondary">
+                {selectedClass?.name || "Chưa chọn lớp"}
+              </Text>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={8} xl={4}>
+            <Card bordered={false} className="stat-card green">
+              <div className="stat-icon">
+                <CheckCircleFilled />
+              </div>
+
+              <Statistic title="Có mặt" value={present} />
+
+              <Text type="secondary">Đã tham dự</Text>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={8} xl={4}>
+            <Card bordered={false} className="stat-card yellow">
+              <div className="stat-icon">
+                <ClockCircleOutlined />
+              </div>
+
+              <Statistic title="Đi muộn" value={late} />
+
+              <Text type="secondary">Đi muộn</Text>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={8} xl={4}>
+            <Card bordered={false} className="stat-card red">
+              <div className="stat-icon">
+                <CloseCircleFilled />
+              </div>
+
+              <Statistic title="Vắng" value={absent} />
+
+              <Text type="secondary">
+                {excused > 0 ? `${excused} có phép` : "Không có phép"}
+              </Text>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={8} xl={4}>
+            <Card bordered={false} className="stat-card purple">
+              <div className="stat-icon">
+                <ExclamationCircleOutlined />
+              </div>
+
+              <Statistic title="Chưa điểm danh" value={notAttended} />
+
+              <Text type="secondary">Chưa ghi nhận</Text>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={8} xl={4}>
+            <Card bordered={false} className="stat-card rate">
+              <div className="stat-icon">
+                <CheckCircleFilled />
+              </div>
+
+              <Statistic
+                title="Tỷ lệ tham dự"
+                value={attendanceRate}
+                precision={2}
+                suffix="%"
+              />
+
+              <Text type="secondary">Tỷ lệ điểm danh</Text>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* =================================================
+            MAIN 2 COLUMNS
+        ================================================= */}
+
+        <Row gutter={[18, 18]} className="attendance-main-row">
+          {/* =================================================
+              STUDENT LIST
+          ================================================= */}
+
+          <Col xs={24} xl={16}>
+            <Card bordered={false} className="student-list-card">
+              <div className="student-list-header">
+                <div>
+                  <Title level={4} className="section-title">
+                    Danh sách học sinh
+                  </Title>
+
+                  <Text type="secondary">
+                    {selectedClass?.name || "Chưa chọn lớp"}
+
+                    {" • "}
+
+                    {dateString}
+                  </Text>
+                </div>
+
+                <Tag className="total-student-tag">
+                  {pagination.total || 0} học sinh
+                </Tag>
+              </div>
+
+              <div className="attendance-table-wrap">
+                <Table
+                  rowKey={(record) => record.student_id ?? record.id}
+                  columns={columns}
+                  dataSource={tableData}
+                  loading={loadingAttendance}
+                  pagination={false}
+                  locale={{
+                    emptyText: <Empty description="Không có học sinh" />,
+                  }}
+                  scroll={{
+                    x: 900,
+                  }}
+                />
+              </div>
+
+              {/* =================================================
+                  PAGINATION
+              ================================================= */}
+
+              <div className="attendance-pagination">
+                <Pagination
+                  current={pagination.page || page}
+                  pageSize={pagination.limit || pageSize}
+                  total={pagination.total || 0}
+                  showSizeChanger
+                  pageSizeOptions={["10", "20", "30", "50"]}
+                  showTotal={(totalCount, range) =>
+                    `${range[0]}-${range[1]} / ${totalCount} học sinh`
+                  }
+                  onChange={(nextPage, nextPageSize) => {
+                    if (nextPageSize !== pageSize) {
+                      setPageSize(nextPageSize);
+
+                      setPage(1);
+                    } else {
+                      setPage(nextPage);
+                    }
+                  }}
+                />
+              </div>
+            </Card>
+          </Col>
+
+          {/* =================================================
+              QR PANEL
+          ================================================= */}
+
+          <Col xs={24} xl={8}>
+            <Card bordered={false} className="qr-panel-card">
+              <div className="qr-panel-header">
+                <div className="qr-title">
+                  <div className="qr-title-icon">
+                    <QrcodeOutlined />
+                  </div>
+
+                  <div>
+                    <Text strong className="qr-title-text">
+                      Quét QR điểm danh
+                    </Text>
+
+                    <Text type="secondary" className="qr-title-sub">
+                      Quét mã học viên bằng camera
+                    </Text>
+                  </div>
+                </div>
+
+                <Button
+                  type={isQrOpen ? "default" : "primary"}
+                  danger={isQrOpen}
+                  icon={isQrOpen ? <StopOutlined /> : <CameraOutlined />}
+                  className="qr-toggle-btn"
+                  loading={saving && isQrOpen}
+                  disabled={!selectedClassId || isLocked}
+                  onClick={handleToggleQR}
+                >
+                  {isQrOpen ? "Tắt Camera" : "Bật Quét QR"}
+                </Button>
+              </div>
+
+              <div className="qr-selected-class">
+                <span className="qr-selected-dot" />
+
+                <div>
+                  <Text type="secondary">Đang điểm danh</Text>
+
+                  <Text strong className="qr-selected-class-name">
+                    {selectedClass?.name || "Chưa chọn lớp"}
+                  </Text>
+                </div>
+              </div>
+
+              <div className="qr-component-container">
+                <QRCodeScanner
+                  open={isQrOpen}
+                  classId={selectedClassId}
+                  onSuccess={handleQRSuccess}
+                  onFinishAttendance={handleFinishQRAttendance}
+                />
+              </div>
+
+              {!isQrOpen && (
+                <div className="qr-off-info">
+                  <QrcodeOutlined />
+
+                  <div>
+                    <Text strong>Điểm danh bằng mã QR</Text>
+
+                    <Text type="secondary">
+                      Khi kết thúc quét, học sinh chưa được ghi nhận sẽ tự động
+                      chuyển thành Vắng.
+                    </Text>
+                  </div>
+                </div>
+              )}
+
+              <div className="qr-status-guide">
+                <div>
+                  <span className="guide-dot green" />
+                  <span>Có mặt</span>
+                </div>
+
+                <div>
+                  <span className="guide-dot yellow" />
+                  <span>Đi muộn</span>
+                </div>
+
+                <div>
+                  <span className="guide-dot red" />
+                  <span>Vắng</span>
+                </div>
+
+                <div>
+                  <span className="guide-dot purple" />
+                  <span>Có phép</span>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* =================================================
+            HISTORY MODAL
+        ================================================= */}
+
+        <Modal
+          open={historyOpen}
+          onCancel={() => setHistoryOpen(false)}
+          footer={null}
+          width={620}
+          centered
+          title={
+            <div className="history-modal-title">
+              <HistoryOutlined />
+
+              <span>Lịch sử điểm danh</span>
+            </div>
           }
-
-          50% {
-            opacity: .35;
-          }
-
-          100% {
-            opacity: 1;
-          }
-        }
-
-
-        .qr-scan-frame {
-          width: 210px;
-          height: 210px;
-
-          max-width: 75%;
-
-          border:
-            2px solid
-            rgba(255,255,255,.9);
-
-          border-radius: 17px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          text-align: center;
-
-          position: relative;
-        }
-
-
-        .qr-scan-frame::before,
-        .qr-scan-frame::after {
-          content: "";
-
-          position: absolute;
-
-          width: 28px;
-          height: 28px;
-
-          border-color: #ff7190;
-
-          border-style: solid;
-        }
-
-
-        .qr-scan-frame::before {
-          top: -2px;
-          left: -2px;
-
-          border-width:
-            3px 0 0 3px;
-
-          border-radius:
-            12px 0 0 0;
-        }
-
-
-        .qr-scan-frame::after {
-          right: -2px;
-          bottom: -2px;
-
-          border-width:
-            0 3px 3px 0;
-
-          border-radius:
-            0 0 12px 0;
-        }
-
-
-        .qr-scan-content {
-          display: flex;
-
-          flex-direction: column;
-
-          align-items: center;
-
-          gap: 7px;
-
-          color: #ffffff;
-        }
-
-
-        .qr-scan-content .anticon {
-          color: #ff7190;
-
-          font-size: 38px;
-        }
-
-
-        .qr-scan-content strong {
-          font-size: 12px;
-        }
-
-
-        .qr-scan-content span {
-          max-width: 150px;
-
-          color: #cbd5e1;
-
-          font-size: 9px;
-
-          line-height: 1.5;
-        }
-
-
-        .qr-stop-button {
-          height: 36px;
-
-          margin-top: 15px;
-
-          padding:
-            0 16px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          gap: 6px;
-
-          border:
-            1px solid
-            rgba(255,255,255,.18);
-
-          border-radius: 9px;
-
-          background:
-            rgba(255,255,255,.08);
-
-          color: #ffffff;
-
-          font-size: 10px;
-
-          font-weight: 650;
-
-          cursor: pointer;
-        }
-
-
-        .qr-stop-button:hover {
-          background:
-            rgba(255,255,255,.14);
-        }
-
-
-        /* =================================================
-           GUIDE
-        ================================================= */
-
-        .qr-guide {
-          margin:
-            0 18px 18px;
-
-          padding:
-            15px;
-
-          border:
-            1px solid #f0e3e7;
-
-          border-radius: 16px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #fffdf7,
-              #fff5f8
-            );
-        }
-
-
-        .qr-guide-title {
-          display: flex;
-
-          align-items: center;
-
-          gap: 8px;
-
-          margin-bottom: 12px;
-        }
-
-
-        .qr-guide-icon {
-          width: 33px;
-          height: 33px;
-
-          min-width: 33px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          border-radius: 9px;
-
-          background: #fff3c8;
-
-          font-size: 16px;
-        }
-
-
-        .qr-guide-title strong {
-          display: block;
-
-          color: #334155;
-
-          font-size: 12px;
-        }
-
-
-        .qr-guide-title span {
-          display: block;
-
-          margin-top: 2px;
-
-          color: #a0a9b6;
-
-          font-size: 9px;
-        }
-
-
-        .qr-step {
-          display: flex;
-
-          align-items: center;
-
-          gap: 8px;
-
-          margin-top: 8px;
-        }
-
-
-        .qr-step-number {
-          width: 22px;
-          height: 22px;
-
-          min-width: 22px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          border-radius: 50%;
-
-          background: #ffe1e8;
-
-          color: #f45b7a;
-
-          font-size: 9px;
-
-          font-weight: 750;
-        }
-
-
-        .qr-step p {
-          margin: 0;
-
-          color: #64748b;
-
-          font-size: 10px;
-
-          line-height: 1.4;
-        }
-
-
-        /* =================================================
-           CAMERA SCANNER COMPONENT
-        ================================================= */
-
-        /*
-          QRCodeScanner được render bên ngoài phần layout.
-          Component tự quản lý phần camera thật.
-          open = qrScannerOpen.
-        */
-
-
-        /* =================================================
-           HISTORY
-        ================================================= */
-
-        .attendance-history-stat {
-          padding: 8px 0;
-        }
-
-
-        .attendance-history-row {
-          display: flex;
-
-          align-items: center;
-
-          justify-content: space-between;
-
-          gap: 10px;
-
-          padding:
-            10px 12px;
-
-          margin-bottom: 7px;
-
-          border-radius: 9px;
-        }
-
-
-        /* =================================================
-           TABLET
-        ================================================= */
-
-        @media (max-width: 1150px) {
-
-          .attendance-workspace {
-            grid-template-columns:
-              minmax(0, 1.15fr)
-              minmax(330px, .85fr);
-          }
-
-          .attendance-table-head,
-          .attendance-table-row {
-            grid-template-columns:
-              32px
-              minmax(165px, 1.5fr)
-              90px
-              105px
-              60px
-              28px;
-          }
-
-          .attendance-search {
-            width: 220px;
-          }
-
-        }
-
-
-        /* =================================================
-           SMALL TABLET
-        ================================================= */
-
-        @media (max-width: 960px) {
-
-          .attendance-workspace {
-            grid-template-columns: 1fr;
-          }
-
-          .qr-panel {
-            order: -1;
-          }
-
-          .qr-camera-area {
-            padding:
-              20px;
-          }
-
-          .qr-camera-off,
-          .qr-camera-active {
-            min-height: 350px;
-          }
-
-          .qr-scan-frame {
-            width: 230px;
-            height: 230px;
-          }
-
-        }
-
-
-        /* =================================================
-           MOBILE
-        ================================================= */
-
-        @media (max-width: 680px) {
-
-          .attendance-page {
-            padding:
-              10px
-              10px
-              70px;
-          }
-
-
-          .attendance-filter {
-            grid-template-columns: 1fr;
-
-            gap: 11px;
-
-            padding: 14px;
-
-            border-radius: 16px;
-          }
-
-
-          .attendance-filter-item {
-            width: 100%;
-          }
-
-
-          .attendance-reload {
-            width: 100%;
-
-            height: 42px;
-          }
-
-
-          .attendance-workspace {
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 13px;
-          }
-
-
-          .attendance-panel {
-            width: 100%;
-
-            border-radius: 17px;
-          }
-
-
-          .qr-panel {
-            order: 1;
-          }
-
-
-          .student-panel {
-            order: 2;
-          }
-
-
-          /* HEADER */
-
-          .attendance-panel-header {
-            padding:
-              15px;
-
-            flex-direction: column;
-
-            align-items: stretch;
-
-            gap: 12px;
-          }
-
-
-          .attendance-title-group {
-            width: 100%;
-          }
-
-
-          .attendance-title-text h2 {
-            font-size: 15px;
-          }
-
-
-          .attendance-title-text p {
-            font-size: 10px;
-          }
-
-
-          .attendance-icon {
-            width: 40px;
-            height: 40px;
-
-            min-width: 40px;
-
-            font-size: 17px;
-          }
-
-
-          .attendance-search {
-            width: 100%;
-          }
-
-
-          /* STATUS */
-
-          .attendance-status-tabs {
-            padding:
-              10px 12px;
-          }
-
-
-          .attendance-status-tab {
-            height: 34px;
-
-            padding:
-              0 11px;
-
-            font-size: 10px;
-          }
-
-
-          /* TABLE */
-
-          .attendance-table-head,
-          .attendance-table-row {
-            padding:
-              0 13px;
-          }
-
-
-          .attendance-table-footer {
-            padding:
-              12px;
-
-            flex-direction: column;
-
-            align-items: flex-start;
-          }
-
-
-          /* QR */
-
-          .qr-panel-header {
-            padding:
-              15px;
-
-            align-items: center;
-          }
-
-
-          .qr-toggle {
-            width: 100px;
-
-            min-width: 100px;
-          }
-
-
-          .qr-camera-area {
-            padding:
-              13px;
-          }
-
-
-          .qr-camera-off,
-          .qr-camera-active {
-            min-height: 300px;
-
-            border-radius: 15px;
-          }
-
-
-          .qr-camera-off {
-            padding:
-              25px 15px;
-          }
-
-
-          .qr-camera-off-icon {
-            width: 60px;
-            height: 60px;
-
-            font-size: 27px;
-          }
-
-
-          .qr-camera-off strong {
-            font-size: 14px;
-          }
-
-
-          .qr-camera-off-text {
-            font-size: 10px;
-          }
-
-
-          .qr-scan-frame {
-            width: 190px;
-            height: 190px;
-
-            max-width: 70%;
-          }
-
-
-          .qr-guide {
-            margin:
-              0 13px 13px;
-
-            padding:
-              13px;
-          }
-
-
-          /* SCANNER */
-
-          .qr-stop-button {
-            height: 38px;
-          }
-
-        }
-
-
-        /* =================================================
-           VERY SMALL MOBILE
-        ================================================= */
-
-        @media (max-width: 390px) {
-
-          .attendance-page {
-            padding:
-              7px
-              7px
-              60px;
-          }
-
-
-          .attendance-filter {
-            padding: 11px;
-          }
-
-
-          .attendance-title-group {
-            gap: 8px;
-          }
-
-
-          .attendance-icon {
-            width: 36px;
-            height: 36px;
-
-            min-width: 36px;
-
-            border-radius: 10px;
-
-            font-size: 15px;
-          }
-
-
-          .attendance-title-text h2 {
-            font-size: 14px;
-          }
-
-
-          .attendance-title-text p {
-            font-size: 9px;
-          }
-
-
-          .qr-toggle {
-            width: 94px;
-
-            min-width: 94px;
-
-            height: 36px;
-
-            font-size: 9px;
-          }
-
-
-          .qr-toggle-circle {
-            width: 28px;
-            height: 28px;
-          }
-
-
-          .qr-camera-off,
-          .qr-camera-active {
-            min-height: 275px;
-          }
-
-
-          .qr-scan-frame {
-            width: 170px;
-            height: 170px;
-          }
-
-
-          .attendance-table-inner {
-            min-width: 650px;
-          }
-
-        }
-          /* =========================================================
-   INLINE QR SCANNER
+        >
+          <div className="history-student">
+            <Avatar
+              size={46}
+              icon={<UserOutlined />}
+              src={historyStudent?.avatar || historyStudent?.avatar_url}
+            />
+
+            <div>
+              <Text strong>{historyStudent?.name || "Học sinh"}</Text>
+
+              <Text type="secondary">{historyStudent?.code || ""}</Text>
+            </div>
+          </div>
+
+          <Table
+            rowKey={(record, index) =>
+              record.id || `${record.attendance_date}-${index}`
+            }
+            columns={historyColumns}
+            dataSource={historyData}
+            loading={historyLoading}
+            pagination={{
+              pageSize: 8,
+              showSizeChanger: false,
+            }}
+            locale={{
+              emptyText: "Chưa có lịch sử điểm danh",
+            }}
+          />
+        </Modal>
+      </div>
+      <style>{`
+      /* =========================================================
+   PAGE
 ========================================================= */
+
+.attendance-page {
+  min-height: 100%;
+  padding-bottom: 40px;
+  background: #fff9fb;
+}
+
+/* =========================================================
+   FILTER
+========================================================= */
+
+.attendance-filter-card {
+  margin-top: 18px;
+  border: 1px solid #f5dfe7;
+  border-radius: 18px;
+  box-shadow: 0 8px 25px rgba(225, 93, 130, 0.06);
+}
+
+.attendance-filter {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 170px;
+}
+
+.class-filter {
+  min-width: 230px;
+}
+
+.search-filter {
+  flex: 1;
+  min-width: 230px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8b5363;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.attendance-select,
+.attendance-date,
+.attendance-search,
+.attendance-status-filter {
+  width: 100%;
+}
+
+.attendance-select .ant-select-selector,
+.attendance-date,
+.attendance-search,
+.attendance-status-filter .ant-select-selector {
+  min-height: 42px !important;
+  border-radius: 12px !important;
+  border-color: #f0d9e2 !important;
+  background: #fff !important;
+}
+
+.attendance-search input {
+  font-size: 14px;
+}
+
+.filter-refresh {
+  padding-bottom: 1px;
+}
+
+.refresh-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #f1d6e0;
+  color: #e85d82;
+  background: #fff4f7;
+}
+
+.refresh-btn:hover {
+  color: #fff !important;
+  background: #ff8fab !important;
+  border-color: #ff8fab !important;
+}
+
+/* =========================================================
+   LOCK
+========================================================= */
+
+.attendance-lock-alert {
+  margin-top: 16px;
+  border-radius: 14px;
+  border: 1px solid #fde3a7;
+}
+
+/* =========================================================
+   STAT
+========================================================= */
+
+.attendance-stat-row {
+  margin-top: 18px;
+}
+
+.stat-card {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid #f4dfe6;
+  box-shadow: 0 8px 25px rgba(225, 93, 130, 0.055);
+  transition: 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(225, 93, 130, 0.09);
+}
+
+.stat-card .ant-card-body {
+  padding: 18px;
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.stat-card.pink .stat-icon {
+  color: #e85d82;
+  background: #fff0f4;
+}
+
+.stat-card.green .stat-icon {
+  color: #059669;
+  background: #ecfdf5;
+}
+
+.stat-card.yellow .stat-icon {
+  color: #d97706;
+  background: #fffbeb;
+}
+
+.stat-card.red .stat-icon {
+  color: #e11d48;
+  background: #fff1f2;
+}
+
+.stat-card.purple .stat-icon {
+  color: #8b5cf6;
+  background: #f5f3ff;
+}
+
+.stat-card.rate .stat-icon {
+  color: #d94678;
+  background: #fff0f4;
+}
+
+.stat-card .ant-statistic-title {
+  margin-bottom: 2px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.stat-card .ant-statistic-content {
+  color: #334155;
+  font-weight: 800;
+  font-size: 26px;
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.attendance-main-row {
+  margin-top: 18px;
+}
+
+/* =========================================================
+   STUDENT LIST
+========================================================= */
+
+.student-list-card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #f3dce5;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(225, 93, 130, 0.06);
+}
+
+.student-list-card .ant-card-body {
+  padding: 0;
+}
+
+.student-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #f7e6eb;
+}
+
+.section-title {
+  margin: 0 !important;
+  color: #6f3547 !important;
+  font-size: 19px !important;
+}
+
+.total-student-tag {
+  margin: 0;
+  padding: 5px 12px;
+  border: 1px solid #f5d5df;
+  border-radius: 20px;
+  color: #d95678;
+  background: #fff3f6;
+  font-weight: 700;
+}
+
+.attendance-table-wrap {
+  overflow-x: auto;
+}
+
+.attendance-table-wrap .ant-table {
+  font-size: 13px;
+}
+
+.attendance-table-wrap .ant-table-thead > tr > th {
+  padding: 13px 16px;
+  color: #9a6473;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  background: #fff8fa;
+  border-bottom: 1px solid #f6e5ea;
+}
+
+.attendance-table-wrap .ant-table-tbody > tr > td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #faedf1;
+}
+
+.attendance-table-wrap
+  .ant-table-tbody
+  > tr:last-child
+  > td {
+  border-bottom: none;
+}
+
+/* =========================================================
+   STUDENT
+========================================================= */
+
+.student-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.student-avatar {
+  flex: 0 0 auto;
+  color: #e85d82;
+  background: #fff0f4;
+  border: 2px solid #ffe0e8;
+}
+
+.student-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.student-name {
+  overflow: hidden;
+  color: #334155;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-code {
+  font-size: 12px;
+}
+
+/* =========================================================
+   STATUS TAG
+========================================================= */
+
+.attendance-status-tag {
+  min-width: 105px;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.attendance-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 35px !important;
+  height: 35px !important;
+  min-width: 35px !important;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50% !important;
+
+  background: #ffffff;
+  border: 1px solid #f1dce3;
+
+  box-shadow: 0 3px 8px rgba(214, 93, 125, 0.06);
+
+  transition:
+    all 0.2s ease,
+    transform 0.15s ease;
+
+  font-size: 14px;
+}
+
+.action-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+/* PRESENT */
+
+.action-btn.present {
+  color: #55b77a;
+  background: #f4fcf7;
+  border-color: #cdeed9;
+}
+
+.action-btn.present:not(:disabled):hover,
+.action-btn.present.active {
+  color: #ffffff;
+  background: #67c587;
+  border-color: #67c587;
+  box-shadow: 0 5px 12px rgba(103, 197, 135, 0.25);
+}
+
+/* LATE */
+
+.action-btn.late {
+  color: #d99b32;
+  background: #fffaf0;
+  border-color: #f5dfad;
+}
+
+.action-btn.late:not(:disabled):hover,
+.action-btn.late.active {
+  color: #ffffff;
+  background: #f3b562;
+  border-color: #f3b562;
+  box-shadow: 0 5px 12px rgba(243, 181, 98, 0.25);
+}
+
+/* ABSENT */
+
+.action-btn.absent {
+  color: #e46f83;
+  background: #fff5f7;
+  border-color: #f4cbd4;
+}
+
+.action-btn.absent:not(:disabled):hover,
+.action-btn.absent.active {
+  color: #ffffff;
+  background: #ef7c8e;
+  border-color: #ef7c8e;
+  box-shadow: 0 5px 12px rgba(239, 124, 142, 0.25);
+}
+
+/* EXCUSED */
+
+.action-btn.excused {
+  color: #9179d5;
+  background: #f8f5ff;
+  border-color: #ded5f8;
+}
+
+.action-btn.excused:not(:disabled):hover,
+.action-btn.excused.active {
+  color: #ffffff;
+  background: #a78bfa;
+  border-color: #a78bfa;
+  box-shadow: 0 5px 12px rgba(167, 139, 250, 0.25);
+}
+
+/* DISABLED */
+
+.action-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.32;
+  transform: none !important;
+  box-shadow: none;
+}
+
+.action-btn.active:disabled {
+  opacity: 1;
+}
+
+/* =========================================================
+   HISTORY BUTTON
+========================================================= */
+
+.history-btn {
+  color: #d86a88;
+  background: #fff5f8;
+}
+
+.history-btn:hover {
+  color: #fff !important;
+  background: #ff8fab !important;
+}
+
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+.attendance-pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding: 17px 20px;
+  border-top: 1px solid #f7e6eb;
+}
+
+.attendance-pagination .ant-pagination-item-active {
+  border-color: #ff8fab;
+  background: #ff8fab;
+}
+
+.attendance-pagination
+  .ant-pagination-item-active
+  a {
+  color: #fff;
+}
+
+.attendance-pagination .ant-pagination-total-text {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* =========================================================
+   QR PANEL
+========================================================= */
+
+.qr-panel-card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #f3dce5;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(225, 93, 130, 0.07);
+}
+
+.qr-panel-card .ant-card-body {
+  padding: 0;
+}
+
+.qr-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f7e6eb;
+}
+
+.qr-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.qr-title-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 13px;
+  color: #e85d82;
+  background: #fff0f4;
+  font-size: 19px;
+}
+
+.qr-title-text {
+  display: block;
+  color: #6f3547;
+  font-size: 14px;
+}
+
+.qr-title-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.qr-toggle-btn {
+  flex: 0 0 auto;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.qr-selected-class {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 16px 0;
+  padding: 11px 13px;
+  border: 1px solid #f6dfe7;
+  border-radius: 12px;
+  background: #fff8fa;
+}
+
+.qr-selected-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #67c587;
+  box-shadow: 0 0 0 4px #eaf9ef;
+}
+
+.qr-selected-class {
+  flex-direction: row;
+}
+
+.qr-selected-class > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.qr-selected-class-name {
+  margin-top: 1px;
+  color: #71384a;
+  font-size: 13px;
+}
+
+/* =========================================================
+   QR COMPONENT
+========================================================= */
+
+.qr-component-container {
+  padding: 16px;
+}
 
 .inline-qr-scanner {
   width: 100%;
 }
 
-
-/* =========================================================
-   CAMERA OFF
-========================================================= */
-
-.qr-camera-off-state {
-  width: 100%;
-  min-height: 330px;
-
-  padding: 30px 20px;
-
-  display: flex;
-  flex-direction: column;
-
-  align-items: center;
-  justify-content: center;
-
-  text-align: center;
-
-  border:
-    1px dashed #dfe5ec;
-
-  border-radius: 18px;
-
-  background: #fafbfd;
-}
-
-
-.qr-camera-off-icon {
-  width: 68px;
-  height: 68px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 13px;
-
-  border-radius: 18px;
-
-  background: #f1f4f7;
-
-  color: #a5afbc;
-
-  font-size: 30px;
-}
-
-
-.qr-camera-off-state strong {
-  margin-bottom: 7px;
-
-  color: #475569;
-
-  font-size: 15px;
-}
-
-
-.qr-camera-off-state span {
-  max-width: 270px;
-
-  color: #98a3b2;
-
-  font-size: 11px;
-
-  line-height: 1.6;
-}
-
-
-/* =========================================================
-   CAMERA
-========================================================= */
-
 .inline-qr-camera {
-  width: 100%;
-
-  height: 390px;
-
   position: relative;
-
+  width: 100%;
+  height: 390px;
   overflow: hidden;
-
   border-radius: 18px;
-
-  background: #111827;
-
-  border: 2px solid #e2e8f0;
+  background: #161616;
 }
 
+.inline-qr-camera > div:first-child {
+  width: 100%;
+  height: 100%;
+}
 
 .inline-qr-camera video {
   width: 100% !important;
   height: 100% !important;
-
   object-fit: cover !important;
 }
 
-
-/* =========================================================
-   OVERLAY
-========================================================= */
-
 .inline-qr-overlay {
   position: absolute;
-
   inset: 0;
-
+  z-index: 2;
   pointer-events: none;
-
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(15,23,42,.30),
-      transparent 30%,
-      transparent 65%,
-      rgba(15,23,42,.45)
-    );
+  background: rgba(0, 0, 0, 0.28);
 }
-
-
-/* =========================================================
-   LIVE
-========================================================= */
 
 .inline-qr-live {
   position: absolute;
-
   top: 13px;
   left: 13px;
-
   z-index: 5;
 
   display: flex;
-
   align-items: center;
-
   gap: 7px;
 
-  padding:
-    7px 10px;
+  padding: 6px 10px;
 
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
 
-  background:
-    rgba(15,23,42,.65);
-
   color: #fff;
+  background: rgba(0, 0, 0, 0.38);
 
-  font-size: 10px;
-
+  font-size: 11px;
   font-weight: 700;
 
-  backdrop-filter:
-    blur(6px);
+  backdrop-filter: blur(8px);
 }
-
 
 .inline-qr-live span {
   width: 7px;
   height: 7px;
-
   border-radius: 50%;
-
-  background: #ff5577;
-
-  box-shadow:
-    0 0 0 4px
-    rgba(255,85,119,.18);
-
-  animation:
-    qrLivePulse 1.4s infinite;
+  background: #67c587;
+  box-shadow: 0 0 0 4px rgba(103, 197, 135, 0.15);
 }
-
-
-@keyframes qrLivePulse {
-
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: .35;
-  }
-
-  100% {
-    opacity: 1;
-  }
-
-}
-
 
 /* =========================================================
    QR FRAME
@@ -2662,140 +2023,88 @@ const AttendancePage = () => {
 
 .inline-qr-frame-wrapper {
   position: absolute;
-
   inset: 0;
-
-  z-index: 3;
+  z-index: 4;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   pointer-events: none;
 }
 
-
 .inline-qr-frame {
-  width: 215px;
-  height: 215px;
-
   position: relative;
-
-  border-radius: 20px;
-
-  box-shadow:
-    0 0 0 9999px
-    rgba(15,23,42,.38);
+  width: 205px;
+  height: 205px;
 }
 
-
-/* =========================================================
-   CORNERS
-========================================================= */
-
-.inline-qr-frame .corner {
+.corner {
   position: absolute;
-
-  width: 32px;
-  height: 32px;
-
-  border-color:
-    #FBBF24;
-
+  width: 35px;
+  height: 35px;
+  border-color: #fff;
   border-style: solid;
 }
 
-
-.inline-qr-frame
 .corner.top-left {
-
   top: 0;
   left: 0;
-
-  border-width:
-    4px 0 0 4px;
-
-  border-radius:
-    14px 0 0 0;
+  border-width: 4px 0 0 4px;
+  border-radius: 8px 0 0 0;
 }
 
-
-.inline-qr-frame
 .corner.top-right {
-
   top: 0;
   right: 0;
-
-  border-width:
-    4px 4px 0 0;
-
-  border-radius:
-    0 14px 0 0;
+  border-width: 4px 4px 0 0;
+  border-radius: 0 8px 0 0;
 }
 
-
-.inline-qr-frame
 .corner.bottom-left {
-
-  left: 0;
   bottom: 0;
-
-  border-width:
-    0 0 4px 4px;
-
-  border-radius:
-    0 0 0 14px;
+  left: 0;
+  border-width: 0 0 4px 4px;
+  border-radius: 0 0 0 8px;
 }
 
-
-.inline-qr-frame
 .corner.bottom-right {
-
   right: 0;
   bottom: 0;
-
-  border-width:
-    0 4px 4px 0;
-
-  border-radius:
-    0 0 14px 0;
+  border-width: 0 4px 4px 0;
+  border-radius: 0 0 8px 0;
 }
-
 
 /* =========================================================
-   HINT
+   QR HINT
 ========================================================= */
 
 .inline-qr-hint {
   position: absolute;
-
+  bottom: 24px;
+  left: 50%;
   z-index: 5;
 
-  bottom: 20px;
-
-  left: 0;
-  right: 0;
-
   display: flex;
-
   align-items: center;
-
-  justify-content: center;
-
   gap: 7px;
 
-  color: #ffffff;
+  transform: translateX(-50%);
+
+  padding: 8px 13px;
+
+  border-radius: 20px;
+
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
 
   font-size: 11px;
+  font-weight: 600;
 
-  font-weight: 650;
+  white-space: nowrap;
 
-  text-shadow:
-    0 1px 4px rgba(0,0,0,.5);
+  backdrop-filter: blur(8px);
 }
-
 
 /* =========================================================
    PROCESSING
@@ -2803,56 +2112,36 @@ const AttendancePage = () => {
 
 .inline-qr-processing {
   position: absolute;
-
   inset: 0;
-
-  z-index: 20;
+  z-index: 10;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
-  background:
-    rgba(15,23,42,.55);
-
-  backdrop-filter:
-    blur(5px);
+  background: rgba(0, 0, 0, 0.25);
 }
-
 
 .inline-qr-processing-card {
-  min-width: 155px;
-
-  padding:
-    18px;
-
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
+  gap: 10px;
 
-  gap: 9px;
+  padding: 18px 25px;
 
-  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
 
-  background:
-    rgba(255,255,255,.96);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.62);
 
-  box-shadow:
-    0 12px 30px
-    rgba(0,0,0,.18);
+  backdrop-filter: blur(10px);
 }
-
 
 .inline-qr-processing-card strong {
-  color: #475569;
-
   font-size: 12px;
 }
-
 
 /* =========================================================
    RESULT
@@ -2860,1061 +2149,379 @@ const AttendancePage = () => {
 
 .inline-qr-result {
   position: absolute;
+  inset: 12px;
+  z-index: 20;
 
-  z-index: 30;
-
-  left: 12px;
-  right: 12px;
-
-  bottom: 12px;
-
-  animation:
-    inlineQRResultIn
-    .3s ease;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
 }
-
-
-@keyframes inlineQRResultIn {
-
-  from {
-    opacity: 0;
-
-    transform:
-      translateY(15px)
-      scale(.97);
-  }
-
-  to {
-    opacity: 1;
-
-    transform:
-      translateY(0)
-      scale(1);
-  }
-
-}
-
 
 .inline-qr-result-card {
-  margin: 0 !important;
-
-  border-radius: 17px !important;
-
-  overflow: hidden;
-
-  box-shadow:
-    0 10px 25px
-    rgba(0,0,0,.16);
+  width: 100%;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
 }
 
-
-.inline-qr-result-inner {
-  display: flex;
-
-  align-items: flex-start;
-
-  gap: 10px;
-
+.inline-qr-result-card .ant-card-body {
   padding: 13px;
 }
 
-
-.inline-qr-result-icon {
-  flex-shrink: 0;
-
-  font-size: 27px;
-
-  line-height: 1;
+.inline-qr-result-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
 
+.inline-qr-result-icon {
+  flex: 0 0 auto;
+  padding-top: 2px;
+  font-size: 25px;
+}
 
 .inline-qr-result-content {
   min-width: 0;
-
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-
 
 .inline-qr-result-title {
-  display: block;
-
-  font-size: 14px;
-
-  line-height: 1.3;
+  font-size: 13px;
 }
-
 
 .inline-qr-student-name {
-  display: block;
-
-  margin-top: 3px;
-
-  color: #1e293b;
-
-  font-size: 16px;
+  color: #334155;
+  font-size: 14px;
 }
-
 
 .inline-qr-meta {
-  display: block;
-
-  margin-top: 2px;
-
   font-size: 10px;
 }
-
 
 .inline-qr-time {
-  margin:
-    6px 0 0 !important;
-
-  border-radius: 10px !important;
-
-  font-size: 10px !important;
+  align-self: flex-start;
+  margin: 4px 0 1px;
+  font-size: 10px;
 }
-
 
 .inline-qr-message {
-  display: block;
-
-  margin-top: 5px;
-
   font-size: 10px;
-
-  line-height: 1.4;
 }
 
-
 /* =========================================================
-   STATUS
+   QR STATUS
 ========================================================= */
 
 .inline-qr-status {
-  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 
   margin-top: 10px;
 
-  padding:
-    8px 12px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 7px;
-
-  border-radius: 10px;
-
-  background: #f8fafc;
-
-  border:
-    1px solid #e2e8f0;
-
-  color: #64748b;
-
-  font-size: 10px;
-
+  color: #8c6a75;
+  font-size: 11px;
   font-weight: 600;
 }
 
-
 .inline-qr-status-dot {
-  width: 7px;
-  height: 7px;
-
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-
-  background: #059669;
-
-  box-shadow:
-    0 0 0 4px
-    rgba(5,150,105,.12);
 }
 
+.inline-qr-status-dot.ready {
+  background: #67c587;
+  box-shadow: 0 0 0 4px #eaf9ef;
+}
 
 .inline-qr-status-dot.processing {
-  background: #d97706;
-
-  box-shadow:
-    0 0 0 4px
-    rgba(217,119,6,.12);
+  background: #f3b562;
+  box-shadow: 0 0 0 4px #fff5df;
 }
 
+.inline-qr-status-dot.success {
+  background: #67c587;
+}
 
 .inline-qr-status-dot.warning {
-  background: #d97706;
+  background: #f3b562;
 }
-
 
 .inline-qr-status-dot.error,
 .inline-qr-status-dot.class_error {
-  background: #e11d48;
-
-  box-shadow:
-    0 0 0 4px
-    rgba(225,29,72,.12);
+  background: #ef7c8e;
 }
 
+.qr-finish-note {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px dashed #f2d4de;
+  border-radius: 10px;
+  color: #9b6b78;
+  background: #fff9fb;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
 
 /* =========================================================
-   MOBILE
+   CAMERA OFF
 ========================================================= */
 
-@media (max-width: 680px) {
+.qr-camera-off-state {
+  min-height: 390px;
 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  border: 1px dashed #f0d5df;
+  border-radius: 18px;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      #fff0f4 0,
+      #fff9fb 45%,
+      #fff 100%
+    );
+}
+
+.qr-camera-off-icon {
+  width: 72px;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 15px;
+
+  border-radius: 22px;
+
+  color: #e85d82;
+  background: #fff0f4;
+
+  font-size: 30px;
+}
+
+.qr-camera-off-state strong {
+  color: #71384a;
+  font-size: 15px;
+}
+
+.qr-camera-off-state span {
+  max-width: 250px;
+  margin-top: 7px;
+  color: #a27a86;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   QR OFF INFO
+========================================================= */
+
+.qr-off-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin: 0 16px 14px;
+  padding: 12px;
+
+  border: 1px solid #f5dfe7;
+  border-radius: 12px;
+
+  color: #e85d82;
+  background: #fff8fa;
+}
+
+.qr-off-info > svg {
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.qr-off-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qr-off-info .ant-typography {
+  font-size: 11px;
+}
+
+/* =========================================================
+   GUIDE
+========================================================= */
+
+.qr-status-guide {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+
+  padding: 0 16px 16px;
+}
+
+.qr-status-guide > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  padding: 6px 3px;
+
+  border-radius: 8px;
+
+  color: #8b6874;
+  background: #fff8fa;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.guide-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.guide-dot.green {
+  background: #67c587;
+}
+
+.guide-dot.yellow {
+  background: #f3b562;
+}
+
+.guide-dot.red {
+  background: #ef7c8e;
+}
+
+.guide-dot.purple {
+  background: #a78bfa;
+}
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+.history-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #71384a;
+}
+
+.history-student {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 18px;
+  padding: 12px;
+
+  border: 1px solid #f5dfe7;
+  border-radius: 13px;
+
+  background: #fff8fa;
+}
+
+.history-student > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1199px) {
+  .qr-panel-card {
+    height: auto;
+  }
+
+  .inline-qr-camera {
+    height: 430px;
+  }
+}
+
+@media (max-width: 767px) {
+  .attendance-page {
+    padding-bottom: 20px;
+  }
+
+  .attendance-filter {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filter-item,
+  .class-filter,
+  .search-filter {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filter-refresh {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .student-list-header {
+    padding: 16px;
+  }
+
+  .attendance-pagination {
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  .attendance-pagination
+    .ant-pagination {
+    white-space: nowrap;
+  }
+
+  .qr-panel-header {
+    align-items: flex-start;
+  }
+
+  .qr-toggle-btn {
+    padding-inline: 10px;
+  }
+
+  .inline-qr-camera,
   .qr-camera-off-state {
-    min-height: 280px;
-
-    padding:
-      25px 15px;
+    height: 350px;
+    min-height: 350px;
   }
-
-
-  .qr-camera-off-icon {
-    width: 60px;
-    height: 60px;
-
-    font-size: 27px;
-  }
-
-
-  .qr-camera-off-state strong {
-    font-size: 14px;
-  }
-
-
-  .qr-camera-off-state span {
-    font-size: 10px;
-  }
-
-
-  .inline-qr-camera {
-    height:
-      min(
-        390px,
-        58vh
-      );
-
-    min-height: 290px;
-
-    border-radius: 15px;
-  }
-
 
   .inline-qr-frame {
-    width:
-      min(
-        210px,
-        60vw
-      );
-
-    height:
-      min(
-        210px,
-        60vw
-      );
+    width: 180px;
+    height: 180px;
   }
 
-
-  .inline-qr-result {
-    left: 7px;
-    right: 7px;
-
-    bottom: 7px;
+  .qr-status-guide {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-
-  .inline-qr-result-inner {
-    padding: 10px;
-
-    gap: 8px;
+  .attendance-table-wrap .ant-table-tbody > tr > td,
+  .attendance-table-wrap .ant-table-thead > tr > th {
+    padding: 12px;
   }
-
-
-  .inline-qr-result-title {
-    font-size: 12px;
-  }
-
-
-  .inline-qr-student-name {
-    font-size: 14px;
-  }
-
-
-  .inline-qr-meta {
-    font-size: 9px;
-  }
-
-
-  .inline-qr-message {
-    font-size: 9px;
-  }
-
-
-  .inline-qr-status {
-    min-height: 36px;
-
-    font-size: 9px;
-  }
-
 }
-
-
-/* =========================================================
-   SMALL PHONE
-========================================================= */
-
-@media (max-width: 390px) {
-
-  .inline-qr-camera {
-    height: 270px;
-
-    min-height: 270px;
-  }
-
-
-  .inline-qr-frame {
-    width: 165px;
-    height: 165px;
-  }
-
-
-  .inline-qr-live {
-    top: 8px;
-    left: 8px;
-
-    padding:
-      5px 8px;
-
-    font-size: 8px;
-  }
-
-
-  .inline-qr-hint {
-    bottom: 12px;
-
-    font-size: 9px;
-  }
-
-}
-
-        `}
-      </style>
-
-      {/* =================================================
-          HERO
-      ================================================= */}
-
-      <div className="attendance-hero">
-        <PageHeroHeader
-          icon={<BookOutlined />}
-          badgeText="🌸 QUẢN LÝ GIÁO LÝ"
-          title="Điểm Danh"
-          description="Quản lý điểm danh học viên bằng danh sách và camera QR."
-        />
-      </div>
-
-      {/* =================================================
-          DATE LOCK
-      ================================================= */}
-
-      {attendanceLocked && (
-        <Alert
-          className="attendance-alert"
-          type="warning"
-          showIcon
-          icon={<LockOutlined />}
-          message="Ngày điểm danh đã khóa chỉnh sửa"
-          description={
-            <>
-              Bạn đang xem dữ liệu ngày{" "}
-              <strong>{selectedDate.format("DD/MM/YYYY")}</strong>. Ngày đã qua
-              chỉ được xem.
-            </>
-          }
-        />
-      )}
-
-      {/* =================================================
-          ERROR
-      ================================================= */}
-
-      {error && (
-        <Alert
-          className="attendance-alert"
-          type="error"
-          showIcon
-          closable
-          message={error}
-          onClose={() => setError("")}
-        />
-      )}
-
-      {/* =================================================
-          FILTER
-      ================================================= */}
-
-      <div className="attendance-filter">
-        <div className="attendance-filter-item">
-          <label className="attendance-filter-label">Chọn lớp 📚</label>
-
-          <Select
-            size="large"
-            value={selectedClassId ? Number(selectedClassId) : undefined}
-            loading={loadingClasses}
-            placeholder="Chọn lớp..."
-            showSearch
-            optionFilterProp="label"
-            onChange={(value) => setSelectedClassId(Number(value))}
-            options={classes.map((item) => ({
-              value: Number(item.id || item.class_id),
-
-              label:
-                item.name ||
-                item.class_name ||
-                `Lớp ${item.id || item.class_id}`,
-            }))}
-          />
-        </div>
-
-        <div className="attendance-filter-item">
-          <label className="attendance-filter-label">Ngày điểm danh 🗓️</label>
-
-          <DatePicker
-            size="large"
-            value={selectedDate}
-            allowClear={false}
-            format="DD/MM/YYYY"
-            onChange={(date) => {
-              if (date) {
-                setSelectedDate(date);
-              }
-            }}
-            suffixIcon={
-              <CalendarOutlined
-                style={{
-                  color: "#f45b7a",
-                }}
-              />
-            }
-          />
-        </div>
-
-        <button
-          type="button"
-          className="attendance-reload"
-          onClick={loadAttendance}
-          disabled={loadingAttendance}
-        >
-          <ReloadOutlined />
-          Tải lại
-        </button>
-      </div>
-
-      {/* =================================================
-          WORKSPACE
-      ================================================= */}
-
-      <div className="attendance-workspace">
-        {/* =================================================
-            LEFT — STUDENT LIST
-        ================================================= */}
-
-        <section className="attendance-panel student-panel">
-          {/* HEADER */}
-
-          <div className="attendance-panel-header">
-            <div className="attendance-title-group">
-              <div className="attendance-icon pink">
-                <TeamOutlined />
-              </div>
-
-              <div className="attendance-title-text">
-                <h2>Danh sách học viên</h2>
-
-                <p>
-                  {selectedClass?.name ||
-                    selectedClass?.class_name ||
-                    "Chưa chọn lớp"}
-                  {" • "}
-                  {statistics.total} học viên
-                </p>
-              </div>
-            </div>
-
-            <Input
-              className="attendance-search"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              allowClear
-              placeholder="Tìm tên hoặc mã học viên..."
-              prefix={
-                <SearchOutlined
-                  style={{
-                    color: "#9AA5B3",
-                  }}
-                />
-              }
-            />
-          </div>
-
-          {/* STATUS */}
-
-          <div className="attendance-status-tabs">
-            <button
-              type="button"
-              className={`attendance-status-tab ${
-                statusFilter === "all" ? "active" : ""
-              }`}
-              onClick={() => setStatusFilter("all")}
-            >
-              Tất cả ({statistics.total})
-            </button>
-
-            <button
-              type="button"
-              className={`attendance-status-tab present ${
-                statusFilter === "present" ? "active" : ""
-              }`}
-              onClick={() => setStatusFilter("present")}
-            >
-              Có mặt ({statistics.present})
-            </button>
-
-            <button
-              type="button"
-              className={`attendance-status-tab absent ${
-                statusFilter === "absent" ? "active" : ""
-              }`}
-              onClick={() => setStatusFilter("absent")}
-            >
-              Vắng ({statistics.absent})
-            </button>
-
-            <button
-              type="button"
-              className={`attendance-status-tab late ${
-                statusFilter === "late" ? "active" : ""
-              }`}
-              onClick={() => setStatusFilter("late")}
-            >
-              Muộn ({statistics.late})
-            </button>
-
-            <button
-              type="button"
-              className={`attendance-status-tab excused ${
-                statusFilter === "excused" ? "active" : ""
-              }`}
-              onClick={() => setStatusFilter("excused")}
-            >
-              Có phép ({statistics.excused})
-            </button>
-
-            <button
-              type="button"
-              className={`attendance-status-tab ${
-                statusFilter === "unmarked" ? "active" : ""
-              }`}
-              onClick={() => setStatusFilter("unmarked")}
-            >
-              Chưa điểm danh ({statistics.notMarked})
-            </button>
-          </div>
-
-          {/* TABLE */}
-
-          <div className="attendance-table-wrapper">
-            <div className="attendance-table-inner">
-              {/* HEAD */}
-
-              <div className="attendance-table-head">
-                <span>#</span>
-
-                <span>Họ và tên</span>
-
-                <span>Mã học viên</span>
-
-                <span>Trạng thái</span>
-
-                <span>Thời gian</span>
-
-                <span />
-              </div>
-
-              {/* LOADING */}
-
-              {loadingAttendance ? (
-                <div
-                  style={{
-                    minHeight: 330,
-
-                    display: "flex",
-
-                    flexDirection: "column",
-
-                    alignItems: "center",
-
-                    justifyContent: "center",
-
-                    gap: 12,
-
-                    color: "#94A3B8",
-                  }}
-                >
-                  <Spin size="large" />
-
-                  <span>Đang tải danh sách...</span>
-                </div>
-              ) : !selectedClassId ? (
-                <Empty
-                  description="Vui lòng chọn lớp"
-                  style={{
-                    padding: "70px 20px",
-                  }}
-                />
-              ) : paginatedStudents.length === 0 ? (
-                <Empty
-                  description="Không tìm thấy học viên"
-                  style={{
-                    padding: "70px 20px",
-                  }}
-                />
-              ) : (
-                paginatedStudents.map((student, index) => {
-                  const status =
-                    student.status || student.attendance_status || null;
-
-                  const config = status ? STATUS_CONFIG[status] : null;
-
-                  const number = (currentPage - 1) * pageSize + index + 1;
-
-                  return (
-                    <div
-                      key={student.student_id}
-                      className="attendance-table-row"
-                    >
-                      {/* NUMBER */}
-
-                      <div>
-                        <span className="attendance-number">{number}</span>
-                      </div>
-
-                      {/* STUDENT */}
-
-                      <div className="attendance-student">
-                        <Avatar size={39} className="attendance-avatar">
-                          {(student.student_name || "?")
-                            .charAt(0)
-                            .toUpperCase()}
-                        </Avatar>
-
-                        <div className="attendance-student-info">
-                          <div className="attendance-student-name">
-                            <span>{student.student_name}</span>
-
-                            <Tooltip title="Xem lịch sử">
-                              <button
-                                type="button"
-                                className="attendance-student-eye"
-                                onClick={() => handleViewStudent(student)}
-                              >
-                                <EyeOutlined />
-                              </button>
-                            </Tooltip>
-                          </div>
-
-                          <div className="attendance-student-meta">
-                            <span>
-                              {student.code || `ID: ${student.student_id}`}
-                            </span>
-
-                            {student.attendance_id && (
-                              <span className="attendance-checked">
-                                ✓ Đã điểm danh
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* CODE */}
-
-                      <div className="attendance-code">
-                        {student.code ||
-                          `HS${String(student.student_id).padStart(5, "0")}`}
-                      </div>
-
-                      {/* STATUS */}
-
-                      <div>
-                        {config ? (
-                          <span
-                            className="attendance-status"
-                            style={{
-                              color: config.color,
-
-                              background: config.bg,
-
-                              borderColor: config.border,
-                            }}
-                          >
-                            {config.icon}
-
-                            {config.label}
-                          </span>
-                        ) : (
-                          <span className="attendance-status-empty">
-                            Chưa điểm danh
-                          </span>
-                        )}
-                      </div>
-
-                      {/* TIME */}
-
-                      <div>
-                        {student.check_in_time ? (
-                          <span className="attendance-time">
-                            {student.check_in_time}
-                          </span>
-                        ) : (
-                          <span className="attendance-time empty">-</span>
-                        )}
-                      </div>
-
-                      {/* MORE */}
-
-                      <div>
-                        <Tooltip title="Xem chi tiết">
-                          <button
-                            type="button"
-                            className="attendance-more"
-                            onClick={() => handleViewStudent(student)}
-                          >
-                            <MoreOutlined />
-                          </button>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* FOOTER */}
-
-          {!loadingAttendance && students.length > 0 && (
-            <div className="attendance-table-footer">
-              <span>
-                Hiển thị{" "}
-                <strong>
-                  {paginationStart}-{paginationEnd}
-                </strong>{" "}
-                trong tổng số <strong>{filteredStudents.length}</strong> học
-                viên
-              </span>
-
-              <TablePagination
-                current={currentPage}
-                pageSize={pageSize}
-                total={filteredStudents.length}
-                onChange={(page, size) => {
-                  setCurrentPage(Number(page));
-
-                  setPageSize(Number(size));
-                }}
-                showSizeChanger
-                pageSizeOptions={[10, 20, 50]}
-              />
-            </div>
-          )}
-        </section>
-
-        {/* =================================================
-            RIGHT — CAMERA
-        ================================================= */}
-
-        <section className="attendance-panel qr-panel">
-          <div className="attendance-panel-header">
-            <div className="attendance-title-group">
-              <div className="attendance-icon qr">
-                <QrcodeOutlined />
-              </div>
-
-              <div className="attendance-title-text">
-                <h2>Điểm danh bằng QR</h2>
-
-                <p>Quét mã QR học viên trực tiếp</p>
-              </div>
-            </div>
-
-            {/* TOGGLE */}
-
-            <button
-              type="button"
-              className={`qr-toggle ${qrScannerOpen ? "enabled" : ""}`}
-              onClick={() => {
-                if (!selectedClassId) {
-                  message.warning("Vui lòng chọn lớp trước.");
-
-                  return;
-                }
-
-                if (attendanceLocked) {
-                  message.warning("Ngày điểm danh đã khóa.");
-
-                  return;
-                }
-
-                setQrScannerOpen((prev) => !prev);
-              }}
-            >
-              <span className="qr-toggle-circle" />
-
-              {qrScannerOpen ? "Đang bật" : "Đang tắt"}
-            </button>
-          </div>
-
-          {/* =====================================================
-      CAMERA HIỆN TRỰC TIẾP TẠI ĐÂY
-  ===================================================== */}
-
-          <div className="qr-camera-area">
-            <QRCodeScanner
-              open={qrScannerOpen}
-              classId={selectedClassId}
-              onSuccess={handleQRSuccess}
-              onFinishAttendance={handleFinishQRScan}
-            />
-          </div>
-
-          {/* GUIDE */}
-
-          <div className="qr-guide">
-            <div className="qr-guide-title">
-              <div className="qr-guide-icon">💡</div>
-
-              <div>
-                <strong>Hướng dẫn điểm danh</strong>
-
-                <span>Sử dụng camera QR</span>
-              </div>
-            </div>
-
-            <div className="qr-step">
-              <span className="qr-step-number">1</span>
-
-              <p>Bật camera bằng công tắc phía trên.</p>
-            </div>
-
-            <div className="qr-step">
-              <span className="qr-step-number">2</span>
-
-              <p>Đưa mã QR của học viên vào khung.</p>
-            </div>
-
-            <div className="qr-step">
-              <span className="qr-step-number">3</span>
-
-              <p>Hệ thống tự động ghi nhận điểm danh.</p>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* =================================================
-          STUDENT HISTORY MODAL
-      ================================================= */}
-
-      <Modal
-        open={studentDetailOpen}
-        onCancel={() => setStudentDetailOpen(false)}
-        footer={null}
-        centered
-        width={650}
-        title={
-          <div
-            style={{
-              display: "flex",
-
-              alignItems: "center",
-
-              gap: 8,
-
-              fontWeight: 700,
-            }}
-          >
-            <UserOutlined />
-            Lịch sử chuyên cần
-          </div>
-        }
-      >
-        {loadingStudentHistory ? (
-          <div
-            style={{
-              minHeight: 250,
-
-              display: "flex",
-
-              alignItems: "center",
-
-              justifyContent: "center",
-            }}
-          >
-            <Spin size="large" />
-          </div>
-        ) : (
-          <>
-            <div
-              style={{
-                display: "flex",
-
-                alignItems: "center",
-
-                gap: 12,
-
-                marginBottom: 18,
-              }}
-            >
-              <Avatar
-                size={48}
-                style={{
-                  background: "linear-gradient(135deg,#ff7692,#ec4a70)",
-                }}
-              >
-                {(selectedStudent?.student_name || "?").charAt(0).toUpperCase()}
-              </Avatar>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: 15,
-
-                    fontWeight: 750,
-
-                    color: "#334155",
-                  }}
-                >
-                  {selectedStudent?.student_name}
-                </div>
-
-                <div
-                  style={{
-                    color: "#94A3B8",
-
-                    fontSize: 11,
-
-                    marginTop: 3,
-                  }}
-                >
-                  {selectedStudent?.code ||
-                    `ID: ${selectedStudent?.student_id}`}
-                </div>
-              </div>
-            </div>
-
-            <Row gutter={[10, 10]}>
-              <Col span={6}>
-                <Statistic title="Tổng buổi" value={monthlyStatistics.total} />
-              </Col>
-
-              <Col span={6}>
-                <Statistic
-                  title="Có mặt"
-                  value={monthlyStatistics.present}
-                  valueStyle={{
-                    color: "#269653",
-                  }}
-                />
-              </Col>
-
-              <Col span={6}>
-                <Statistic
-                  title="Muộn"
-                  value={monthlyStatistics.late}
-                  valueStyle={{
-                    color: "#C58A13",
-                  }}
-                />
-              </Col>
-
-              <Col span={6}>
-                <Statistic
-                  title="Vắng"
-                  value={monthlyStatistics.absent}
-                  valueStyle={{
-                    color: "#E44848",
-                  }}
-                />
-              </Col>
-            </Row>
-
-            <Divider />
-
-            {monthlyHistory.length === 0 ? (
-              <Empty description="Không có lịch sử điểm danh trong tháng này." />
-            ) : (
-              <div
-                style={{
-                  maxHeight: 360,
-
-                  overflowY: "auto",
-                }}
-              >
-                {monthlyHistory.map((item, index) => {
-                  const config = STATUS_CONFIG[item.status] || {};
-
-                  return (
-                    <div
-                      key={item.id || item.attendance_id || index}
-                      className="attendance-history-row"
-                      style={{
-                        background: config.bg || "#F8FAFC",
-
-                        border: `1px solid ${config.border || "#E2E8F0"}`,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-
-                          alignItems: "center",
-
-                          gap: 8,
-                        }}
-                      >
-                        <CalendarOutlined />
-
-                        <strong>
-                          {dayjs(item.attendance_date).format("DD/MM/YYYY")}
-                        </strong>
-                      </div>
-
-                      <Tag
-                        style={{
-                          margin: 0,
-
-                          color: config.color,
-
-                          borderColor: config.border,
-
-                          background: "#fff",
-                        }}
-                      >
-                        {config.label || item.status}
-                      </Tag>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-      </Modal>
-    </div>
+        `}</style>
+    </ConfigProvider>
   );
 };
 

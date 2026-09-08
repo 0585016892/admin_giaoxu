@@ -1,103 +1,124 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-
 import {
-  Table,
-  Card,
-  Typography,
-  Button,
-  Tag,
   Avatar,
-  Space,
-  Input,
-  Select,
-  Row,
+  Button,
+  Card,
   Col,
-  Pagination,
-  message,
-  Tooltip,
-  Form,
-  Popconfirm,
   Empty,
-  Divider,
-  Skeleton,
-  Badge,
+  Form,
+  Input,
+  Pagination,
+  Popconfirm,
   Progress,
+  Row,
+  Select,
+  Skeleton,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
 } from "antd";
 
 import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-  FileTextOutlined,
-  TrophyOutlined,
-  RiseOutlined,
-  CheckCircleOutlined,
-  EyeOutlined,
-  TeamOutlined,
   BookOutlined,
   CalendarOutlined,
+  CheckCircleOutlined,
+  DeleteOutlined,
   DesktopOutlined,
+  EditOutlined,
+  EyeOutlined,
+  FilterOutlined,
   FormOutlined,
+  PlusOutlined,
+  RiseOutlined,
+  SearchOutlined,
+  TeamOutlined,
+  TrophyOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
 
-import AppFormModal from "../../components/common/AppFormModal";
-import ResultForm from "../../components/forms/ResultForm";
-
 import {
-  getResults,
-  getResultStatistics,
+  createResult,
+  deleteResult,
+  getClassStatistics,
+  getResultsByClass,
   getResultsByStudent,
   getStudentStatistics,
-  createResult,
   updateResult,
-  deleteResult,
 } from "../../api/resultApi";
 
-import studentApi from "../../api/studentApi";
 import classApi from "../../api/classApi";
+import studentApi from "../../api/studentApi";
 
 import AppDetailModal from "../../components/common/AppDetailModal";
-import StatCard from "../../components/common/StatCard";
+import AppFormModal from "../../components/common/AppFormModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
+import StatCard from "../../components/common/StatCard";
+import ResultForm from "../../components/forms/ResultForm";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
-const primaryNavy = "#1B365D";
-
-// =========================================================
-// COLORS
-// =========================================================
+/* ============================================================
+   DESIGN SYSTEM
+============================================================ */
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryDark: "#4338CA",
-  primaryLight: "#EEF2FF",
+  primary: "#F4729A",
+  primaryDark: "#E85D87",
+  primaryLight: "#FFF0F5",
+  primaryBorder: "#F8C8D8",
 
-  green: "#16A34A",
-  greenLight: "#F0FDF4",
+  lavender: "#B98AE8",
+  lavenderLight: "#F6EEFF",
 
-  orange: "#D97706",
-  orangeLight: "#FFFBEB",
+  green: "#34B27B",
+  greenLight: "#ECFDF5",
 
-  red: "#DC2626",
+  orange: "#F59E0B",
+  orangeLight: "#FEF3C7",
+
+  red: "#EF4444",
   redLight: "#FEF2F2",
 
-  blue: "#2563EB",
+  blue: "#3B82F6",
   blueLight: "#EFF6FF",
 
-  text: "#0F172A",
-  textSecondary: "#64748B",
-  border: "#E2E8F0",
-  background: "#F8FAFC",
+  text: "#493F47",
+  textSecondary: "#918792",
+  textMuted: "#A59BA3",
+
+  border: "#F3E8EE",
+  background: "#FAF8FA",
   white: "#FFFFFF",
 };
 
-// =========================================================
-// HELPERS
-// =========================================================
+/* ============================================================
+   HELPERS
+============================================================ */
+
+const unwrapResponse = (response) => {
+  if (!response) return {};
+
+  // axios response
+  if (response?.data?.success !== undefined) {
+    return response.data;
+  }
+
+  // API response
+  if (response?.success !== undefined) {
+    return response;
+  }
+
+  // trường hợp response.data là object
+  if (response?.data) {
+    return response.data;
+  }
+
+  return response;
+};
 
 const getStudentName = (record, studentsMap) => {
   const student = studentsMap.get(Number(record?.student_id));
@@ -116,9 +137,10 @@ const getScoreStatus = (score) => {
 
   if (value >= 8) {
     return {
-      label: "Tốt",
+      label: "Giỏi / Tốt",
       color: COLORS.green,
       background: COLORS.greenLight,
+      tagColor: "success",
     };
   }
 
@@ -127,6 +149,7 @@ const getScoreStatus = (score) => {
       label: "Đạt",
       color: COLORS.orange,
       background: COLORS.orangeLight,
+      tagColor: "warning",
     };
   }
 
@@ -134,12 +157,13 @@ const getScoreStatus = (score) => {
     label: "Chưa đạt",
     color: COLORS.red,
     background: COLORS.redLight,
+    tagColor: "error",
   };
 };
 
-// =========================================================
-// SCORE DISPLAY
-// =========================================================
+/* ============================================================
+   SCORE DISPLAY
+============================================================ */
 
 const ScoreDisplay = ({ score, large = false }) => {
   const value =
@@ -148,29 +172,21 @@ const ScoreDisplay = ({ score, large = false }) => {
   const status = getScoreStatus(value);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: large ? 12 : 8,
-        flexWrap: "wrap",
-      }}
-    >
+    <Space size={8} align="center">
       <div
         style={{
-          minWidth: large ? 58 : 48,
-          height: large ? 42 : 34,
+          minWidth: large ? 60 : 44,
+          height: large ? 42 : 32,
           padding: "0 10px",
           borderRadius: 10,
           background: status.background,
           color: status.color,
-          border: `1px solid ${status.color}25`,
+          border: `1px solid ${status.color}30`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontSize: large ? 18 : 14,
-          fontWeight: 800,
-          boxSizing: "border-box",
+          fontWeight: 700,
         }}
       >
         {value.toFixed(1)}
@@ -181,27 +197,28 @@ const ScoreDisplay = ({ score, large = false }) => {
           bordered={false}
           style={{
             margin: 0,
-            borderRadius: 6,
+            borderRadius: 8,
             color: status.color,
             background: status.background,
             fontWeight: 600,
+            padding: "4px 10px",
           }}
         >
           {status.label}
         </Tag>
       )}
-    </div>
+    </Space>
   );
 };
 
-// =========================================================
-// MAIN
-// =========================================================
+/* ============================================================
+   MAIN
+============================================================ */
 
 const ResultsPage = () => {
-  // =======================================================
-  // LOADING
-  // =======================================================
+  /* ============================================================
+     LOADING
+  ============================================================ */
 
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
@@ -212,36 +229,29 @@ const ResultsPage = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // =======================================================
-  // DATA
-  // =======================================================
+  /* ============================================================
+     DATA
+  ============================================================ */
 
   const [results, setResults] = useState([]);
   const [students, setStudents] = useState([]);
   const [statistics, setStatistics] = useState(null);
-
-  // =======================================================
-  // TEACHER CLASSES
-  // =======================================================
-
   const [teacherClasses, setTeacherClasses] = useState([]);
 
-  // =======================================================
-  // FILTER
-  // =======================================================
+  /* ============================================================
+     FILTER
+  ============================================================ */
 
   const [searchText, setSearchText] = useState("");
-
-  // Không cho mặc định all nếu giáo viên có nhiều lớp.
-  // Ban đầu chưa chọn lớp.
+  const [scoreFilter, setScoreFilter] = useState("all");
   const [classId, setClassId] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // =======================================================
-  // DETAIL
-  // =======================================================
+  /* ============================================================
+     DETAIL MODAL
+  ============================================================ */
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -249,32 +259,31 @@ const ResultsPage = () => {
   const [studentResults, setStudentResults] = useState([]);
   const [studentStats, setStudentStats] = useState(null);
 
-  // =======================================================
-  // FORM
-  // =======================================================
+  /* ============================================================
+     FORM MODAL
+  ============================================================ */
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingResult, setEditingResult] = useState(null);
 
   const [form] = Form.useForm();
 
-  // =======================================================
-  // LOAD TEACHER CLASSES
-  // =======================================================
+  /* ============================================================
+     LOAD TEACHER CLASSES
+  ============================================================ */
 
   const loadTeacherClasses = useCallback(async () => {
     try {
       setTeacherClassesLoading(true);
 
       const response = await classApi.getClassTeacher();
-
-      const resData = response?.data || response;
+      const resData = unwrapResponse(response);
 
       if (resData?.success === false) {
         setTeacherClasses([]);
 
         message.error(
-          resData?.message || "Không thể lấy danh sách lớp giáo viên quản lý",
+          resData?.message || "Không thể lấy danh sách lớp quản lý",
         );
 
         return [];
@@ -290,17 +299,16 @@ const ResultsPage = () => {
         .filter((item) => item?.id !== undefined && item?.id !== null)
         .map((item) => ({
           ...item,
+
           id: Number(item.id),
+
           name:
             item.name || item.class_name || item.className || `Lớp #${item.id}`,
         }));
 
       setTeacherClasses(list);
 
-      /*
-       * Nếu đang chọn một lớp nhưng lớp đó không còn
-       * thuộc giáo viên thì reset.
-       */
+      // Nếu lớp đang chọn không còn tồn tại
       if (
         classId &&
         !list.some((item) => String(item.id) === String(classId))
@@ -308,20 +316,19 @@ const ResultsPage = () => {
         setClassId(null);
       }
 
-      /*
-       * Nếu chỉ có 1 lớp → tự chọn.
-       */
+      // Chỉ có 1 lớp thì tự chọn
       if (list.length === 1) {
         setClassId(String(list[0].id));
       }
 
       return list;
     } catch (error) {
+      console.error("LOAD TEACHER CLASSES ERROR:", error);
+
       setTeacherClasses([]);
 
       message.error(
-        error?.response?.data?.message ||
-          "Không thể lấy danh sách lớp giáo viên quản lý",
+        error?.response?.data?.message || "Không thể lấy danh sách lớp quản lý",
       );
 
       return [];
@@ -330,32 +337,30 @@ const ResultsPage = () => {
     }
   }, [classId]);
 
-  // =======================================================
-  // LOAD RESULTS
-  // =======================================================
+  /* ============================================================
+     LOAD RESULTS
+     
+     API:
+     GET /api/results/class/:classId
+  ============================================================ */
 
   const loadResults = useCallback(async (selectedClassId) => {
+    if (!selectedClassId) {
+      setResults([]);
+      return;
+    }
+
     try {
       setLoading(true);
 
-      /*
-       * Chưa chọn lớp thì không lấy bảng điểm.
-       */
-      if (!selectedClassId) {
-        setResults([]);
-        return;
-      }
+      const response = await getResultsByClass(selectedClassId);
 
-      const response = await getResults({
-        class_id: selectedClassId,
-      });
-
-      const resData = response?.data || response;
+      const resData = unwrapResponse(response);
 
       if (resData?.success === false) {
         setResults([]);
 
-        message.error(resData?.message || "Không thể lấy bảng điểm");
+        message.error(resData?.message || "Không thể lấy bảng điểm lớp");
 
         return;
       }
@@ -368,45 +373,39 @@ const ResultsPage = () => {
 
       setResults(data);
     } catch (error) {
-      console.error("GET RESULTS ERROR:", error);
+      console.error("LOAD RESULTS BY CLASS ERROR:", error);
 
       setResults([]);
 
       message.error(
-        error?.response?.data?.message ||
-          "Không thể kết nối đến máy chủ khi tải bảng điểm",
+        error?.response?.data?.message || "Không thể kết nối máy chủ điểm số",
       );
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // =======================================================
-  // LOAD STUDENTS OF SELECTED CLASS
-  // =======================================================
+  /* ============================================================
+     LOAD STUDENTS
+     
+     API:
+     GET /api/students?class_id=xxx
+  ============================================================ */
 
   const loadStudents = useCallback(async (selectedClassId) => {
+    if (!selectedClassId) {
+      setStudents([]);
+      return;
+    }
+
     try {
       setStudentsLoading(true);
 
-      /*
-       * Chưa chọn lớp → không lấy học viên.
-       */
-      if (!selectedClassId) {
-        setStudents([]);
-        return;
-      }
-
-      /*
-       * Nếu studentApi hỗ trợ class_id:
-       *
-       * GET /students?class_id=17
-       */
       const response = await studentApi.getAll({
         class_id: selectedClassId,
       });
 
-      const resData = response?.data || response;
+      const resData = unwrapResponse(response);
 
       let list = [];
 
@@ -420,61 +419,69 @@ const ResultsPage = () => {
 
       setStudents(list);
     } catch (error) {
+      console.error("LOAD STUDENTS ERROR:", error);
+
       setStudents([]);
 
       message.error(
-        error?.response?.data?.message ||
-          "Không thể lấy danh sách học viên của lớp",
+        error?.response?.data?.message || "Không thể lấy danh sách học viên",
       );
     } finally {
       setStudentsLoading(false);
     }
   }, []);
 
-  // =======================================================
-  // LOAD STATISTICS
-  // =======================================================
+  /* ============================================================
+     LOAD CLASS STATISTICS
+     
+     API:
+     GET /api/results/class/:classId/statistics
+  ============================================================ */
 
   const loadStatistics = useCallback(async (selectedClassId) => {
+    if (!selectedClassId) {
+      setStatistics(null);
+      return;
+    }
+
     try {
       setStatsLoading(true);
 
-      /*
-       * Nếu API statistics hỗ trợ class_id
-       * thì truyền class_id.
-       */
-      const response = selectedClassId
-        ? await getResultStatistics({
-            class_id: selectedClassId,
-          })
-        : null;
+      // QUAN TRỌNG:
+      // getClassStatistics(classId)
+      // KHÔNG phải getClassStatistics({ class_id })
+      const response = await getClassStatistics(selectedClassId);
 
-      if (!response) {
-        setStatistics(null);
-        return;
-      }
-
-      const resData = response?.data || response;
+      const resData = unwrapResponse(response);
 
       if (resData?.success === false) {
         setStatistics(null);
         return;
       }
 
-      setStatistics(resData?.data || resData || null);
+      setStatistics(resData?.data || null);
     } catch (error) {
+      console.error("LOAD CLASS STATISTICS ERROR:", error);
+
       setStatistics(null);
     } finally {
       setStatsLoading(false);
     }
   }, []);
 
-  // =======================================================
-  // LOAD ALL
-  // =======================================================
+  /* ============================================================
+     LOAD ALL DATA
+  ============================================================ */
 
   const loadData = useCallback(
     async (selectedClassId) => {
+      if (!selectedClassId) {
+        setResults([]);
+        setStudents([]);
+        setStatistics(null);
+        return;
+      }
+
       await Promise.all([
         loadResults(selectedClassId),
         loadStudents(selectedClassId),
@@ -484,38 +491,33 @@ const ResultsPage = () => {
     [loadResults, loadStudents, loadStatistics],
   );
 
-  // =======================================================
-  // INITIAL LOAD
-  // =======================================================
+  /* ============================================================
+     INITIAL LOAD CLASSES
+  ============================================================ */
 
   useEffect(() => {
     loadTeacherClasses();
   }, [loadTeacherClasses]);
 
-  // =======================================================
-  // LOAD DATA WHEN CLASS CHANGES
-  // =======================================================
+  /* ============================================================
+     LOAD WHEN CLASS CHANGES
+  ============================================================ */
 
   useEffect(() => {
     setCurrentPage(1);
     setSearchText("");
+    setScoreFilter("all");
 
     loadData(classId);
   }, [classId, loadData]);
 
-  // =======================================================
-  // REFRESH
-  // =======================================================
+  /* ============================================================
+     REFRESH
+  ============================================================ */
 
   const handleRefresh = useCallback(async () => {
     const classes = await loadTeacherClasses();
 
-    /*
-     * Sau khi refresh:
-     * - nếu đang có classId → tải lại lớp đó
-     * - nếu chưa có mà chỉ có 1 lớp → loadData sẽ chạy
-     *   theo effect khi classId thay đổi
-     */
     if (
       classId &&
       classes.some((item) => String(item.id) === String(classId))
@@ -524,9 +526,9 @@ const ResultsPage = () => {
     }
   }, [classId, loadTeacherClasses, loadData]);
 
-  // =======================================================
-  // STUDENT MAP
-  // =======================================================
+  /* ============================================================
+     MAP STUDENTS
+  ============================================================ */
 
   const studentsMap = useMemo(() => {
     const map = new Map();
@@ -538,9 +540,9 @@ const ResultsPage = () => {
     return map;
   }, [students]);
 
-  // =======================================================
-  // CLASS LIST
-  // =======================================================
+  /* ============================================================
+     CLASS LIST
+  ============================================================ */
 
   const classList = useMemo(() => {
     return [...teacherClasses].sort((a, b) =>
@@ -548,20 +550,22 @@ const ResultsPage = () => {
     );
   }, [teacherClasses]);
 
-  // =======================================================
-  // SELECTED CLASS
-  // =======================================================
+  /* ============================================================
+     SELECTED CLASS
+  ============================================================ */
 
   const selectedClass = useMemo(() => {
     return classList.find((item) => String(item.id) === String(classId));
   }, [classList, classId]);
 
-  // =======================================================
-  // FILTER RESULTS
-  // =======================================================
+  /* ============================================================
+     FILTER RESULTS
+  ============================================================ */
 
   const filteredResults = useMemo(() => {
     let data = [...results];
+
+    /* SEARCH */
 
     if (searchText.trim()) {
       const keyword = searchText.trim().toLowerCase();
@@ -575,35 +579,44 @@ const ResultsPage = () => {
           item.student_id || student?.id || "",
         ).toLowerCase();
 
-        const className = String(
-          item.class_name || item.className || "",
-        ).toLowerCase();
-
         const guardianName = String(student?.guardian_name || "").toLowerCase();
 
         return (
           studentName.includes(keyword) ||
           studentId.includes(keyword) ||
-          className.includes(keyword) ||
           guardianName.includes(keyword)
         );
       });
     }
 
-    /*
-     * Thêm lớp filter ở frontend để chắc chắn
-     * bảng đang hiển thị đúng lớp được chọn.
-     */
-    if (classId) {
-      data = data.filter((item) => String(item.class_id) === String(classId));
+    /* SCORE FILTER */
+
+    if (scoreFilter !== "all") {
+      data = data.filter((item) => {
+        const avg = Number(item.average_score || 0);
+
+        if (scoreFilter === "good") {
+          return avg >= 8;
+        }
+
+        if (scoreFilter === "pass") {
+          return avg >= 5 && avg < 8;
+        }
+
+        if (scoreFilter === "fail") {
+          return avg < 5;
+        }
+
+        return true;
+      });
     }
 
     return data;
-  }, [results, searchText, classId, studentsMap]);
+  }, [results, searchText, scoreFilter, studentsMap]);
 
-  // =======================================================
-  // PAGINATION
-  // =======================================================
+  /* ============================================================
+     PAGINATION
+  ============================================================ */
 
   const paginatedResults = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -611,9 +624,62 @@ const ResultsPage = () => {
     return filteredResults.slice(start, start + pageSize);
   }, [filteredResults, currentPage, pageSize]);
 
-  // =======================================================
-  // DETAIL
-  // =======================================================
+  /* ============================================================
+     COMPUTED STATISTICS
+     
+     API statistics:
+       total_students
+       total_results
+       average_score
+       highest_score
+       lowest_score
+       passed_students
+       failed_students
+
+     API chưa trả good_students nên tính từ results.
+  ============================================================ */
+
+  const computedStats = useMemo(() => {
+    const apiStats = statistics || {};
+
+    const totalStudents =
+      Number(apiStats.total_students) || students.length || results.length || 0;
+
+    const totalResults = Number(apiStats.total_results) || 0;
+
+    const averageScore = Number(apiStats.average_score) || 0;
+
+    const passedStudents = Number(apiStats.passed_students) || 0;
+
+    const failedStudents = Number(apiStats.failed_students) || 0;
+
+    const goodStudents = results.filter(
+      (item) => Number(item.average_score || 0) >= 8,
+    ).length;
+
+    const passRate =
+      totalStudents > 0
+        ? Math.round((passedStudents / totalStudents) * 100)
+        : 0;
+
+    const goodRate =
+      totalStudents > 0 ? Math.round((goodStudents / totalStudents) * 100) : 0;
+
+    return {
+      totalStudents,
+      totalResults,
+      averageScore,
+      passedStudents,
+      failedStudents,
+      goodStudents,
+      passRate,
+      goodRate,
+    };
+  }, [statistics, students.length, results]);
+
+  /* ============================================================
+     LOAD STUDENT DETAIL
+  ============================================================ */
 
   const fetchStudentDetailsData = useCallback(
     async (studentId) => {
@@ -627,8 +693,12 @@ const ResultsPage = () => {
           getStudentStatistics(studentId),
         ]);
 
+        /* ==========================
+             RESULTS
+          ========================== */
+
         if (resultsResponse.status === "fulfilled") {
-          const resData = resultsResponse.value?.data || resultsResponse.value;
+          const resData = unwrapResponse(resultsResponse.value);
 
           const list = Array.isArray(resData?.data)
             ? resData.data
@@ -636,10 +706,7 @@ const ResultsPage = () => {
               ? resData
               : [];
 
-          /*
-           * Chỉ hiển thị kết quả thuộc lớp
-           * đang được chọn.
-           */
+          // Chỉ hiển thị kết quả của lớp đang chọn
           const classResults = classId
             ? list.filter((item) => String(item.class_id) === String(classId))
             : list;
@@ -649,14 +716,23 @@ const ResultsPage = () => {
           setStudentResults([]);
         }
 
-        if (statsResponse.status === "fulfilled") {
-          const resData = statsResponse.value?.data || statsResponse.value;
+        /* ==========================
+             STUDENT STATISTICS
+          ========================== */
 
-          setStudentStats(resData?.data || resData || null);
+        if (statsResponse.status === "fulfilled") {
+          const resData = unwrapResponse(statsResponse.value);
+
+          setStudentStats(resData?.data || null);
         } else {
           setStudentStats(null);
         }
       } catch (error) {
+        console.error("FETCH STUDENT DETAIL ERROR:", error);
+
+        setStudentResults([]);
+        setStudentStats(null);
+
         message.error("Không thể lấy chi tiết điểm của học viên");
       } finally {
         setDetailLoading(false);
@@ -665,14 +741,15 @@ const ResultsPage = () => {
     [classId],
   );
 
-  // =======================================================
-  // VIEW DETAIL
-  // =======================================================
+  /* ============================================================
+     VIEW DETAIL
+  ============================================================ */
 
   const handleViewDetail = useCallback(
     (record) => {
       const student = studentsMap.get(Number(record.student_id)) || {
         id: record.student_id,
+
         name:
           record.student_name ||
           record.studentName ||
@@ -688,20 +765,18 @@ const ResultsPage = () => {
     [studentsMap, fetchStudentDetailsData],
   );
 
-  // =======================================================
-  // CREATE
-  // =======================================================
+  /* ============================================================
+     CREATE
+  ============================================================ */
 
   const handleCreate = () => {
     if (!classId) {
       message.warning("Vui lòng chọn lớp trước khi nhập điểm");
-
       return;
     }
 
     if (!students.length) {
-      message.warning("Lớp này chưa có học viên");
-
+      message.warning("Lớp này hiện chưa có học viên");
       return;
     }
 
@@ -719,17 +794,17 @@ const ResultsPage = () => {
     setModalOpen(true);
   };
 
-  // =======================================================
-  // EDIT
-  // =======================================================
+  /* ============================================================
+     EDIT
+  ============================================================ */
 
   const handleEdit = (record) => {
-    /*
-     * Không cho sửa điểm ngoài lớp hiện tại.
-     */
-    if (classId && String(record.class_id) !== String(classId)) {
-      message.error("Học viên không thuộc lớp đang chọn");
-
+    if (
+      classId &&
+      record.class_id &&
+      String(record.class_id) !== String(classId)
+    ) {
+      message.error("Kết quả không thuộc lớp đang chọn");
       return;
     }
 
@@ -753,22 +828,9 @@ const ResultsPage = () => {
     setModalOpen(true);
   };
 
-  // =======================================================
-  // CLOSE FORM
-  // =======================================================
-
-  const handleCloseForm = () => {
-    if (submitting) return;
-
-    setModalOpen(false);
-    setEditingResult(null);
-
-    form.resetFields();
-  };
-
-  // =======================================================
-  // SUBMIT
-  // =======================================================
+  /* ============================================================
+     SUBMIT CREATE / UPDATE
+  ============================================================ */
 
   const handleSubmit = async () => {
     try {
@@ -776,14 +838,9 @@ const ResultsPage = () => {
 
       if (!classId) {
         message.error("Vui lòng chọn lớp");
-
         return;
       }
 
-      /*
-       * Kiểm tra học viên có thuộc danh sách
-       * của lớp hiện tại hay không.
-       */
       const selectedStudentId = Number(values.student_id);
 
       const validStudent = students.some(
@@ -792,7 +849,6 @@ const ResultsPage = () => {
 
       if (!validStudent) {
         message.error("Học viên không thuộc lớp đang chọn");
-
         return;
       }
 
@@ -801,10 +857,9 @@ const ResultsPage = () => {
       const payload = {
         student_id: selectedStudentId,
 
-        /*
-         * Gửi class_id để backend có thể
-         * kiểm tra quyền.
-         */
+        // Giữ class_id trong payload.
+        // Backend hiện tại có thể chưa lưu,
+        // nhưng dùng để tương thích về sau.
         class_id: Number(classId),
 
         score: Number(values.score),
@@ -826,11 +881,10 @@ const ResultsPage = () => {
         response = await createResult(payload);
       }
 
-      const resData = response?.data || response;
+      const resData = unwrapResponse(response);
 
       if (resData?.success === false) {
-        message.error(resData?.message || "Không thể lưu kết quả");
-
+        message.error(resData?.message || "Không thể lưu điểm");
         return;
       }
 
@@ -849,21 +903,21 @@ const ResultsPage = () => {
         await fetchStudentDetailsData(selectedStudent.id);
       }
     } catch (error) {
-      if (error?.errorFields) {
-        return;
-      }
+      if (!error?.errorFields) {
+        console.error("SAVE RESULT ERROR:", error);
 
-      message.error(
-        error?.response?.data?.message || "Có lỗi xảy ra khi lưu điểm",
-      );
+        message.error(
+          error?.response?.data?.message || "Có lỗi xảy ra khi lưu điểm",
+        );
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  // =======================================================
-  // DELETE
-  // =======================================================
+  /* ============================================================
+     DELETE
+  ============================================================ */
 
   const handleDelete = async (id) => {
     if (!id) return;
@@ -873,15 +927,14 @@ const ResultsPage = () => {
 
       const response = await deleteResult(id);
 
-      const resData = response?.data || response;
+      const resData = unwrapResponse(response);
 
       if (resData?.success === false) {
         message.error(resData?.message || "Không thể xóa điểm");
-
         return;
       }
 
-      message.success("Xóa điểm thành công");
+      message.success("Đã xóa điểm thành công");
 
       await loadData(classId);
 
@@ -889,29 +942,35 @@ const ResultsPage = () => {
         await fetchStudentDetailsData(selectedStudent.id);
       }
     } catch (error) {
+      console.error("DELETE RESULT ERROR:", error);
+
       message.error(error?.response?.data?.message || "Không thể xóa điểm");
     } finally {
       setDeletingId(null);
     }
   };
 
-  // =======================================================
-  // TABLE COLUMNS
-  // =======================================================
+  /* ============================================================
+     TABLE COLUMNS
+  ============================================================ */
 
   const columns = [
     {
-      title: "#",
+      title: "STT",
       width: 60,
       align: "center",
 
       render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
     },
 
+    /* ==========================
+       STUDENT
+    ========================== */
+
     {
       title: "Học viên",
       key: "student",
-      width: 290,
+      width: 280,
 
       render: (_, record) => {
         const student = studentsMap.get(Number(record.student_id));
@@ -921,89 +980,127 @@ const ResultsPage = () => {
         const guardian = student?.guardian_name;
 
         return (
-          <div className="result-student-cell">
-            <Avatar size={44} className="result-student-avatar">
+          <Space size={12} align="center">
+            <Avatar
+              size={42}
+              style={{
+                backgroundColor: COLORS.primaryLight,
+
+                color: COLORS.primaryDark,
+
+                fontWeight: 700,
+
+                border: `1px solid ${COLORS.primaryBorder}`,
+              }}
+            >
               {name.charAt(0).toUpperCase()}
             </Avatar>
 
-            <div className="result-student-info">
+            <div>
               <Text
                 strong
-                ellipsis
                 style={{
                   display: "block",
-                  maxWidth: 210,
+
                   color: COLORS.text,
+
                   fontSize: 14,
+
+                  lineHeight: 1.3,
                 }}
               >
                 {name}
               </Text>
 
-              <div className="result-student-meta">
+              <Space
+                size={6}
+                style={{
+                  marginTop: 2,
+                }}
+              >
                 <Text
-                  type="secondary"
                   style={{
                     fontSize: 11,
+                    color: COLORS.textMuted,
                   }}
                 >
-                  #{record.student_id}
+                  ID: #{record.student_id}
                 </Text>
 
                 {guardian && (
                   <>
                     <Text
-                      type="secondary"
                       style={{
-                        margin: "0 5px",
                         fontSize: 10,
+                        color: COLORS.textMuted,
                       }}
                     >
                       •
                     </Text>
 
                     <Text
-                      type="secondary"
-                      ellipsis
                       style={{
-                        maxWidth: 130,
                         fontSize: 11,
+                        color: COLORS.textSecondary,
                       }}
                     >
-                      {guardian}
+                      PH: {guardian}
                     </Text>
                   </>
                 )}
-              </div>
+              </Space>
             </div>
-          </div>
+          </Space>
         );
       },
     },
 
+    /* ==========================
+       TOTAL RESULTS
+    ========================== */
+
     {
-      title: "Bài kiểm tra",
+      title: "Bài thi",
       dataIndex: "total_results",
+
       key: "total_results",
-      width: 120,
+
+      width: 100,
+
       align: "center",
 
       render: (value) => (
-        <div className="result-count-cell">
-          <div className="result-count-icon">
-            <BookOutlined />
-          </div>
+        <Tag
+          color="purple"
+          style={{
+            borderRadius: 12,
+            padding: "2px 10px",
+            fontWeight: 600,
+          }}
+        >
+          <BookOutlined
+            style={{
+              marginRight: 4,
+            }}
+          />
 
-          <Text strong>{Number(value) || 0}</Text>
-        </div>
+          {Number(value) || 0}
+        </Tag>
       ),
     },
 
+    /* ==========================
+       AVERAGE
+    ========================== */
+
     {
       title: "Điểm trung bình",
+
       dataIndex: "average_score",
+
       key: "average_score",
-      width: 190,
+
+      width: 220,
 
       sorter: (a, b) =>
         Number(a.average_score || 0) - Number(b.average_score || 0),
@@ -1014,43 +1111,65 @@ const ResultsPage = () => {
         const status = getScoreStatus(value);
 
         return (
-          <div className="result-score-progress">
-            <div className="result-score-header">
+          <div
+            style={{
+              width: "100%",
+              paddingRight: 10,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+
+                justifyContent: "space-between",
+
+                marginBottom: 4,
+              }}
+            >
               <Text
                 strong
                 style={{
                   color: status.color,
+
+                  fontSize: 13,
                 }}
               >
-                {value.toFixed(1)}
+                {value.toFixed(1)} / 10
               </Text>
 
               <Text
-                type="secondary"
                 style={{
                   fontSize: 11,
+                  color: COLORS.textMuted,
                 }}
               >
-                / 10
+                {Math.round(value * 10)}%
               </Text>
             </div>
 
             <Progress
               percent={Math.min(value * 10, 100)}
               showInfo={false}
-              strokeWidth={6}
+              strokeWidth={8}
               strokeColor={status.color}
-              trailColor="#E2E8F0"
+              trailColor="#F3E8EE"
             />
           </div>
         );
       },
     },
 
+    /* ==========================
+       STATUS
+    ========================== */
+
     {
-      title: "Kết quả",
+      title: "Xếp loại",
+
       key: "status",
+
       width: 120,
+
       align: "center",
 
       render: (_, record) => {
@@ -1060,12 +1179,14 @@ const ResultsPage = () => {
           <Tag
             bordered={false}
             style={{
-              margin: 0,
-              borderRadius: 7,
-              padding: "5px 10px",
+              borderRadius: 8,
+              padding: "4px 12px",
+
               color: status.color,
+
               background: status.background,
-              fontWeight: 700,
+
+              fontWeight: 600,
             }}
           >
             {status.label}
@@ -1074,24 +1195,32 @@ const ResultsPage = () => {
       },
     },
 
+    /* ==========================
+       LATEST EXAM
+    ========================== */
+
     {
-      title: "Gần nhất",
+      title: "Thi gần nhất",
+
       dataIndex: "latest_exam_date",
+
       key: "latest_exam_date",
-      width: 145,
+
+      width: 140,
 
       render: (date) =>
         date ? (
           <Space size={6}>
             <CalendarOutlined
               style={{
-                color: COLORS.textSecondary,
+                color: COLORS.primary,
               }}
             />
 
             <Text
               style={{
                 color: COLORS.textSecondary,
+
                 fontSize: 13,
               }}
             >
@@ -1099,19 +1228,33 @@ const ResultsPage = () => {
             </Text>
           </Space>
         ) : (
-          <Text type="secondary">—</Text>
+          <Text
+            style={{
+              color: COLORS.textMuted,
+            }}
+          >
+            —
+          </Text>
         ),
     },
 
+    /* ==========================
+       ACTION
+    ========================== */
+
     {
-      title: "",
+      title: "Thao tác",
+
       key: "action",
-      width: 75,
+
+      width: 90,
+
       fixed: "right",
+
       align: "center",
 
       render: (_, record) => (
-        <Tooltip title="Xem bảng điểm">
+        <Tooltip title="Xem chi tiết điểm">
           <Button
             type="text"
             shape="circle"
@@ -1119,20 +1262,24 @@ const ResultsPage = () => {
               <EyeOutlined
                 style={{
                   color: COLORS.primary,
-                  fontSize: 18,
+
+                  fontSize: 16,
                 }}
               />
             }
             onClick={() => handleViewDetail(record)}
+            style={{
+              background: COLORS.primaryLight,
+            }}
           />
         </Tooltip>
       ),
     },
   ];
 
-  // =======================================================
-  // DETAIL COLUMNS
-  // =======================================================
+  /* ============================================================
+     DETAIL TABLE
+  ============================================================ */
 
   const detailColumns = [
     {
@@ -1144,17 +1291,21 @@ const ResultsPage = () => {
     },
 
     {
-      title: "Ngày kiểm tra",
+      title: "Ngày thi",
+
       dataIndex: "exam_date",
-      width: 145,
+
+      width: 130,
 
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
     },
 
     {
       title: "Hình thức",
+
       dataIndex: "exam_type",
-      width: 150,
+
+      width: 130,
 
       render: (type) =>
         type === "online" ? (
@@ -1162,8 +1313,7 @@ const ResultsPage = () => {
             icon={<DesktopOutlined />}
             color="blue"
             style={{
-              borderRadius: 7,
-              padding: "4px 9px",
+              borderRadius: 8,
             }}
           >
             Online
@@ -1173,8 +1323,7 @@ const ResultsPage = () => {
             icon={<FormOutlined />}
             color="orange"
             style={{
-              borderRadius: 7,
-              padding: "4px 9px",
+              borderRadius: 8,
             }}
           >
             Bài giấy
@@ -1183,8 +1332,10 @@ const ResultsPage = () => {
     },
 
     {
-      title: "Điểm",
+      title: "Điểm số",
+
       dataIndex: "score",
+
       width: 120,
 
       render: (score) => <ScoreDisplay score={score} />,
@@ -1192,27 +1343,43 @@ const ResultsPage = () => {
 
     {
       title: "Ghi chú",
+
       dataIndex: "note",
-      ellipsis: true,
 
       render: (note) =>
         note ? (
-          <Text>{note}</Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: COLORS.text,
+            }}
+          >
+            {note}
+          </Text>
         ) : (
-          <Text type="secondary" italic>
+          <Text
+            style={{
+              fontSize: 12,
+              color: COLORS.textMuted,
+
+              fontStyle: "italic",
+            }}
+          >
             Không có ghi chú
           </Text>
         ),
     },
 
     {
-      title: "",
-      width: 100,
+      title: "Thao tác",
+
+      width: 90,
+
       align: "right",
 
       render: (_, record) => (
-        <Space size={2}>
-          <Tooltip title="Sửa">
+        <Space size={4}>
+          <Tooltip title="Chỉnh sửa">
             <Button
               type="text"
               shape="circle"
@@ -1228,8 +1395,8 @@ const ResultsPage = () => {
           </Tooltip>
 
           <Popconfirm
-            title="Xóa điểm này?"
-            description="Kết quả sẽ bị xóa khỏi hệ thống."
+            title="Xóa điểm bài thi này?"
+            description="Dữ liệu điểm số sẽ bị xóa vĩnh viễn."
             okText="Xóa"
             cancelText="Hủy"
             okButtonProps={{
@@ -1252,1122 +1419,581 @@ const ResultsPage = () => {
     },
   ];
 
-  // =======================================================
-  // RENDER
-  // =======================================================
+  /* ============================================================
+     RENDER
+  ============================================================ */
 
   return (
-    <div className="results-page">
-      {/* ===================================================
+    <div
+      style={{
+        maxWidth: 1250,
+        margin: "0 auto",
+        paddingBottom: 40,
+      }}
+    >
+      {/* ======================================================
           HEADER
-      ==================================================== */}
+      ====================================================== */}
 
       <PageHeroHeader
         icon={<TrophyOutlined />}
-        badgeText="🌸 QUẢN LÝ ĐIỂM SỐ"
-        title="Bảng điểm học viên"
-        description={
-          selectedClass
-            ? `Quản lý kết quả học tập — ${selectedClass.name}`
-            : "Chọn lớp để xem bảng điểm học viên"
-        }
+        title="Bảng Điểm Học Viên"
+        description="Quản lý kết quả học tập, nhập điểm thi và theo dõi tiến trình học viên trong lớp"
         onRefresh={handleRefresh}
         refreshLoading={
           loading || studentsLoading || statsLoading || teacherClassesLoading
         }
-        primaryButtonText="Nhập điểm"
+        primaryButtonText="Nhập điểm mới"
         primaryButtonIcon={<PlusOutlined />}
         onPrimaryClick={handleCreate}
       />
 
-      {/* ===================================================
-          CLASS SELECT
-      ==================================================== */}
+      {/* ======================================================
+          CLASS SELECTOR
+      ====================================================== */}
 
       <Card
         bordered={false}
-        className="results-class-card"
+        style={{
+          marginTop: 20,
+          borderRadius: 20,
+
+          background: "linear-gradient(135deg, #FFF0F5 0%, #F6EEFF 100%)",
+
+          border: `1px solid ${COLORS.primaryBorder}`,
+
+          boxShadow: "0 6px 20px rgba(244,114,154,0.06)",
+        }}
         bodyStyle={{
-          padding: 18,
+          padding: "20px 24px",
         }}
       >
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={14} lg={10}>
-            <div>
-              <Text
-                strong
+        <Row align="middle" justify="space-between" gutter={[16, 16]}>
+          <Col xs={24} md={14}>
+            <Space size={12} align="center">
+              <div
                 style={{
-                  display: "block",
-                  marginBottom: 7,
-                  color: COLORS.text,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+
+                  background: COLORS.white,
+
+                  color: COLORS.primary,
+
+                  display: "flex",
+
+                  alignItems: "center",
+
+                  justifyContent: "center",
+
+                  fontSize: 20,
+
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.04)",
                 }}
               >
-                <TeamOutlined
-                  style={{
-                    marginRight: 7,
-                    color: COLORS.primary,
-                  }}
-                />
-                Lớp đang quản lý
-              </Text>
-
-              <Select
-                value={classId ? String(classId) : undefined}
-                onChange={(value) => {
-                  setClassId(value);
-                  setCurrentPage(1);
-                  setSearchText("");
-                }}
-                loading={teacherClassesLoading}
-                disabled={teacherClassesLoading || classList.length === 0}
-                style={{
-                  width: "100%",
-                  height: 44,
-                }}
-                placeholder={
-                  teacherClassesLoading
-                    ? "Đang tải lớp..."
-                    : "Chọn lớp giáo viên quản lý"
-                }
-                options={classList.map((item) => ({
-                  value: String(item.id),
-                  label: item.name,
-                }))}
-              />
-            </div>
-          </Col>
-
-          <Col xs={24} md={10} lg={14}>
-            <div className="selected-class-info">
-              {selectedClass ? (
-                <>
-                  <div className="selected-class-icon">
-                    <TeamOutlined />
-                  </div>
-
-                  <div>
-                    <Text
-                      type="secondary"
-                      style={{
-                        display: "block",
-                        fontSize: 11,
-                      }}
-                    >
-                      ĐANG XEM
-                    </Text>
-
-                    <Text
-                      strong
-                      style={{
-                        color: COLORS.text,
-                        fontSize: 15,
-                      }}
-                    >
-                      {selectedClass.name}
-                    </Text>
-                  </div>
-
-                  <Tag
-                    bordered={false}
-                    style={{
-                      marginLeft: "auto",
-                      borderRadius: 7,
-                      background: COLORS.primaryLight,
-                      color: COLORS.primary,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {results.length} học viên có điểm
-                  </Tag>
-                </>
-              ) : (
-                <>
-                  <TeamOutlined
-                    style={{
-                      fontSize: 24,
-                      color: COLORS.textSecondary,
-                    }}
-                  />
-
-                  <Text type="secondary">
-                    Vui lòng chọn một lớp để xem danh sách học viên và bảng điểm
-                  </Text>
-                </>
-              )}
-            </div>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* ===================================================
-          KPI
-      ==================================================== */}
-
-      <Row gutter={[16, 16]} className="results-kpi-row">
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Tổng bài kiểm tra"
-            value={Number(statistics?.total_results || 0)}
-            loading={statsLoading}
-            icon={<FileTextOutlined />}
-            iconColor={primaryNavy}
-            description={selectedClass ? selectedClass.name : "Chọn lớp"}
-          />
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Điểm trung bình"
-            value={Number(statistics?.average_score || 0).toFixed(2)}
-            loading={statsLoading}
-            icon={<RiseOutlined />}
-            iconColor={COLORS.green}
-            description="Mức điểm trung bình"
-          />
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Điểm cao nhất"
-            value={Number(statistics?.highest_score || 0).toFixed(1)}
-            loading={statsLoading}
-            icon={<TrophyOutlined />}
-            iconColor={COLORS.orange}
-            description="Thành tích cao nhất"
-          />
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            title="Kết quả"
-            value={
-              <>
-                <span
-                  style={{
-                    color: COLORS.green,
-                  }}
-                >
-                  {statistics?.passed ?? 0}
-                </span>
-
-                <span
-                  style={{
-                    margin: "0 5px",
-                    color: COLORS.border,
-                  }}
-                >
-                  /
-                </span>
-
-                <span
-                  style={{
-                    color: COLORS.red,
-                  }}
-                >
-                  {statistics?.failed ?? 0}
-                </span>
-              </>
-            }
-            loading={statsLoading}
-            icon={<CheckCircleOutlined />}
-            iconColor={COLORS.green}
-            description="Đạt / Chưa đạt"
-          />
-        </Col>
-      </Row>
-
-      {/* ===================================================
-          FILTER
-      ==================================================== */}
-
-      {classId && (
-        <Card
-          bordered={false}
-          className="results-filter-card"
-          bodyStyle={{
-            padding: 16,
-          }}
-        >
-          <Row gutter={[12, 12]} align="middle">
-            <Col xs={24} md={14} lg={12}>
-              <Input
-                allowClear
-                prefix={
-                  <SearchOutlined
-                    style={{
-                      color: "#94A3B8",
-                    }}
-                  />
-                }
-                placeholder="Tìm tên, mã học viên hoặc phụ huynh..."
-                value={searchText}
-                onChange={(e) => {
-                  setSearchText(e.target.value);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  height: 42,
-                  borderRadius: 10,
-                }}
-              />
-            </Col>
-
-            <Col xs={24} md={10} lg={12}>
-              <div className="results-found">
-                <TeamOutlined
-                  style={{
-                    color: COLORS.textSecondary,
-                  }}
-                />
-
-                <Text
-                  style={{
-                    color: COLORS.textSecondary,
-                    fontSize: 13,
-                  }}
-                >
-                  Lớp{" "}
-                  <strong
-                    style={{
-                      color: COLORS.text,
-                    }}
-                  >
-                    {selectedClass?.name}
-                  </strong>{" "}
-                  — tìm thấy{" "}
-                  <strong
-                    style={{
-                      color: COLORS.text,
-                    }}
-                  >
-                    {filteredResults.length}
-                  </strong>{" "}
-                  học viên
-                </Text>
+                <TeamOutlined />
               </div>
-            </Col>
-          </Row>
-        </Card>
-      )}
 
-      {/* ===================================================
-          MAIN TABLE
-      ==================================================== */}
-
-      <Card
-        bordered={false}
-        className="results-main-card"
-        bodyStyle={{
-          padding: 0,
-        }}
-      >
-        <div className="results-table-header">
-          <div className="results-table-title">
-            <Text
-              strong
-              style={{
-                fontSize: 16,
-                color: COLORS.text,
-              }}
-            >
-              {selectedClass
-                ? `Danh sách kết quả — ${selectedClass.name}`
-                : "Danh sách kết quả"}
-            </Text>
-
-            <Text
-              type="secondary"
-              style={{
-                display: "block",
-                marginTop: 3,
-                fontSize: 12,
-              }}
-            >
-              {selectedClass
-                ? "Chỉ hiển thị học viên thuộc lớp bạn đang quản lý"
-                : "Chọn lớp để xem bảng điểm"}
-            </Text>
-          </div>
-
-          <Tag
-            bordered={false}
-            style={{
-              margin: 0,
-              borderRadius: 7,
-              background: COLORS.primaryLight,
-              color: COLORS.primary,
-              fontWeight: 600,
-            }}
-          >
-            {filteredResults.length} học viên
-          </Tag>
-        </div>
-
-        {!classId ? (
-          <div className="results-empty">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="Vui lòng chọn lớp giáo viên đang quản lý"
-            />
-          </div>
-        ) : loading ? (
-          <div className="results-loading">
-            <Skeleton
-              active
-              paragraph={{
-                rows: 8,
-              }}
-            />
-          </div>
-        ) : filteredResults.length === 0 ? (
-          <div className="results-empty">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                searchText
-                  ? "Không tìm thấy học viên phù hợp"
-                  : "Lớp chưa có dữ liệu bảng điểm"
-              }
-            >
-              {searchText && (
-                <Button
-                  onClick={() => {
-                    setSearchText("");
-                    setCurrentPage(1);
-                  }}
-                >
-                  Xóa tìm kiếm
-                </Button>
-              )}
-            </Empty>
-          </div>
-        ) : (
-          <>
-            <div className="results-table-wrapper">
-              <Table
-                rowKey={(record) => `${record.student_id}-${record.class_id}`}
-                columns={columns}
-                dataSource={paginatedResults}
-                pagination={false}
-                scroll={{
-                  x: 1200,
-                }}
-                rowClassName={() => "result-table-row"}
-              />
-            </div>
-
-            <Divider
-              style={{
-                margin: 0,
-              }}
-            />
-
-            <div className="results-pagination">
-              <Text type="secondary" className="results-pagination-text">
-                Hiển thị <strong>{paginatedResults.length}</strong> /{" "}
-                <strong>{filteredResults.length}</strong> học viên
-              </Text>
-
-              <Pagination
-                current={currentPage}
-                pageSize={pageSize}
-                total={filteredResults.length}
-                showSizeChanger
-                pageSizeOptions={["10", "20", "50", "100"]}
-                onChange={(page, size) => {
-                  setCurrentPage(page);
-                  setPageSize(size);
-                }}
-                size="small"
-                responsive
-                showTotal={(total, range) =>
-                  `${range[0]}-${range[1]} / ${total}`
-                }
-              />
-            </div>
-          </>
-        )}
-      </Card>
-
-      {/* ===================================================
-          DETAIL MODAL
-      ==================================================== */}
-
-      <AppDetailModal
-        open={detailModalOpen}
-        loading={detailLoading}
-        width={940}
-        title={
-          selectedStudent?.name || selectedStudent?.full_name || "Học viên"
-        }
-        subtitle={`Mã học viên: #${selectedStudent?.id || ""}`}
-        onCancel={() => setDetailModalOpen(false)}
-        showEdit={false}
-        showClose
-        closeText="Đóng"
-      >
-        {detailLoading ? (
-          <Skeleton
-            active
-            paragraph={{
-              rows: 9,
-            }}
-          />
-        ) : (
-          <>
-            <Row
-              gutter={[12, 12]}
-              style={{
-                marginBottom: 22,
-              }}
-            >
-              <Col xs={24} sm={8}>
-                <div className="detail-stat-card">
-                  <Text type="secondary" className="detail-stat-label">
-                    TỔNG BÀI
-                  </Text>
-
-                  <div className="detail-stat-value">
-                    <BookOutlined
-                      style={{
-                        color: COLORS.primary,
-                        fontSize: 20,
-                      }}
-                    />
-
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 25,
-                      }}
-                    >
-                      {studentStats?.total_results ?? studentResults.length}
-                    </Text>
-                  </div>
-                </div>
-              </Col>
-
-              <Col xs={24} sm={8}>
-                <div
-                  className="detail-stat-card"
-                  style={{
-                    background: COLORS.greenLight,
-                    borderColor: "#DCFCE7",
-                  }}
-                >
-                  <Text
-                    className="detail-stat-label"
-                    style={{
-                      color: COLORS.green,
-                      fontWeight: 600,
-                    }}
-                  >
-                    ĐIỂM TRUNG BÌNH
-                  </Text>
-
-                  <div className="detail-stat-value">
-                    <RiseOutlined
-                      style={{
-                        color: COLORS.green,
-                        fontSize: 20,
-                      }}
-                    />
-
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 25,
-                        color: COLORS.green,
-                      }}
-                    >
-                      {Number(studentStats?.average_score || 0).toFixed(2)}
-                    </Text>
-                  </div>
-                </div>
-              </Col>
-
-              <Col xs={24} sm={8}>
-                <div
-                  className="detail-stat-card"
-                  style={{
-                    background: COLORS.orangeLight,
-                    borderColor: "#FEF3C7",
-                  }}
-                >
-                  <Text
-                    className="detail-stat-label"
-                    style={{
-                      color: COLORS.orange,
-                      fontWeight: 600,
-                    }}
-                  >
-                    ĐIỂM CAO NHẤT
-                  </Text>
-
-                  <div className="detail-stat-value">
-                    <TrophyOutlined
-                      style={{
-                        color: COLORS.orange,
-                        fontSize: 20,
-                      }}
-                    />
-
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 25,
-                        color: COLORS.orange,
-                      }}
-                    >
-                      {Number(studentStats?.highest_score || 0).toFixed(1)}
-                    </Text>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-
-            <div className="detail-table-title">
               <div>
                 <Text
                   strong
                   style={{
                     fontSize: 15,
+                    color: COLORS.text,
+
+                    display: "block",
                   }}
                 >
-                  Lịch sử kiểm tra
+                  Lớp giáo lý đang quản lý
                 </Text>
 
                 <Text
-                  type="secondary"
                   style={{
-                    display: "block",
-                    fontSize: 11,
-                    marginTop: 2,
+                    fontSize: 12,
+                    color: COLORS.textSecondary,
                   }}
                 >
-                  {selectedClass
-                    ? `Kết quả của ${selectedClass.name}`
-                    : "Chi tiết các bài kiểm tra"}
+                  Vui lòng chọn lớp để tải bảng điểm
                 </Text>
               </div>
+            </Space>
+          </Col>
 
-              <Badge
-                count={studentResults.length}
-                showZero
+          <Col
+            xs={24}
+            md={10}
+            style={{
+              textAlign: "right",
+            }}
+          >
+            <Select
+              size="large"
+              placeholder="-- Chọn lớp học --"
+              value={classId ? String(classId) : undefined}
+              onChange={(value) => {
+                setClassId(value);
+              }}
+              loading={teacherClassesLoading}
+              style={{
+                width: "100%",
+                maxWidth: 320,
+              }}
+              options={classList.map((item) => ({
+                value: String(item.id),
+
+                label: `🏫 ${item.name}`,
+              }))}
+            />
+          </Col>
+        </Row>
+      </Card>
+
+      {/* ======================================================
+          STATISTICS
+      ====================================================== */}
+
+      {classId && (
+        <Row
+          gutter={[16, 16]}
+          style={{
+            marginTop: 20,
+          }}
+        >
+          {/* TOTAL STUDENTS */}
+
+          <Col xs={12} sm={6}>
+            <StatCard
+              title="Tổng học viên"
+              value={computedStats.totalStudents}
+              icon={<TeamOutlined />}
+              color={COLORS.primary}
+              bg={COLORS.primaryLight}
+            />
+          </Col>
+
+          {/* TOTAL RESULTS */}
+
+          <Col xs={12} sm={6}>
+            <StatCard
+              title="Tổng bài điểm"
+              value={computedStats.totalResults}
+              icon={<BookOutlined />}
+              color={COLORS.lavender}
+              bg={COLORS.lavenderLight}
+            />
+          </Col>
+
+          {/* AVERAGE */}
+
+          <Col xs={12} sm={6}>
+            <StatCard
+              title="ĐTB Lớp"
+              value={Number(computedStats.averageScore || 0).toFixed(1)}
+              suffix="/ 10"
+              icon={<RiseOutlined />}
+              color={COLORS.green}
+              bg={COLORS.greenLight}
+            />
+          </Col>
+
+          {/* PASS RATE */}
+
+          <Col xs={12} sm={6}>
+            <StatCard
+              title="Tỷ lệ Đạt"
+              value={`${computedStats.passRate}%`}
+              icon={<CheckCircleOutlined />}
+              color={COLORS.orange}
+              bg={COLORS.orangeLight}
+            />
+          </Col>
+        </Row>
+      )}
+
+      {/* ======================================================
+          MAIN CARD
+      ====================================================== */}
+
+      <Card
+        bordered={false}
+        style={{
+          marginTop: 20,
+          borderRadius: 20,
+          background: COLORS.white,
+
+          border: `1px solid ${COLORS.primaryBorder}`,
+
+          boxShadow: "0 8px 30px rgba(0,0,0,0.03)",
+        }}
+        bodyStyle={{
+          padding: 24,
+        }}
+      >
+        {/* NO CLASS */}
+
+        {!classId ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <Space direction="vertical" align="center" size={4}>
+                <Text
+                  strong
+                  style={{
+                    color: COLORS.text,
+                  }}
+                >
+                  Chưa chọn lớp học
+                </Text>
+
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: COLORS.textMuted,
+                  }}
+                >
+                  Vui lòng chọn một lớp ở menu trên để xem bảng điểm
+                </Text>
+              </Space>
+            }
+            style={{
+              padding: "40px 0",
+            }}
+          />
+        ) : (
+          <>
+            {/* ==================================================
+                FILTER BAR
+            ================================================== */}
+
+            <Row
+              gutter={[16, 16]}
+              align="middle"
+              style={{
+                marginBottom: 20,
+              }}
+            >
+              <Col xs={24} md={12}>
+                <Input
+                  prefix={
+                    <SearchOutlined
+                      style={{
+                        color: COLORS.primary,
+                      }}
+                    />
+                  }
+                  placeholder="Tìm kiếm theo tên học viên, mã học viên..."
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.target.value);
+
+                    setCurrentPage(1);
+                  }}
+                  allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 12,
+                  }}
+                />
+              </Col>
+
+              <Col
+                xs={24}
+                md={12}
                 style={{
-                  background: COLORS.primary,
+                  textAlign: "right",
                 }}
-              />
-            </div>
+              >
+                <Space wrap align="center">
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: COLORS.textSecondary,
+                    }}
+                  >
+                    <FilterOutlined /> Lọc điểm:
+                  </Text>
 
-            <div className="detail-table-wrapper">
-              <Table
-                rowKey="id"
-                columns={detailColumns}
-                dataSource={studentResults}
-                pagination={false}
-                size="middle"
-                scroll={{
-                  x: 700,
+                  <Select
+                    value={scoreFilter}
+                    onChange={(value) => {
+                      setScoreFilter(value);
+
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      width: 160,
+                    }}
+                    size="large"
+                    options={[
+                      {
+                        value: "all",
+                        label: "Tất cả điểm",
+                      },
+
+                      {
+                        value: "good",
+                        label: "🟢 Tốt/Giỏi (≥8)",
+                      },
+
+                      {
+                        value: "pass",
+                        label: "🟠 Đạt (5-7.9)",
+                      },
+
+                      {
+                        value: "fail",
+                        label: "🔴 Chưa đạt (<5)",
+                      },
+                    ]}
+                  />
+                </Space>
+              </Col>
+            </Row>
+
+            {/* ==================================================
+                TABLE
+            ================================================== */}
+
+            <Table
+              columns={columns}
+              dataSource={paginatedResults}
+              rowKey={(record) => record.id || record.student_id}
+              loading={loading || studentsLoading}
+              pagination={false}
+              scroll={{
+                x: 850,
+              }}
+              locale={{
+                emptyText: (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description="Chưa có dữ liệu điểm cho lớp này"
+                  />
+                ),
+              }}
+            />
+
+            {/* ==================================================
+                PAGINATION
+            ================================================== */}
+
+            {filteredResults.length > 0 && (
+              <div
+                style={{
+                  marginTop: 20,
+
+                  display: "flex",
+
+                  justifyContent: "space-between",
+
+                  alignItems: "center",
+
+                  flexWrap: "wrap",
+
+                  gap: 12,
                 }}
-                locale={{
-                  emptyText: "Học viên chưa có điểm kiểm tra trong lớp này",
-                }}
-              />
-            </div>
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: COLORS.textSecondary,
+                  }}
+                >
+                  Hiển thị <b>{paginatedResults.length}</b> /{" "}
+                  <b>{filteredResults.length}</b> học viên
+                </Text>
+
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={filteredResults.length}
+                  onChange={(page, pSize) => {
+                    setCurrentPage(page);
+
+                    setPageSize(pSize);
+                  }}
+                  showSizeChanger
+                  pageSizeOptions={["10", "20", "50"]}
+                />
+              </div>
+            )}
           </>
+        )}
+      </Card>
+
+      {/* ======================================================
+          STUDENT DETAIL MODAL
+      ====================================================== */}
+
+      <AppDetailModal
+        open={detailModalOpen}
+        onCancel={() => {
+          setDetailModalOpen(false);
+        }}
+        showEdit={false}
+        title={
+          selectedStudent
+            ? `Bảng Điểm Cá Nhân - ${
+                selectedStudent.name || selectedStudent.full_name || ""
+              }`
+            : "Bảng Điểm Học Viên"
+        }
+        width={800}
+      >
+        {detailLoading ? (
+          <Skeleton
+            active
+            paragraph={{
+              rows: 6,
+            }}
+          />
+        ) : (
+          <div>
+            {/* STUDENT INFO */}
+
+            <Card
+              bordered={false}
+              style={{
+                borderRadius: 16,
+
+                background: COLORS.primaryLight,
+
+                marginBottom: 20,
+
+                border: `1px solid ${COLORS.primaryBorder}`,
+              }}
+              bodyStyle={{
+                padding: 16,
+              }}
+            >
+              <Row align="middle" justify="space-between" gutter={16}>
+                <Col>
+                  <Space size={12}>
+                    <Avatar
+                      size={48}
+                      style={{
+                        backgroundColor: COLORS.white,
+
+                        color: COLORS.primary,
+
+                        fontWeight: 700,
+                      }}
+                    >
+                      {(
+                        selectedStudent?.name ||
+                        selectedStudent?.full_name ||
+                        "H"
+                      )
+                        .charAt(0)
+                        .toUpperCase()}
+                    </Avatar>
+
+                    <div>
+                      <Title
+                        level={5}
+                        style={{
+                          margin: 0,
+                          color: COLORS.text,
+                        }}
+                      >
+                        {selectedStudent?.name || selectedStudent?.full_name}
+                      </Title>
+
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: COLORS.textSecondary,
+                        }}
+                      >
+                        Mã HV: #{selectedStudent?.id} • Lớp:{" "}
+                        {selectedClass?.name}
+                      </Text>
+                    </div>
+                  </Space>
+                </Col>
+
+                <Col>
+                  {studentStats && (
+                    <Space size={12}>
+                      <div
+                        style={{
+                          textAlign: "right",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            color: COLORS.textMuted,
+
+                            display: "block",
+                          }}
+                        >
+                          ĐTB Tích lũy
+                        </Text>
+
+                        <Text
+                          strong
+                          style={{
+                            fontSize: 18,
+                            color: COLORS.primaryDark,
+                          }}
+                        >
+                          {Number(studentStats.average_score || 0).toFixed(1)}
+                        </Text>
+                      </div>
+                    </Space>
+                  )}
+                </Col>
+              </Row>
+            </Card>
+
+            {/* DETAIL RESULTS */}
+
+            <Table
+              columns={detailColumns}
+              dataSource={studentResults}
+              rowKey="id"
+              pagination={false}
+              size="small"
+              scroll={{
+                x: 650,
+              }}
+              locale={{
+                emptyText: "Chưa có bài thi nào",
+              }}
+            />
+          </div>
         )}
       </AppDetailModal>
 
-      {/* ===================================================
-          CREATE / EDIT
-      ==================================================== */}
+      {/* ======================================================
+          CREATE / EDIT MODAL
+      ====================================================== */}
 
       <AppFormModal
         open={modalOpen}
-        loading={submitting}
-        editing={!!editingResult}
-        form={form}
-        width={520}
-        createTitle="Nhập điểm kiểm tra"
-        editTitle="Cập nhật kết quả"
-        subtitle={
-          editingResult
-            ? `Chỉnh sửa kết quả #${editingResult.id}`
-            : `Thêm kết quả — ${selectedClass?.name || ""}`
-        }
-        icon={<FormOutlined />}
-        createText="Thêm điểm"
-        editText="Lưu thay đổi"
-        onCancel={handleCloseForm}
+        onCancel={() => {
+          if (!submitting) {
+            setModalOpen(false);
+
+            setEditingResult(null);
+
+            form.resetFields();
+          }
+        }}
+        onOk={handleSubmit}
+        confirmLoading={submitting}
+        title={editingResult ? "Chỉnh sửa điểm bài thi" : "Nhập điểm mới"}
+        width={540}
       >
         <ResultForm
           form={form}
           students={students}
-          studentsLoading={studentsLoading}
           editingResult={editingResult}
-          submitting={submitting}
-          onFinish={handleSubmit}
+          disabledStudentSelect={Boolean(editingResult)}
         />
       </AppFormModal>
-
-      {/* ===================================================
-          CSS
-      ==================================================== */}
-
-      <style>
-        {`
-          .results-page {
-            min-height: 100vh;
-            padding: clamp(14px, 3vw, 28px)
-              clamp(12px, 3vw, 32px);
-            background: #F8FAFC;
-            overflow-x: hidden;
-            box-sizing: border-box;
-          }
-
-          .results-class-card {
-            border-radius: 16px;
-            margin-bottom: 20px;
-            box-shadow:
-              0 2px 10px rgba(15, 23, 42, 0.04);
-          }
-
-          .results-kpi-row {
-            margin-bottom: 24px;
-          }
-
-          .selected-class-info {
-            min-height: 72px;
-            padding: 12px 15px;
-            border-radius: 12px;
-            background: #F8FAFC;
-            border: 1px solid ${COLORS.border};
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          }
-
-          .selected-class-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 11px;
-            background: ${COLORS.primaryLight};
-            color: ${COLORS.primary};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 19px;
-          }
-
-          .results-filter-card {
-            border-radius: 16px;
-            margin-bottom: 16px;
-            box-shadow:
-              0 2px 10px rgba(15, 23, 42, 0.04);
-          }
-
-          .results-found {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 8px;
-            min-height: 42px;
-          }
-
-          .results-main-card {
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow:
-              0 2px 12px rgba(15, 23, 42, 0.04);
-          }
-
-          .results-table-header {
-            padding: 18px 22px;
-            border-bottom: 1px solid ${COLORS.border};
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-          }
-
-          .results-table-title {
-            min-width: 0;
-          }
-
-          .results-loading {
-            padding: 32px;
-          }
-
-          .results-empty {
-            padding: 80px 24px;
-            text-align: center;
-          }
-
-          .results-table-wrapper {
-            width: 100%;
-            overflow: hidden;
-          }
-
-          .result-student-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-          }
-
-          .result-student-avatar {
-            flex-shrink: 0;
-            background:
-              linear-gradient(
-                135deg,
-                #6366F1,
-                #4F46E5
-              );
-            font-weight: 800;
-          }
-
-          .result-student-info {
-            min-width: 0;
-            flex: 1;
-          }
-
-          .result-student-meta {
-            display: flex;
-            align-items: center;
-            min-width: 0;
-            margin-top: 3px;
-          }
-
-          .result-count-cell {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-          }
-
-          .result-count-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            background: ${COLORS.primaryLight};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: ${COLORS.primary};
-          }
-
-          .result-score-progress {
-            min-width: 150px;
-          }
-
-          .result-score-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 4px;
-          }
-
-          .results-pagination {
-            padding: 15px 22px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-          }
-
-          .results-pagination-text {
-            font-size: 12px;
-          }
-
-          .detail-stat-card {
-            padding: 18px;
-            border-radius: 14px;
-            background: #F8FAFC;
-            border: 1px solid ${COLORS.border};
-          }
-
-          .detail-stat-label {
-            font-size: 12px;
-          }
-
-          .detail-stat-value {
-            margin-top: 7px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          }
-
-          .detail-table-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            gap: 10px;
-          }
-
-          .detail-table-wrapper {
-            width: 100%;
-            overflow: hidden;
-          }
-
-          .result-table-row:hover > td {
-            background: #F8FAFC !important;
-          }
-
-          .ant-table-thead > tr > th {
-            background: #F8FAFC !important;
-            color: #64748B !important;
-            font-size: 11px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            border-bottom: 1px solid #E2E8F0 !important;
-          }
-
-          .ant-table-tbody > tr > td {
-            border-bottom: 1px solid #F1F5F9 !important;
-          }
-
-          .ant-pagination-item {
-            border-radius: 7px !important;
-          }
-
-          .ant-select-selector {
-            border-radius: 10px !important;
-          }
-
-          .ant-input-affix-wrapper {
-            border-radius: 10px !important;
-          }
-
-          .ant-input-number {
-            border-radius: 9px !important;
-          }
-
-          .ant-picker {
-            border-radius: 9px !important;
-          }
-
-          .ant-modal-content {
-            border-radius: 18px !important;
-            overflow: hidden;
-          }
-
-          .ant-modal-header {
-            margin-bottom: 16px !important;
-          }
-
-          @media (max-width: 992px) {
-            .results-page {
-              padding-left: 20px;
-              padding-right: 20px;
-            }
-
-            .results-found {
-              justify-content: flex-start;
-            }
-
-            .selected-class-info {
-              min-height: auto;
-            }
-          }
-
-          @media (max-width: 768px) {
-            .results-page {
-              padding: 14px 12px 24px;
-            }
-
-            .results-kpi-row {
-              margin-bottom: 16px;
-            }
-
-            .results-class-card {
-              border-radius: 14px;
-            }
-
-            .results-filter-card {
-              border-radius: 14px;
-            }
-
-            .results-main-card {
-              border-radius: 14px;
-            }
-
-            .results-table-header {
-              padding: 15px 16px;
-              align-items: flex-start;
-            }
-
-            .results-table-title {
-              flex: 1;
-            }
-
-            .results-loading {
-              padding: 20px 16px;
-            }
-
-            .results-empty {
-              padding: 55px 16px;
-            }
-
-            .results-pagination {
-              padding: 14px 16px;
-              flex-direction: column;
-              align-items: flex-start;
-            }
-
-            .results-pagination .ant-pagination {
-              width: 100%;
-              display: flex;
-              flex-wrap: wrap;
-              justify-content: flex-start;
-            }
-
-            .result-student-cell {
-              gap: 9px;
-            }
-
-            .result-student-avatar {
-              width: 38px !important;
-              height: 38px !important;
-              line-height: 38px !important;
-            }
-
-            .result-score-progress {
-              min-width: 130px;
-            }
-
-            .detail-stat-card {
-              padding: 15px;
-            }
-
-            .detail-table-title {
-              margin-bottom: 10px;
-            }
-
-            .ant-table {
-              font-size: 12px;
-            }
-
-            .ant-table-thead > tr > th {
-              font-size: 10px !important;
-            }
-
-            .ant-table-tbody > tr > td {
-              padding: 10px 8px !important;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .results-page {
-              padding: 10px 8px 20px;
-            }
-
-            .results-class-card .ant-card-body {
-              padding: 12px !important;
-            }
-
-            .results-filter-card {
-              margin-bottom: 12px;
-            }
-
-            .results-filter-card .ant-card-body {
-              padding: 12px !important;
-            }
-
-            .results-table-header {
-              padding: 14px;
-              flex-direction: column;
-              align-items: stretch;
-              gap: 10px;
-            }
-
-            .results-table-header .ant-tag {
-              align-self: flex-start;
-            }
-
-            .results-found {
-              justify-content: flex-start;
-            }
-
-            .results-pagination {
-              padding: 13px 14px;
-              gap: 12px;
-            }
-
-            .results-pagination-text {
-              width: 100%;
-            }
-
-            .results-pagination .ant-pagination {
-              width: 100%;
-            }
-
-            .results-pagination .ant-pagination-options {
-              margin-inline-start: 0;
-            }
-
-            .selected-class-info {
-              padding: 11px;
-            }
-
-            .detail-stat-card {
-              padding: 14px;
-              border-radius: 12px;
-            }
-
-            .detail-stat-value {
-              margin-top: 5px;
-            }
-
-            .detail-table-title {
-              align-items: flex-start;
-            }
-
-            .ant-modal {
-              max-width: calc(100vw - 20px) !important;
-              margin: 10px auto !important;
-            }
-
-            .ant-modal-content {
-              border-radius: 14px !important;
-            }
-          }
-
-          @media (max-width: 360px) {
-            .results-page {
-              padding-left: 6px;
-              padding-right: 6px;
-            }
-
-            .results-table-header {
-              padding: 12px;
-            }
-
-            .results-pagination {
-              padding-left: 12px;
-              padding-right: 12px;
-            }
-
-            .result-student-meta {
-              display: block;
-            }
-
-            .result-student-meta > .ant-typography:nth-child(2) {
-              display: none;
-            }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            * {
-              scroll-behavior: auto !important;
-              transition: none !important;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };
