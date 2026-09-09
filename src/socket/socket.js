@@ -30,24 +30,13 @@ const socket = io(SOCKET_URL, {
 // DEBUG
 // ============================================================
 
-socket.on("connect", () => {
-  console.log("🟢 SOCKET CONNECTED:", socket.id);
-});
+socket.on("connect", () => {});
 
-socket.on("disconnect", (reason) => {
-  console.log("🔴 SOCKET DISCONNECTED:", reason);
-});
+socket.on("disconnect", () => {});
 
-socket.on("connect_error", (error) => {
-  console.error("❌ SOCKET CONNECT ERROR:", error.message);
-});
+socket.on("connect_error", () => {});
 
-socket.io.on("reconnect_attempt", () => {
-  console.log("🔄 SOCKET RECONNECTING...");
-});
+socket.io.on("reconnect_attempt", () => {});
 
-socket.io.on("reconnect", () => {
-  console.log("🟢 SOCKET RECONNECTED:", socket.id);
-});
-
+socket.io.on("reconnect", () => {});
 export default socket;

@@ -43,8 +43,6 @@ export const LicenseProvider = ({ children }) => {
         localStorage.removeItem(LICENSE_EXPIRED_KEY);
       }
     } catch (error) {
-      console.error("Check license error:", error);
-
       // Nếu API trả 402 thì chắc chắn expired
       if (error?.response?.status === 402) {
         setExpired(true);

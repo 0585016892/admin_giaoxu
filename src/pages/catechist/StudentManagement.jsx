@@ -467,7 +467,6 @@ export default function StudentManagement() {
           studentApi.getAll(),
           classApi.getAll(),
         ]);
-        console.log(studentRes);
 
         if (!mountedRef.current) {
           return;
@@ -718,8 +717,6 @@ export default function StudentManagement() {
       setSelectedRowKeys([]);
       setCurrentPage(1);
     } catch (error) {
-      console.error("Import Excel error:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||
@@ -749,8 +746,6 @@ export default function StudentManagement() {
 
       message.success("Đã tải file Excel mẫu!");
     } catch (error) {
-      console.error("Download Excel template error:", error);
-
       message.error("Không thể tải file Excel mẫu!");
     }
   }, []);
@@ -1633,7 +1628,7 @@ export default function StudentManagement() {
               </Descriptions.Item>
 
               <Descriptions.Item label="Giới tính">
-                {detailStudent.gender}
+                {detailStudent.gender === "male" ? "Nam" : "Nữ"}
               </Descriptions.Item>
 
               <Descriptions.Item label="Ngày sinh">

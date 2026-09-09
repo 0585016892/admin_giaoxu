@@ -47,8 +47,6 @@ export function UserProvider({ children }) {
     const payload = decodeJWT(token);
 
     if (!payload) {
-      console.error("❌ JWT không hợp lệ");
-
       localStorage.removeItem("token");
       setLoading(false);
       return;
@@ -56,8 +54,6 @@ export function UserProvider({ children }) {
 
     // Check hết hạn
     if (payload.exp && Date.now() >= payload.exp * 1000) {
-      console.warn("⏰ JWT đã hết hạn");
-
       localStorage.removeItem("token");
       setUser(null);
       setLoading(false);
@@ -86,8 +82,6 @@ export function UserProvider({ children }) {
   // LOGIN
   // ================================
   const login = (token) => {
-    console.log("🔐 [AUTH] LOGIN");
-
     const payload = decodeJWT(token);
 
     if (!payload) {
@@ -113,8 +107,6 @@ export function UserProvider({ children }) {
       catechist_id: payload.catechist_id,
       token,
     };
-
-    console.log("👤 [AUTH] LOGIN USER:", loggedUser);
 
     setUser(loggedUser);
 

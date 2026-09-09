@@ -64,7 +64,6 @@ const MyStudentsPage = () => {
 
       const response = await studentApi.getStudentClass();
       const data = response?.data;
-      console.log(data);
 
       if (Array.isArray(data)) {
         setStudents(data);
@@ -321,7 +320,9 @@ const MyStudentsPage = () => {
               />
             )}
 
-            <Text className="table-secondary-text">{renderValue(gender)}</Text>
+            <Text className="table-secondary-text">
+              {renderValue(gender) === "male" ? "Nam" : "Nữ"}
+            </Text>
           </div>
         );
       },
@@ -667,7 +668,7 @@ const MyStudentsPage = () => {
                   </span>
                 }
               >
-                {renderValue(selectedStudent.gender)}
+                {renderValue(selectedStudent.gender) === "male" ? "Nam" : "Nữ"}
               </Descriptions.Item>
 
               <Descriptions.Item

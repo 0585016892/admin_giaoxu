@@ -182,7 +182,6 @@ export default function CatechistManagement() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-  console.log("catechists:::", catechists);
 
   /* =========================
      FILTER & STATS
