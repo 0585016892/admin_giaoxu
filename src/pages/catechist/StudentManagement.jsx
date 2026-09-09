@@ -50,6 +50,7 @@ import {
   UserSwitchOutlined,
   QrcodeOutlined,
   DownloadOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -174,6 +175,8 @@ export default function StudentManagement() {
   const [isChangeClassModalOpen, setIsChangeClassModalOpen] = useState(false);
 
   const [changeClassStudent, setChangeClassStudent] = useState(null);
+
+  const [importing, setImporting] = useState(false);
 
   /* ===================================================
      QR
@@ -464,6 +467,7 @@ export default function StudentManagement() {
           studentApi.getAll(),
           classApi.getAll(),
         ]);
+        console.log(studentRes);
 
         if (!mountedRef.current) {
           return;
@@ -658,7 +662,98 @@ export default function StudentManagement() {
     setCurrentPage(1);
     setSelectedRowKeys([]);
   };
+  /* ===================================================
+     IMPORT EXCEL
+  =================================================== */
 
+  const handleImportExcel = async (file) => {
+    if (!file || importing) {
+      return;
+    }
+
+    // Kiểm tra định dạng
+    const isExcel =
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.type === "application/vnd.ms-excel" ||
+      file.name?.toLowerCase().endsWith(".xlsx") ||
+      file.name?.toLowerCase().endsWith(".xls");
+
+    if (!isExcel) {
+      message.error("Vui lòng chọn file Excel (.xlsx hoặc .xls)!");
+      return;
+    }
+
+    // Giới hạn 10MB
+    const isLt10M = file.size / 1024 / 1024 < 10;
+
+    if (!isLt10M) {
+      message.error("File Excel không được vượt quá 10MB!");
+      return;
+    }
+
+    try {
+      setImporting(true);
+
+      const hide = message.loading("Đang import danh sách học sinh...", 0);
+
+      try {
+        const response = await studentApi.importExcel(file);
+
+        message.success(
+          response?.data?.message ||
+            response?.data?.data?.message ||
+            "Import học sinh thành công!",
+        );
+      } finally {
+        hide();
+      }
+
+      // Load lại danh sách
+      await fetchStudents({
+        silent: true,
+      });
+
+      // Reset lựa chọn
+      setSelectedRowKeys([]);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("Import Excel error:", error);
+
+      message.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Không thể import danh sách học sinh!",
+      );
+    } finally {
+      setImporting(false);
+    }
+  };
+  /* ===================================================
+   DOWNLOAD EXCEL TEMPLATE
+=================================================== */
+
+  const handleDownloadExcelTemplate = useCallback(() => {
+    try {
+      const link = document.createElement("a");
+
+      link.href = "/templates/mau_import_hoc_sinh_FaithEdu.xlsx";
+      link.download = "mau_import_hoc_sinh_FaithEdu.xlsx";
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+
+      message.success("Đã tải file Excel mẫu!");
+    } catch (error) {
+      console.error("Download Excel template error:", error);
+
+      message.error("Không thể tải file Excel mẫu!");
+    }
+  }, []);
   /* ===================================================
      CREATE
   =================================================== */
@@ -2063,6 +2158,32 @@ export default function StudentManagement() {
               font-size: 11px;
             }
           }
+            .hero-btn-template {
+  height: 42px;
+  border-radius: 14px !important;
+  padding: 0 16px !important;
+  background: #fff !important;
+  border: 1.5px solid #D4AF37 !important;
+  color: #927500 !important;
+  font-weight: 700 !important;
+  font-family: 'Be Vietnam Pro', sans-serif !important;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
+  transition: all 0.2s ease !important;
+}
+
+.hero-btn-template:hover {
+  color: #7A6200 !important;
+  border-color: #B8961E !important;
+  background: #FFFDF5 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.22);
+}
+
+@media (max-width: 576px) {
+  .hero-btn-template {
+    height: 40px;
+  }
+}
         `}
       </style>
 
@@ -2075,7 +2196,6 @@ export default function StudentManagement() {
         {/* =================================================
             HEADER
         ================================================= */}
-
         <PageHeroHeader
           icon={<UserOutlined />}
           badgeText="🌸 QUẢN LÝ HỌC SINH"
@@ -2090,15 +2210,47 @@ export default function StudentManagement() {
             })
           }
           refreshLoading={refreshing}
+          secondaryButtonText={importing ? "Đang import..." : "Import Excel"}
+          secondaryButtonIcon={<UploadOutlined />}
+          onSecondaryClick={() => {
+            document.getElementById("student-excel-input")?.click();
+          }}
+          secondaryButtonLoading={importing}
+          secondaryButtonDisabled={loading || saving || bulkDeleting}
           primaryButtonText={
             saving && !editingStudent ? "Đang thêm..." : "Thêm học sinh"
           }
           primaryButtonIcon={<PlusOutlined />}
           onPrimaryClick={handleOpenCreateModal}
           primaryLoading={saving && !editingStudent}
-          primaryDisabled={loading || saving}
+          primaryDisabled={loading || saving || importing}
+          extra={
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleDownloadExcelTemplate}
+              disabled={loading || saving || importing || bulkDeleting}
+              className="hero-btn-template"
+            >
+              Tải Excel mẫu
+            </Button>
+          }
         />
+        <input
+          id="student-excel-input"
+          type="file"
+          accept=".xlsx,.xls"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
 
+            if (file) {
+              handleImportExcel(file);
+            }
+
+            // Cho phép chọn lại cùng một file
+            e.target.value = "";
+          }}
+        />
         {/* =================================================
             STATISTICS
         ================================================= */}

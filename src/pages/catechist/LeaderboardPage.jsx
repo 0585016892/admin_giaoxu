@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Empty, Select, Spin, Tag, message } from "antd";
+import { Button, Empty, Select, Tag, message } from "antd";
 import {
   StarFilled,
   CrownFilled,
@@ -12,7 +12,7 @@ import {
   getResultsLeaderBoard,
   getClassLeaderboard,
 } from "../../api/resultApi";
-
+import LoadingLogo from "../../components/LoadingLogo";
 import classApi from "../../api/classApi";
 
 // =========================================================
@@ -140,6 +140,8 @@ const getClassName = (item) => {
 // =========================================================
 
 const LeaderboardGame = () => {
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
   // =======================================================
   // STATE
   // =======================================================
@@ -162,11 +164,21 @@ const LeaderboardGame = () => {
   const fetchClasses = useCallback(async () => {
     try {
       setClassesLoading(true);
+      setLoadingProgress(0);
 
+      const progressTimer = setInterval(() => {
+        setLoadingProgress((prev) => {
+          if (prev >= 88) return 88;
+          if (prev < 30) return prev + 5;
+          if (prev < 60) return prev + 3;
+          return prev + 1;
+        });
+      }, 70);
       const response = await classApi.getAll();
 
       const data = normalizeListResponse(response);
-
+      clearInterval(progressTimer);
+      setLoadingProgress(100);
       setClassesList(data);
     } catch (error) {
       setClassesList([]);
@@ -461,11 +473,7 @@ const LeaderboardGame = () => {
       =================================================== */}
 
       {loading ? (
-        <div className="chibi-loading-card">
-          <Spin size="large" />
-
-          <div className="loading-text">Đang tải Bảng Vàng Chibi...</div>
-        </div>
+        <LoadingLogo progress={loadingProgress} />
       ) : students.length === 0 ? (
         <div className="chibi-empty-card">
           <Empty

@@ -23,6 +23,13 @@ const PageHeroHeader = ({
   refreshLoading = false,
   refreshTooltip = "Làm mới dữ liệu",
 
+  // --- Props cho Action phụ ---
+  secondaryButtonText,
+  secondaryButtonIcon,
+  onSecondaryClick,
+  secondaryButtonDisabled = false,
+  secondaryButtonLoading = false,
+
   // --- Props cho Action chính ---
   primaryButtonText,
   primaryButtonIcon,
@@ -44,9 +51,14 @@ const PageHeroHeader = ({
         justify="space-between"
         align="middle"
         gutter={[16, 16]}
-        style={{ position: "relative", zIndex: 2 }}
+        style={{
+          position: "relative",
+          zIndex: 2,
+        }}
       >
-        {/* BÊN TRÁI: Icon, Badge, Title, Description */}
+        {/* =========================
+            BÊN TRÁI
+        ========================== */}
         <Col xs={24} md={14} lg={16}>
           <div className="hero-left-content">
             {icon && <div className="hero-icon-box">{icon}</div>}
@@ -65,10 +77,14 @@ const PageHeroHeader = ({
           </div>
         </Col>
 
-        {/* BÊN PHẢI: Các nút hành động */}
+        {/* =========================
+            BÊN PHẢI
+        ========================== */}
         <Col xs={24} md={10} lg={8}>
           <Space size={10} wrap className="hero-actions-group">
-            {/* 1. Nút Xóa hàng loạt */}
+            {/* =================================
+                1. NÚT XÓA HÀNG LOẠT
+            ================================= */}
             {selectedCount > 0 && onBulkDelete && (
               <Popconfirm
                 title={bulkDeleteTitle || `Xóa ${selectedCount} mục đã chọn?`}
@@ -78,11 +94,16 @@ const PageHeroHeader = ({
                 okButtonProps={{
                   danger: true,
                   loading: bulkDeleting,
-                  style: { borderRadius: 10, fontWeight: 700 },
+                  style: {
+                    borderRadius: 10,
+                    fontWeight: 700,
+                  },
                 }}
                 cancelButtonProps={{
                   disabled: bulkDeleting,
-                  style: { borderRadius: 10 },
+                  style: {
+                    borderRadius: 10,
+                  },
                 }}
                 onConfirm={onBulkDelete}
               >
@@ -99,7 +120,9 @@ const PageHeroHeader = ({
               </Popconfirm>
             )}
 
-            {/* 2. Nút Refresh */}
+            {/* =================================
+                2. NÚT REFRESH
+            ================================= */}
             {onRefresh && (
               <Tooltip title={refreshTooltip}>
                 <Button
@@ -112,7 +135,25 @@ const PageHeroHeader = ({
               </Tooltip>
             )}
 
-            {/* 3. Nút Action chính */}
+            {/* =================================
+                3. ACTION PHỤ
+                Ví dụ: Import Excel
+            ================================= */}
+            {secondaryButtonText && (
+              <Button
+                icon={secondaryButtonIcon}
+                loading={secondaryButtonLoading}
+                disabled={secondaryButtonDisabled || bulkDeleting}
+                onClick={onSecondaryClick}
+                className="hero-btn-secondary"
+              >
+                {secondaryButtonText}
+              </Button>
+            )}
+
+            {/* =================================
+                4. ACTION CHÍNH
+            ================================= */}
             {primaryButtonText && (
               <AppButton
                 type="primary"
@@ -126,13 +167,17 @@ const PageHeroHeader = ({
               </AppButton>
             )}
 
-            {/* 4. Tuỳ chọn thêm */}
+            {/* =================================
+                5. EXTRA
+            ================================= */}
             {extra}
           </Space>
         </Col>
       </Row>
 
-      {/* Style CSS-in-JS với Font chữ Tiếng Việt hiện đại */}
+      {/* =========================
+          CSS
+      ========================== */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,500;0,600;0,700;0,800;0,900;1,600&family=Plus+Jakarta+Sans:wght@700;800&display=swap');
 
@@ -142,19 +187,34 @@ const PageHeroHeader = ({
           padding: 22px 24px;
           margin-bottom: 20px;
           border-radius: 24px;
-          background: linear-gradient(135deg, #FFFFFF 0%, #FFF0F3 50%, #FFE4E6 100%);
+          background: linear-gradient(
+            135deg,
+            #FFFFFF 0%,
+            #FFF0F3 50%,
+            #FFE4E6 100%
+          );
           border: 1.5px solid #FFCCD5;
           box-shadow: 0 12px 32px -4px rgba(255, 182, 193, 0.3);
-          font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+          font-family: 'Be Vietnam Pro',
+            -apple-system,
+            BlinkMacSystemFont,
+            sans-serif;
         }
 
-        /* Họa tiết phông nền */
+        /* =========================
+           DECOR
+        ========================== */
+
         .hero-decor-circle-1 {
           position: absolute;
           width: 180px;
           height: 180px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,228,230,0) 70%);
+          background: radial-gradient(
+            circle,
+            rgba(255,255,255,0.85) 0%,
+            rgba(255,228,230,0) 70%
+          );
           right: -30px;
           top: -50px;
           pointer-events: none;
@@ -181,7 +241,10 @@ const PageHeroHeader = ({
           pointer-events: none;
         }
 
-        /* Khối bên trái */
+        /* =========================
+           LEFT CONTENT
+        ========================== */
+
         .hero-left-content {
           display: flex;
           align-items: center;
@@ -192,7 +255,11 @@ const PageHeroHeader = ({
           width: 56px;
           height: 56px;
           border-radius: 18px;
-          background: linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%);
+          background: linear-gradient(
+            135deg,
+            #FF6B8B 0%,
+            #FF85A1 100%
+          );
           color: #FFFFFF;
           display: flex;
           align-items: center;
@@ -208,7 +275,10 @@ const PageHeroHeader = ({
           min-width: 0;
         }
 
-        /* Badge phụ */
+        /* =========================
+           BADGE
+        ========================== */
+
         .hero-badge {
           display: inline-block;
           color: #E11D48;
@@ -220,23 +290,36 @@ const PageHeroHeader = ({
           letter-spacing: 0.6px;
           margin-bottom: 4px;
           border: 1px solid #FECDD3;
-          font-family: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
+          font-family: 'Plus Jakarta Sans',
+            'Be Vietnam Pro',
+            sans-serif;
           text-transform: uppercase;
         }
 
-        /* Tiêu đề chính */
+        /* =========================
+           TITLE
+        ========================== */
+
         .hero-title {
           margin: 0 !important;
           color: #0F172A !important;
           font-weight: 800 !important;
-          font-size: clamp(1.25rem, 2vw, 1.6rem) !important;
+          font-size: clamp(
+            1.25rem,
+            2vw,
+            1.6rem
+          ) !important;
           line-height: 1.3 !important;
-          font-family: 'Be Vietnam Pro', sans-serif !important;
+          font-family: 'Be Vietnam Pro',
+            sans-serif !important;
           letter-spacing: -0.3px;
           word-break: break-word;
         }
 
-        /* Mô tả bên dưới */
+        /* =========================
+           DESCRIPTION
+        ========================== */
+
         .hero-description {
           display: block;
           margin-top: 4px;
@@ -244,23 +327,41 @@ const PageHeroHeader = ({
           color: #64748B;
           font-weight: 500;
           line-height: 1.45;
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family: 'Be Vietnam Pro',
+            sans-serif;
         }
 
-        /* Khối nút bấm bên phải */
+        /* =========================
+           ACTION GROUP
+        ========================== */
+
         .hero-actions-group {
           width: 100%;
           justify-content: flex-end;
         }
+
+        /* =========================
+           DELETE
+        ========================== */
 
         .hero-btn-delete {
           height: 42px;
           border-radius: 14px;
           font-weight: 700;
           padding: 0 16px;
-          font-family: 'Be Vietnam Pro', sans-serif;
-          box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25);
+          font-family: 'Be Vietnam Pro',
+            sans-serif;
+          box-shadow: 0 6px 16px rgba(
+            239,
+            68,
+            68,
+            0.25
+          );
         }
+
+        /* =========================
+           REFRESH
+        ========================== */
 
         .hero-btn-refresh {
           width: 42px;
@@ -268,7 +369,12 @@ const PageHeroHeader = ({
           border-radius: 14px;
           background: #FFFFFF !important;
           border: 1.5px solid #FFE4E6 !important;
-          box-shadow: 0 4px 12px rgba(255, 182, 193, 0.2);
+          box-shadow: 0 4px 12px rgba(
+            255,
+            182,
+            193,
+            0.2
+          );
           transition: all 0.2s ease;
         }
 
@@ -282,27 +388,118 @@ const PageHeroHeader = ({
           font-size: 16px;
         }
 
+        /* =========================
+           SECONDARY BUTTON
+        ========================== */
+
+        .hero-btn-secondary {
+          height: 42px;
+          border-radius: 14px !important;
+          padding: 0 16px !important;
+          background: rgba(255, 255, 255, 0.9) !important;
+          border: 1.5px solid #FFCCD5 !important;
+          color: #BE123C !important;
+          font-weight: 700 !important;
+          font-family: 'Be Vietnam Pro',
+            sans-serif !important;
+          box-shadow: 0 4px 12px rgba(
+            255,
+            182,
+            193,
+            0.18
+          );
+          transition: all 0.2s ease !important;
+        }
+
+        .hero-btn-secondary:hover {
+          color: #E11D48 !important;
+          border-color: #FF6B8B !important;
+          background: #FFFFFF !important;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(
+            255,
+            107,
+            139,
+            0.2
+          );
+        }
+
+        /* =========================
+           PRIMARY
+        ========================== */
+
         .hero-btn-primary {
           border-radius: 14px !important;
-          background: linear-gradient(135deg, #FF6B8B 0%, #FF85A1 100%) !important;
+          background: linear-gradient(
+            135deg,
+            #FF6B8B 0%,
+            #FF85A1 100%
+          ) !important;
           border: none !important;
           height: 42px !important;
           padding: 0 20px !important;
           font-weight: 700 !important;
-          font-family: 'Be Vietnam Pro', sans-serif !important;
-          box-shadow: 0 8px 20px rgba(255, 107, 139, 0.35) !important;
+          font-family: 'Be Vietnam Pro',
+            sans-serif !important;
+          box-shadow: 0 8px 20px rgba(
+            255,
+            107,
+            139,
+            0.35
+          ) !important;
           transition: all 0.2s ease !important;
         }
 
         .hero-btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 24px rgba(255, 107, 139, 0.45) !important;
+          box-shadow: 0 10px 24px rgba(
+            255,
+            107,
+            139,
+            0.45
+          ) !important;
         }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
 
         @media (max-width: 768px) {
           .hero-actions-group {
             justify-content: flex-start;
             margin-top: 8px;
+          }
+        }
+
+        @media (max-width: 576px) {
+          .hero-header-wrapper {
+            padding: 18px;
+            border-radius: 20px;
+          }
+
+          .hero-left-content {
+            gap: 12px;
+          }
+
+          .hero-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 15px;
+            font-size: 21px;
+          }
+
+          .hero-actions-group {
+            width: 100%;
+          }
+
+          .hero-actions-group > * {
+            max-width: 100%;
+          }
+
+          .hero-btn-secondary,
+          .hero-btn-primary,
+          .hero-btn-delete {
+            height: 40px;
           }
         }
       `}</style>

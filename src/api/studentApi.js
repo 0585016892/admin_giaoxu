@@ -19,6 +19,17 @@ const studentApi = {
   update: (id, data) => axiosClient.put(`/students/${id}`, data),
 
   delete: (id) => axiosClient.delete(`/students/${id}`),
+  // Import học sinh từ Excel
+  importExcel: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return axiosClient.post("/students/import-excel", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
 };
 
 export default studentApi;

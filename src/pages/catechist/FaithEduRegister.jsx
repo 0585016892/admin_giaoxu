@@ -2345,20 +2345,7 @@ const FaithEduRegister = () => {
                       </Col>
 
                       <Col span={24}>
-                        <Form.Item
-                          label="Username"
-                          name="username"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Vui lòng nhập tên đăng nhập",
-                            },
-                            {
-                              min: 4,
-                              message: "Tên đăng nhập tối thiểu 4 ký tự",
-                            },
-                          ]}
-                        >
+                        <Form.Item label="Username" name="username">
                           <Input
                             prefix={<UserOutlined />}
                             disabled

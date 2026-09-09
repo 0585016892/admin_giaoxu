@@ -25,7 +25,6 @@ const decodeJWT = (token) => {
 
     return JSON.parse(json);
   } catch (error) {
-    console.error("❌ JWT DECODE ERROR:", error);
     return null;
   }
 };
@@ -39,8 +38,6 @@ export function UserProvider({ children }) {
   // ================================
   useEffect(() => {
     const token = localStorage.getItem("token");
-
-    console.log("🔄 [AUTH] Restore token:", !!token);
 
     if (!token) {
       setLoading(false);
@@ -56,8 +53,6 @@ export function UserProvider({ children }) {
       setLoading(false);
       return;
     }
-
-    console.log("🔓 [AUTH] RESTORED JWT:", payload);
 
     // Check hết hạn
     if (payload.exp && Date.now() >= payload.exp * 1000) {
@@ -83,8 +78,6 @@ export function UserProvider({ children }) {
       token,
     };
 
-    console.log("✅ [AUTH] USER RESTORED:", restoredUser);
-
     setUser(restoredUser);
     setLoading(false);
   }, []);
@@ -100,8 +93,6 @@ export function UserProvider({ children }) {
     if (!payload) {
       throw new Error("JWT token không hợp lệ");
     }
-
-    console.log("🔓 [AUTH] DECODED:", payload);
 
     if (payload.exp && Date.now() >= payload.exp * 1000) {
       throw new Error("JWT token đã hết hạn");
@@ -134,10 +125,6 @@ export function UserProvider({ children }) {
   // LOGOUT
   // ================================
   const logout = () => {
-    const currentRole = user?.role;
-
-    console.log("🚪 [AUTH] LOGOUT:", currentRole);
-
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("catechist_user");

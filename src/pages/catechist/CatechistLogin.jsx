@@ -1,18 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  Form,
-  Input,
-  Button,
-  message,
-  ConfigProvider,
-  Checkbox,
-  Spin,
-} from "antd";
+import { Form, Input, Button, message, ConfigProvider, Checkbox } from "antd";
 import {
   UserOutlined,
   LockOutlined,
   ArrowRightOutlined,
-  LoadingOutlined,
   HeartFilled,
   SafetyCertificateOutlined,
   ThunderboltOutlined,
@@ -22,54 +13,36 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api/axios";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-
+import LoadingLogo from "../../components/LoadingLogo";
 import background from "../../assets/images/login-background.png";
 import logobackground from "../../assets/images/logo-giao-ly.png.png";
 
 /* =========================================================
-   🖼️ HÌNH ẢNH
+   🖼️ HÌNH ẢNH & THÔNG SỐ
 ========================================================= */
 
 const LOGIN_BACKGROUND = background;
 const LOGIN_LOGO = logobackground;
 
-/* =========================================================
-   🎨 PALETTE
-========================================================= */
-
 const colors = {
-  primary: "#6366F1",
-
+  primary: "#4F46E5",
+  primaryHover: "#4338CA",
   primaryGradient:
-    "linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #C084FC 100%)",
-
+    "linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #9333EA 100%)",
   accentGold: "#F59E0B",
-  accentCyan: "#06B6D4",
-
-  bgDark: "#0B0F19",
-
-  cardBg: "rgba(255, 255, 255, 0.94)",
-
+  bgDark: "#030712",
+  cardBg: "rgba(255, 255, 255, 0.85)",
+  cardBorder: "rgba(255, 255, 255, 0.6)",
   textMain: "#0F172A",
-  textMuted: "#64748B",
+  textMuted: "#475569",
 };
-
-const antIcon = (
-  <LoadingOutlined
-    style={{
-      fontSize: 44,
-      color: colors.primary,
-    }}
-    spin
-  />
-);
 
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useUser();
 
   const [loading, setLoading] = useState(false);
-
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [form] = Form.useForm();
 
   /* =========================================================
@@ -78,27 +51,31 @@ export default function Login() {
 
   useEffect(() => {
     const savedUser = localStorage.getItem("remember_me");
-
     if (savedUser) {
       try {
-        const { email, password } = JSON.parse(savedUser);
-
+        const { email } = JSON.parse(savedUser);
         form.setFieldsValue({
           email,
-          password,
           remember: true,
         });
       } catch (e) {
-        message.error("Lỗi đọc thông tin đăng nhập đã lưu");
+        // Fallback silently if parsing fails
       }
     }
   }, [form]);
 
-  /* =========================================================
-     LOGIN
-  ========================================================= */
   const onFinish = async (values) => {
     setLoading(true);
+    setLoadingProgress(0);
+
+    const progressTimer = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 88) return 88;
+        if (prev < 30) return prev + 5;
+        if (prev < 60) return prev + 3;
+        return prev + 1;
+      });
+    }, 70);
 
     try {
       const res = await api.post("/auth/login", {
@@ -106,62 +83,52 @@ export default function Login() {
         password: values.password,
       });
 
-      // ========================================================
-      // KIỂM TRA TOKEN
-      // ========================================================
-
       if (!res.data?.token) {
-        message.error("Đăng nhập thất bại: Server không trả token");
+        clearInterval(progressTimer);
+        setLoadingProgress(0);
+        setLoading(false);
+        message.error(
+          "Đăng nhập thất bại: Hệ thống phản hồi thiếu token xác thực.",
+        );
         return;
       }
-
-      // ========================================================
-      // REMEMBER ME
-      // ========================================================
 
       if (values.remember) {
         localStorage.setItem(
           "remember_me",
-          JSON.stringify({
-            email: values.email,
-          }),
+          JSON.stringify({ email: values.email }),
         );
       } else {
         localStorage.removeItem("remember_me");
       }
 
-      // ========================================================
-      // LOGIN CONTEXT
-      // ========================================================
-
       try {
         await login(res.data.token);
       } catch (loginError) {
-        message.error("Không thể lưu phiên đăng nhập");
-
+        clearInterval(progressTimer);
+        setLoadingProgress(0);
+        setLoading(false);
+        message.error("Không thể khởi tạo phiên làm việc.");
         return;
       }
 
-      // ========================================================
-      // SUCCESS
-      // ========================================================
+      clearInterval(progressTimer);
+      setLoadingProgress(100);
+      message.success("Chào mừng Huynh Trưởng trở lại!");
 
-      // Đợi Context cập nhật user rồi chuyển trang
       setTimeout(() => {
-        navigate("/catechist", {
-          replace: true,
-        });
+        navigate("/catechist", { replace: true });
       }, 800);
-      message.success("Chào mừng Huynh Trưởng / GLV trở lại!");
     } catch (error) {
+      clearInterval(progressTimer);
+      setLoadingProgress(0);
+      setLoading(false);
+
       const msg =
         error?.response?.data?.message ||
         error?.message ||
-        "Đăng nhập thất bại!";
-
+        "Thông tin tài khoản hoặc mật khẩu không chính xác.";
       message.error(msg);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -170,153 +137,73 @@ export default function Login() {
       theme={{
         token: {
           colorPrimary: colors.primary,
-          borderRadius: 14,
-          controlHeightLG: 52,
+          borderRadius: 16,
+          controlHeightLG: 54,
           fontFamily: "'Be Vietnam Pro', sans-serif",
         },
       }}
     >
       {/* =====================================================
-          LOADING
+          LOADING OVERLAY CAO CẤP
       ====================================================== */}
-
       <AnimatePresence>
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="neo-loading-overlay"
-          >
-            <motion.div
-              initial={{
-                scale: 0.85,
-                y: 15,
-              }}
-              animate={{
-                scale: 1,
-                y: 0,
-              }}
-              exit={{
-                scale: 0.85,
-                opacity: 0,
-              }}
-              className="neo-loading-card"
-            >
-              <Spin indicator={antIcon} />
-
-              <h3 className="loading-title">ĐANG KẾT NỐI HỆ THỐNG...</h3>
-
-              <p className="loading-desc">
-                Xác thực quyền Quản trị & Huynh Trưởng
-              </p>
-            </motion.div>
-          </motion.div>
-        )}
+        {loading && <LoadingLogo progress={loadingProgress} />}
       </AnimatePresence>
 
       {/* =====================================================
-          FULL PAGE
+          GIAO DIỆN CHÍNH
       ====================================================== */}
-
-      <div className="canvas-wrapper">
-        {/* ===================================================
-            BACKGROUND
-        ==================================================== */}
-
-        <div className="art-layer">
+      <div className="faith-canvas">
+        {/* Lớp nền nghệ thuật hiệu ứng chiều sâu */}
+        <div className="faith-backdrop">
           <img
             src={LOGIN_BACKGROUND}
-            alt="Background Artwork"
-            className="art-image"
+            alt="Faith Background"
+            className="backdrop-image"
           />
-
-          <div className="art-overlay-vignette" />
-
-          <div className="art-blur-spheres">
-            <div className="sphere sphere-1" />
-            <div className="sphere sphere-2" />
-          </div>
+          <div className="backdrop-gradient-mask" />
+          <div className="ambient-orb orb-one" />
+          <div className="ambient-orb orb-two" />
         </div>
 
-        {/* ===================================================
-            HEADER
-        ==================================================== */}
-
+        {/* Header tối giản */}
         <motion.header
-          className="canvas-header"
-          initial={{
-            y: -40,
-            opacity: 0,
-          }}
-          animate={{
-            y: 0,
-            opacity: 1,
-          }}
-          transition={{
-            duration: 0.7,
-            ease: "easeOut",
-          }}
+          className="faith-header"
+          initial={{ y: -30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div className="brand-pill">
-            <img src={LOGIN_LOGO} alt="Logo" className="brand-logo" />
-
-            <div className="brand-divider" />
-
-            <span className="brand-tag">CỔNG THIẾU NHI THÁNH THỂ</span>
+          <div className="header-badge">
+            <img src={LOGIN_LOGO} alt="Faith Logo" className="badge-logo" />
+            <div className="badge-divider" />
+            <span className="badge-title">CỔNG THIẾU NHI THÁNH THỂ</span>
           </div>
 
-          <div className="header-status">
-            <span className="status-dot" />
-
-            <span>Hệ thống Quản trị v2026</span>
+          <div className="header-status-pill">
+            <span className="live-dot" />
+            <span>Hệ thống FaithEdu v2026</span>
           </div>
         </motion.header>
 
-        {/* ===================================================
-            MAIN
-        ==================================================== */}
-
-        <main className="canvas-content">
+        {/* Khung đăng nhập trung tâm */}
+        <main className="faith-main">
           <motion.div
-            className="glass-card"
-            initial={{
-              scale: 0.92,
-              y: 25,
-              opacity: 0,
-            }}
-            animate={{
-              scale: 1,
-              y: 0,
-              opacity: 1,
-            }}
-            transition={{
-              duration: 0.65,
-              delay: 0.15,
-              ease: [0.16, 1, 0.3, 1],
-            }}
+            className="faith-glass-panel"
+            initial={{ scale: 0.94, y: 30, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* =================================================
-                CARD HEADER
-            ================================================== */}
-
-            <div className="card-header">
-              <div className="role-tag">
+            <div className="panel-heading">
+              <div className="panel-tag">
                 <ThunderboltOutlined />
-
-                <span>HUYNH TRƯỞNG / GIÁO LÝ VIÊN</span>
+                <span>HUYNH TRƯỞNG & GIÁO LÝ VIÊN</span>
               </div>
-
-              <h1 className="card-title">Trang Quản Trị Giáo Lý</h1>
-
-              <p className="card-subtitle">
-                Đăng nhập tài khoản quản trị để đồng hành cùng Thiếu Nhi.
+              <h1 className="panel-title">Cổng Đăng Nhập Quản Trị</h1>
+              <p className="panel-subtitle">
+                Kết nối yêu thương, phụng sự và đồng hành cùng các em thiếu nhi
+                mỗi ngày.
               </p>
             </div>
-
-            {/* =================================================
-                LOGIN FORM
-            ================================================== */}
 
             <Form
               form={form}
@@ -325,1114 +212,512 @@ export default function Login() {
               requiredMark={false}
               size="large"
             >
-              {/* EMAIL */}
-
               <Form.Item
                 name="email"
                 rules={[
-                  {
-                    required: true,
-                    message: "Vui lòng nhập Email hoặc Tên tài khoản!",
-                  },
+                  { required: true, message: "Vui lòng nhập Email tài khoản!" },
                 ]}
               >
                 <Input
-                  prefix={<UserOutlined className="input-icon" />}
-                  placeholder="Email hoặc Tên tài khoản Huynh Trưởng"
-                  className="neo-input"
+                  prefix={<UserOutlined className="form-icon" />}
+                  placeholder="Email hoặc Tên tài khoản quản trị"
+                  className="faith-input"
                   autoComplete="username"
                 />
               </Form.Item>
-
-              {/* PASSWORD */}
 
               <Form.Item
                 name="password"
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng nhập Mật khẩu!",
+                    message: "Vui lòng nhập mật khẩu bảo mật!",
                   },
                 ]}
               >
                 <Input.Password
-                  prefix={<LockOutlined className="input-icon" />}
-                  placeholder="Mật khẩu"
-                  className="neo-input"
+                  prefix={<LockOutlined className="form-icon" />}
+                  placeholder="Mật khẩu của bạn"
+                  className="faith-input"
                   autoComplete="current-password"
                 />
               </Form.Item>
 
-              {/* OPTIONS */}
-
-              <div className="card-options">
+              <div className="panel-row-options">
                 <Form.Item name="remember" valuePropName="checked" noStyle>
-                  <Checkbox className="neo-checkbox">
-                    Ghi nhớ đăng nhập
+                  <Checkbox className="faith-checkbox">
+                    Ghi nhớ tài khoản
                   </Checkbox>
                 </Form.Item>
-
-                <div className="auth-actions">
-                  <button
-                    type="button"
-                    className="neo-forgot"
-                    onClick={() => navigate("/register")}
-                  >
-                    Đăng ký FaithEdu
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="faith-link-btn"
+                  onClick={() => navigate("/register")}
+                >
+                  Đăng ký tài khoản mới
+                </button>
               </div>
-              {/* LOGIN BUTTON */}
 
-              <Form.Item
-                style={{
-                  marginTop: 22,
-                  marginBottom: 0,
-                }}
-              >
+              <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
                 <Button
                   type="primary"
                   htmlType="submit"
                   block
                   icon={<ArrowRightOutlined />}
-                  className="neo-submit-btn"
+                  className="faith-submit-btn"
                   loading={loading}
                 >
-                  ĐĂNG NHẬP QUẢN TRỊ
+                  TRUY CẬP HỆ THỐNG
                 </Button>
               </Form.Item>
             </Form>
 
-            {/* =================================================
-                FEATURES
-            ================================================== */}
-
-            <div className="card-footer-info">
-              <div className="info-chip">
-                <SafetyCertificateOutlined />
-
-                <span>Quyền Quản Trị</span>
+            <div className="panel-trust-badges">
+              <div className="trust-item">
+                <SafetyCertificateOutlined className="trust-icon text-indigo" />
+                <span>Bảo mật phân quyền</span>
               </div>
-
-              <div className="info-chip">
-                <CheckCircleOutlined className="security-icon" />
-
-                <span>Bảo Mật Cao</span>
+              <div className="trust-item">
+                <CheckCircleOutlined className="trust-icon text-emerald" />
+                <span>Đồng bộ thời gian thực</span>
               </div>
-
-              <div className="info-chip">
-                <HeartFilled className="heart-icon" />
-
-                <span>Phụng Sự</span>
+              <div className="trust-item">
+                <HeartFilled className="trust-icon text-rose" />
+                <span>Phụng sự tông đồ</span>
               </div>
             </div>
           </motion.div>
         </main>
 
-        {/* ===================================================
-            FOOTER
-        ==================================================== */}
-
-        <footer className="canvas-footer">
-          <span>© 2026 E-Catechism Leader Portal</span>
-
-          <span>Nền tảng Giáo Lý Thông Minh</span>
+        {/* Footer */}
+        <footer className="faith-footer">
+          <span>© 2026 FaithEdu Management Suite. All rights reserved.</span>
+          <span>Nền tảng Quản trị Đoàn sinh & Huynh Trưởng</span>
         </footer>
       </div>
 
       {/* =====================================================
-          CSS
+          HỆ THỐNG CSS CAO CẤP (NEOMORPHISM & GLASS)
       ====================================================== */}
-
       <style
         dangerouslySetInnerHTML={{
           __html: `
+            @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 
-          @import url(
-            'https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap'
-          );
-
-          * {
-            box-sizing: border-box;
-          }
-
-          html,
-          body,
-          #root {
-            width: 100%;
-            min-height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: 'Be Vietnam Pro', sans-serif;
-          }
-
-          body {
-            background: ${colors.bgDark};
-          }
-
-          /* =================================================
-             PAGE
-          ================================================== */
-
-          .canvas-wrapper {
-            position: relative;
-
-            width: 100%;
-            min-height: 100vh;
-
-            display: flex;
-            flex-direction: column;
-
-            padding: 24px 36px;
-
-            overflow: hidden;
-          }
-
-          /* =================================================
-             BACKGROUND
-          ================================================== */
-
-          .art-layer {
-            position: fixed;
-            inset: 0;
-
-            z-index: 0;
-
-            overflow: hidden;
-          }
-
-          .art-image {
-            width: 100%;
-            height: 100%;
-
-            object-fit: cover;
-            object-position: center;
-
-            filter:
-              brightness(0.65)
-              contrast(1.15)
-              saturate(1.2);
-
-            transform: scale(1.02);
-          }
-
-          .art-overlay-vignette {
-            position: absolute;
-            inset: 0;
-
-            background:
-              radial-gradient(
-                circle at center,
-                rgba(11, 15, 25, 0.25) 0%,
-                rgba(11, 15, 25, 0.8) 70%,
-                rgba(11, 15, 25, 0.95) 100%
-              );
-          }
-
-          .art-blur-spheres .sphere {
-            position: absolute;
-
-            border-radius: 50%;
-
-            filter: blur(100px);
-
-            opacity: 0.45;
-
-            pointer-events: none;
-          }
-
-          .sphere-1 {
-            width: 380px;
-            height: 380px;
-
-            top: -120px;
-            left: -100px;
-
-            background: #4F46E5;
-          }
-
-          .sphere-2 {
-            width: 420px;
-            height: 420px;
-
-            right: -100px;
-            bottom: -160px;
-
-            background: #7C3AED;
-          }
-
-          /* =================================================
-             HEADER
-          ================================================== */
-
-          .canvas-header {
-            position: relative;
-
-            z-index: 10;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            width: 100%;
-          }
-
-          .brand-pill {
-            display: flex;
-            align-items: center;
-
-            gap: 12px;
-
-            padding: 8px 18px;
-
-            background: rgba(255, 255, 255, 0.12);
-
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-
-            border-radius: 40px;
-
-            border: 1px solid
-              rgba(255, 255, 255, 0.22);
-
-            box-shadow:
-              0 8px 32px
-              rgba(0, 0, 0, 0.25);
-          }
-
-          .brand-logo {
-            height: 36px;
-            width: auto;
-
-            max-width: 160px;
-
-            object-fit: contain;
-          }
-
-          .brand-divider {
-            width: 1px;
-            height: 18px;
-
-            background:
-              rgba(255, 255, 255, 0.3);
-          }
-
-          .brand-tag {
-            color: #FFFFFF;
-
-            font-size: 11px;
-
-            font-weight: 800;
-
-            letter-spacing: 1px;
-
-            white-space: nowrap;
-          }
-
-          .header-status {
-            display: flex;
-            align-items: center;
-
-            gap: 8px;
-
-            padding: 6px 14px;
-
-            background:
-              rgba(15, 23, 42, 0.65);
-
-            backdrop-filter: blur(12px);
-
-            border-radius: 20px;
-
-            border: 1px solid
-              rgba(255, 255, 255, 0.12);
-
-            color:
-              rgba(255, 255, 255, 0.85);
-
-            font-size: 11px;
-
-            white-space: nowrap;
-          }
-
-          .status-dot {
-            width: 7px;
-            height: 7px;
-
-            flex-shrink: 0;
-
-            border-radius: 50%;
-
-            background: #22C55E;
-
-            box-shadow:
-              0 0 10px #22C55E;
-          }
-
-          /* =================================================
-             MAIN CONTENT
-          ================================================== */
-
-          .canvas-content {
-            position: relative;
-
-            z-index: 5;
-
-            flex: 1;
-
-            min-height: 0;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            margin: 20px 0;
-          }
-
-          /* =================================================
-             CARD
-          ================================================== */
-
-          .glass-card {
-            width: min(100%, 430px);
-
-            background: ${colors.cardBg};
-
-            backdrop-filter:
-              blur(28px)
-              saturate(190%);
-
-            -webkit-backdrop-filter:
-              blur(28px)
-              saturate(190%);
-
-            border-radius: 28px;
-
-            padding: 38px 34px 28px;
-
-            border: 1px solid
-              rgba(255, 255, 255, 0.8);
-
-            box-shadow:
-              0 25px 60px
-              rgba(0, 0, 0, 0.35),
-
-              0 0 40px
-              rgba(99, 102, 241, 0.15),
-
-              inset 0 1px 0
-              rgba(255, 255, 255, 1);
-          }
-
-          /* =================================================
-             CARD HEADER
-          ================================================== */
-          
-
-          .card-header {
-            margin-bottom: 24px;
-          }
-
-          .role-tag {
-            display: inline-flex;
-
-            align-items: center;
-
-            gap: 6px;
-
-            max-width: 100%;
-
-            color: ${colors.primary};
-
-            font-size: 10px;
-
-            font-weight: 800;
-
-            letter-spacing: 0.8px;
-
-            background: #EEF2FF;
-
-            padding: 4px 10px;
-
-            border-radius: 20px;
-
-            margin-bottom: 8px;
-
-            border: 1px solid #C7D2FE;
-          }
-
-          .role-tag span {
-            white-space: nowrap;
-          }
-
-          .card-title {
-            font-size: 28px;
-
-            font-weight: 800;
-
-            color: ${colors.textMain};
-
-            letter-spacing: -0.5px;
-
-            line-height: 1.2;
-
-            margin: 0;
-          }
-
-          .card-subtitle {
-            font-size: 13px;
-
-            color: ${colors.textMuted};
-
-            margin-top: 7px;
-
-            margin-bottom: 0;
-
-            line-height: 1.5;
-          }
-
-          /* =================================================
-             INPUT
-          ================================================== */
-
-          .neo-input {
-            width: 100%;
-
-            border-radius: 12px !important;
-
-            background: #F8FAFC !important;
-
-            border: 1px solid
-              #E2E8F0 !important;
-
-            transition: all 0.25s ease !important;
-          }
-
-          .neo-input:hover {
-            border-color:
-              #A5B4FC !important;
-
-            background:
-              #FFFFFF !important;
-          }
-
-          .neo-input:focus,
-          .ant-input-affix-wrapper-focused {
-            border-color:
-              ${colors.primary} !important;
-
-            background:
-              #FFFFFF !important;
-
-            box-shadow:
-              0 0 0 4px
-              rgba(99, 102, 241, 0.15) !important;
-          }
-
-          .input-icon {
-            color: #94A3B8;
-
-            font-size: 16px;
-
-            margin-right: 8px;
-          }
-
-          /* =================================================
-             OPTIONS
-          ================================================== */
-
-          .card-options {
-            display: flex;
-
-            align-items: center;
-
-            justify-content: space-between;
-
-            gap: 12px;
-
-            margin-bottom: 10px;
-          }
-
-          .neo-checkbox {
-            font-size: 12px;
-
-            color: ${colors.textMuted};
-          }
-
-          .neo-forgot {
-            border: none;
-
-            padding: 0;
-
-            margin: 0;
-
-            background: transparent;
-
-            cursor: pointer;
-
-            font-family: inherit;
-
-            font-size: 12px;
-
-            font-weight: 700;
-
-            color: ${colors.primary};
-
-            white-space: nowrap;
-          }
-
-          .neo-forgot:hover {
-            text-decoration: underline;
-          }
-
-          /* =================================================
-             BUTTON
-          ================================================== */
-
-          .neo-submit-btn {
-            height: 52px !important;
-
-            border-radius: 14px !important;
-
-            background:
-              ${colors.primaryGradient} !important;
-
-            border: none !important;
-
-            font-size: 13px !important;
-
-            font-weight: 800 !important;
-
-            letter-spacing: 0.8px;
-
-            box-shadow:
-              0 10px 25px
-              rgba(79, 70, 229, 0.35) !important;
-
-            transition:
-              all 0.3s
-              cubic-bezier(
-                0.34,
-                1.56,
-                0.64,
-                1
-              ) !important;
-          }
-
-          .neo-submit-btn:hover {
-            transform: translateY(-2px);
-
-            box-shadow:
-              0 14px 30px
-              rgba(79, 70, 229, 0.45) !important;
-          }
-
-          /* =================================================
-             FEATURES
-          ================================================== */
-
-          .card-footer-info {
-            display: flex;
-
-            align-items: center;
-
-            justify-content: space-between;
-
-            gap: 8px;
-
-            margin-top: 22px;
-
-            padding-top: 18px;
-
-            border-top:
-              1px dashed
-              rgba(203, 213, 225, 0.8);
-          }
-
-          .info-chip {
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            gap: 5px;
-
-            min-width: 0;
-
-            font-size: 11px;
-
-            font-weight: 600;
-
-            color: ${colors.textMuted};
-
-            white-space: nowrap;
-          }
-
-          .security-icon {
-            color: #22C55E;
-          }
-
-          .heart-icon {
-            color: #EC4899;
-          }
-
-          /* =================================================
-             FOOTER
-          ================================================== */
-
-          .canvas-footer {
-            position: relative;
-
-            z-index: 10;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: space-between;
-
-            gap: 20px;
-
-            color:
-              rgba(255, 255, 255, 0.6);
-
-            font-size: 11px;
-
-            font-weight: 500;
-          }
-
-          /* =================================================
-             LOADING
-          ================================================== */
-
-          .neo-loading-overlay {
-            position: fixed;
-
-            inset: 0;
-
-            z-index: 9999;
-
-            background:
-              rgba(11, 15, 25, 0.82);
-
-            backdrop-filter:
-              blur(12px);
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            padding: 20px;
-          }
-
-          .neo-loading-card {
-            width: min(100%, 360px);
-
-            background: #FFFFFF;
-
-            padding: 38px 30px;
-
-            border-radius: 24px;
-
-            text-align: center;
-
-            box-shadow:
-              0 25px 50px
-              rgba(0, 0, 0, 0.3);
-          }
-
-          .loading-title {
-            font-size: 15px;
-
-            font-weight: 800;
-
-            color: ${colors.textMain};
-
-            margin-top: 16px;
-
-            letter-spacing: 0.5px;
-          }
-
-          .loading-desc {
-            font-size: 12px;
-
-            color: ${colors.textMuted};
-
-            margin-top: 4px;
-          }
-
-          /* =================================================
-             TABLET
-          ================================================== */
-
-          @media (max-width: 768px) {
-
-            .canvas-wrapper {
-              padding: 18px 20px;
+            * {
+              box-sizing: border-box;
             }
 
-            .canvas-content {
-              margin: 14px 0;
-            }
-
-            .glass-card {
-              max-width: 420px;
-
-              padding:
-                32px 28px 24px;
-            }
-
-            .card-title {
-              font-size: 25px;
-            }
-
-            .header-status {
-              font-size: 10px;
-            }
-
-            .canvas-footer {
-              font-size: 10px;
-            }
-          }
-
-          /* =================================================
-             MOBILE
-          ================================================== */
-
-          @media (max-width: 576px) {
-
-            html,
-            body,
-            #root {
+            html, body, #root {
+              width: 100%;
               min-height: 100%;
-              height: auto;
+              margin: 0;
+              padding: 0;
+              font-family: 'Be Vietnam Pro', sans-serif;
+              background-color: ${colors.bgDark};
+            }
+
+            .faith-canvas {
+              position: relative;
+              width: 100%;
+              min-height: 100vh;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              padding: 24px 40px;
               overflow-x: hidden;
             }
 
-            .canvas-wrapper {
+            /* --- BACKDROP & AMBIENT EFFECTS --- */
+            .faith-backdrop {
+              position: fixed;
+              inset: 0;
+              z-index: 0;
+              overflow: hidden;
+            }
 
+            .backdrop-image {
               width: 100%;
-
-              min-height: 100svh;
-
-              height: auto;
-
-              padding:
-                12px 12px 14px;
-
-              overflow-y: auto;
-
-              overflow-x: hidden;
+              height: 100%;
+              object-fit: cover;
+              filter: brightness(0.55) contrast(1.15) saturate(1.1);
+              transform: scale(1.03);
             }
 
-            /* HEADER */
-
-            .canvas-header {
-              justify-content: center;
+            .backdrop-gradient-mask {
+              position: absolute;
+              inset: 0;
+              background: radial-gradient(circle at center, rgba(3, 7, 18, 0.3) 0%, rgba(3, 7, 18, 0.75) 75%, rgba(3, 7, 18, 0.95) 100%);
             }
 
-            .brand-pill {
-
-              padding:
-                7px 14px;
-
-              gap: 9px;
-
-              border-radius: 30px;
+            .ambient-orb {
+              position: absolute;
+              border-radius: 50%;
+              filter: blur(120px);
+              opacity: 0.45;
+              pointer-events: none;
             }
 
-            .brand-logo {
-
-              height: 32px;
-
-              max-width: 145px;
+            .orb-one {
+              width: 450px;
+              height: 450px;
+              top: -150px;
+              left: -100px;
+              background: #4F46E5;
             }
 
-            .brand-tag,
-            .brand-divider,
-            .header-status {
-              display: none;
+            .orb-two {
+              width: 500px;
+              height: 500px;
+              bottom: -150px;
+              right: -100px;
+              background: #9333EA;
             }
 
-            /* MAIN */
-
-            .canvas-content {
-
-              flex: 1;
-
-              width: 100%;
-
-              margin:
-                12px 0;
-
+            /* --- HEADER --- */
+            .faith-header {
+              position: relative;
+              z-index: 10;
+              display: flex;
               align-items: center;
-            }
-
-            /* CARD */
-
-            .glass-card {
-
+              justify-content: space-between;
               width: 100%;
-
-              max-width: 430px;
-
-              padding:
-                26px 20px 20px;
-
-              border-radius: 22px;
-
-              box-shadow:
-                0 18px 45px
-                rgba(0, 0, 0, 0.32),
-
-                0 0 30px
-                rgba(99, 102, 241, 0.12);
             }
 
-            /* HEADER */
-
-            .card-header {
-
-              margin-bottom: 20px;
-
-              text-align: center;
+            .header-badge {
+              display: flex;
+              align-items: center;
+              gap: 14px;
+              padding: 8px 20px;
+              background: rgba(255, 255, 255, 0.08);
+              backdrop-filter: blur(20px);
+              -webkit-backdrop-filter: blur(20px);
+              border-radius: 40px;
+              border: 1px solid rgba(255, 255, 255, 0.15);
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             }
 
-            .role-tag {
-
-              font-size: 9px;
-
-              padding:
-                4px 9px;
-
-              margin-bottom: 9px;
+            .badge-logo {
+              height: 38px;
+              width: auto;
+              object-fit: contain;
             }
 
-            .card-title {
-
-              font-size: 23px;
-
-              line-height: 1.25;
-
-              letter-spacing: -0.3px;
+            .badge-divider {
+              width: 1px;
+              height: 20px;
+              background: rgba(255, 255, 255, 0.25);
             }
 
-            .card-subtitle {
-
+            .badge-title {
+              color: #FFFFFF;
               font-size: 12px;
-
-              line-height: 1.55;
-
-              margin-top: 7px;
+              font-weight: 800;
+              letter-spacing: 1.2px;
+              white-space: nowrap;
             }
 
-            /* INPUT */
-
-            .neo-input {
-
-              min-height: 48px;
-
-              border-radius: 11px !important;
-            }
-
-            /* OPTIONS */
-
-            .card-options {
-
+            .header-status-pill {
+              display: flex;
+              align-items: center;
               gap: 8px;
-
-              flex-wrap: wrap;
-
-              margin-top: -2px;
-            }
-
-            .neo-checkbox {
-
-              font-size: 11px;
-            }
-
-            .neo-forgot {
-
-              font-size: 11px;
-            }
-
-            /* BUTTON */
-
-            .neo-submit-btn {
-
-              height: 50px !important;
-
-              border-radius: 12px !important;
-
-              font-size: 12px !important;
-            }
-
-            /* FEATURES */
-
-            .card-footer-info {
-
-              margin-top: 18px;
-
-              padding-top: 15px;
-
-              gap: 4px;
-            }
-
-            .info-chip {
-
-              font-size: 9px;
-
-              gap: 3px;
-            }
-
-            /* FOOTER */
-
-            .canvas-footer {
-
-              justify-content: center;
-
-              text-align: center;
-
-              font-size: 9px;
-
-              line-height: 1.4;
-            }
-
-            .canvas-footer span:last-child {
-
-              display: none;
-            }
-          }
-
-          /* =================================================
-             SMALL PHONE
-          ================================================== */
-
-          @media (max-width: 380px) {
-
-            .canvas-wrapper {
-
-              padding:
-                10px 9px 12px;
-            }
-
-            .brand-logo {
-
-              height: 29px;
-            }
-
-            .glass-card {
-
-              padding:
-                23px 17px 18px;
-
+              padding: 7px 16px;
+              background: rgba(3, 7, 18, 0.6);
+              backdrop-filter: blur(12px);
               border-radius: 20px;
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              color: rgba(255, 255, 255, 0.85);
+              font-size: 12px;
+              font-weight: 500;
             }
 
-            .card-title {
-
-              font-size: 21px;
+            .live-dot {
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
+              background: #10B981;
+              box-shadow: 0 0 12px #10B981;
             }
 
-            .card-subtitle {
+            /* --- MAIN PANEL --- */
+            .faith-main {
+              position: relative;
+              z-index: 5;
+              flex: 1;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 24px 0;
+            }
 
+            .faith-glass-panel {
+              width: min(100%, 460px);
+              background: rgba(255, 255, 255, 0.92);
+              backdrop-filter: blur(35px) saturate(200%);
+              -webkit-backdrop-filter: blur(35px) saturate(200%);
+              border-radius: 32px;
+              padding: 42px 38px 32px;
+              border: 1px solid rgba(255, 255, 255, 0.9);
+              box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.35),
+                0 0 50px rgba(79, 70, 229, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 1);
+            }
+
+            .panel-heading {
+              margin-bottom: 28px;
+            }
+
+            .panel-tag {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              color: ${colors.primary};
               font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 0.9px;
+              background: #EEF2FF;
+              padding: 5px 12px;
+              border-radius: 20px;
+              margin-bottom: 12px;
+              border: 1px solid #C7D2FE;
             }
 
-            .neo-input {
-
-              min-height: 46px;
+            .panel-title {
+              font-size: 30px;
+              font-weight: 800;
+              color: ${colors.textMain};
+              letter-spacing: -0.6px;
+              line-height: 1.15;
+              margin: 0;
             }
 
-            .neo-submit-btn {
-
-              height: 48px !important;
-
-              font-size: 11px !important;
+            .panel-subtitle {
+              font-size: 13.5px;
+              color: ${colors.textMuted};
+              margin-top: 8px;
+              margin-bottom: 0;
+              line-height: 1.55;
             }
 
-            .info-chip {
-
-              font-size: 8.5px;
+            /* --- INPUT FIELDS --- */
+            .faith-input {
+              width: 100%;
+              border-radius: 14px !important;
+              background: #F8FAFC !important;
+              border: 1.5px solid #E2E8F0 !important;
+              transition: all 0.25s ease !important;
             }
 
-            .card-footer-info {
-
-              gap: 2px;
-            }
-          }
-
-          /* =================================================
-             VERY SHORT SCREEN
-          ================================================== */
-
-          @media (max-height: 700px) and (max-width: 576px) {
-
-            .canvas-wrapper {
-
-              padding-top: 8px;
-
-              padding-bottom: 8px;
+            .faith-input:hover {
+              border-color: #A5B4FC !important;
+              background: #FFFFFF !important;
             }
 
-            .canvas-content {
-
-              margin:
-                6px 0;
+            .faith-input:focus,
+            .ant-input-affix-wrapper-focused {
+              border-color: ${colors.primary} !important;
+              background: #FFFFFF !important;
+              box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.12) !important;
             }
 
-            .glass-card {
-
-              padding:
-                20px 18px 16px;
+            .form-icon {
+              color: #94A3B8;
+              font-size: 16px;
+              margin-right: 10px;
             }
 
-            .card-header {
-
-              margin-bottom: 15px;
+            /* --- OPTIONS --- */
+            .panel-row-options {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 12px;
+              margin-top: 6px;
+              margin-bottom: 4px;
             }
 
-            .card-title {
-
-              font-size: 21px;
+            .faith-checkbox {
+              font-size: 13px;
+              color: ${colors.textMuted};
+              font-weight: 500;
             }
 
-            .card-subtitle {
-
-              margin-top: 4px;
+            .faith-link-btn {
+              border: none;
+              padding: 0;
+              background: transparent;
+              cursor: pointer;
+              font-family: inherit;
+              font-size: 13px;
+              font-weight: 700;
+              color: ${colors.primary};
+              transition: color 0.2s;
             }
 
-            .neo-submit-btn {
-
-              height: 46px !important;
+            .faith-link-btn:hover {
+              color: ${colors.primaryHover};
+              text-decoration: underline;
             }
 
-            .card-footer-info {
-
-              margin-top: 13px;
-
-              padding-top: 12px;
+            /* --- SUBMIT BUTTON --- */
+            .faith-submit-btn {
+              height: 54px !important;
+              border-radius: 16px !important;
+              background: ${colors.primaryGradient} !important;
+              border: none !important;
+              font-size: 14px !important;
+              font-weight: 800 !important;
+              letter-spacing: 0.8px;
+              box-shadow: 0 12px 28px rgba(79, 70, 229, 0.4) !important;
+              transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
             }
-          }
 
-          /* =================================================
-             REDUCE MOTION
-          ================================================== */
-
-          @media (prefers-reduced-motion: reduce) {
-
-            .neo-submit-btn {
-
-              transition: none !important;
+            .faith-submit-btn:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 16px 35px rgba(79, 70, 229, 0.5) !important;
             }
-          }
 
-        `,
+            /* --- TRUST BADGES --- */
+            .panel-trust-badges {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 8px;
+              margin-top: 26px;
+              padding-top: 20px;
+              border-top: 1px dashed rgba(203, 213, 225, 0.8);
+            }
+
+            .trust-item {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              font-size: 11px;
+              font-weight: 600;
+              color: ${colors.textMuted};
+            }
+
+            .trust-icon.text-indigo { color: #6366F1; }
+            .trust-icon.text-emerald { color: #10B981; }
+            .trust-icon.text-rose { color: #EC4899; }
+
+            /* --- FOOTER --- */
+            .faith-footer {
+              position: relative;
+              z-index: 10;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 20px;
+              color: rgba(255, 255, 255, 0.6);
+              font-size: 12px;
+              font-weight: 500;
+            }
+
+            /* --- LOADING DIALOG --- */
+            .faith-loading-overlay {
+              position: fixed;
+              inset: 0;
+              z-index: 9999;
+              background: rgba(3, 7, 18, 0.85);
+              backdrop-filter: blur(14px);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 20px;
+            }
+
+            .faith-loading-card {
+              width: min(100%, 380px);
+              background: #FFFFFF;
+              padding: 40px 32px;
+              border-radius: 28px;
+              text-align: center;
+              box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+            }
+
+            .loading-desc {
+              font-size: 13px;
+              color: ${colors.textMuted};
+              margin-top: 16px;
+              margin-bottom: 0;
+              font-weight: 500;
+            }
+
+            /* --- RESPONSIVE THIẾT KẾ --- */
+            @media (max-width: 768px) {
+              .faith-canvas {
+                padding: 18px 20px;
+              }
+              .faith-glass-panel {
+                max-width: 420px;
+                padding: 34px 28px 24px;
+              }
+              .panel-title {
+                font-size: 26px;
+              }
+            }
+
+            @media (max-width: 576px) {
+              .faith-canvas {
+                padding: 14px 12px;
+                min-height: 100svh;
+              }
+              .faith-header {
+                justify-content: center;
+              }
+              .header-badge {
+                padding: 7px 16px;
+              }
+              .badge-logo {
+                height: 32px;
+              }
+              .badge-title, .badge-divider, .header-status-pill {
+                display: none;
+              }
+              .faith-main {
+                margin: 10px 0;
+              }
+              .faith-glass-panel {
+                width: 100%;
+                padding: 28px 20px 22px;
+                border-radius: 24px;
+              }
+              .panel-heading {
+                text-align: center;
+                margin-bottom: 22px;
+              }
+              .panel-title {
+                font-size: 24px;
+              }
+              .panel-subtitle {
+                font-size: 12.5px;
+              }
+              .faith-input {
+                min-height: 50px;
+              }
+              .faith-submit-btn {
+                height: 50px !important;
+              }
+              .panel-trust-badges {
+                margin-top: 20px;
+                padding-top: 15px;
+                gap: 4px;
+              }
+              .trust-item {
+                font-size: 9.5px;
+              }
+              .faith-footer {
+                justify-content: center;
+                text-align: center;
+                font-size: 10px;
+              }
+              .faith-footer span:last-child {
+                display: none;
+              }
+            }
+          `,
         }}
       />
     </ConfigProvider>

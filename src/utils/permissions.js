@@ -118,7 +118,9 @@ export const canEditClass = (user) => {
  * Chỉ catechist
  */
 export const canDeleteClass = (user) => {
-  return user?.role === ROLES.CATECHIST;
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -169,7 +171,9 @@ export const canEditStudent = (user) => {
  * Chỉ catechist
  */
 export const canDeleteStudent = (user) => {
-  return user?.role === ROLES.CATECHIST;
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
 
 /**
@@ -220,5 +224,7 @@ export const canEditCatechist = (user) => {
  * Chỉ catechist
  */
 export const canDeleteCatechist = (user) => {
-  return user?.role === ROLES.CATECHIST;
+  return [ROLES.ADMIN, ROLES.ADMIN_CATECHIST, ROLES.CATECHIST].includes(
+    user?.role,
+  );
 };
