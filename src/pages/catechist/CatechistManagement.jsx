@@ -58,7 +58,7 @@ import classApi from "../../api/classApi";
 
 import dayjs from "dayjs";
 
-import avataImg from "../../assets/images/jesusImg.png";
+import avataImg from "../../assets/images/imgGLV.png";
 
 const { Title, Text } = Typography;
 
@@ -182,6 +182,7 @@ export default function CatechistManagement() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  console.log("catechists:::", catechists);
 
   /* =========================
      FILTER & STATS

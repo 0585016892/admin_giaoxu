@@ -4,33 +4,123 @@ import api from "./axios";
  * =========================================================
  * ATTENDANCE API
  * =========================================================
+ *
+ * Loại điểm danh:
+ *
+ * mass       = Điểm danh Thánh lễ
+ * catechism  = Điểm danh học Giáo lý
+ *
+ * =========================================================
  */
 
+export const ATTENDANCE_TYPES = {
+  MASS: "mass",
+  CATECHISM: "catechism",
+};
+
+export const ATTENDANCE_STATUS = {
+  PRESENT: "present",
+  ABSENT: "absent",
+  LATE: "late",
+  EXCUSED: "excused",
+};
+
 /**
- * 1. LẤY DANH SÁCH ĐIỂM DANH THEO LỚP + NGÀY
+ * =========================================================
+ * HELPERS
+ * =========================================================
+ */
+
+const normalizeClassId = (classId) => {
+  const id = Number(classId);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("class_id không hợp lệ");
+  }
+
+  return id;
+};
+
+const normalizeStudentId = (studentId) => {
+  const id = Number(studentId);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("student_id không hợp lệ");
+  }
+
+  return id;
+};
+
+const normalizeAttendanceType = (type) => {
+  const attendanceType = type || ATTENDANCE_TYPES.CATECHISM;
+
+  const validTypes = Object.values(ATTENDANCE_TYPES);
+
+  if (!validTypes.includes(attendanceType)) {
+    throw new Error("Loại điểm danh không hợp lệ");
+  }
+
+  return attendanceType;
+};
+
+const normalizeStatus = (status) => {
+  const validStatuses = Object.values(ATTENDANCE_STATUS);
+
+  if (!validStatuses.includes(status)) {
+    throw new Error("Trạng thái điểm danh không hợp lệ");
+  }
+
+  return status;
+};
+
+const normalizeDate = (date) => {
+  if (!date || typeof date !== "string") {
+    throw new Error("Ngày điểm danh không hợp lệ");
+  }
+
+  return date.trim();
+};
+
+/**
+ * =========================================================
+ * 1. LẤY DANH SÁCH ĐIỂM DANH
  *
  * GET /attendance
+ *
+ * Query:
+ *
+ * class_id
+ * date
+ * attendance_type
+ * page
+ * limit
+ * search
+ * status
+ *
+ * =========================================================
  */
+
 export const getAttendance = async ({
   class_id,
   date,
+  attendance_date,
+  attendance_type = ATTENDANCE_TYPES.CATECHISM,
   page = 1,
   limit = 10,
   search = "",
   status = "all",
 }) => {
-  if (!class_id) {
-    throw new Error("class_id không hợp lệ");
-  }
+  const classId = normalizeClassId(class_id);
 
-  if (!date) {
-    throw new Error("Ngày điểm danh không hợp lệ");
-  }
+  const finalDate = normalizeDate(attendance_date || date);
+
+  const attendanceType = normalizeAttendanceType(attendance_type);
 
   const response = await api.get("/attendance", {
     params: {
-      class_id,
-      date,
+      class_id: classId,
+      date: finalDate,
+      attendance_type: attendanceType,
       page,
       limit,
       search,
@@ -43,35 +133,68 @@ export const getAttendance = async ({
 
 /**
  * =========================================================
- * 2. LƯU ĐIỂM DANH
+ * 2. LƯU ĐIỂM DANH HÀNG LOẠT
  *
  * POST /attendance/bulk
+ *
+ * Body:
+ *
+ * {
+ *   class_id,
+ *   attendance_date,
+ *   attendance_type,
+ *   students
+ * }
+ *
  * =========================================================
  */
+
 export const saveBulkAttendance = async ({
   class_id,
   date,
   attendance_date,
+  attendance_type = ATTENDANCE_TYPES.CATECHISM,
   students,
 }) => {
-  if (!class_id) {
-    throw new Error("class_id không hợp lệ");
-  }
+  const classId = normalizeClassId(class_id);
 
-  const finalDate = attendance_date || date;
+  const finalDate = normalizeDate(attendance_date || date);
 
-  if (!finalDate) {
-    throw new Error("Ngày điểm danh không hợp lệ");
-  }
+  const attendanceType = normalizeAttendanceType(attendance_type);
 
-  if (!Array.isArray(students) || students.length === 0) {
+  if (!Array.isArray(students)) {
     throw new Error("Danh sách học sinh không hợp lệ");
   }
 
+  if (students.length === 0) {
+    throw new Error("Danh sách học sinh không được để trống");
+  }
+
+  const normalizedStudents = students.map((student) => {
+    const studentId = normalizeStudentId(student.student_id);
+
+    const status = normalizeStatus(student.status);
+
+    return {
+      student_id: studentId,
+
+      status,
+
+      check_in_time: student.check_in_time || null,
+
+      note:
+        typeof student.note === "string" ? student.note.trim() || null : null,
+    };
+  });
+
   const response = await api.post("/attendance/bulk", {
-    class_id: Number(class_id),
+    class_id: classId,
+
     attendance_date: finalDate,
-    students,
+
+    attendance_type: attendanceType,
+
+    students: normalizedStudents,
   });
 
   return response.data;
@@ -82,27 +205,38 @@ export const saveBulkAttendance = async ({
  * 3. QUÉT QR ĐIỂM DANH
  *
  * POST /attendance/scan-qr
+ *
+ * Body:
+ *
+ * {
+ *   qr_token,
+ *   class_id,
+ *   attendance_type
+ * }
+ *
  * =========================================================
  */
-export const scanQRCode = async ({ qr_token, class_id, attendance_date }) => {
-  if (!class_id) {
-    throw new Error("Vui lòng chọn lớp trước khi quét QR");
-  }
 
-  if (!qr_token || typeof qr_token !== "string") {
+export const scanQRCode = async ({
+  qr_token,
+  class_id,
+  attendance_type = ATTENDANCE_TYPES.CATECHISM,
+}) => {
+  const classId = normalizeClassId(class_id);
+
+  const attendanceType = normalizeAttendanceType(attendance_type);
+
+  if (!qr_token || typeof qr_token !== "string" || !qr_token.trim()) {
     throw new Error("Mã QR không hợp lệ");
   }
 
-  const payload = {
+  const response = await api.post("/attendance/scan-qr", {
     qr_token: qr_token.trim(),
-    class_id: Number(class_id),
-  };
 
-  if (attendance_date) {
-    payload.attendance_date = attendance_date;
-  }
+    class_id: classId,
 
-  const response = await api.post("/attendance/scan-qr", payload);
+    attendance_type: attendanceType,
+  });
 
   return response.data;
 };
@@ -112,22 +246,31 @@ export const scanQRCode = async ({ qr_token, class_id, attendance_date }) => {
  * 4. KẾT THÚC BUỔI ĐIỂM DANH
  *
  * POST /attendance/finish
+ *
+ * Các học sinh chưa được điểm danh
+ * sẽ tự động chuyển sang absent.
+ *
  * =========================================================
  */
-export const finishAttendance = async ({ class_id, date, attendance_date }) => {
-  if (!class_id) {
-    throw new Error("class_id không hợp lệ");
-  }
 
-  const finalDate = attendance_date || date;
+export const finishAttendance = async ({
+  class_id,
+  date,
+  attendance_date,
+  attendance_type = ATTENDANCE_TYPES.CATECHISM,
+}) => {
+  const classId = normalizeClassId(class_id);
 
-  if (!finalDate) {
-    throw new Error("Ngày điểm danh không hợp lệ");
-  }
+  const finalDate = normalizeDate(attendance_date || date);
+
+  const attendanceType = normalizeAttendanceType(attendance_type);
 
   const response = await api.post("/attendance/finish", {
-    class_id: Number(class_id),
+    class_id: classId,
+
     attendance_date: finalDate,
+
+    attendance_type: attendanceType,
   });
 
   return response.data;
@@ -138,23 +281,27 @@ export const finishAttendance = async ({ class_id, date, attendance_date }) => {
  * 5. CẬP NHẬT MỘT BẢN GHI ĐIỂM DANH
  *
  * PUT /attendance/:id
+ *
  * =========================================================
  */
+
 export const updateAttendance = async (
   id,
   { status, check_in_time = null, note = null },
 ) => {
-  if (!id) {
+  const attendanceId = Number(id);
+
+  if (!Number.isInteger(attendanceId) || attendanceId <= 0) {
     throw new Error("ID điểm danh không hợp lệ");
   }
 
-  if (!status) {
-    throw new Error("Trạng thái điểm danh không hợp lệ");
-  }
+  const finalStatus = normalizeStatus(status);
 
-  const response = await api.put(`/attendance/${id}`, {
-    status,
-    check_in_time,
+  const response = await api.put(`/attendance/${attendanceId}`, {
+    status: finalStatus,
+
+    check_in_time: check_in_time || null,
+
     note: typeof note === "string" ? note.trim() || null : null,
   });
 
@@ -166,14 +313,18 @@ export const updateAttendance = async (
  * 6. XÓA BẢN GHI ĐIỂM DANH
  *
  * DELETE /attendance/:id
+ *
  * =========================================================
  */
+
 export const deleteAttendance = async (id) => {
-  if (!id) {
+  const attendanceId = Number(id);
+
+  if (!Number.isInteger(attendanceId) || attendanceId <= 0) {
     throw new Error("ID điểm danh không hợp lệ");
   }
 
-  const response = await api.delete(`/attendance/${id}`);
+  const response = await api.delete(`/attendance/${attendanceId}`);
 
   return response.data;
 };
@@ -183,24 +334,40 @@ export const deleteAttendance = async (id) => {
  * 7. LỊCH SỬ ĐIỂM DANH HỌC SINH
  *
  * GET /attendance/student/:studentId
+ *
+ * Query optional:
+ *
+ * month
+ * year
+ * attendance_type
+ *
+ * Nếu không truyền attendance_type
+ * backend có thể trả về toàn bộ lịch sử.
+ *
  * =========================================================
  */
-export const getStudentAttendance = async (studentId, { month, year } = {}) => {
-  if (!studentId) {
-    throw new Error("studentId không hợp lệ");
-  }
+
+export const getStudentAttendance = async (
+  studentId,
+  { month, year, attendance_type } = {},
+) => {
+  const id = normalizeStudentId(studentId);
 
   const params = {};
 
   if (month) {
-    params.month = month;
+    params.month = Number(month);
   }
 
   if (year) {
-    params.year = year;
+    params.year = Number(year);
   }
 
-  const response = await api.get(`/attendance/student/${studentId}`, {
+  if (attendance_type) {
+    params.attendance_type = normalizeAttendanceType(attendance_type);
+  }
+
+  const response = await api.get(`/attendance/student/${id}`, {
     params,
   });
 
@@ -208,8 +375,14 @@ export const getStudentAttendance = async (studentId, { month, year } = {}) => {
 };
 
 /**
- * Alias để tương thích với AttendancePage
+ * =========================================================
+ * ALIAS
+ *
+ * Giữ tương thích với AttendancePage cũ
+ *
+ * =========================================================
  */
+
 export const getStudentHistory = async (studentId, options = {}) => {
   return getStudentAttendance(studentId, options);
 };
@@ -219,12 +392,21 @@ export const getStudentHistory = async (studentId, options = {}) => {
  * 8. THỐNG KÊ ĐIỂM DANH CỦA LỚP
  *
  * GET /attendance/statistics/:classId
+ *
+ * Query:
+ *
+ * from
+ * to
+ * attendance_type
+ *
  * =========================================================
  */
-export const getClassStatistics = async (classId, { from, to } = {}) => {
-  if (!classId) {
-    throw new Error("classId không hợp lệ");
-  }
+
+export const getClassStatistics = async (
+  classId,
+  { from, to, attendance_type } = {},
+) => {
+  const id = normalizeClassId(classId);
 
   const params = {};
 
@@ -236,7 +418,11 @@ export const getClassStatistics = async (classId, { from, to } = {}) => {
     params.to = to;
   }
 
-  const response = await api.get(`/attendance/statistics/${classId}`, {
+  if (attendance_type) {
+    params.attendance_type = normalizeAttendanceType(attendance_type);
+  }
+
+  const response = await api.get(`/attendance/statistics/${id}`, {
     params,
   });
 
@@ -250,14 +436,26 @@ export const getClassStatistics = async (classId, { from, to } = {}) => {
  */
 
 const attendanceApi = {
+  ATTENDANCE_TYPES,
+
+  ATTENDANCE_STATUS,
+
   getAttendance,
+
   saveBulkAttendance,
+
   scanQRCode,
+
   finishAttendance,
+
   updateAttendance,
+
   deleteAttendance,
+
   getStudentAttendance,
+
   getStudentHistory,
+
   getClassStatistics,
 };
 

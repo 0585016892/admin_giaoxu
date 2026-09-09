@@ -20,7 +20,6 @@ import {
   Pagination,
   Row,
   Select,
-  Statistic,
   Table,
   Tag,
   Tooltip,
@@ -43,17 +42,42 @@ import {
   StopOutlined,
   UserOutlined,
   TeamOutlined,
+  BookOutlined,
+  HeartOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
 
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import QRCodeScanner from "./QRCodeScanner";
+import StatCard from "../../components/common/StatCard";
 
 import attendanceApi from "../../api/attendanceApi";
 import classApi from "../../api/classApi";
 
 const { Text, Title } = Typography;
+
+/* =========================================================
+   ATTENDANCE TYPE
+========================================================= */
+
+const ATTENDANCE_TYPE_CONFIG = {
+  catechism: {
+    label: "Học Giáo lý",
+    shortLabel: "Giáo lý",
+    icon: <BookOutlined />,
+    description: "Điểm danh buổi học giáo lý",
+    color: "blue",
+  },
+
+  mass: {
+    label: "Tham dự Thánh lễ",
+    shortLabel: "Thánh lễ",
+    icon: <HeartOutlined />,
+    description: "Điểm danh tham dự Thánh lễ",
+    color: "purple",
+  },
+};
 
 /* =========================================================
    STATUS
@@ -100,8 +124,6 @@ const DEFAULT_PAGINATION = {
   limit: 10,
   total: 0,
   totalPages: 1,
-  hasNextPage: false,
-  hasPrevPage: false,
 };
 
 const DEFAULT_STATISTICS = {
@@ -111,10 +133,7 @@ const DEFAULT_STATISTICS = {
   late: 0,
   excused: 0,
   not_attended: 0,
-  notMarked: 0,
-  attended: 0,
   attendance_rate: 0,
-  rate: 0,
 };
 
 /* =========================================================
@@ -174,48 +193,47 @@ const getPaginationFromResponse = (response) => {
 
     total: Number(pg?.total) || 0,
 
-    totalPages: Number(pg?.totalPages) || 1,
-
-    hasNextPage: Boolean(pg?.hasNextPage),
-
-    hasPrevPage: Boolean(pg?.hasPrevPage),
+    totalPages: Number(pg?.totalPages) || Number(pg?.total_pages) || 1,
   };
 };
 
 const getStatisticsFromResponse = (response) => {
-  const body = getApiBody(response);
+  const body = response;
 
-  const st = body?.statistics || response?.statistics || {};
+  const stats = body?.statistics || body?.stats || {};
 
   return {
-    total: Number(st?.total) || 0,
+    total: Number(stats?.total) || 0,
 
-    present: Number(st?.present) || 0,
+    present: Number(stats?.present) || 0,
 
-    absent: Number(st?.absent) || 0,
+    absent: Number(stats?.absent) || 0,
 
-    late: Number(st?.late) || 0,
+    late: Number(stats?.late) || 0,
 
-    excused: Number(st?.excused) || 0,
+    excused: Number(stats?.excused) || 0,
 
-    not_attended: Number(st?.not_attended ?? st?.notMarked) || 0,
+    not_attended: Number(stats?.not_attended) || Number(stats?.notMarked) || 0,
 
-    notMarked: Number(st?.notMarked) || 0,
-
-    attended: Number(st?.attended) || 0,
-
-    attendance_rate: Number(st?.attendance_rate ?? st?.rate) || 0,
-
-    rate: Number(st?.rate) || 0,
+    attendance_rate: Number(stats?.attendance_rate) || Number(stats?.rate) || 0,
   };
 };
 
 const normalizeAttendanceStatus = (status) => {
-  if (!status || !STATUS_CONFIG[status]) {
-    return "not_attended";
+  if (
+    status === "present" ||
+    status === "absent" ||
+    status === "late" ||
+    status === "excused"
+  ) {
+    return status;
   }
 
-  return status;
+  return "not_attended";
+};
+
+const getAttendanceTypeConfig = (type) => {
+  return ATTENDANCE_TYPE_CONFIG[type] || ATTENDANCE_TYPE_CONFIG.catechism;
 };
 
 /* =========================================================
@@ -232,6 +250,8 @@ const AttendancePage = () => {
   const [selectedClassId, setSelectedClassId] = useState(null);
 
   const [selectedDate, setSelectedDate] = useState(dayjs());
+
+  const [attendanceType, setAttendanceType] = useState(null);
 
   const [searchInput, setSearchInput] = useState("");
 
@@ -268,7 +288,7 @@ const AttendancePage = () => {
   const requestIdRef = useRef(0);
 
   /* =======================================================
-     USER ROLE
+     USER
   ======================================================= */
 
   const user = useMemo(() => {
@@ -285,10 +305,9 @@ const AttendancePage = () => {
      DATE
   ======================================================= */
 
-  const dateString = useMemo(
-    () => selectedDate.format("YYYY-MM-DD"),
-    [selectedDate],
-  );
+  const dateString = useMemo(() => {
+    return selectedDate.format("YYYY-MM-DD");
+  }, [selectedDate]);
 
   const isLocked = selectedDate.isBefore(dayjs(), "day");
 
@@ -296,10 +315,17 @@ const AttendancePage = () => {
      SELECTED CLASS
   ======================================================= */
 
-  const selectedClass = useMemo(
-    () => classes.find((item) => Number(item.id) === Number(selectedClassId)),
-    [classes, selectedClassId],
-  );
+  const selectedClass = useMemo(() => {
+    return classes.find((item) => Number(item.id) === Number(selectedClassId));
+  }, [classes, selectedClassId]);
+
+  /* =======================================================
+     ATTENDANCE TYPE
+  ======================================================= */
+
+  const currentTypeConfig = useMemo(() => {
+    return getAttendanceTypeConfig(attendanceType);
+  }, [attendanceType]);
 
   /* =======================================================
      LOAD CLASSES
@@ -338,10 +364,11 @@ const AttendancePage = () => {
   ======================================================= */
 
   const loadAttendance = useCallback(async () => {
-    if (!selectedClassId) {
+    if (!selectedClassId || !attendanceType) {
       setStudents([]);
       setStatistics(DEFAULT_STATISTICS);
       setPagination(DEFAULT_PAGINATION);
+
       return;
     }
 
@@ -354,6 +381,8 @@ const AttendancePage = () => {
         class_id: selectedClassId,
 
         date: dateString,
+
+        attendance_type: attendanceType,
 
         page,
 
@@ -384,7 +413,15 @@ const AttendancePage = () => {
         setLoadingAttendance(false);
       }
     }
-  }, [selectedClassId, dateString, page, pageSize, search, statusFilter]);
+  }, [
+    selectedClassId,
+    dateString,
+    attendanceType,
+    page,
+    pageSize,
+    search,
+    statusFilter,
+  ]);
 
   /* =======================================================
      EFFECT - CLASSES
@@ -422,7 +459,8 @@ const AttendancePage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [selectedClassId, dateString, statusFilter]);
+    setIsQrOpen(false);
+  }, [selectedClassId, dateString, attendanceType, statusFilter]);
 
   /* =======================================================
      TABLE DATA
@@ -442,9 +480,6 @@ const AttendancePage = () => {
 
   /* =======================================================
      UPDATE ATTENDANCE
-     
-     QUAN TRỌNG:
-     Đã có trạng thái => KHÔNG CHO UPDATE
   ======================================================= */
 
   const updateAttendance = useCallback(
@@ -463,21 +498,11 @@ const AttendancePage = () => {
         student.attendance_status ?? student.status,
       );
 
-      /* ===============================================
-           ĐÃ ĐIỂM DANH
-        =============================================== */
-
       if (["present", "late", "absent", "excused"].includes(currentStatus)) {
-        message.info(
-          "Học sinh này đã được điểm danh và không thể thay đổi trạng thái.",
-        );
+        message.info("Học sinh này đã được điểm danh.");
 
         return;
       }
-
-      /* ===============================================
-           SAVE
-        =============================================== */
 
       try {
         setSaving(true);
@@ -492,6 +517,8 @@ const AttendancePage = () => {
 
           date: dateString,
 
+          attendance_type: attendanceType,
+
           students: [
             {
               student_id: student.student_id,
@@ -505,10 +532,12 @@ const AttendancePage = () => {
           ],
         });
 
-        message.success("Đã cập nhật điểm danh");
+        message.success(`Đã điểm danh ${currentTypeConfig.shortLabel}`);
 
         await loadAttendance();
       } catch (error) {
+        console.error("Save attendance error:", error);
+
         const statusCode = error?.response?.status;
 
         const body = error?.response?.data;
@@ -522,7 +551,14 @@ const AttendancePage = () => {
         setSaving(false);
       }
     },
-    [isLocked, selectedClassId, dateString, loadAttendance],
+    [
+      isLocked,
+      selectedClassId,
+      dateString,
+      attendanceType,
+      currentTypeConfig,
+      loadAttendance,
+    ],
   );
 
   /* =======================================================
@@ -531,11 +567,6 @@ const AttendancePage = () => {
 
   const handleQRSuccess = useCallback(
     async (data) => {
-      /*
-       * QR API đã lưu attendance rồi.
-       * Chỉ reload danh sách.
-       */
-
       await loadAttendance();
 
       return data;
@@ -544,10 +575,7 @@ const AttendancePage = () => {
   );
 
   /* =======================================================
-     FINISH QR ATTENDANCE
-     
-     Khi tắt camera:
-     chưa điểm danh -> absent
+     FINISH QR
   ======================================================= */
 
   const handleFinishQRAttendance = useCallback(async () => {
@@ -568,12 +596,14 @@ const AttendancePage = () => {
         class_id: selectedClassId,
 
         attendance_date: dateString,
+
+        attendance_type: attendanceType,
       });
 
       setIsQrOpen(false);
 
       message.success(
-        "Đã kết thúc điểm danh. Các học sinh chưa điểm danh đã được ghi nhận vắng.",
+        `Đã kết thúc điểm danh ${currentTypeConfig.shortLabel}. Các học sinh chưa được ghi nhận đã chuyển sang Vắng.`,
       );
 
       await loadAttendance();
@@ -586,7 +616,14 @@ const AttendancePage = () => {
     } finally {
       setSaving(false);
     }
-  }, [selectedClassId, dateString, isLocked, loadAttendance]);
+  }, [
+    selectedClassId,
+    dateString,
+    attendanceType,
+    isLocked,
+    currentTypeConfig,
+    loadAttendance,
+  ]);
 
   /* =======================================================
      TOGGLE QR
@@ -598,7 +635,10 @@ const AttendancePage = () => {
 
       return;
     }
-
+    if (!attendanceType) {
+      message.warning("Vui lòng chọn loại điểm danh trước.");
+      return;
+    }
     if (isLocked) {
       message.warning("Ngày này đã khóa điểm danh.");
 
@@ -606,20 +646,18 @@ const AttendancePage = () => {
     }
 
     if (isQrOpen) {
-      /*
-       * KHÔNG được chỉ set false.
-       *
-       * Phải finish để:
-       * chưa điểm danh -> absent
-       */
-
       handleFinishQRAttendance();
-
       return;
     }
 
     setIsQrOpen(true);
-  }, [selectedClassId, isLocked, isQrOpen, handleFinishQRAttendance]);
+  }, [
+    selectedClassId,
+    attendanceType,
+    isLocked,
+    isQrOpen,
+    handleFinishQRAttendance,
+  ]);
 
   /* =======================================================
      HISTORY
@@ -671,7 +709,6 @@ const AttendancePage = () => {
     absent,
     late,
     excused,
-    not_attended: notAttended,
     attendance_rate: attendanceRate,
   } = statistics;
 
@@ -752,120 +789,84 @@ const AttendancePage = () => {
         },
       },
 
+      /* =====================================================
+         MANUAL ATTENDANCE
+      ===================================================== */
+
       {
         title: "ĐIỂM DANH",
         key: "actions",
-        width: 260,
+        width: 235,
         align: "center",
 
         render: (_, record) => {
           const current = record.currentStatus;
 
-          /*
-           * ĐÃ CÓ TRẠNG THÁI
-           * => KHÔNG CHO ĐỔI
-           */
-
-          const hasAttendance = [
-            "present",
-            "late",
-            "absent",
-            "excused",
-          ].includes(current);
-
-          const disabled = isLocked || saving || hasAttendance;
-
-          const getTooltip = (status) => {
-            if (current === status) {
-              return `Đã ghi nhận: ${STATUS_CONFIG[status].label}`;
-            }
-
-            if (hasAttendance) {
-              return "Học sinh đã được điểm danh";
-            }
-
-            return `Đánh dấu ${STATUS_CONFIG[status].label.toLowerCase()}`;
-          };
+          const disabled = isLocked || saving || current !== "not_attended";
 
           return (
-            <div className="attendance-actions">
-              {/* PRESENT */}
-
-              <Tooltip title={getTooltip("present")}>
+            <div className="manual-attendance-actions">
+              {/* CÓ MẶT */}
+              <Tooltip title="Đánh dấu Có mặt">
                 <Button
+                  className="manual-action-btn manual-present"
                   shape="circle"
-                  className={`action-btn present ${
-                    current === "present" ? "active" : ""
-                  }`}
+                  size="middle"
                   icon={<CheckOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "present")}
                 />
               </Tooltip>
 
-              {/* LATE */}
-
-              <Tooltip title={getTooltip("late")}>
+              {/* ĐI MUỘN */}
+              <Tooltip title="Đánh dấu Đi muộn">
                 <Button
+                  className="manual-action-btn manual-late"
                   shape="circle"
-                  className={`action-btn late ${
-                    current === "late" ? "active" : ""
-                  }`}
+                  size="middle"
                   icon={<ClockCircleOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "late")}
                 />
               </Tooltip>
 
-              {/* ABSENT */}
-
-              <Tooltip title={getTooltip("absent")}>
+              {/* VẮNG */}
+              <Tooltip title="Đánh dấu Vắng">
                 <Button
+                  className="manual-action-btn manual-absent"
                   shape="circle"
-                  className={`action-btn absent ${
-                    current === "absent" ? "active" : ""
-                  }`}
+                  size="middle"
                   icon={<CloseOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "absent")}
                 />
               </Tooltip>
 
-              {/* EXCUSED */}
-
-              <Tooltip title={getTooltip("excused")}>
+              {/* CÓ PHÉP */}
+              <Tooltip title="Đánh dấu Có phép">
                 <Button
+                  className="manual-action-btn manual-excused"
                   shape="circle"
-                  className={`action-btn excused ${
-                    current === "excused" ? "active" : ""
-                  }`}
+                  size="middle"
                   icon={<ExclamationCircleOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "excused")}
                 />
               </Tooltip>
+
+              {/* LỊCH SỬ */}
+              <Tooltip title="Xem lịch sử điểm danh">
+                <Button
+                  className="manual-action-btn manual-history"
+                  shape="circle"
+                  size="middle"
+                  icon={<HistoryOutlined />}
+                  onClick={() => openHistory(record)}
+                />
+              </Tooltip>
             </div>
           );
         },
-      },
-
-      {
-        title: "",
-        key: "history",
-        width: 60,
-        align: "center",
-
-        render: (_, record) => (
-          <Tooltip title="Xem lịch sử">
-            <Button
-              type="text"
-              shape="circle"
-              icon={<HistoryOutlined />}
-              className="history-btn"
-              onClick={() => openHistory(record)}
-            />
-          </Tooltip>
-        ),
       },
     ],
     [isLocked, saving, updateAttendance, openHistory],
@@ -875,36 +876,60 @@ const AttendancePage = () => {
      HISTORY COLUMNS
   ======================================================= */
 
-  const historyColumns = [
-    {
-      title: "NGÀY",
-      dataIndex: "attendance_date",
+  const historyColumns = useMemo(
+    () => [
+      {
+        title: "Ngày",
+        dataIndex: "attendance_date",
+        width: 110,
 
-      render: (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "—"),
-    },
-
-    {
-      title: "TRẠNG THÁI",
-      dataIndex: "status",
-
-      render: (status) => {
-        const config = STATUS_CONFIG[status] || STATUS_CONFIG.not_attended;
-
-        return (
-          <Tag color={config.color} icon={config.icon}>
-            {config.label}
-          </Tag>
-        );
+        render: (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "—"),
       },
-    },
 
-    {
-      title: "GIỜ VÀO",
-      dataIndex: "check_in_time",
+      {
+        title: "Hoạt động",
+        dataIndex: "attendance_type",
+        width: 140,
 
-      render: (value) => (value ? String(value).slice(0, 5) : "—"),
-    },
-  ];
+        render: (value) => {
+          const config = getAttendanceTypeConfig(value);
+
+          return (
+            <Tag
+              color={value === "mass" ? "purple" : "blue"}
+              icon={config.icon}
+            >
+              {config.shortLabel}
+            </Tag>
+          );
+        },
+      },
+
+      {
+        title: "Trạng thái",
+        dataIndex: "status",
+
+        render: (value) => {
+          const config = STATUS_CONFIG[value] || STATUS_CONFIG.not_attended;
+
+          return (
+            <Tag color={config.color} icon={config.icon}>
+              {config.label}
+            </Tag>
+          );
+        },
+      },
+
+      {
+        title: "Giờ",
+        dataIndex: "check_in_time",
+        width: 80,
+
+        render: (value) => (value ? String(value).slice(0, 5) : "—"),
+      },
+    ],
+    [],
+  );
 
   /* =======================================================
      RENDER
@@ -935,10 +960,6 @@ const AttendancePage = () => {
           Select: {
             optionSelectedBg: "#FFF0F4",
           },
-
-          Pagination: {
-            itemActiveBg: "#FF8FAB",
-          },
         },
       }}
     >
@@ -951,18 +972,57 @@ const AttendancePage = () => {
           icon={<CheckCircleFilled />}
           badgeText="QUẢN LÝ ĐIỂM DANH"
           title="Điểm Danh Học Viên"
-          description="Theo dõi, ghi nhận sự hiện diện và quản lý chuyên cần của học viên theo từng lớp học."
-          // Refresh Props
+          description="Quản lý điểm danh tham dự Thánh lễ và học Giáo lý theo từng lớp."
           onRefresh={loadAttendance}
           refreshLoading={loadingAttendance}
         />
 
         {/* =================================================
-            FILTER BAR
+            FILTER
         ================================================= */}
 
         <Card bordered={false} className="attendance-filter-card">
           <div className="attendance-filter">
+            {/* LOẠI */}
+            <div className="filter-item type-filter">
+              <Text className="filter-label">
+                Loại điểm danh <span style={{ color: "#ff4d4f" }}>*</span>
+              </Text>
+
+              <Select
+                value={attendanceType}
+                placeholder="Chọn loại điểm danh"
+                className="attendance-type-select"
+                allowClear
+                onChange={(value) => {
+                  setAttendanceType(value || null);
+                  setPage(1);
+                  setIsQrOpen(false);
+                }}
+                options={[
+                  {
+                    value: "catechism",
+                    label: (
+                      <div className="type-option">
+                        <BookOutlined />
+                        <span>Học Giáo lý</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    value: "mass",
+                    label: (
+                      <div className="type-option">
+                        <HeartOutlined />
+                        <span>Tham dự Thánh lễ</span>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            </div>
+
+            {/* LỚP */}
             <div className="filter-item class-filter">
               <Text className="filter-label">Lớp học</Text>
 
@@ -978,11 +1038,13 @@ const AttendancePage = () => {
                 }}
                 options={classes.map((item) => ({
                   value: item.id,
+
                   label: item.name,
                 }))}
               />
             </div>
 
+            {/* NGÀY */}
             <div className="filter-item">
               <Text className="filter-label">Ngày điểm danh</Text>
 
@@ -1004,6 +1066,7 @@ const AttendancePage = () => {
               />
             </div>
 
+            {/* SEARCH */}
             <div className="filter-item search-filter">
               <Text className="filter-label">Tìm học sinh</Text>
 
@@ -1017,6 +1080,7 @@ const AttendancePage = () => {
               />
             </div>
 
+            {/* STATUS */}
             <div className="filter-item">
               <Text className="filter-label">Trạng thái</Text>
 
@@ -1038,12 +1102,12 @@ const AttendancePage = () => {
                     label: "Có mặt",
                   },
                   {
-                    value: "late",
-                    label: "Đi muộn",
-                  },
-                  {
                     value: "absent",
                     label: "Vắng",
+                  },
+                  {
+                    value: "late",
+                    label: "Đi muộn",
                   },
                   {
                     value: "excused",
@@ -1060,7 +1124,37 @@ const AttendancePage = () => {
         </Card>
 
         {/* =================================================
-            LOCK NOTICE
+            TYPE BANNER
+        ================================================= */}
+
+        {attendanceType ? (
+          <div className={`attendance-type-banner ${attendanceType}`}>
+            <div className="type-banner-icon">{currentTypeConfig.icon}</div>
+
+            <div>
+              <Text strong>Đang điểm danh: {currentTypeConfig.label}</Text>
+
+              <div>
+                <Text type="secondary">{currentTypeConfig.description}</Text>
+              </div>
+            </div>
+
+            <Tag color={attendanceType === "mass" ? "purple" : "blue"}>
+              {dateString}
+            </Tag>
+          </div>
+        ) : (
+          <Alert
+            style={{ marginTop: 16, borderRadius: 14 }}
+            type="info"
+            showIcon
+            message="Chưa chọn loại điểm danh"
+            description="Vui lòng chọn điểm danh Học Giáo lý hoặc Tham dự Thánh lễ để bắt đầu."
+          />
+        )}
+
+        {/* =================================================
+            LOCK
         ================================================= */}
 
         {isLocked && (
@@ -1068,8 +1162,8 @@ const AttendancePage = () => {
             className="attendance-lock-alert"
             type="warning"
             showIcon
-            message="Ngày điểm danh đã khóa"
-            description="Bạn chỉ có thể xem dữ liệu của ngày này, không thể thay đổi trạng thái điểm danh."
+            message="Ngày điểm danh đã qua"
+            description="Không thể thực hiện điểm danh hoặc thay đổi dữ liệu của ngày trước."
           />
         )}
 
@@ -1078,90 +1172,76 @@ const AttendancePage = () => {
         ================================================= */}
 
         <Row gutter={[16, 16]} className="attendance-stat-row">
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card bordered={false} className="stat-card pink">
-              <div className="stat-icon">
-                <TeamOutlined />
-              </div>
-
-              <Statistic title="Tổng học sinh" value={total} />
-
-              <Text type="secondary">
-                {selectedClass?.name || "Chưa chọn lớp"}
-              </Text>
-            </Card>
+          <Col xs={12} sm={8} lg={4}>
+            <StatCard
+              title="Tổng học sinh"
+              value={total}
+              loading={loadingAttendance}
+              icon={<TeamOutlined />}
+              iconColor="#FF6B8B"
+              description="Tổng số học sinh trong lớp"
+            />
           </Col>
 
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card bordered={false} className="stat-card green">
-              <div className="stat-icon">
-                <CheckCircleFilled />
-              </div>
-
-              <Statistic title="Có mặt" value={present} />
-
-              <Text type="secondary">Đã tham dự</Text>
-            </Card>
+          <Col xs={12} sm={8} lg={4}>
+            <StatCard
+              title="Có mặt"
+              value={present}
+              loading={loadingAttendance}
+              icon={<CheckCircleFilled />}
+              iconColor="#52B788"
+              description="Học sinh có mặt"
+            />
           </Col>
 
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card bordered={false} className="stat-card yellow">
-              <div className="stat-icon">
-                <ClockCircleOutlined />
-              </div>
-
-              <Statistic title="Đi muộn" value={late} />
-
-              <Text type="secondary">Đi muộn</Text>
-            </Card>
+          <Col xs={12} sm={8} lg={4}>
+            <StatCard
+              title="Đi muộn"
+              value={late}
+              loading={loadingAttendance}
+              icon={<ClockCircleOutlined />}
+              iconColor="#E6A23C"
+              description="Học sinh đi muộn"
+            />
           </Col>
 
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card bordered={false} className="stat-card red">
-              <div className="stat-icon">
-                <CloseCircleFilled />
-              </div>
-
-              <Statistic title="Vắng" value={absent} />
-
-              <Text type="secondary">
-                {excused > 0 ? `${excused} có phép` : "Không có phép"}
-              </Text>
-            </Card>
+          <Col xs={12} sm={8} lg={4}>
+            <StatCard
+              title="Vắng"
+              value={absent}
+              loading={loadingAttendance}
+              icon={<CloseCircleFilled />}
+              iconColor="#E56B7D"
+              description="Học sinh vắng mặt"
+            />
           </Col>
 
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card bordered={false} className="stat-card purple">
-              <div className="stat-icon">
-                <ExclamationCircleOutlined />
-              </div>
-
-              <Statistic title="Chưa điểm danh" value={notAttended} />
-
-              <Text type="secondary">Chưa ghi nhận</Text>
-            </Card>
+          <Col xs={12} sm={8} lg={4}>
+            <StatCard
+              title="Có phép"
+              value={excused}
+              loading={loadingAttendance}
+              icon={<ExclamationCircleOutlined />}
+              iconColor="#9274DF"
+              description="Học sinh có phép"
+            />
           </Col>
 
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card bordered={false} className="stat-card rate">
-              <div className="stat-icon">
-                <CheckCircleFilled />
-              </div>
-
-              <Statistic
-                title="Tỷ lệ tham dự"
-                value={attendanceRate}
-                precision={2}
-                suffix="%"
-              />
-
-              <Text type="secondary">Tỷ lệ điểm danh</Text>
-            </Card>
+          <Col xs={12} sm={8} lg={4}>
+            <StatCard
+              title="Tỷ lệ tham dự"
+              value={attendanceRate}
+              loading={loadingAttendance}
+              icon={<CheckCircleFilled />}
+              iconColor="#1677FF"
+              description="Tỷ lệ tham dự hôm nay"
+              suffix="%"
+            />
           </Col>
         </Row>
 
         {/* =================================================
-            MAIN 2 COLUMNS
+            MAIN
         ================================================= */}
 
         <Row gutter={[18, 18]} className="attendance-main-row">
@@ -1179,6 +1259,10 @@ const AttendancePage = () => {
 
                   <Text type="secondary">
                     {selectedClass?.name || "Chưa chọn lớp"}
+
+                    {" • "}
+
+                    {currentTypeConfig.shortLabel}
 
                     {" • "}
 
@@ -1202,14 +1286,10 @@ const AttendancePage = () => {
                     emptyText: <Empty description="Không có học sinh" />,
                   }}
                   scroll={{
-                    x: 900,
+                    x: 950,
                   }}
                 />
               </div>
-
-              {/* =================================================
-                  PAGINATION
-              ================================================= */}
 
               <div className="attendance-pagination">
                 <Pagination
@@ -1236,96 +1316,161 @@ const AttendancePage = () => {
           </Col>
 
           {/* =================================================
-              QR PANEL
+              MODERN QR PANEL
           ================================================= */}
 
           <Col xs={24} xl={8}>
             <Card bordered={false} className="qr-panel-card">
-              <div className="qr-panel-header">
-                <div className="qr-title">
-                  <div className="qr-title-icon">
+              {/* HEADER */}
+              <div className="qr-modern-header">
+                <div className="qr-modern-title">
+                  <div className="qr-modern-icon">
                     <QrcodeOutlined />
                   </div>
 
-                  <div>
-                    <Text strong className="qr-title-text">
-                      Quét QR điểm danh
-                    </Text>
+                  <div className="qr-modern-heading">
+                    <span className="qr-modern-title-text">Điểm danh QR</span>
 
-                    <Text type="secondary" className="qr-title-sub">
-                      Quét mã học viên bằng camera
-                    </Text>
+                    <span className="qr-modern-title-sub">
+                      {currentTypeConfig.label}
+                    </span>
                   </div>
                 </div>
 
-                <Button
-                  type={isQrOpen ? "default" : "primary"}
-                  danger={isQrOpen}
-                  icon={isQrOpen ? <StopOutlined /> : <CameraOutlined />}
-                  className="qr-toggle-btn"
-                  loading={saving && isQrOpen}
-                  disabled={!selectedClassId || isLocked}
-                  onClick={handleToggleQR}
+                <div
+                  className={`qr-live-status ${
+                    isQrOpen ? "active" : "inactive"
+                  }`}
                 >
-                  {isQrOpen ? "Tắt Camera" : "Bật Quét QR"}
-                </Button>
-              </div>
+                  <span className="qr-live-dot" />
 
-              <div className="qr-selected-class">
-                <span className="qr-selected-dot" />
-
-                <div>
-                  <Text type="secondary">Đang điểm danh</Text>
-
-                  <Text strong className="qr-selected-class-name">
-                    {selectedClass?.name || "Chưa chọn lớp"}
-                  </Text>
+                  {isQrOpen ? "Đang quét" : "Chưa bật"}
                 </div>
               </div>
 
-              <div className="qr-component-container">
+              {/* CLASS */}
+              <div className="qr-class-card">
+                <div className="qr-class-left">
+                  <div className="qr-class-icon">
+                    <TeamOutlined />
+                  </div>
+
+                  <div className="qr-class-info">
+                    <span className="qr-class-label">Lớp đang điểm danh</span>
+
+                    <strong className="qr-class-name">
+                      {selectedClass?.name || "Chưa chọn lớp"}
+                    </strong>
+                  </div>
+                </div>
+
+                <Tag
+                  color={attendanceType === "mass" ? "purple" : "blue"}
+                  className="qr-modern-type-tag"
+                >
+                  {currentTypeConfig.shortLabel}
+                </Tag>
+              </div>
+
+              {/* DATE */}
+              <div className="qr-date-info">
+                <CalendarOutlined />
+
+                <span>{dayjs(dateString).format("dddd, DD/MM/YYYY")}</span>
+              </div>
+
+              {/* SCANNER */}
+              <div
+                className={`qr-scanner-box ${isQrOpen ? "scanner-active" : ""}`}
+              >
                 <QRCodeScanner
                   open={isQrOpen}
                   classId={selectedClassId}
+                  attendanceType={attendanceType}
                   onSuccess={handleQRSuccess}
                   onFinishAttendance={handleFinishQRAttendance}
                 />
+
+                {!isQrOpen && (
+                  <div className="qr-scanner-placeholder">
+                    <div className="qr-placeholder-icon">
+                      <QrcodeOutlined />
+                    </div>
+
+                    <strong>Sẵn sàng điểm danh</strong>
+
+                    <span>Bật camera để bắt đầu quét mã QR</span>
+                  </div>
+                )}
               </div>
 
-              {!isQrOpen && (
-                <div className="qr-off-info">
-                  <QrcodeOutlined />
+              {/* BUTTON */}
+              <Button
+                block
+                size="large"
+                type={isQrOpen ? "default" : "primary"}
+                danger={isQrOpen}
+                icon={isQrOpen ? <StopOutlined /> : <CameraOutlined />}
+                className={`qr-main-button ${isQrOpen ? "qr-stop-button" : ""}`}
+                loading={saving && isQrOpen}
+                disabled={!selectedClassId || !attendanceType || isLocked}
+                onClick={handleToggleQR}
+              >
+                {isQrOpen ? "Kết thúc điểm danh" : "Bật camera điểm danh"}
+              </Button>
 
-                  <div>
-                    <Text strong>Điểm danh bằng mã QR</Text>
+              {/* NOTE */}
+              <div className="qr-attendance-note">
+                <div className="qr-note-icon">
+                  <ExclamationCircleOutlined />
+                </div>
 
-                    <Text type="secondary">
-                      Khi kết thúc quét, học sinh chưa được ghi nhận sẽ tự động
-                      chuyển thành Vắng.
-                    </Text>
+                <div className="qr-note-content">
+                  <strong>Lưu ý</strong>
+
+                  <span>
+                    Khi kết thúc điểm danh, học sinh chưa được ghi nhận sẽ tự
+                    động chuyển thành Vắng.
+                  </span>
+                </div>
+              </div>
+
+              {/* GUIDE */}
+              <div className="qr-guide">
+                <div className="qr-guide-title">Trạng thái điểm danh</div>
+
+                <div className="qr-guide-list">
+                  <div className="qr-guide-item">
+                    <span className="qr-guide-icon present">
+                      <CheckOutlined />
+                    </span>
+
+                    <span>Có mặt</span>
                   </div>
-                </div>
-              )}
 
-              <div className="qr-status-guide">
-                <div>
-                  <span className="guide-dot green" />
-                  <span>Có mặt</span>
-                </div>
+                  <div className="qr-guide-item">
+                    <span className="qr-guide-icon late">
+                      <ClockCircleOutlined />
+                    </span>
 
-                <div>
-                  <span className="guide-dot yellow" />
-                  <span>Đi muộn</span>
-                </div>
+                    <span>Đi muộn</span>
+                  </div>
 
-                <div>
-                  <span className="guide-dot red" />
-                  <span>Vắng</span>
-                </div>
+                  <div className="qr-guide-item">
+                    <span className="qr-guide-icon absent">
+                      <CloseOutlined />
+                    </span>
 
-                <div>
-                  <span className="guide-dot purple" />
-                  <span>Có phép</span>
+                    <span>Vắng</span>
+                  </div>
+
+                  <div className="qr-guide-item">
+                    <span className="qr-guide-icon excused">
+                      <ExclamationCircleOutlined />
+                    </span>
+
+                    <span>Có phép</span>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -1340,7 +1485,7 @@ const AttendancePage = () => {
           open={historyOpen}
           onCancel={() => setHistoryOpen(false)}
           footer={null}
-          width={620}
+          width={700}
           centered
           title={
             <div className="history-modal-title">
@@ -1358,15 +1503,22 @@ const AttendancePage = () => {
             />
 
             <div>
-              <Text strong>{historyStudent?.name || "Học sinh"}</Text>
+              <Text strong>
+                {historyStudent?.name ||
+                  historyStudent?.student_name ||
+                  "Học sinh"}
+              </Text>
 
-              <Text type="secondary">{historyStudent?.code || ""}</Text>
+              <Text type="secondary">
+                {historyStudent?.code || historyStudent?.student_code || ""}
+              </Text>
             </div>
           </div>
 
           <Table
             rowKey={(record, index) =>
-              record.id || `${record.attendance_date}-${index}`
+              record.id ||
+              `${record.attendance_date}-${record.attendance_type}-${index}`
             }
             columns={historyColumns}
             dataSource={historyData}
@@ -1381,1146 +1533,1122 @@ const AttendancePage = () => {
           />
         </Modal>
       </div>
+
+      {/* =====================================================
+          STYLE
+      ===================================================== */}
+
       <style>{`
-      /* =========================================================
-   PAGE
-========================================================= */
-
-.attendance-page {
-  min-height: 100%;
-  padding-bottom: 40px;
-  background: #fff9fb;
-}
-
-/* =========================================================
-   FILTER
-========================================================= */
-
-.attendance-filter-card {
-  margin-top: 18px;
-  border: 1px solid #f5dfe7;
-  border-radius: 18px;
-  box-shadow: 0 8px 25px rgba(225, 93, 130, 0.06);
-}
-
-.attendance-filter {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.filter-item {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  min-width: 170px;
-}
-
-.class-filter {
-  min-width: 230px;
-}
-
-.search-filter {
-  flex: 1;
-  min-width: 230px;
-}
-
-.filter-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #8b5363;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.attendance-select,
-.attendance-date,
-.attendance-search,
-.attendance-status-filter {
-  width: 100%;
-}
-
-.attendance-select .ant-select-selector,
-.attendance-date,
-.attendance-search,
-.attendance-status-filter .ant-select-selector {
-  min-height: 42px !important;
-  border-radius: 12px !important;
-  border-color: #f0d9e2 !important;
-  background: #fff !important;
-}
-
-.attendance-search input {
-  font-size: 14px;
-}
-
-.filter-refresh {
-  padding-bottom: 1px;
-}
-
-.refresh-btn {
-  width: 42px;
-  height: 42px;
-  border: 1px solid #f1d6e0;
-  color: #e85d82;
-  background: #fff4f7;
-}
-
-.refresh-btn:hover {
-  color: #fff !important;
-  background: #ff8fab !important;
-  border-color: #ff8fab !important;
-}
-
-/* =========================================================
-   LOCK
-========================================================= */
-
-.attendance-lock-alert {
-  margin-top: 16px;
-  border-radius: 14px;
-  border: 1px solid #fde3a7;
-}
-
-/* =========================================================
-   STAT
-========================================================= */
-
-.attendance-stat-row {
-  margin-top: 18px;
-}
-
-.stat-card {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 18px;
-  border: 1px solid #f4dfe6;
-  box-shadow: 0 8px 25px rgba(225, 93, 130, 0.055);
-  transition: 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(225, 93, 130, 0.09);
-}
-
-.stat-card .ant-card-body {
-  padding: 18px;
-}
-
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 13px;
-  margin-bottom: 10px;
-  font-size: 18px;
-}
-
-.stat-card.pink .stat-icon {
-  color: #e85d82;
-  background: #fff0f4;
-}
-
-.stat-card.green .stat-icon {
-  color: #059669;
-  background: #ecfdf5;
-}
-
-.stat-card.yellow .stat-icon {
-  color: #d97706;
-  background: #fffbeb;
-}
-
-.stat-card.red .stat-icon {
-  color: #e11d48;
-  background: #fff1f2;
-}
-
-.stat-card.purple .stat-icon {
-  color: #8b5cf6;
-  background: #f5f3ff;
-}
-
-.stat-card.rate .stat-icon {
-  color: #d94678;
-  background: #fff0f4;
-}
-
-.stat-card .ant-statistic-title {
-  margin-bottom: 2px;
-  color: #94a3b8;
-  font-size: 12px;
-}
-
-.stat-card .ant-statistic-content {
-  color: #334155;
-  font-weight: 800;
-  font-size: 26px;
-}
-
-/* =========================================================
-   MAIN
-========================================================= */
-
-.attendance-main-row {
-  margin-top: 18px;
-}
-
-/* =========================================================
-   STUDENT LIST
-========================================================= */
-
-.student-list-card {
-  height: 100%;
-  overflow: hidden;
-  border: 1px solid #f3dce5;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(225, 93, 130, 0.06);
-}
-
-.student-list-card .ant-card-body {
-  padding: 0;
-}
-
-.student-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 20px 22px;
-  border-bottom: 1px solid #f7e6eb;
-}
-
-.section-title {
-  margin: 0 !important;
-  color: #6f3547 !important;
-  font-size: 19px !important;
-}
-
-.total-student-tag {
-  margin: 0;
-  padding: 5px 12px;
-  border: 1px solid #f5d5df;
-  border-radius: 20px;
-  color: #d95678;
-  background: #fff3f6;
-  font-weight: 700;
-}
-
-.attendance-table-wrap {
-  overflow-x: auto;
-}
-
-.attendance-table-wrap .ant-table {
-  font-size: 13px;
-}
-
-.attendance-table-wrap .ant-table-thead > tr > th {
-  padding: 13px 16px;
-  color: #9a6473;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  background: #fff8fa;
-  border-bottom: 1px solid #f6e5ea;
-}
-
-.attendance-table-wrap .ant-table-tbody > tr > td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #faedf1;
-}
-
-.attendance-table-wrap
-  .ant-table-tbody
-  > tr:last-child
-  > td {
-  border-bottom: none;
-}
-
-/* =========================================================
-   STUDENT
-========================================================= */
-
-.student-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.student-avatar {
-  flex: 0 0 auto;
-  color: #e85d82;
-  background: #fff0f4;
-  border: 2px solid #ffe0e8;
-}
-
-.student-info {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.student-name {
-  overflow: hidden;
-  color: #334155;
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.student-code {
-  font-size: 12px;
-}
-
-/* =========================================================
-   STATUS TAG
-========================================================= */
-
-.attendance-status-tag {
-  min-width: 105px;
-  margin: 0;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-/* =========================================================
-   ACTION BUTTONS
-========================================================= */
-
-.attendance-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.action-btn {
-  width: 35px !important;
-  height: 35px !important;
-  min-width: 35px !important;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 50% !important;
-
-  background: #ffffff;
-  border: 1px solid #f1dce3;
-
-  box-shadow: 0 3px 8px rgba(214, 93, 125, 0.06);
-
-  transition:
-    all 0.2s ease,
-    transform 0.15s ease;
-
-  font-size: 14px;
-}
-
-.action-btn:not(:disabled):hover {
-  transform: translateY(-2px);
-}
-
-/* PRESENT */
-
-.action-btn.present {
-  color: #55b77a;
-  background: #f4fcf7;
-  border-color: #cdeed9;
-}
-
-.action-btn.present:not(:disabled):hover,
-.action-btn.present.active {
-  color: #ffffff;
-  background: #67c587;
-  border-color: #67c587;
-  box-shadow: 0 5px 12px rgba(103, 197, 135, 0.25);
-}
-
-/* LATE */
-
-.action-btn.late {
-  color: #d99b32;
-  background: #fffaf0;
-  border-color: #f5dfad;
-}
-
-.action-btn.late:not(:disabled):hover,
-.action-btn.late.active {
-  color: #ffffff;
-  background: #f3b562;
-  border-color: #f3b562;
-  box-shadow: 0 5px 12px rgba(243, 181, 98, 0.25);
-}
-
-/* ABSENT */
-
-.action-btn.absent {
-  color: #e46f83;
-  background: #fff5f7;
-  border-color: #f4cbd4;
-}
-
-.action-btn.absent:not(:disabled):hover,
-.action-btn.absent.active {
-  color: #ffffff;
-  background: #ef7c8e;
-  border-color: #ef7c8e;
-  box-shadow: 0 5px 12px rgba(239, 124, 142, 0.25);
-}
-
-/* EXCUSED */
-
-.action-btn.excused {
-  color: #9179d5;
-  background: #f8f5ff;
-  border-color: #ded5f8;
-}
-
-.action-btn.excused:not(:disabled):hover,
-.action-btn.excused.active {
-  color: #ffffff;
-  background: #a78bfa;
-  border-color: #a78bfa;
-  box-shadow: 0 5px 12px rgba(167, 139, 250, 0.25);
-}
-
-/* DISABLED */
-
-.action-btn:disabled {
-  cursor: not-allowed !important;
-  opacity: 0.32;
-  transform: none !important;
-  box-shadow: none;
-}
-
-.action-btn.active:disabled {
-  opacity: 1;
-}
-
-/* =========================================================
-   HISTORY BUTTON
-========================================================= */
-
-.history-btn {
-  color: #d86a88;
-  background: #fff5f8;
-}
-
-.history-btn:hover {
-  color: #fff !important;
-  background: #ff8fab !important;
-}
-
-/* =========================================================
-   PAGINATION
-========================================================= */
-
-.attendance-pagination {
-  display: flex;
-  justify-content: flex-end;
-  padding: 17px 20px;
-  border-top: 1px solid #f7e6eb;
-}
-
-.attendance-pagination .ant-pagination-item-active {
-  border-color: #ff8fab;
-  background: #ff8fab;
-}
-
-.attendance-pagination
-  .ant-pagination-item-active
-  a {
-  color: #fff;
-}
-
-.attendance-pagination .ant-pagination-total-text {
-  color: #94a3b8;
-  font-size: 12px;
-}
-
-/* =========================================================
-   QR PANEL
-========================================================= */
-
-.qr-panel-card {
-  height: 100%;
-  overflow: hidden;
-  border: 1px solid #f3dce5;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(225, 93, 130, 0.07);
-}
-
-.qr-panel-card .ant-card-body {
-  padding: 0;
-}
-
-.qr-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px 20px;
-  border-bottom: 1px solid #f7e6eb;
-}
-
-.qr-title {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  min-width: 0;
-}
-
-.qr-title-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  border-radius: 13px;
-  color: #e85d82;
-  background: #fff0f4;
-  font-size: 19px;
-}
-
-.qr-title-text {
-  display: block;
-  color: #6f3547;
-  font-size: 14px;
-}
-
-.qr-title-sub {
-  display: block;
-  margin-top: 2px;
-  font-size: 11px;
-}
-
-.qr-toggle-btn {
-  flex: 0 0 auto;
-  border-radius: 10px;
-  font-weight: 700;
-}
-
-.qr-selected-class {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 14px 16px 0;
-  padding: 11px 13px;
-  border: 1px solid #f6dfe7;
-  border-radius: 12px;
-  background: #fff8fa;
-}
-
-.qr-selected-dot {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: #67c587;
-  box-shadow: 0 0 0 4px #eaf9ef;
-}
-
-.qr-selected-class {
-  flex-direction: row;
-}
-
-.qr-selected-class > div {
-  display: flex;
-  flex-direction: column;
-}
-
-.qr-selected-class-name {
-  margin-top: 1px;
-  color: #71384a;
-  font-size: 13px;
-}
-
-/* =========================================================
-   QR COMPONENT
-========================================================= */
-
-.qr-component-container {
-  padding: 16px;
-}
-
-.inline-qr-scanner {
-  width: 100%;
-}
-
-.inline-qr-camera {
-  position: relative;
-  width: 100%;
-  height: 390px;
-  overflow: hidden;
-  border-radius: 18px;
-  background: #161616;
-}
-
-.inline-qr-camera > div:first-child {
-  width: 100%;
-  height: 100%;
-}
-
-.inline-qr-camera video {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-}
-
-.inline-qr-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: rgba(0, 0, 0, 0.28);
-}
-
-.inline-qr-live {
-  position: absolute;
-  top: 13px;
-  left: 13px;
-  z-index: 5;
-
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  padding: 6px 10px;
-
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-
-  color: #fff;
-  background: rgba(0, 0, 0, 0.38);
-
-  font-size: 11px;
-  font-weight: 700;
-
-  backdrop-filter: blur(8px);
-}
-
-.inline-qr-live span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #67c587;
-  box-shadow: 0 0 0 4px rgba(103, 197, 135, 0.15);
-}
-
-/* =========================================================
-   QR FRAME
-========================================================= */
-
-.inline-qr-frame-wrapper {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  pointer-events: none;
-}
-
-.inline-qr-frame {
-  position: relative;
-  width: 205px;
-  height: 205px;
-}
-
-.corner {
-  position: absolute;
-  width: 35px;
-  height: 35px;
-  border-color: #fff;
-  border-style: solid;
-}
-
-.corner.top-left {
-  top: 0;
-  left: 0;
-  border-width: 4px 0 0 4px;
-  border-radius: 8px 0 0 0;
-}
-
-.corner.top-right {
-  top: 0;
-  right: 0;
-  border-width: 4px 4px 0 0;
-  border-radius: 0 8px 0 0;
-}
-
-.corner.bottom-left {
-  bottom: 0;
-  left: 0;
-  border-width: 0 0 4px 4px;
-  border-radius: 0 0 0 8px;
-}
-
-.corner.bottom-right {
-  right: 0;
-  bottom: 0;
-  border-width: 0 4px 4px 0;
-  border-radius: 0 0 8px 0;
-}
-
-/* =========================================================
-   QR HINT
-========================================================= */
-
-.inline-qr-hint {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  z-index: 5;
-
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  transform: translateX(-50%);
-
-  padding: 8px 13px;
-
-  border-radius: 20px;
-
-  color: #fff;
-  background: rgba(0, 0, 0, 0.45);
-
-  font-size: 11px;
-  font-weight: 600;
-
-  white-space: nowrap;
-
-  backdrop-filter: blur(8px);
-}
-
-/* =========================================================
-   PROCESSING
-========================================================= */
-
-.inline-qr-processing {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.inline-qr-processing-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-
-  padding: 18px 25px;
-
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 16px;
-
-  color: #fff;
-  background: rgba(0, 0, 0, 0.62);
-
-  backdrop-filter: blur(10px);
-}
-
-.inline-qr-processing-card strong {
-  font-size: 12px;
-}
-
-/* =========================================================
-   RESULT
-========================================================= */
-
-.inline-qr-result {
-  position: absolute;
-  inset: 12px;
-  z-index: 20;
-
-  display: flex;
-  align-items: flex-end;
-  pointer-events: none;
-}
-
-.inline-qr-result-card {
-  width: 100%;
-  border-radius: 16px !important;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
-}
-
-.inline-qr-result-card .ant-card-body {
-  padding: 13px;
-}
-
-.inline-qr-result-inner {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.inline-qr-result-icon {
-  flex: 0 0 auto;
-  padding-top: 2px;
-  font-size: 25px;
-}
-
-.inline-qr-result-content {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.inline-qr-result-title {
-  font-size: 13px;
-}
-
-.inline-qr-student-name {
-  color: #334155;
-  font-size: 14px;
-}
-
-.inline-qr-meta {
-  font-size: 10px;
-}
-
-.inline-qr-time {
-  align-self: flex-start;
-  margin: 4px 0 1px;
-  font-size: 10px;
-}
-
-.inline-qr-message {
-  font-size: 10px;
-}
-
-/* =========================================================
-   QR STATUS
-========================================================= */
-
-.inline-qr-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  margin-top: 10px;
-
-  color: #8c6a75;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.inline-qr-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.inline-qr-status-dot.ready {
-  background: #67c587;
-  box-shadow: 0 0 0 4px #eaf9ef;
-}
-
-.inline-qr-status-dot.processing {
-  background: #f3b562;
-  box-shadow: 0 0 0 4px #fff5df;
-}
-
-.inline-qr-status-dot.success {
-  background: #67c587;
-}
-
-.inline-qr-status-dot.warning {
-  background: #f3b562;
-}
-
-.inline-qr-status-dot.error,
-.inline-qr-status-dot.class_error {
-  background: #ef7c8e;
-}
-
-.qr-finish-note {
-  margin-top: 10px;
-  padding: 9px 12px;
-  border: 1px dashed #f2d4de;
-  border-radius: 10px;
-  color: #9b6b78;
-  background: #fff9fb;
-  font-size: 10px;
-  line-height: 1.5;
-  text-align: center;
-}
-
-/* =========================================================
-   CAMERA OFF
-========================================================= */
-
-.qr-camera-off-state {
-  min-height: 390px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  padding: 30px;
-
-  border: 1px dashed #f0d5df;
-  border-radius: 18px;
-
-  text-align: center;
-
-  background:
-    radial-gradient(
-      circle at 50% 30%,
-      #fff0f4 0,
-      #fff9fb 45%,
-      #fff 100%
-    );
-}
-
-.qr-camera-off-icon {
-  width: 72px;
-  height: 72px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 15px;
-
-  border-radius: 22px;
-
-  color: #e85d82;
-  background: #fff0f4;
-
-  font-size: 30px;
-}
-
-.qr-camera-off-state strong {
-  color: #71384a;
-  font-size: 15px;
-}
-
-.qr-camera-off-state span {
-  max-width: 250px;
-  margin-top: 7px;
-  color: #a27a86;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-/* =========================================================
-   QR OFF INFO
-========================================================= */
-
-.qr-off-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-
-  margin: 0 16px 14px;
-  padding: 12px;
-
-  border: 1px solid #f5dfe7;
-  border-radius: 12px;
-
-  color: #e85d82;
-  background: #fff8fa;
-}
-
-.qr-off-info > svg {
-  margin-top: 2px;
-  font-size: 18px;
-}
-
-.qr-off-info > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.qr-off-info .ant-typography {
-  font-size: 11px;
-}
-
-/* =========================================================
-   GUIDE
-========================================================= */
-
-.qr-status-guide {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-
-  padding: 0 16px 16px;
-}
-
-.qr-status-guide > div {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-
-  padding: 6px 3px;
-
-  border-radius: 8px;
-
-  color: #8b6874;
-  background: #fff8fa;
-
-  font-size: 9px;
-  font-weight: 600;
-}
-
-.guide-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.guide-dot.green {
-  background: #67c587;
-}
-
-.guide-dot.yellow {
-  background: #f3b562;
-}
-
-.guide-dot.red {
-  background: #ef7c8e;
-}
-
-.guide-dot.purple {
-  background: #a78bfa;
-}
-
-/* =========================================================
-   HISTORY
-========================================================= */
-
-.history-modal-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #71384a;
-}
-
-.history-student {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  margin-bottom: 18px;
-  padding: 12px;
-
-  border: 1px solid #f5dfe7;
-  border-radius: 13px;
-
-  background: #fff8fa;
-}
-
-.history-student > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media (max-width: 1199px) {
-  .qr-panel-card {
-    height: auto;
-  }
-
-  .inline-qr-camera {
-    height: 430px;
-  }
-}
-
-@media (max-width: 767px) {
-  .attendance-page {
-    padding-bottom: 20px;
-  }
-
-  .attendance-filter {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .filter-item,
-  .class-filter,
-  .search-filter {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .filter-refresh {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .student-list-header {
-    padding: 16px;
-  }
-
-  .attendance-pagination {
-    justify-content: center;
-    overflow-x: auto;
-  }
-
-  .attendance-pagination
-    .ant-pagination {
-    white-space: nowrap;
-  }
-
-  .qr-panel-header {
-    align-items: flex-start;
-  }
-
-  .qr-toggle-btn {
-    padding-inline: 10px;
-  }
-
-  .inline-qr-camera,
-  .qr-camera-off-state {
-    height: 350px;
-    min-height: 350px;
-  }
-
-  .inline-qr-frame {
-    width: 180px;
-    height: 180px;
-  }
-
-  .qr-status-guide {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .attendance-table-wrap .ant-table-tbody > tr > td,
-  .attendance-table-wrap .ant-table-thead > tr > th {
-    padding: 12px;
-  }
-}
-        `}</style>
+
+        /* =====================================================
+           PAGE
+        ===================================================== */
+
+        .attendance-page {
+          min-height: 100%;
+          padding-bottom: 40px;
+          background: #fff9fb;
+        }
+
+
+        /* =====================================================
+           FILTER
+        ===================================================== */
+
+        .attendance-filter-card {
+          margin-top: 18px;
+          border: 1px solid #f5dfe7 !important;
+          border-radius: 18px !important;
+
+          box-shadow:
+            0 8px 25px
+            rgba(225, 93, 130, 0.06);
+        }
+
+        .attendance-filter {
+          display: flex;
+          align-items: flex-end;
+          gap: 14px;
+          flex-wrap: wrap;
+        }
+
+        .filter-item {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+          min-width: 170px;
+        }
+
+        .type-filter {
+          min-width: 200px;
+        }
+
+        .class-filter {
+          min-width: 220px;
+        }
+
+        .search-filter {
+          flex: 1;
+          min-width: 220px;
+        }
+
+        .filter-label {
+          font-size: 12px;
+          font-weight: 700;
+          color: #8b5363;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+
+        .attendance-select,
+        .attendance-date,
+        .attendance-search,
+        .attendance-status-filter,
+        .attendance-type-select {
+          width: 100%;
+        }
+
+        .attendance-select .ant-select-selector,
+        .attendance-type-select .ant-select-selector,
+        .attendance-status-filter .ant-select-selector,
+        .attendance-date,
+        .attendance-search {
+          min-height: 42px !important;
+          border-radius: 12px !important;
+          border-color: #f0d9e2 !important;
+        }
+
+        .type-option {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+
+        /* =====================================================
+           TYPE BANNER
+        ===================================================== */
+
+        .attendance-type-banner {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+
+          margin-top: 16px;
+          padding: 15px 18px;
+
+          border-radius: 16px;
+
+          background: #fff;
+
+          border: 1px solid #f1dce4;
+        }
+
+        .attendance-type-banner.mass {
+          border-color: #e5d5ff;
+          background: #fbf8ff;
+        }
+
+        .attendance-type-banner.catechism {
+          border-color: #d7e9ff;
+          background: #f8fbff;
+        }
+
+        .type-banner-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          width: 42px;
+          height: 42px;
+
+          flex-shrink: 0;
+
+          border-radius: 12px;
+
+          color: #fff;
+          background: #ff8fab;
+
+          font-size: 20px;
+        }
+
+        .attendance-type-banner.mass .type-banner-icon {
+          background: #9254de;
+        }
+
+        .attendance-type-banner.catechism .type-banner-icon {
+          background: #1677ff;
+        }
+
+        .attendance-type-banner .ant-tag {
+          margin-left: auto;
+        }
+
+
+        /* =====================================================
+           LOCK
+        ===================================================== */
+
+        .attendance-lock-alert {
+          margin-top: 16px;
+          border-radius: 14px;
+        }
+
+
+        /* =====================================================
+           STATISTICS
+        ===================================================== */
+
+        .attendance-stat-row {
+          margin-top: 18px;
+        }
+
+
+        /* =====================================================
+           MAIN
+        ===================================================== */
+
+        .attendance-main-row {
+          margin-top: 18px;
+        }
+
+        .student-list-card,
+        .qr-panel-card {
+          height: 100%;
+
+          border-radius: 20px !important;
+
+          border: 1px solid #f4dfe6 !important;
+
+          box-shadow:
+            0 8px 25px
+            rgba(225, 93, 130, 0.05);
+        }
+
+        .student-list-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          padding: 20px;
+
+          border-bottom:
+            1px solid #f5e5ea;
+        }
+
+        .section-title {
+          margin-bottom: 4px !important;
+          color: #71384a !important;
+        }
+
+        .total-student-tag {
+          border-radius: 20px;
+          padding: 5px 12px;
+          border: none;
+
+          color: #b04464;
+          background: #fff0f4;
+        }
+
+
+        /* =====================================================
+           STUDENT
+        ===================================================== */
+
+        .student-cell {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .student-info {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .student-name {
+          color: #58313d;
+        }
+
+        .student-code {
+          font-size: 12px;
+        }
+
+
+        /* =====================================================
+           MANUAL ATTENDANCE
+        ===================================================== */
+
+        .manual-attendance-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          gap: 8px;
+
+          white-space: nowrap;
+        }
+
+        .manual-action-btn {
+          width: 34px !important;
+          height: 34px !important;
+
+          min-width: 34px !important;
+
+          display: inline-flex !important;
+          align-items: center;
+          justify-content: center;
+
+          padding: 0 !important;
+
+          border-radius: 50% !important;
+
+          border: 1px solid #f0dfe5 !important;
+
+          background: #fff !important;
+
+          box-shadow:
+            0 3px 10px
+            rgba(100, 60, 75, 0.06);
+
+          transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            background 0.18s ease,
+            border-color 0.18s ease;
+        }
+
+        .manual-action-btn .anticon {
+          font-size: 15px;
+        }
+
+
+        /* CÓ MẶT */
+
+        .manual-present {
+          color: #38a169 !important;
+          border-color: #bce8cd !important;
+          background: #f2fff6 !important;
+        }
+
+        .manual-present:hover:not(:disabled) {
+          color: #fff !important;
+          border-color: #52b788 !important;
+          background: #52b788 !important;
+
+          transform: translateY(-2px);
+
+          box-shadow:
+            0 6px 14px
+            rgba(82, 183, 136, 0.25);
+        }
+
+
+        /* ĐI MUỘN */
+
+        .manual-late {
+          color: #d99432 !important;
+          border-color: #f5dfb6 !important;
+          background: #fffaf0 !important;
+        }
+
+        .manual-late:hover:not(:disabled) {
+          color: #fff !important;
+          border-color: #e6a23c !important;
+          background: #e6a23c !important;
+
+          transform: translateY(-2px);
+
+          box-shadow:
+            0 6px 14px
+            rgba(230, 162, 60, 0.25);
+        }
+
+
+        /* VẮNG */
+
+        .manual-absent {
+          color: #e56b7d !important;
+          border-color: #f4cbd3 !important;
+          background: #fff5f7 !important;
+        }
+
+        .manual-absent:hover:not(:disabled) {
+          color: #fff !important;
+          border-color: #e56b7d !important;
+          background: #e56b7d !important;
+
+          transform: translateY(-2px);
+
+          box-shadow:
+            0 6px 14px
+            rgba(229, 107, 125, 0.25);
+        }
+
+
+        /* CÓ PHÉP */
+
+        .manual-excused {
+          color: #8b6bd6 !important;
+          border-color: #ddd2fa !important;
+          background: #f8f5ff !important;
+        }
+
+        .manual-excused:hover:not(:disabled) {
+          color: #fff !important;
+          border-color: #9274df !important;
+          background: #9274df !important;
+
+          transform: translateY(-2px);
+
+          box-shadow:
+            0 6px 14px
+            rgba(146, 116, 223, 0.25);
+        }
+
+
+        /* LỊCH SỬ */
+
+        .manual-history {
+          color: #7a6570 !important;
+          border-color: #eadde2 !important;
+          background: #faf7f8 !important;
+        }
+
+        .manual-history:hover:not(:disabled) {
+          color: #fff !important;
+          border-color: #8f7782 !important;
+          background: #8f7782 !important;
+
+          transform: translateY(-2px);
+
+          box-shadow:
+            0 6px 14px
+            rgba(100, 80, 90, 0.18);
+        }
+
+        .manual-action-btn:active:not(:disabled) {
+          transform: scale(0.92);
+        }
+
+        .manual-action-btn:disabled {
+          opacity: 0.38 !important;
+          cursor: not-allowed !important;
+
+          transform: none !important;
+
+          box-shadow: none !important;
+        }
+
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        .attendance-table-wrap {
+          overflow-x: auto;
+        }
+
+        .attendance-pagination {
+          display: flex;
+          justify-content: flex-end;
+
+          padding: 18px;
+
+          border-top:
+            1px solid #f5e5ea;
+        }
+
+
+        /* =====================================================
+           MODERN QR
+        ===================================================== */
+
+        .qr-panel-card {
+          overflow: hidden;
+
+          border-radius: 22px !important;
+
+          background: #fff !important;
+
+          box-shadow:
+            0 12px 35px
+            rgba(225, 93, 130, 0.08) !important;
+        }
+
+        .qr-modern-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          gap: 12px;
+
+          padding: 20px;
+
+          border-bottom:
+            1px solid #f7e9ed;
+        }
+
+        .qr-modern-title {
+          display: flex;
+          align-items: center;
+
+          gap: 12px;
+
+          min-width: 0;
+        }
+
+        .qr-modern-icon {
+          width: 46px;
+          height: 46px;
+
+          flex-shrink: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 14px;
+
+          color: #fff;
+
+          background:
+            linear-gradient(
+              135deg,
+              #ff6b8b,
+              #ff9eb2
+            );
+
+          font-size: 21px;
+
+          box-shadow:
+            0 7px 18px
+            rgba(255, 107, 139, 0.22);
+        }
+
+        .qr-modern-heading {
+          display: flex;
+          flex-direction: column;
+
+          gap: 3px;
+
+          min-width: 0;
+        }
+
+        .qr-modern-title-text {
+          color: #55313d;
+
+          font-size: 16px;
+          font-weight: 800;
+        }
+
+        .qr-modern-title-sub {
+          color: #a48791;
+
+          font-size: 12px;
+        }
+
+
+        /* STATUS */
+
+        .qr-live-status {
+          display: flex;
+          align-items: center;
+
+          gap: 6px;
+
+          flex-shrink: 0;
+
+          padding: 6px 10px;
+
+          border-radius: 20px;
+
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .qr-live-status.active {
+          color: #32945b;
+          background: #edfff4;
+        }
+
+        .qr-live-status.inactive {
+          color: #9b7d87;
+          background: #f8f4f6;
+        }
+
+        .qr-live-dot {
+          width: 7px;
+          height: 7px;
+
+          border-radius: 50%;
+
+          background: currentColor;
+        }
+
+        .qr-live-status.active .qr-live-dot {
+          animation:
+            qrPulse 1.5s infinite;
+        }
+
+        @keyframes qrPulse {
+          0% {
+            box-shadow:
+              0 0 0 0
+              rgba(
+                82,
+                183,
+                136,
+                0.35
+              );
+          }
+
+          70% {
+            box-shadow:
+              0 0 0 6px
+              rgba(
+                82,
+                183,
+                136,
+                0
+              );
+          }
+
+          100% {
+            box-shadow:
+              0 0 0 0
+              rgba(
+                82,
+                183,
+                136,
+                0
+              );
+          }
+        }
+
+
+        /* CLASS */
+
+        .qr-class-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          gap: 10px;
+
+          margin: 16px;
+
+          padding: 13px;
+
+          border-radius: 15px;
+
+          background: #fff8fa;
+
+          border:
+            1px solid #f5e1e7;
+        }
+
+        .qr-class-left {
+          display: flex;
+          align-items: center;
+
+          gap: 10px;
+
+          min-width: 0;
+        }
+
+        .qr-class-icon {
+          width: 38px;
+          height: 38px;
+
+          flex-shrink: 0;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 11px;
+
+          color: #ff6b8b;
+
+          background: #ffeaf0;
+
+          font-size: 16px;
+        }
+
+        .qr-class-info {
+          display: flex;
+          flex-direction: column;
+
+          min-width: 0;
+        }
+
+        .qr-class-label {
+          color: #a48a94;
+
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        .qr-class-name {
+          max-width: 170px;
+
+          overflow: hidden;
+
+          text-overflow: ellipsis;
+
+          white-space: nowrap;
+
+          color: #55313d;
+
+          font-size: 14px;
+        }
+
+        .qr-modern-type-tag {
+          flex-shrink: 0;
+
+          margin: 0 !important;
+
+          border: none !important;
+
+          border-radius: 8px !important;
+
+          font-size: 10px;
+          font-weight: 700;
+        }
+
+
+        /* DATE */
+
+        .qr-date-info {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          gap: 7px;
+
+          margin: 0 16px 13px;
+
+          color: #987e88;
+
+          font-size: 12px;
+        }
+
+        .qr-date-info .anticon {
+          color: #ff8fab;
+        }
+
+
+        /* SCANNER */
+
+        .qr-scanner-box {
+          position: relative;
+
+          min-height: 260px;
+
+          margin: 0 16px 14px;
+
+          overflow: hidden;
+
+          border-radius: 18px;
+
+          background:
+            linear-gradient(
+              145deg,
+              #fff7fa,
+              #fffafd
+            );
+
+          border:
+            1px dashed #efcdd8;
+        }
+
+        .qr-scanner-box.scanner-active {
+          border-style: solid;
+
+          border-color: #ff9eb2;
+
+          box-shadow:
+            inset 0 0 0 1px
+            rgba(
+              255,
+              107,
+              139,
+              0.08
+            );
+        }
+
+
+        /* PLACEHOLDER */
+
+        .qr-scanner-placeholder {
+          position: absolute;
+
+          inset: 0;
+
+          display: flex;
+
+          align-items: center;
+          justify-content: center;
+
+          flex-direction: column;
+
+          gap: 7px;
+
+          text-align: center;
+        }
+
+        .qr-placeholder-icon {
+          width: 64px;
+          height: 64px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          margin-bottom: 4px;
+
+          border-radius: 20px;
+
+          color: #ff6b8b;
+
+          background: #ffeaf0;
+
+          font-size: 30px;
+
+          box-shadow:
+            0 8px 20px
+            rgba(
+              255,
+              107,
+              139,
+              0.12
+            );
+        }
+
+        .qr-scanner-placeholder strong {
+          color: #55313d;
+
+          font-size: 14px;
+        }
+
+        .qr-scanner-placeholder span {
+          max-width: 220px;
+
+          color: #a58b95;
+
+          font-size: 11px;
+
+          line-height: 1.5;
+        }
+
+
+        /* BUTTON */
+
+        .qr-main-button {
+          height: 46px !important;
+
+          margin: 0 16px;
+
+          width:
+            calc(100% - 32px) !important;
+
+          border-radius: 13px !important;
+
+          font-weight: 700;
+
+          box-shadow:
+            0 7px 18px
+            rgba(
+              255,
+              107,
+              139,
+              0.18
+            );
+        }
+
+        .qr-main-button.ant-btn-primary {
+          border: none;
+
+          background:
+            linear-gradient(
+              135deg,
+              #ff6b8b,
+              #ff8fab
+            );
+        }
+
+        .qr-main-button.ant-btn-primary:hover {
+          background:
+            linear-gradient(
+              135deg,
+              #ff5d80,
+              #ff7f9f
+            ) !important;
+        }
+
+        .qr-stop-button {
+          box-shadow: none !important;
+        }
+
+
+        /* NOTE */
+
+        .qr-attendance-note {
+          display: flex;
+          align-items: flex-start;
+
+          gap: 9px;
+
+          margin: 14px 16px;
+
+          padding: 11px 12px;
+
+          border-radius: 12px;
+
+          background: #fffbf2;
+
+          border:
+            1px solid #f6e6bf;
+        }
+
+        .qr-note-icon {
+          flex-shrink: 0;
+
+          color: #d99a37;
+
+          font-size: 15px;
+        }
+
+        .qr-note-content {
+          display: flex;
+          flex-direction: column;
+
+          gap: 2px;
+        }
+
+        .qr-note-content strong {
+          color: #80602d;
+
+          font-size: 11px;
+        }
+
+        .qr-note-content span {
+          color: #9b8662;
+
+          font-size: 10px;
+
+          line-height: 1.5;
+        }
+
+
+        /* GUIDE */
+
+        .qr-guide {
+          padding:
+            15px 16px 17px;
+
+          border-top:
+            1px solid #f7e9ed;
+        }
+
+        .qr-guide-title {
+          margin-bottom: 9px;
+
+          color: #775563;
+
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .qr-guide-list {
+          display: grid;
+
+          grid-template-columns:
+            repeat(4, 1fr);
+
+          gap: 7px;
+        }
+
+        .qr-guide-item {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          flex-direction: column;
+
+          gap: 5px;
+
+          padding: 8px 3px;
+
+          border-radius: 10px;
+
+          background: #fff9fb;
+
+          color: #8e7580;
+
+          font-size: 9px;
+          font-weight: 600;
+        }
+
+        .qr-guide-icon {
+          width: 25px;
+          height: 25px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 8px;
+
+          font-size: 11px;
+        }
+
+        .qr-guide-icon.present {
+          color: #3da568;
+          background: #eafff1;
+        }
+
+        .qr-guide-icon.late {
+          color: #d89732;
+          background: #fff5df;
+        }
+
+        .qr-guide-icon.absent {
+          color: #df697c;
+          background: #fff0f3;
+        }
+
+        .qr-guide-icon.excused {
+          color: #8d6bd4;
+          background: #f3efff;
+        }
+
+
+        /* =====================================================
+           HISTORY
+        ===================================================== */
+
+        .history-modal-title {
+          display: flex;
+          align-items: center;
+
+          gap: 8px;
+
+          color: #71384a;
+        }
+
+        .history-student {
+          display: flex;
+          align-items: center;
+
+          gap: 12px;
+
+          margin-bottom: 18px;
+
+          padding: 12px;
+
+          border-radius: 13px;
+
+          background: #fff8fa;
+
+          border:
+            1px solid #f5dfe7;
+        }
+
+        .history-student > div {
+          display: flex;
+          flex-direction: column;
+
+          gap: 2px;
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 767px) {
+
+          .attendance-filter {
+            display: grid;
+
+            grid-template-columns:
+              1fr;
+          }
+
+          .filter-item,
+          .type-filter,
+          .class-filter,
+          .search-filter {
+            width: 100%;
+            min-width: 0;
+          }
+
+          .attendance-type-banner {
+            align-items: flex-start;
+          }
+
+          .attendance-type-banner .ant-tag {
+            display: none;
+          }
+
+          .student-list-header {
+            padding: 16px;
+          }
+
+          .attendance-pagination {
+            justify-content: center;
+
+            overflow-x: auto;
+          }
+
+          .manual-attendance-actions {
+            min-width: 205px;
+
+            gap: 6px;
+          }
+
+          .manual-action-btn {
+            width: 32px !important;
+            height: 32px !important;
+
+            min-width: 32px !important;
+          }
+
+          .manual-action-btn .anticon {
+            font-size: 14px;
+          }
+
+          .qr-modern-header {
+            padding: 16px;
+          }
+
+          .qr-modern-icon {
+            width: 42px;
+            height: 42px;
+          }
+
+          .qr-live-status {
+            font-size: 10px;
+          }
+
+          .qr-class-card {
+            margin: 14px;
+          }
+
+          .qr-scanner-box {
+            min-height: 240px;
+          }
+
+          .qr-guide-list {
+            grid-template-columns:
+              repeat(2, 1fr);
+          }
+        }
+
+      `}</style>
     </ConfigProvider>
   );
 };
