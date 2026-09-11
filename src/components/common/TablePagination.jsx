@@ -9,14 +9,16 @@ import {
 const { Text } = Typography;
 
 // =========================================================
-// COLORS — CHIBI PINK PASTEL PALETTE
+// COLORS — NAVY & GOLD PALETTE
 // =========================================================
 
 const COLORS = {
-  primary: "#EC4899",
-  primaryLight: "#FDF2F8",
-  border: "#FBCFE8",
-  textDark: "#1E293B",
+  primary: "#173B5E",
+  primaryHover: "#244F78",
+  primaryLight: "#EEF2F7",
+  gold: "#D9A441",
+  border: "#D9E2EC",
+  textDark: "#173B5E",
   textMuted: "#64748B",
 };
 
@@ -62,7 +64,7 @@ const TablePagination = ({
              CONTAINER
           ===================================================== */
 
-          .chibi-pagination-container {
+          .navy-gold-pagination-container {
             width: 100%;
             box-sizing: border-box;
           }
@@ -71,18 +73,18 @@ const TablePagination = ({
              TOP INFO
           ===================================================== */
 
-          .chibi-pagination-info {
+          .navy-gold-pagination-info {
             display: flex;
             align-items: center;
             min-width: 0;
             flex: 1 1 auto;
           }
 
-          .chibi-pagination-info-text {
+          .navy-gold-pagination-info-text {
             min-width: 0;
           }
 
-          .chibi-pagination-info-title {
+          .navy-gold-pagination-info-title {
             white-space: nowrap;
           }
 
@@ -90,89 +92,69 @@ const TablePagination = ({
              PAGINATION
           ===================================================== */
 
-          .chibi-pink-pagination {
+          .navy-gold-pagination {
             display: flex;
             align-items: center;
             justify-content: center;
             min-width: 0;
           }
 
-          .chibi-pink-pagination .ant-pagination {
+          .navy-gold-pagination .ant-pagination {
             margin: 0 !important;
           }
 
-          .chibi-pink-pagination .ant-pagination-item {
-            border-radius: 14px !important;
-            border: 2px solid ${COLORS.border} !important;
+          .navy-gold-pagination .ant-pagination-item {
+            border-radius: 12px !important;
+            border: 1.5px solid ${COLORS.border} !important;
             background: #FFFFFF !important;
             font-weight: 700;
-            font-family: 'Nunito', 'Quicksand', sans-serif;
-            transition:
-              all 0.25s cubic-bezier(
-                0.175,
-                0.885,
-                0.32,
-                1.275
-              );
-            box-shadow:
-              0 3px 6px rgba(236, 72, 153, 0.04);
+            font-family: 'Be Vietnam Pro', -apple-system, sans-serif;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 6px rgba(23, 59, 94, 0.04);
           }
 
-          .chibi-pink-pagination .ant-pagination-item a {
+          .navy-gold-pagination .ant-pagination-item a {
             color: ${COLORS.textMuted} !important;
           }
 
-          .chibi-pink-pagination
-            .ant-pagination-item-active {
-            background-color: ${COLORS.primary} !important;
+          .navy-gold-pagination .ant-pagination-item-active {
+            background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryHover} 100%) !important;
             border-color: ${COLORS.primary} !important;
-            transform: scale(1.05);
-            box-shadow:
-              0 6px 16px rgba(236, 72, 153, 0.3) !important;
+            box-shadow: 0 4px 12px rgba(23, 59, 94, 0.2) !important;
           }
 
-          .chibi-pink-pagination
-            .ant-pagination-item-active a {
+          .navy-gold-pagination .ant-pagination-item-active a {
             color: #FFFFFF !important;
           }
 
-          .chibi-pink-pagination
-            .ant-pagination-item:hover:not(
-              .ant-pagination-item-active
-            ) {
+          .navy-gold-pagination .ant-pagination-item:hover:not(.ant-pagination-item-active) {
             border-color: ${COLORS.primary} !important;
             background-color: ${COLORS.primaryLight} !important;
           }
 
-          .chibi-pink-pagination
-            .ant-pagination-item:hover a {
+          .navy-gold-pagination .ant-pagination-item:hover a {
             color: ${COLORS.primary} !important;
           }
 
           /* Prev / Next */
 
-          .chibi-pink-pagination
-            .ant-pagination-prev,
-          .chibi-pink-pagination
-            .ant-pagination-next {
-            border-radius: 14px !important;
-            border: 2px solid ${COLORS.border} !important;
+          .navy-gold-pagination .ant-pagination-prev,
+          .navy-gold-pagination .ant-pagination-next {
+            border-radius: 12px !important;
+            border: 1.5px solid ${COLORS.border} !important;
             background: #FFFFFF !important;
             transition: all 0.2s ease;
           }
 
-          .chibi-pink-pagination
-            .ant-pagination-prev:hover,
-          .chibi-pink-pagination
-            .ant-pagination-next:hover {
+          .navy-gold-pagination .ant-pagination-prev:hover,
+          .navy-gold-pagination .ant-pagination-next:hover {
             border-color: ${COLORS.primary} !important;
             background-color: ${COLORS.primaryLight} !important;
           }
 
           /* Disabled */
 
-          .chibi-pink-pagination
-            .ant-pagination-disabled {
+          .navy-gold-pagination .ant-pagination-disabled {
             opacity: 0.45;
           }
 
@@ -180,37 +162,30 @@ const TablePagination = ({
              PAGE SIZE
           ===================================================== */
 
-          .chibi-pagination-size {
+          .navy-gold-pagination-size {
             display: flex;
             align-items: center;
             flex: 0 0 auto;
           }
 
-          .chibi-pink-select {
+          .navy-gold-select {
             min-width: 120px;
           }
 
-          .chibi-pink-select .ant-select-selector {
-            border-radius: 14px !important;
-            border: 2px solid ${COLORS.border} !important;
+          .navy-gold-select .ant-select-selector {
+            border-radius: 12px !important;
+            border: 1.5px solid ${COLORS.border} !important;
             background: #FFFFFF !important;
             font-weight: 600 !important;
-            font-family:
-              'Nunito',
-              'Quicksand',
-              sans-serif !important;
-            box-shadow:
-              0 3px 6px rgba(236, 72, 153, 0.04);
+            font-family: 'Be Vietnam Pro', -apple-system, sans-serif !important;
+            box-shadow: 0 2px 6px rgba(23, 59, 94, 0.04);
             transition: all 0.2s ease;
           }
 
-          .chibi-pink-select:hover
-            .ant-select-selector,
-          .chibi-pink-select.ant-select-focused
-            .ant-select-selector {
+          .navy-gold-select:hover .ant-select-selector,
+          .navy-gold-select.ant-select-focused .ant-select-selector {
             border-color: ${COLORS.primary} !important;
-            box-shadow:
-              0 0 0 4px rgba(236, 72, 153, 0.12) !important;
+            box-shadow: 0 0 0 4px rgba(23, 59, 94, 0.08) !important;
           }
 
           /* =====================================================
@@ -218,20 +193,20 @@ const TablePagination = ({
           ===================================================== */
 
           @media (max-width: 900px) {
-            .chibi-pagination-container {
+            .navy-gold-pagination-container {
               padding: 14px 16px !important;
-              border-radius: 20px !important;
+              border-radius: 18px !important;
             }
 
-            .chibi-pagination-info {
+            .navy-gold-pagination-info {
               flex: 1 1 100%;
             }
 
-            .chibi-pink-pagination {
+            .navy-gold-pagination {
               flex: 1 1 auto;
             }
 
-            .chibi-pagination-size {
+            .navy-gold-pagination-size {
               flex: 0 0 auto;
             }
           }
@@ -241,86 +216,64 @@ const TablePagination = ({
           ===================================================== */
 
           @media (max-width: 600px) {
-            .chibi-pagination-container {
+            .navy-gold-pagination-container {
               margin-top: 14px !important;
               padding: 14px !important;
-              border-radius: 18px !important;
+              border-radius: 16px !important;
               gap: 14px !important;
             }
 
-            /* Info */
-
-            .chibi-pagination-info {
+            .navy-gold-pagination-info {
               width: 100%;
               flex: 1 1 100%;
             }
 
-            .chibi-pagination-icon {
+            .navy-gold-pagination-icon {
               width: 40px !important;
               height: 40px !important;
               min-width: 40px !important;
-              border-radius: 14px !important;
+              border-radius: 12px !important;
               font-size: 16px !important;
             }
 
-            .chibi-pagination-info-title {
+            .navy-gold-pagination-info-title {
               font-size: 14px !important;
             }
 
-            .chibi-pagination-info-subtitle {
+            .navy-gold-pagination-info-subtitle {
               font-size: 12px !important;
             }
 
-            /* Pagination */
-
-            .chibi-pink-pagination {
+            .navy-gold-pagination {
               width: 100%;
               flex: 1 1 100%;
               overflow: hidden;
             }
 
-            .chibi-pink-pagination
-              .ant-pagination {
+            .navy-gold-pagination .ant-pagination {
               width: 100%;
               justify-content: center;
               flex-wrap: nowrap;
             }
 
-            .chibi-pink-pagination
-              .ant-pagination-item {
+            .navy-gold-pagination .ant-pagination-item {
               margin-inline-end: 4px !important;
-              border-radius: 11px !important;
+              border-radius: 10px !important;
             }
 
-            .chibi-pink-pagination
-              .ant-pagination-prev,
-            .chibi-pink-pagination
-              .ant-pagination-next {
+            .navy-gold-pagination .ant-pagination-prev,
+            .navy-gold-pagination .ant-pagination-next {
               margin-inline-end: 4px !important;
-              border-radius: 11px !important;
+              border-radius: 10px !important;
             }
 
-            .chibi-pink-pagination
-              .ant-pagination-jump-prev,
-            .chibi-pink-pagination
-              .ant-pagination-jump-next {
-              margin-inline-end: 4px !important;
-            }
-
-            /* Page size */
-
-            .chibi-pagination-size {
+            .navy-gold-pagination-size {
               width: 100%;
               flex: 1 1 100%;
               justify-content: space-between;
             }
 
-            .chibi-pagination-size
-              .chibi-page-size-label {
-              font-size: 13px !important;
-            }
-
-            .chibi-pink-select {
+            .navy-gold-select {
               width: 140px !important;
               min-width: 140px !important;
             }
@@ -331,35 +284,24 @@ const TablePagination = ({
           ===================================================== */
 
           @media (max-width: 400px) {
-            .chibi-pagination-container {
+            .navy-gold-pagination-container {
               padding: 12px !important;
             }
 
-            .chibi-pagination-info {
+            .navy-gold-pagination-info {
               gap: 10px !important;
             }
 
-            .chibi-pagination-info-title {
-              font-size: 13px !important;
-            }
-
-            .chibi-pagination-info-subtitle {
-              font-size: 11px !important;
-            }
-
-            .chibi-pagination-icon {
+            .navy-gold-pagination-icon {
               width: 36px !important;
               height: 36px !important;
               min-width: 36px !important;
-              border-radius: 12px !important;
+              border-radius: 10px !important;
             }
 
-            .chibi-pink-pagination
-              .ant-pagination-item,
-            .chibi-pink-pagination
-              .ant-pagination-prev,
-            .chibi-pink-pagination
-              .ant-pagination-next {
+            .navy-gold-pagination .ant-pagination-item,
+            .navy-gold-pagination .ant-pagination-prev,
+            .navy-gold-pagination .ant-pagination-next {
               width: 32px !important;
               min-width: 32px !important;
               height: 32px !important;
@@ -367,61 +309,23 @@ const TablePagination = ({
               margin-inline-end: 3px !important;
             }
 
-            .chibi-pink-pagination
-              .ant-pagination-item {
-              font-size: 12px !important;
-            }
-
-            .chibi-pink-pagination
-              .ant-pagination-prev
-              > *,
-            .chibi-pink-pagination
-              .ant-pagination-next
-              > * {
-              width: 32px !important;
-              height: 32px !important;
-            }
-
-            .chibi-pink-select {
+            .navy-gold-select {
               width: 125px !important;
               min-width: 125px !important;
-            }
-          }
-
-          /* =====================================================
-             VERY SMALL SCREEN
-          ===================================================== */
-
-          @media (max-width: 330px) {
-            .chibi-pink-pagination
-              .ant-pagination-item {
-              display: none;
-            }
-
-            .chibi-pink-pagination
-              .ant-pagination-item-active {
-              display: block;
-            }
-
-            .chibi-pink-pagination
-              .ant-pagination-jump-prev,
-            .chibi-pink-pagination
-              .ant-pagination-jump-next {
-              display: none;
             }
           }
         `}
       </style>
 
       <div
-        className="chibi-pagination-container"
+        className="navy-gold-pagination-container"
         style={{
           marginTop: 20,
           padding: "16px 24px",
-          background: "#FFFDFD",
-          borderRadius: 24,
-          border: `2px solid ${COLORS.border}`,
-          boxShadow: "0 10px 25px rgba(236, 72, 153, 0.08)",
+          background: "#FFFFFF",
+          borderRadius: 20,
+          border: `1.5px solid ${COLORS.border}`,
+          boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -435,7 +339,7 @@ const TablePagination = ({
         ===================================================== */}
 
         <div
-          className="chibi-pagination-info"
+          className="navy-gold-pagination-info"
           style={{
             display: "flex",
             alignItems: "center",
@@ -443,14 +347,14 @@ const TablePagination = ({
           }}
         >
           <div
-            className="chibi-pagination-icon"
+            className="navy-gold-pagination-icon"
             style={{
               width: 44,
               height: 44,
               minWidth: 44,
-              borderRadius: 16,
+              borderRadius: 14,
               background: COLORS.primaryLight,
-              border: `2px solid ${COLORS.border}`,
+              border: `1.5px solid ${COLORS.border}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -462,15 +366,15 @@ const TablePagination = ({
             <DatabaseOutlined />
           </div>
 
-          <div className="chibi-pagination-info-text">
+          <div className="navy-gold-pagination-info-text">
             <Text
               strong
-              className="chibi-pagination-info-title"
+              className="navy-gold-pagination-info-title"
               style={{
                 display: "block",
                 color: COLORS.textDark,
                 fontSize: 15,
-                fontFamily: "Nunito, Quicksand, sans-serif",
+                fontFamily: "Be Vietnam Pro, -apple-system, sans-serif",
                 lineHeight: 1.5,
               }}
             >
@@ -496,10 +400,11 @@ const TablePagination = ({
 
             <Text
               type="secondary"
-              className="chibi-pagination-info-subtitle"
+              className="navy-gold-pagination-info-subtitle"
               style={{
                 fontSize: 13,
                 lineHeight: 1.5,
+                fontFamily: "Be Vietnam Pro, -apple-system, sans-serif",
               }}
             >
               Tổng số{" "}
@@ -511,7 +416,7 @@ const TablePagination = ({
               >
                 {safeTotal.toLocaleString("vi-VN")}
               </span>{" "}
-              bản ghi 💕
+              bản ghi
             </Text>
           </div>
         </div>
@@ -520,7 +425,7 @@ const TablePagination = ({
             PAGINATION
         ===================================================== */}
 
-        <div className="chibi-pink-pagination">
+        <div className="navy-gold-pagination">
           <Pagination
             current={safePage}
             pageSize={safePageSize}
@@ -584,7 +489,7 @@ const TablePagination = ({
             PAGE SIZE
         ===================================================== */}
 
-        <div className="chibi-pagination-size">
+        <div className="navy-gold-pagination-size">
           <Text
             type="secondary"
             className="chibi-page-size-label"
@@ -592,13 +497,14 @@ const TablePagination = ({
               fontSize: 14,
               fontWeight: 600,
               color: COLORS.textMuted,
+              fontFamily: "Be Vietnam Pro, -apple-system, sans-serif",
             }}
           >
             Số dòng:
           </Text>
 
           <Select
-            className="chibi-pink-select"
+            className="navy-gold-select"
             value={safePageSize}
             style={{
               width: 120,

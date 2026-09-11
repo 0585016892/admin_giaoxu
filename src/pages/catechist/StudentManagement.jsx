@@ -70,7 +70,37 @@ import { QRCodeCanvas } from "qrcode.react";
 
 const { Text } = Typography;
 
-const primaryNavy = "#1B365D";
+/* =====================================================
+   FAITHEDU THEME
+===================================================== */
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  gold: "#D9A441",
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+  border: "#E2E8F0",
+
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
+
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
+
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+
+  gray: "#64748B",
+  grayBg: "#F1F5F9",
+};
 
 const EMPTY_VALUE = "-";
 
@@ -146,10 +176,13 @@ export default function StudentManagement() {
   =================================================== */
 
   const [activeClassTab, setActiveClassTab] = useState("all");
+
   const [searchText, setSearchText] = useState("");
+
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const [currentPage, setCurrentPage] = useState(1);
+
   const [pageSize, setPageSize] = useState(10);
 
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -159,6 +192,7 @@ export default function StudentManagement() {
   =================================================== */
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+
   const [editingStudent, setEditingStudent] = useState(null);
 
   /* ===================================================
@@ -166,6 +200,7 @@ export default function StudentManagement() {
   =================================================== */
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
   const [detailStudent, setDetailStudent] = useState(null);
 
   /* ===================================================
@@ -183,6 +218,7 @@ export default function StudentManagement() {
   =================================================== */
 
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+
   const [qrStudent, setQrStudent] = useState(null);
 
   const handleOpenQR = useCallback((student) => {
@@ -194,6 +230,7 @@ export default function StudentManagement() {
     setQrStudent(student);
     setIsQRModalOpen(true);
   }, []);
+
   const handleDownloadQR = useCallback(() => {
     if (!qrStudent?.qr_token) {
       message.warning("Không có mã QR để tải!");
@@ -208,9 +245,6 @@ export default function StudentManagement() {
     }
 
     try {
-      // ==============================
-      // THÔNG TIN HỌC SINH
-      // ==============================
       const studentName = qrStudent.full_name || qrStudent.name || "Học sinh";
 
       const studentCode = qrStudent.code || `HS-${qrStudent.id}`;
@@ -222,9 +256,6 @@ export default function StudentManagement() {
         qrStudent.class?.class_name ||
         "Chưa xếp lớp";
 
-      // ==============================
-      // KÍCH THƯỚC
-      // ==============================
       const qrSize = qrCanvas.width || 300;
 
       const padding = 30;
@@ -242,9 +273,6 @@ export default function StudentManagement() {
       const canvasHeight =
         qrSize + padding * 2 + nameHeight + codeHeight + classHeight + 20;
 
-      // ==============================
-      // TẠO CANVAS
-      // ==============================
       const canvas = document.createElement("canvas");
 
       canvas.width = canvasWidth;
@@ -256,54 +284,33 @@ export default function StudentManagement() {
         throw new Error("Không thể tạo Canvas Context");
       }
 
-      // ==============================
-      // NỀN
-      // ==============================
-      ctx.fillStyle = "#FFFFFF";
+      ctx.fillStyle = COLORS.white;
 
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-      // ==============================
-      // VẼ QR
-      // ==============================
       ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
 
-      // ==============================
-      // CĂN GIỮA TEXT
-      // ==============================
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // ==============================
-      // TÊN HỌC SINH
-      // ==============================
       ctx.fillStyle = "#1E293B";
 
       ctx.font = `600 ${nameFontSize}px Arial`;
 
       ctx.fillText(studentName, canvasWidth / 2, qrSize + padding + 20);
 
-      // ==============================
-      // MÃ HỌC SINH
-      // ==============================
-      ctx.fillStyle = "#64748B";
+      ctx.fillStyle = COLORS.textSecondary;
 
       ctx.font = `500 ${codeFontSize}px Arial`;
 
       ctx.fillText(studentCode, canvasWidth / 2, qrSize + padding + 52);
 
-      // ==============================
-      // TÊN LỚP
-      // ==============================
-      ctx.fillStyle = "#1B365D";
+      ctx.fillStyle = COLORS.navy;
 
       ctx.font = `600 ${classFontSize}px Arial`;
 
       ctx.fillText(`Lớp: ${className}`, canvasWidth / 2, qrSize + padding + 84);
 
-      // ==============================
-      // DOWNLOAD
-      // ==============================
       const link = document.createElement("a");
 
       link.download = `${studentCode}-QR.png`;
@@ -327,10 +334,11 @@ export default function StudentManagement() {
   =================================================== */
 
   const [form] = Form.useForm();
+
   const [changeClassForm] = Form.useForm();
 
   /* ===================================================
-     ACTION LOADING HELPERS
+     ACTION LOADING
   =================================================== */
 
   const setActionLoadingState = useCallback((type, id) => {
@@ -370,7 +378,9 @@ export default function StudentManagement() {
       qr_token: student.qr_token || null,
 
       code: student.code || EMPTY_VALUE,
+
       name: student.name || "Chưa có tên",
+
       gender: student.gender || "Khác",
 
       date_of_birth: student.date_of_birth || null,
@@ -380,8 +390,11 @@ export default function StudentManagement() {
       nationality: student.nationality || "Việt Nam",
 
       phone: student.phone || EMPTY_VALUE,
+
       email: student.email || EMPTY_VALUE,
+
       address: student.address || EMPTY_VALUE,
+
       parish: student.parish || EMPTY_VALUE,
 
       father_name: student.father_name || EMPTY_VALUE,
@@ -451,18 +464,12 @@ export default function StudentManagement() {
       const { silent = false } = options;
 
       try {
-        // =====================================================
-        // LOADING
-        // =====================================================
         if (silent) {
           setRefreshing(true);
         } else {
           setLoading(true);
         }
 
-        // =====================================================
-        // CHỈ 2 REQUEST
-        // =====================================================
         const [studentRes, classRes] = await Promise.all([
           studentApi.getAll(),
           classApi.getAll(),
@@ -472,70 +479,50 @@ export default function StudentManagement() {
           return;
         }
 
-        // =====================================================
-        // DATA
-        // =====================================================
         const studentData = getResponseData(studentRes, ["students"]);
 
         const classData = getResponseData(classRes, ["classes"]);
 
-        // =====================================================
-        // FORMAT CLASSES
-        // =====================================================
         const formattedClasses = Array.isArray(classData)
           ? classData.map((item) => ({
               id: item.id,
+
               name: item.name || item.className || `Lớp #${item.id}`,
+
               code: item.code || null,
             }))
           : [];
 
         setClasses(formattedClasses);
 
-        // =====================================================
-        // KHÔNG CÓ HỌC SINH
-        // =====================================================
         if (!Array.isArray(studentData)) {
           setStudents([]);
           setSelectedRowKeys([]);
           return;
         }
 
-        // =====================================================
-        // FORMAT STUDENTS
-        //
-        // KHÔNG GỌI:
-        // classStudentApi.getByStudent()
-        //
-        // Vì /students đã trả:
-        // class_id
-        // class_name
-        // class_code
-        // class_student_status
-        // joined_at
-        // =====================================================
         const formattedStudents = studentData.map((student) => {
           const relation = {
             class_id: student.class_id,
+
             class_name: student.class_name,
+
             class_code: student.class_code,
+
             status: student.class_student_status,
+
             joined_at: student.joined_at,
           };
 
           return formatStudent(student, relation, formattedClasses);
         });
 
-        // =====================================================
-        // SET DATA
-        // =====================================================
         if (!mountedRef.current) {
           return;
         }
 
         setStudents(formattedStudents);
 
-        // Reset checkbox
         setSelectedRowKeys([]);
       } catch (error) {
         if (mountedRef.current) {
@@ -563,6 +550,7 @@ export default function StudentManagement() {
 
     if (!didInitialFetch.current) {
       didInitialFetch.current = true;
+
       fetchStudents();
     }
 
@@ -641,7 +629,7 @@ export default function StudentManagement() {
   }, [students]);
 
   /* ===================================================
-     TAB CHANGE
+     TAB
   =================================================== */
 
   const handleTabChange = (key) => {
@@ -661,6 +649,7 @@ export default function StudentManagement() {
     setCurrentPage(1);
     setSelectedRowKeys([]);
   };
+
   /* ===================================================
      IMPORT EXCEL
   =================================================== */
@@ -670,7 +659,6 @@ export default function StudentManagement() {
       return;
     }
 
-    // Kiểm tra định dạng
     const isExcel =
       file.type ===
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
@@ -683,7 +671,6 @@ export default function StudentManagement() {
       return;
     }
 
-    // Giới hạn 10MB
     const isLt10M = file.size / 1024 / 1024 < 10;
 
     if (!isLt10M) {
@@ -708,12 +695,10 @@ export default function StudentManagement() {
         hide();
       }
 
-      // Load lại danh sách
       await fetchStudents({
         silent: true,
       });
 
-      // Reset lựa chọn
       setSelectedRowKeys([]);
       setCurrentPage(1);
     } catch (error) {
@@ -727,15 +712,17 @@ export default function StudentManagement() {
       setImporting(false);
     }
   };
+
   /* ===================================================
-   DOWNLOAD EXCEL TEMPLATE
-=================================================== */
+     DOWNLOAD TEMPLATE
+  =================================================== */
 
   const handleDownloadExcelTemplate = useCallback(() => {
     try {
       const link = document.createElement("a");
 
       link.href = "/templates/mau_import_hoc_sinh_FaithEdu.xlsx";
+
       link.download = "mau_import_hoc_sinh_FaithEdu.xlsx";
 
       document.body.appendChild(link);
@@ -749,6 +736,7 @@ export default function StudentManagement() {
       message.error("Không thể tải file Excel mẫu!");
     }
   }, []);
+
   /* ===================================================
      CREATE
   =================================================== */
@@ -784,6 +772,7 @@ export default function StudentManagement() {
 
       form.setFieldsValue({
         code: value(student.code),
+
         name: student.name,
         gender: student.gender,
 
@@ -796,8 +785,11 @@ export default function StudentManagement() {
         nationality: value(student.nationality),
 
         phone: value(student.phone),
+
         email: value(student.email),
+
         address: value(student.address),
+
         parish: value(student.parish),
 
         class_id: student.classId ? String(student.classId) : undefined,
@@ -945,7 +937,7 @@ export default function StudentManagement() {
   };
 
   /* ===================================================
-     SAVE STUDENT
+     SAVE
   =================================================== */
 
   const handleSaveStudent = async (values) => {
@@ -991,6 +983,7 @@ export default function StudentManagement() {
 
   const handleOpenDetail = useCallback((student) => {
     setDetailStudent(student);
+
     setIsDetailModalOpen(true);
   }, []);
 
@@ -1055,7 +1048,9 @@ export default function StudentManagement() {
         } else {
           await classStudentApi.add({
             class_id: newClassId,
+
             student_id: studentId,
+
             status: "studying",
           });
         }
@@ -1229,32 +1224,32 @@ export default function StudentManagement() {
     const config = {
       active: {
         text: "Hoạt động",
-        bg: "#ecfdf5",
-        color: "#059669",
+        bg: COLORS.successBg,
+        color: COLORS.success,
       },
 
       inactive: {
         text: "Tạm khóa",
-        bg: "#fff7ed",
-        color: "#ea580c",
+        bg: "#FFF7ED",
+        color: "#EA580C",
       },
 
       graduated: {
         text: "Đã tốt nghiệp",
-        bg: "#eff6ff",
-        color: "#2563eb",
+        bg: COLORS.navyLight,
+        color: COLORS.navyHover,
       },
 
       transferred: {
         text: "Đã chuyển đi",
-        bg: "#f5f3ff",
-        color: "#7c3aed",
+        bg: COLORS.navyLight,
+        color: COLORS.navy,
       },
 
       dropped: {
         text: "Đã nghỉ",
-        bg: "#fef2f2",
-        color: "#dc2626",
+        bg: COLORS.dangerBg,
+        color: COLORS.danger,
       },
     };
 
@@ -1294,6 +1289,9 @@ export default function StudentManagement() {
       <Tag
         style={{
           whiteSpace: "nowrap",
+          background: COLORS.navyLight,
+          borderColor: COLORS.border,
+          color: COLORS.navy,
         }}
       >
         {map[status] || status}
@@ -1327,9 +1325,10 @@ export default function StudentManagement() {
               icon={<UserOutlined />}
               style={{
                 flexShrink: 0,
-                background: "#eef2ff",
-                color: "#6366f1",
+                background: COLORS.navyLight,
+                color: COLORS.navy,
                 fontWeight: 700,
+                border: `1px solid ${COLORS.border}`,
               }}
             />
 
@@ -1346,6 +1345,7 @@ export default function StudentManagement() {
                   display: "block",
                   maxWidth: 250,
                   cursor: "pointer",
+                  color: COLORS.navy,
                 }}
                 onClick={() => handleOpenDetail(record)}
               >
@@ -1386,6 +1386,9 @@ export default function StudentManagement() {
               style={{
                 borderRadius: 8,
                 whiteSpace: "nowrap",
+                background: COLORS.navyLight,
+                borderColor: COLORS.border,
+                color: COLORS.navy,
               }}
             >
               {record.className}
@@ -1425,7 +1428,7 @@ export default function StudentManagement() {
                 icon={<QrcodeOutlined />}
                 onClick={() => handleOpenQR(record)}
                 style={{
-                  color: primaryNavy,
+                  color: COLORS.navy,
                 }}
               />
             </Tooltip>
@@ -1436,6 +1439,9 @@ export default function StudentManagement() {
                 shape="circle"
                 icon={<EyeOutlined />}
                 onClick={() => handleOpenDetail(record)}
+                style={{
+                  color: COLORS.navy,
+                }}
               />
             </Tooltip>
 
@@ -1445,6 +1451,9 @@ export default function StudentManagement() {
                 shape="circle"
                 icon={<EditOutlined />}
                 onClick={() => handleOpenEditModal(record)}
+                style={{
+                  color: COLORS.navy,
+                }}
               />
             </Tooltip>
 
@@ -1508,7 +1517,14 @@ export default function StudentManagement() {
                 ],
               }}
             >
-              <Button type="text" shape="circle" icon={<MoreOutlined />} />
+              <Button
+                type="text"
+                shape="circle"
+                icon={<MoreOutlined />}
+                style={{
+                  color: COLORS.navy,
+                }}
+              />
             </Dropdown>
           </Space>
         ),
@@ -1543,7 +1559,7 @@ export default function StudentManagement() {
               count={statistics.total}
               overflowCount={999}
               style={{
-                background: "#6366f1",
+                background: COLORS.navy,
               }}
             />
           </Space>
@@ -1569,7 +1585,7 @@ export default function StudentManagement() {
               count={count}
               showZero
               style={{
-                background: "#94a3b8",
+                background: COLORS.gold,
               }}
             />
           </Space>
@@ -1590,7 +1606,7 @@ export default function StudentManagement() {
             count={statistics.unassigned}
             showZero
             style={{
-              background: "#f59e0b",
+              background: COLORS.gold,
             }}
           />
         </Space>
@@ -1617,6 +1633,16 @@ export default function StudentManagement() {
               column={{
                 xs: 1,
                 sm: 2,
+              }}
+              labelStyle={{
+                width: 150,
+                minWidth: 150,
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+              }}
+              contentStyle={{
+                minWidth: 0,
+                wordBreak: "break-word",
               }}
             >
               <Descriptions.Item label="Mã học sinh">
@@ -1686,6 +1712,16 @@ export default function StudentManagement() {
                 xs: 1,
                 sm: 2,
               }}
+              labelStyle={{
+                width: 160,
+                minWidth: 160,
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+              }}
+              contentStyle={{
+                minWidth: 0,
+                wordBreak: "break-word",
+              }}
             >
               <Descriptions.Item label="Tên thánh Rửa tội">
                 {detailStudent.baptism_name}
@@ -1746,6 +1782,16 @@ export default function StudentManagement() {
                 xs: 1,
                 sm: 2,
               }}
+              labelStyle={{
+                width: 160,
+                minWidth: 160,
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+              }}
+              contentStyle={{
+                minWidth: 0,
+                wordBreak: "break-word",
+              }}
             >
               <Descriptions.Item label="Bố">
                 {detailStudent.father_name}
@@ -1790,6 +1836,16 @@ export default function StudentManagement() {
                 xs: 1,
                 sm: 2,
               }}
+              labelStyle={{
+                width: 160,
+                minWidth: 160,
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+              }}
+              contentStyle={{
+                minWidth: 0,
+                wordBreak: "break-word",
+              }}
             >
               <Descriptions.Item label="Cấp giáo lý">
                 {detailStudent.catechism_level}
@@ -1821,13 +1877,30 @@ export default function StudentManagement() {
       <style>
         {`
           /* =====================================================
-             GLOBAL RESPONSIVE
+             PAGE
           ===================================================== */
 
           .student-management-page {
             min-height: 100vh;
             box-sizing: border-box;
             overflow-x: hidden;
+            background: #F7F9FC;
+            color: #173B5E;
+          }
+
+          /* =====================================================
+             MAIN CARD
+          ===================================================== */
+
+          .student-main-card {
+            border: 1px solid #E2E8F0 !important;
+            background: #FFFFFF !important;
+            box-shadow:
+              0 8px 28px rgba(23, 59, 94, 0.06);
+          }
+
+          .student-main-card .ant-card-body {
+            padding: 24px;
           }
 
           /* =====================================================
@@ -1846,14 +1919,29 @@ export default function StudentManagement() {
 
           .student-class-tabs .ant-tabs-tab {
             white-space: nowrap;
+            color: #64748B;
+            font-weight: 600;
+            border-color: #E2E8F0 !important;
+            background: #FFFFFF;
+            transition: all 0.2s ease;
           }
 
-          /* =====================================================
-             MAIN CARD
-          ===================================================== */
+          .student-class-tabs .ant-tabs-tab:hover {
+            color: #244F78;
+            border-color: #D9A441 !important;
+          }
 
-          .student-main-card .ant-card-body {
-            padding: 24px;
+          .student-class-tabs .ant-tabs-tab-active {
+            background: #173B5E !important;
+            border-color: #173B5E !important;
+          }
+
+          .student-class-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+            color: #FFFFFF !important;
+          }
+
+          .student-class-tabs .ant-tabs-ink-bar {
+            background: #D9A441 !important;
           }
 
           /* =====================================================
@@ -1868,28 +1956,128 @@ export default function StudentManagement() {
             width: 100%;
           }
 
+          .student-management-page
+            .ant-input-affix-wrapper,
+          .student-management-page
+            .ant-input,
+          .student-management-page
+            .ant-select-selector {
+            border-color: #E2E8F0 !important;
+            background: #FFFFFF !important;
+            color: #173B5E !important;
+          }
+
+          .student-management-page
+            .ant-input-affix-wrapper:hover,
+          .student-management-page
+            .ant-input:hover,
+          .student-management-page
+            .ant-select-selector:hover {
+            border-color: #D9A441 !important;
+          }
+
+          .student-management-page
+            .ant-input-affix-wrapper-focused,
+          .student-management-page
+            .ant-input:focus,
+          .student-management-page
+            .ant-select-focused
+            .ant-select-selector {
+            border-color: #173B5E !important;
+            box-shadow:
+              0 0 0 2px rgba(23, 59, 94, 0.08) !important;
+          }
+
+          /* =====================================================
+             BUTTON
+          ===================================================== */
+
+          .student-management-page
+            .ant-btn-primary {
+            background: #173B5E;
+            border-color: #173B5E;
+            color: #FFFFFF;
+            font-weight: 700;
+          }
+
+          .student-management-page
+            .ant-btn-primary:hover,
+          .student-management-page
+            .ant-btn-primary:focus {
+            background: #244F78 !important;
+            border-color: #244F78 !important;
+          }
+
+          .student-management-page
+            .ant-btn:not(.ant-btn-primary):hover {
+            color: #173B5E;
+            border-color: #D9A441;
+          }
+
           /* =====================================================
              TABLE
           ===================================================== */
 
           .student-table .ant-table {
             border-radius: 12px;
+            overflow: hidden;
           }
 
           .student-table .ant-table-container {
             border-radius: 12px;
           }
 
-          .student-table .ant-table-thead > tr > th {
+          .student-table
+            .ant-table-thead
+            > tr
+            > th {
+            background: #EEF3F7 !important;
+            color: #173B5E !important;
+            font-weight: 800;
+            border-bottom:
+              1px solid #E2E8F0;
             white-space: nowrap;
           }
 
-          .student-table .ant-table-cell {
+          .student-table
+            .ant-table-tbody
+            > tr
+            > td {
+            border-bottom:
+              1px solid #EEF1F4;
+          }
+
+          .student-table
+            .ant-table-tbody
+            > tr:hover
+            > td {
+            background: #F7F9FC !important;
+          }
+
+          .student-table
+            .ant-table-cell {
             vertical-align: middle;
           }
 
           /* =====================================================
-             BOTTOM PAGINATION
+             CHECKBOX
+          ===================================================== */
+
+          .student-management-page
+            .ant-checkbox-checked
+            .ant-checkbox-inner {
+            background-color: #173B5E;
+            border-color: #173B5E;
+          }
+
+          .student-management-page
+            .ant-checkbox-indeterminate
+            .ant-checkbox-inner:after {
+            background-color: #173B5E;
+          }
+
+          /* =====================================================
+             PAGINATION
           ===================================================== */
 
           .student-pagination-row {
@@ -1904,6 +2092,46 @@ export default function StudentManagement() {
             gap: 10px;
           }
 
+          .student-management-page
+            .ant-pagination-item-active {
+            border-color: #173B5E;
+          }
+
+          .student-management-page
+            .ant-pagination-item-active
+            a {
+            color: #173B5E;
+            font-weight: 700;
+          }
+
+          /* =====================================================
+             TEMPLATE BUTTON
+          ===================================================== */
+
+          .hero-btn-template {
+            height: 42px;
+            border-radius: 10px !important;
+            padding: 0 16px !important;
+            background: #FFFFFF !important;
+            border: 1px solid #D9A441 !important;
+            color: #173B5E !important;
+            font-weight: 700 !important;
+            font-family:
+              'Be Vietnam Pro',
+              sans-serif !important;
+            box-shadow:
+              0 4px 12px
+              rgba(23, 59, 94, 0.06);
+            transition: all 0.2s ease !important;
+          }
+
+          .hero-btn-template:hover {
+            color: #173B5E !important;
+            border-color: #D9A441 !important;
+            background: #FBF5E7 !important;
+            transform: translateY(-1px);
+          }
+
           /* =====================================================
              QR
           ===================================================== */
@@ -1912,6 +2140,8 @@ export default function StudentManagement() {
             width: 330px;
             max-width: 100%;
             margin: 0 auto 20px;
+            border:
+              1px solid #E2E8F0 !important;
           }
 
           .student-qr-wrapper {
@@ -1936,8 +2166,9 @@ export default function StudentManagement() {
              MODAL
           ===================================================== */
 
-          .student-responsive-modal .ant-modal-content {
-            border-radius: 18px;
+          .student-responsive-modal
+            .ant-modal-content {
+            border-radius: 16px;
             overflow: hidden;
           }
 
@@ -1950,7 +2181,8 @@ export default function StudentManagement() {
               padding: 20px;
             }
 
-            .student-main-card .ant-card-body {
+            .student-main-card
+              .ant-card-body {
               padding: 20px;
             }
           }
@@ -1968,48 +2200,49 @@ export default function StudentManagement() {
               border-radius: 16px !important;
             }
 
-            .student-main-card .ant-card-body {
+            .student-main-card
+              .ant-card-body {
               padding: 14px !important;
             }
-
-            /* Tabs */
 
             .student-class-tabs {
               margin-left: -4px;
               margin-right: -4px;
             }
 
-            .student-class-tabs .ant-tabs-nav {
+            .student-class-tabs
+              .ant-tabs-nav {
               margin-bottom: 16px !important;
             }
 
-            .student-class-tabs .ant-tabs-tab {
+            .student-class-tabs
+              .ant-tabs-tab {
               padding: 8px 10px !important;
               font-size: 13px;
             }
-
-            /* Filter */
 
             .student-filter-row {
               margin-bottom: 16px !important;
             }
 
-            /* Table */
-
             .student-table .ant-table {
               font-size: 13px;
             }
 
-            .student-table .ant-table-thead > tr > th {
+            .student-table
+              .ant-table-thead
+              > tr
+              > th {
               padding: 10px 12px !important;
               font-size: 12px;
             }
 
-            .student-table .ant-table-tbody > tr > td {
+            .student-table
+              .ant-table-tbody
+              > tr
+              > td {
               padding: 10px 12px !important;
             }
-
-            /* Bottom */
 
             .student-pagination-row {
               display: flex !important;
@@ -2027,24 +2260,12 @@ export default function StudentManagement() {
               justify-content: center;
             }
 
-            .student-pagination-controls
-              .ant-pagination {
-              max-width: 100%;
-            }
-
-            /* Modal */
-
             .student-responsive-modal {
-              max-width: calc(100vw - 16px) !important;
+              max-width:
+                calc(100vw - 16px)
+                !important;
               margin: 8px auto !important;
             }
-
-            .student-responsive-modal
-              .ant-modal-content {
-              border-radius: 16px;
-            }
-
-            /* QR */
 
             .student-qr-card {
               width: 100%;
@@ -2070,8 +2291,6 @@ export default function StudentManagement() {
               min-width: 0 !important;
             }
 
-            /* Description */
-
             .ant-descriptions {
               overflow: hidden;
             }
@@ -2079,6 +2298,10 @@ export default function StudentManagement() {
             .ant-descriptions-item-label,
             .ant-descriptions-item-content {
               word-break: break-word;
+            }
+
+            .hero-btn-template {
+              height: 40px;
             }
           }
 
@@ -2091,17 +2314,25 @@ export default function StudentManagement() {
               padding: 8px;
             }
 
-            .student-main-card .ant-card-body {
+            .student-main-card
+              .ant-card-body {
               padding: 10px !important;
             }
 
-            .student-class-tabs .ant-tabs-tab {
+            .student-class-tabs
+              .ant-tabs-tab {
               padding: 7px 8px !important;
               font-size: 12px;
             }
 
-            .student-table .ant-table-thead > tr > th,
-            .student-table .ant-table-tbody > tr > td {
+            .student-table
+              .ant-table-thead
+              > tr
+              > th,
+            .student-table
+              .ant-table-tbody
+              > tr
+              > td {
               padding: 9px 10px !important;
             }
 
@@ -2144,41 +2375,17 @@ export default function StudentManagement() {
               padding: 6px;
             }
 
-            .student-main-card .ant-card-body {
+            .student-main-card
+              .ant-card-body {
               padding: 8px !important;
             }
 
-            .student-class-tabs .ant-tabs-tab {
+            .student-class-tabs
+              .ant-tabs-tab {
               padding: 6px !important;
               font-size: 11px;
             }
           }
-            .hero-btn-template {
-  height: 42px;
-  border-radius: 14px !important;
-  padding: 0 16px !important;
-  background: #fff !important;
-  border: 1.5px solid #D4AF37 !important;
-  color: #927500 !important;
-  font-weight: 700 !important;
-  font-family: 'Be Vietnam Pro', sans-serif !important;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
-  transition: all 0.2s ease !important;
-}
-
-.hero-btn-template:hover {
-  color: #7A6200 !important;
-  border-color: #B8961E !important;
-  background: #FFFDF5 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.22);
-}
-
-@media (max-width: 576px) {
-  .hero-btn-template {
-    height: 40px;
-  }
-}
         `}
       </style>
 
@@ -2191,9 +2398,10 @@ export default function StudentManagement() {
         {/* =================================================
             HEADER
         ================================================= */}
+
         <PageHeroHeader
           icon={<UserOutlined />}
-          badgeText="🌸 QUẢN LÝ HỌC SINH"
+          badgeText="QUẢN LÝ HỌC SINH"
           title="Quản lý học sinh"
           description="Quản lý thông tin, lớp học và quá trình giáo lý của học sinh"
           selectedCount={selectedRowKeys.length}
@@ -2230,11 +2438,14 @@ export default function StudentManagement() {
             </Button>
           }
         />
+
         <input
           id="student-excel-input"
           type="file"
           accept=".xlsx,.xls"
-          style={{ display: "none" }}
+          style={{
+            display: "none",
+          }}
           onChange={(e) => {
             const file = e.target.files?.[0];
 
@@ -2242,10 +2453,10 @@ export default function StudentManagement() {
               handleImportExcel(file);
             }
 
-            // Cho phép chọn lại cùng một file
             e.target.value = "";
           }}
         />
+
         {/* =================================================
             STATISTICS
         ================================================= */}
@@ -2262,7 +2473,7 @@ export default function StudentManagement() {
               value={statistics.total}
               loading={loading}
               icon={<TeamOutlined />}
-              iconColor={primaryNavy}
+              iconColor={COLORS.navy}
               description="Tất cả học sinh"
             />
           </Col>
@@ -2273,7 +2484,7 @@ export default function StudentManagement() {
               value={statistics.active}
               loading={loading}
               icon={<UserSwitchOutlined />}
-              iconColor="#059669"
+              iconColor={COLORS.navyHover}
               description="Học sinh đang hoạt động"
             />
           </Col>
@@ -2284,7 +2495,7 @@ export default function StudentManagement() {
               value={statistics.inactive}
               loading={loading}
               icon={<LockOutlined />}
-              iconColor="#ea580c"
+              iconColor={COLORS.gold}
               description="Học sinh tạm khóa"
             />
           </Col>
@@ -2295,7 +2506,7 @@ export default function StudentManagement() {
               value={statistics.unassigned}
               loading={loading}
               icon={<BookOutlined />}
-              iconColor="#d97706"
+              iconColor={COLORS.gold}
               description="Chưa được phân lớp"
             />
           </Col>
@@ -2309,7 +2520,7 @@ export default function StudentManagement() {
           className="student-main-card"
           bordered={false}
           style={{
-            borderRadius: 22,
+            borderRadius: 18,
             overflow: "hidden",
           }}
         >
@@ -2335,7 +2546,7 @@ export default function StudentManagement() {
                 prefix={
                   <SearchOutlined
                     style={{
-                      color: "#94a3b8",
+                      color: COLORS.navy,
                     }}
                   />
                 }
@@ -2344,10 +2555,11 @@ export default function StudentManagement() {
                 disabled={loading || bulkDeleting}
                 onChange={(e) => {
                   setSearchText(e.target.value);
+
                   setCurrentPage(1);
                 }}
                 style={{
-                  borderRadius: 12,
+                  borderRadius: 10,
                 }}
               />
             </Col>
@@ -2360,6 +2572,7 @@ export default function StudentManagement() {
                 disabled={loading || bulkDeleting}
                 onChange={(value) => {
                   setSelectedStatus(value);
+
                   setCurrentPage(1);
                 }}
                 options={[
@@ -2398,7 +2611,7 @@ export default function StudentManagement() {
                 disabled={loading || saving || bulkDeleting}
                 onClick={resetFilters}
                 style={{
-                  borderRadius: 12,
+                  borderRadius: 10,
                 }}
               >
                 Đặt lại
@@ -2483,6 +2696,7 @@ export default function StudentManagement() {
                   disabled={loading || saving || bulkDeleting}
                   onChange={(value) => {
                     setPageSize(Number(value));
+
                     setCurrentPage(1);
                   }}
                   options={[
@@ -2626,9 +2840,9 @@ export default function StudentManagement() {
             <Card
               size="small"
               style={{
-                background: "#f8fafc",
+                background: COLORS.navyLight,
                 borderRadius: 12,
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${COLORS.border}`,
                 marginBottom: 20,
               }}
             >
@@ -2644,6 +2858,8 @@ export default function StudentManagement() {
                   icon={<UserOutlined />}
                   style={{
                     flexShrink: 0,
+                    background: COLORS.navy,
+                    color: COLORS.white,
                   }}
                 />
 
@@ -2717,7 +2933,7 @@ export default function StudentManagement() {
             <Space>
               <QrcodeOutlined
                 style={{
-                  color: primaryNavy,
+                  color: COLORS.navy,
                   fontSize: 20,
                 }}
               />
@@ -2733,16 +2949,15 @@ export default function StudentManagement() {
                 padding: "10px 0 20px",
               }}
             >
-              {/* INFO */}
-
               <Avatar
                 size={64}
                 src={qrStudent.avatar}
                 icon={<UserOutlined />}
                 style={{
-                  background: "#eef2ff",
-                  color: "#6366f1",
+                  background: COLORS.navyLight,
+                  color: COLORS.navy,
                   marginBottom: 12,
+                  border: `1px solid ${COLORS.border}`,
                 }}
               />
 
@@ -2750,7 +2965,7 @@ export default function StudentManagement() {
                 level={4}
                 style={{
                   margin: "0 0 4px",
-                  color: "#1E293B",
+                  color: COLORS.navy,
                   wordBreak: "break-word",
                 }}
               >
@@ -2767,15 +2982,13 @@ export default function StudentManagement() {
                 {qrStudent.code}
               </Typography.Text>
 
-              {/* QR */}
-
               <Card
                 className="student-qr-card"
                 bordered={false}
                 style={{
-                  background: "#F8FAFC",
-                  borderRadius: 20,
-                  border: "1px solid #E2E8F0",
+                  background: COLORS.background,
+                  borderRadius: 16,
+                  border: `1px solid ${COLORS.border}`,
                 }}
                 bodyStyle={{
                   padding: 20,
@@ -2784,14 +2997,15 @@ export default function StudentManagement() {
                 <div
                   className="student-qr-wrapper"
                   style={{
-                    background: "#FFFFFF",
+                    background: COLORS.white,
                     padding: 16,
-                    borderRadius: 16,
+                    borderRadius: 12,
                     display: "inline-flex",
                     justifyContent: "center",
                     alignItems: "center",
                     maxWidth: "100%",
                     boxSizing: "border-box",
+                    border: `1px solid ${COLORS.border}`,
                   }}
                 >
                   <QRCodeCanvas
@@ -2816,33 +3030,37 @@ export default function StudentManagement() {
                 Mã này dùng để điểm danh bằng QR
               </Typography.Text>
 
-              {/* ACTION */}
-
               <div className="student-qr-actions">
                 <AppButton
                   type="primary"
                   icon={<DownloadOutlined />}
                   onClick={handleDownloadQR}
                   style={{
-                    borderRadius: 14,
+                    borderRadius: 10,
                     height: 40,
                     padding: "0 16px",
                     fontWeight: 800,
-                    boxShadow: "0 8px 18px rgba(255, 107, 139, 0.3)",
+                    background: COLORS.navy,
+                    borderColor: COLORS.navy,
+                    boxShadow: "0 8px 18px rgba(23, 59, 94, 0.18)",
                   }}
                 >
                   Tải QR
                 </AppButton>
+
                 <AppButton
                   type="primary"
                   size="large"
                   onClick={() => {
                     setIsQRModalOpen(false);
+
                     setQrStudent(null);
                   }}
                   style={{
-                    borderRadius: 12,
+                    borderRadius: 10,
                     minWidth: 100,
+                    background: COLORS.navy,
+                    borderColor: COLORS.navy,
                   }}
                 >
                   Đóng

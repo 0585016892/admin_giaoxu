@@ -35,6 +35,9 @@ import {
   ClockCircleOutlined,
   ExclamationCircleFilled,
   CalendarOutlined,
+  FileTextOutlined,
+  GlobalOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 
 import PageHeroHeader from "../../components/common/PageHeroHeader";
@@ -46,38 +49,47 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { Text, Title } = Typography;
 
-// ======================================================
-// DESIGN TOKENS
-// ======================================================
+/* =========================================================
+   DESIGN TOKENS
+========================================================= */
 
 const COLORS = {
-  navy: "#1B365D",
-  navyDark: "#122845",
-  gold: "#D4AF37",
-  goldDark: "#A78318",
+  navy: "#173B5E",
+  navyDark: "#102C46",
+  navyHover: "#244F78",
+  navyLight: "#EEF3F7",
+  navySoft: "#F6F9FC",
 
-  text: "#1E293B",
-  textSecondary: "#64748B",
+  gold: "#D9A441",
+  goldDark: "#B8862F",
+  goldLight: "#FBF5E7",
 
-  bg: "#F8FAFC",
+  text: "#172B3A",
+  textSecondary: "#66788A",
+  muted: "#94A3B8",
+
+  bg: "#F5F7FA",
   white: "#FFFFFF",
-  border: "#E2E8F0",
 
-  success: "#15803D",
-  successBg: "#F0FDF4",
+  border: "#E1E7ED",
+  borderDark: "#D3DCE5",
 
-  warning: "#B45309",
-  warningBg: "#FFFBEB",
+  success: "#2F7D5A",
+  successBg: "#EEF8F2",
 
-  danger: "#B91C1C",
-  dangerBg: "#FEF2F2",
+  warning: "#A96E17",
+  warningBg: "#FCF6E8",
 
-  blueBg: "#EFF6FF",
+  danger: "#B64040",
+  dangerBg: "#FDF0F0",
+
+  info: "#356B96",
+  infoBg: "#EEF5FA",
 };
 
-// ======================================================
-// HELPERS
-// ======================================================
+/* =========================================================
+   HELPERS
+========================================================= */
 
 const getApiBaseUrl = () => {
   const base = process.env.REACT_APP_API_URL || "";
@@ -135,9 +147,9 @@ const formatDateTime = (date) => {
   });
 };
 
-// ======================================================
-// LICENSE CONFIG
-// ======================================================
+/* =========================================================
+   LICENSE CONFIG
+========================================================= */
 
 const getLicenseConfig = (status) => {
   switch (status) {
@@ -147,7 +159,7 @@ const getLicenseConfig = (status) => {
         shortLabel: "Hoạt động",
         color: COLORS.success,
         background: COLORS.successBg,
-        border: "#BBF7D0",
+        border: "#BFE5CD",
         icon: <CheckCircleFilled />,
       };
 
@@ -157,7 +169,7 @@ const getLicenseConfig = (status) => {
         shortLabel: "Hết hạn",
         color: COLORS.danger,
         background: COLORS.dangerBg,
-        border: "#FECACA",
+        border: "#F1C5C5",
         icon: <ExclamationCircleFilled />,
       };
 
@@ -168,15 +180,51 @@ const getLicenseConfig = (status) => {
         shortLabel: "Dùng thử",
         color: COLORS.warning,
         background: COLORS.warningBg,
-        border: "#FDE68A",
+        border: "#F0D78F",
         icon: <ClockCircleOutlined />,
       };
   }
 };
 
-// ======================================================
-// COMPONENT
-// ======================================================
+/* =========================================================
+   SMALL COMPONENTS
+========================================================= */
+
+const LicenseInfoRow = ({ icon, label, value }) => {
+  return (
+    <div className="license-info-row">
+      <div className="license-info-label">
+        <span className="license-info-icon">{icon}</span>
+
+        <Text>{label}</Text>
+      </div>
+
+      <Text strong className="license-info-value">
+        {value}
+      </Text>
+    </div>
+  );
+};
+
+const SummaryItem = ({ icon, label, value }) => {
+  return (
+    <div className="summary-item">
+      <div className="summary-item-icon">{icon}</div>
+
+      <div className="summary-item-content">
+        <Text className="summary-item-label">{label}</Text>
+
+        <Text strong className="summary-item-value">
+          {value}
+        </Text>
+      </div>
+    </div>
+  );
+};
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 const ParishSettingsPage = () => {
   const { user } = useUser();
@@ -195,16 +243,16 @@ const ParishSettingsPage = () => {
 
   const [churchData, setChurchData] = useState(null);
 
-  // ======================================================
-  // CHURCH ID
-  // ======================================================
+  /* =======================================================
+     CHURCH ID
+  ======================================================= */
 
   const churchId =
     user?.church_id || user?.church?.id || user?.parish_id || user?.parish?.id;
 
-  // ======================================================
-  // LICENSE
-  // ======================================================
+  /* =======================================================
+     LICENSE
+  ======================================================= */
 
   const licenseStatus = churchData?.license_status || "trial";
 
@@ -229,15 +277,16 @@ const ParishSettingsPage = () => {
   const activatedAt =
     churchData?.activated_at ?? churchData?.license?.activated_at ?? null;
 
-  // ======================================================
-  // FETCH CHURCH
-  // ======================================================
+  /* =======================================================
+     FETCH CHURCH
+  ======================================================= */
 
   const fetchParishInfo = useCallback(async () => {
     if (!churchId) {
       message.warning(
         "Không tìm thấy thông tin Giáo xứ của tài khoản hiện tại!",
       );
+
       return;
     }
 
@@ -246,9 +295,6 @@ const ParishSettingsPage = () => {
     try {
       const res = await getChurchId(churchId);
 
-      // Có API trả trực tiếp object
-      // Có API trả { data: {...} }
-      // Có API trả { church: {...} }
       const rawData = res?.data ?? res;
 
       const data = rawData?.church ?? rawData;
@@ -257,6 +303,7 @@ const ParishSettingsPage = () => {
 
       if (!data) {
         message.error("Không nhận được dữ liệu giáo xứ!");
+
         return;
       }
 
@@ -311,18 +358,20 @@ const ParishSettingsPage = () => {
     fetchParishInfo();
   }, [fetchParishInfo]);
 
-  // ======================================================
-  // SAVE
-  // ======================================================
+  /* =======================================================
+     SAVE
+  ======================================================= */
 
   const handleSave = async (values) => {
     if (!isCatechist) {
       message.warning("Bạn không có quyền chỉnh sửa thông tin giáo xứ!");
+
       return;
     }
 
     if (!churchId) {
       message.error("Không tìm thấy ID giáo xứ để cập nhật!");
+
       return;
     }
 
@@ -369,18 +418,20 @@ const ParishSettingsPage = () => {
     }
   };
 
-  // ======================================================
-  // IMAGE UPLOAD
-  // ======================================================
+  /* =======================================================
+     IMAGE UPLOAD
+  ======================================================= */
 
   const handleBeforeUpload = (file) => {
     if (!file.type?.startsWith("image/")) {
       message.error("Vui lòng chọn file hình ảnh!");
+
       return Upload.LIST_IGNORE;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       message.error("Ảnh không được vượt quá 5MB!");
+
       return Upload.LIST_IGNORE;
     }
 
@@ -395,9 +446,9 @@ const ParishSettingsPage = () => {
     return false;
   };
 
-  // ======================================================
-  // LICENSE CARD
-  // ======================================================
+  /* =======================================================
+     LICENSE CARD
+  ======================================================= */
 
   const renderLicenseCard = () => {
     const isTrial = licenseStatus === "trial";
@@ -407,111 +458,60 @@ const ParishSettingsPage = () => {
     return (
       <Card
         bordered={false}
-        style={{
-          borderRadius: 24,
-          border: `1px solid ${licenseConfig.border}`,
-          background: licenseConfig.background,
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-          overflow: "hidden",
-        }}
-        bodyStyle={{ padding: 20 }}
+        className="license-card"
+        bodyStyle={{ padding: 0 }}
       >
-        <Space direction="vertical" size={18} style={{ width: "100%" }}>
-          {/* HEADER */}
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: 12,
-            }}
-          >
-            <div>
-              <Space align="center" size={10}>
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 14,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: COLORS.white,
-                    color: licenseConfig.color,
-                    border: `1px solid ${licenseConfig.border}`,
-                    fontSize: 20,
-                  }}
-                >
-                  <SafetyCertificateOutlined />
-                </div>
-
-                <div>
-                  <Text
-                    strong
-                    style={{
-                      display: "block",
-                      color: COLORS.text,
-                      fontSize: 15,
-                    }}
-                  >
-                    License FaithEdu
-                  </Text>
-
-                  <Text type="secondary" style={{ fontSize: 11 }}>
-                    Quyền sử dụng hệ thống
-                  </Text>
-                </div>
-              </Space>
+        <div
+          className="license-card-top"
+          style={{
+            background: licenseConfig.background,
+          }}
+        >
+          <div className="license-heading">
+            <div className="license-heading-icon">
+              <SafetyCertificateOutlined />
             </div>
 
-            <Tag
-              icon={licenseConfig.icon}
-              style={{
-                margin: 0,
-                borderRadius: 10,
-                border: `1px solid ${licenseConfig.border}`,
-                background: COLORS.white,
-                color: licenseConfig.color,
-                fontWeight: 700,
-                padding: "4px 9px",
-              }}
-            >
-              {licenseConfig.shortLabel}
-            </Tag>
+            <div>
+              <Text className="license-heading-title">License FaithEdu</Text>
+
+              <Text className="license-heading-subtitle">
+                Quyền sử dụng hệ thống
+              </Text>
+            </div>
           </div>
 
-          {/* MAIN VALUE */}
-
-          <div
+          <Tag
+            icon={licenseConfig.icon}
+            className="license-status-tag"
             style={{
-              padding: "18px",
+              color: licenseConfig.color,
+              borderColor: licenseConfig.border,
               background: COLORS.white,
-              borderRadius: 18,
-              border: `1px solid ${licenseConfig.border}`,
+            }}
+          >
+            {licenseConfig.shortLabel}
+          </Tag>
+        </div>
+
+        <div className="license-card-body">
+          <div
+            className="license-main-value"
+            style={{
+              borderColor: licenseConfig.border,
             }}
           >
             {isTrial && (
               <>
-                <Text
-                  style={{
-                    display: "block",
-                    fontSize: 12,
-                    color: COLORS.textSecondary,
-                    marginBottom: 3,
-                  }}
-                >
+                <Text className="license-value-label">
                   Thời gian dùng thử còn lại
                 </Text>
 
                 <Title
                   level={2}
+                  className="license-value"
                   style={{
-                    margin: 0,
-                    fontSize: 32,
-                    lineHeight: 1.2,
                     color: licenseConfig.color,
-                    fontWeight: 800,
                   }}
                 >
                   {daysRemaining !== null ? `${daysRemaining} ngày` : "--"}
@@ -521,25 +521,13 @@ const ParishSettingsPage = () => {
 
             {isActive && (
               <>
-                <Text
-                  style={{
-                    display: "block",
-                    fontSize: 12,
-                    color: COLORS.textSecondary,
-                    marginBottom: 3,
-                  }}
-                >
-                  Trạng thái sử dụng
-                </Text>
+                <Text className="license-value-label">Trạng thái sử dụng</Text>
 
                 <Title
                   level={2}
+                  className="license-value"
                   style={{
-                    margin: 0,
-                    fontSize: 28,
-                    lineHeight: 1.2,
                     color: COLORS.success,
-                    fontWeight: 800,
                   }}
                 >
                   Vĩnh viễn
@@ -549,25 +537,13 @@ const ParishSettingsPage = () => {
 
             {isExpired && (
               <>
-                <Text
-                  style={{
-                    display: "block",
-                    fontSize: 12,
-                    color: COLORS.textSecondary,
-                    marginBottom: 3,
-                  }}
-                >
-                  Trạng thái sử dụng
-                </Text>
+                <Text className="license-value-label">Trạng thái sử dụng</Text>
 
                 <Title
                   level={2}
+                  className="license-value"
                   style={{
-                    margin: 0,
-                    fontSize: 28,
-                    lineHeight: 1.2,
                     color: COLORS.danger,
-                    fontWeight: 800,
                   }}
                 >
                   Đã hết hạn
@@ -576,9 +552,7 @@ const ParishSettingsPage = () => {
             )}
           </div>
 
-          {/* DATE INFO */}
-
-          <div>
+          <div className="license-info-list">
             <LicenseInfoRow
               icon={<CalendarOutlined />}
               label="Ngày bắt đầu"
@@ -600,8 +574,6 @@ const ParishSettingsPage = () => {
             )}
           </div>
 
-          {/* ALERT */}
-
           {isTrial && (
             <Alert
               showIcon
@@ -610,10 +582,7 @@ const ParishSettingsPage = () => {
               description={`Hệ thống đang trong thời gian dùng thử. ${
                 daysRemaining ?? 0
               } ngày còn lại.`}
-              style={{
-                borderRadius: 14,
-                border: "1px solid #FDE68A",
-              }}
+              className="license-alert"
             />
           )}
 
@@ -623,9 +592,7 @@ const ParishSettingsPage = () => {
               showIcon
               message="License đang hoạt động"
               description="Giáo xứ đã được kích hoạt và có thể sử dụng FaithEdu không giới hạn thời gian."
-              style={{
-                borderRadius: 14,
-              }}
+              className="license-alert"
             />
           )}
 
@@ -635,31 +602,23 @@ const ParishSettingsPage = () => {
               showIcon
               message="License đã hết hạn"
               description="Dữ liệu giáo xứ vẫn được bảo toàn. Vui lòng kích hoạt FaithEdu để tiếp tục sử dụng hệ thống."
-              style={{
-                borderRadius: 14,
-              }}
+              className="license-alert"
             />
           )}
-        </Space>
+        </div>
       </Card>
     );
   };
 
-  // ======================================================
-  // RENDER
-  // ======================================================
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
-    <div
-      style={{
-        paddingBottom: 40,
-        background: COLORS.bg,
-        minHeight: "100%",
-      }}
-    >
-      {/* ==================================================
+    <div className="parish-settings-page">
+      {/* ===================================================
           HEADER
-      ================================================== */}
+      =================================================== */}
 
       <PageHeroHeader
         icon={<BankOutlined />}
@@ -681,9 +640,9 @@ const ParishSettingsPage = () => {
         primaryDisabled={loading || !isCatechist}
       />
 
-      {/* ==================================================
-          CONTENT
-      ================================================== */}
+      {/* ===================================================
+          FORM
+      =================================================== */}
 
       <Spin spinning={loading}>
         <Form
@@ -697,83 +656,62 @@ const ParishSettingsPage = () => {
           }}
         >
           <Row gutter={[20, 20]}>
-            {/* ==================================================
-                LEFT
-            ================================================== */}
+            {/* =================================================
+                LEFT COLUMN
+            ================================================= */}
 
             <Col xs={24} lg={7}>
-              <Space direction="vertical" size={20} style={{ width: "100%" }}>
-                {/* CHURCH IMAGE */}
+              <Space
+                direction="vertical"
+                size={20}
+                style={{
+                  width: "100%",
+                }}
+              >
+                {/* ===============================================
+                    CHURCH IMAGE
+                =============================================== */}
 
                 <Card
                   bordered={false}
-                  style={{
-                    borderRadius: 24,
-                    border: `1px solid ${COLORS.border}`,
-                    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)",
-                    textAlign: "center",
+                  className="settings-card image-card"
+                  bodyStyle={{
+                    padding: 22,
                   }}
-                  bodyStyle={{ padding: 22 }}
                 >
-                  <div style={{ marginBottom: 18 }}>
-                    <Text
-                      strong
-                      style={{
-                        color: COLORS.text,
-                        display: "block",
-                        fontSize: 15,
-                      }}
-                    >
-                      Hình Ảnh Nhà Thờ / Logo
-                    </Text>
+                  <div className="card-section-heading">
+                    <div className="card-section-icon">
+                      <BankOutlined />
+                    </div>
 
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      Ảnh hiển thị trên báo cáo và ứng dụng
-                    </Text>
+                    <div>
+                      <Text className="card-section-title">
+                        Hình Ảnh Nhà Thờ
+                      </Text>
+
+                      <Text className="card-section-description">
+                        Logo hoặc hình ảnh đại diện
+                      </Text>
+                    </div>
                   </div>
 
-                  {/* IMAGE */}
-
-                  <div
-                    style={{
-                      width: 160,
-                      height: 160,
-                      margin: "0 auto 18px",
-                      borderRadius: 22,
-                      border: `2px dashed ${COLORS.gold}`,
-                      padding: 5,
-                      overflow: "hidden",
-                      background: "#FFFCF2",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {imageUrl ? (
-                      <img
-                        src={getImageUrl(imageUrl)}
-                        alt="Church Logo"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          borderRadius: 17,
-                        }}
-                        onError={(e) => {
-                          console.error(
-                            "❌ Không tải được ảnh:",
-                            e.currentTarget.src,
-                          );
-                        }}
-                      />
-                    ) : (
-                      <BankOutlined
-                        style={{
-                          fontSize: 48,
-                          color: COLORS.gold,
-                        }}
-                      />
-                    )}
+                  <div className="church-image-wrapper">
+                    <div className="church-image">
+                      {imageUrl ? (
+                        <img
+                          src={getImageUrl(imageUrl)}
+                          alt="Church Logo"
+                          onError={(e) => {
+                            console.error(
+                              "❌ Không tải được ảnh:",
+                              e.currentTarget.src,
+                            );
+                          }}
+                        />
+                      ) : (
+                        <BankOutlined />
+                      )}
+                    </div>
                   </div>
 
                   {isCatechist && (
@@ -784,64 +722,39 @@ const ParishSettingsPage = () => {
                     >
                       <AppButton
                         icon={<UploadOutlined />}
-                        style={{
-                          borderRadius: 12,
-                        }}
+                        className="upload-button"
                       >
                         Chọn ảnh mới
                       </AppButton>
                     </Upload>
                   )}
 
+                  <Text className="image-hint">
+                    JPG, PNG hoặc WEBP · Tối đa 5MB
+                  </Text>
+
                   {!isCatechist && (
-                    <div
-                      style={{
-                        marginTop: 12,
-                        padding: "9px 12px",
-                        borderRadius: 12,
-                        background: "#F8FAFC",
-                        border: `1px solid ${COLORS.border}`,
-                        color: COLORS.textSecondary,
-                        fontSize: 12,
-                        textAlign: "left",
-                      }}
-                    >
-                      <InfoCircleOutlined style={{ marginRight: 6 }} />
-                      Tài khoản của bạn chỉ có quyền xem thông tin.
+                    <div className="view-only-alert">
+                      <InfoCircleOutlined />
+
+                      <span>Tài khoản của bạn chỉ có quyền xem thông tin.</span>
                     </div>
                   )}
 
-                  {/* ACTIVE STATUS */}
+                  <Divider />
 
-                  <div
-                    style={{
-                      marginTop: 22,
-                      paddingTop: 18,
-                      borderTop: `1px dashed ${COLORS.border}`,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Space
-                      direction="vertical"
-                      size={0}
-                      style={{ textAlign: "left" }}
-                    >
-                      <Text
-                        strong
-                        style={{
-                          fontSize: 13,
-                          color: COLORS.text,
-                        }}
-                      >
+                  {/* ACTIVE */}
+
+                  <div className="active-status-row">
+                    <div>
+                      <Text className="active-status-title">
                         Trạng thái hoạt động
                       </Text>
 
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        Trạng thái của giáo xứ
+                      <Text className="active-status-description">
+                        Trạng thái hiện tại của giáo xứ
                       </Text>
-                    </Space>
+                    </div>
 
                     <Form.Item name="is_active" valuePropName="checked" noStyle>
                       <Switch disabled />
@@ -849,453 +762,1111 @@ const ParishSettingsPage = () => {
                   </div>
                 </Card>
 
-                {/* LICENSE */}
+                {/* ===============================================
+                    LICENSE
+                =============================================== */}
 
                 {renderLicenseCard()}
               </Space>
             </Col>
 
-            {/* ==================================================
-                RIGHT
-            ================================================== */}
+            {/* =================================================
+                RIGHT COLUMN
+            ================================================= */}
 
             <Col xs={24} lg={17}>
+              {/* ===============================================
+                  INFORMATION CARD
+              =============================================== */}
+
               <Card
                 bordered={false}
-                style={{
-                  borderRadius: 24,
-                  border: `1px solid ${COLORS.border}`,
-                  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)",
+                className="settings-card information-card"
+                bodyStyle={{
+                  padding: 0,
                 }}
-                bodyStyle={{ padding: 22 }}
               >
-                <Tabs
-                  defaultActiveKey="1"
-                  items={[
-                    // ==========================================
-                    // TAB 1
-                    // ==========================================
+                <div className="information-card-header">
+                  <div>
+                    <Text className="section-eyebrow">THÔNG TIN CẤU HÌNH</Text>
 
-                    {
-                      key: "1",
+                    <Title level={4} className="information-card-title">
+                      Thông tin giáo xứ
+                    </Title>
 
-                      label: (
-                        <span>
-                          <HomeOutlined /> Thông Tin Cơ Bản
-                        </span>
-                      ),
+                    <Text className="information-card-description">
+                      Quản lý thông tin cơ bản, liên hệ và giới thiệu
+                    </Text>
+                  </div>
 
-                      children: (
-                        <Row gutter={[16, 0]}>
-                          <Col xs={24} sm={12}>
-                            <Form.Item
-                              label="Mã Giáo Xứ / Họ"
-                              name="code"
-                              rules={[
-                                {
-                                  required: true,
-                                  message: "Vui lòng nhập mã!",
-                                },
-                              ]}
-                            >
-                              <Input
-                                disabled
-                                placeholder="VD: GX-THAIHA"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                              />
-                            </Form.Item>
-                          </Col>
+                  {isCatechist && (
+                    <Tag className="editable-tag">
+                      <EditOutlined />
+                      Có quyền chỉnh sửa
+                    </Tag>
+                  )}
+                </div>
 
-                          <Col xs={24} sm={12}>
-                            <Form.Item
-                              label="Phân Loại"
-                              name="type"
-                              rules={[
-                                {
-                                  required: true,
-                                  message: "Vui lòng chọn phân loại!",
-                                },
-                              ]}
-                            >
-                              <Select
-                                disabled
-                                style={{
-                                  height: 42,
-                                }}
+                <Divider style={{ margin: 0 }} />
+
+                <div className="information-card-content">
+                  <Tabs
+                    defaultActiveKey="1"
+                    className="parish-tabs"
+                    items={[
+                      /* =========================================
+                         TAB 1
+                      ========================================= */
+
+                      {
+                        key: "1",
+
+                        label: (
+                          <span>
+                            <HomeOutlined />
+                            Thông Tin Cơ Bản
+                          </span>
+                        ),
+
+                        children: (
+                          <Row gutter={[18, 0]}>
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Mã Giáo Xứ / Họ"
+                                name="code"
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: "Vui lòng nhập mã!",
+                                  },
+                                ]}
                               >
-                                <Option value="GIAO_XU">Giáo Xứ</Option>
+                                <Input
+                                  disabled
+                                  placeholder="VD: GX-THAIHA"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
 
-                                <Option value="GIAO_HO">Giáo Họ</Option>
-                              </Select>
-                            </Form.Item>
-                          </Col>
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Phân Loại"
+                                name="type"
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: "Vui lòng chọn phân loại!",
+                                  },
+                                ]}
+                              >
+                                <Select disabled className="form-select">
+                                  <Option value="GIAO_XU">Giáo Xứ</Option>
 
-                          <Col xs={24}>
-                            <Form.Item
-                              label="Tên Giáo Xứ / Họ"
-                              name="name"
-                              rules={[
-                                {
-                                  required: true,
-                                  message: "Vui lòng nhập tên!",
-                                },
-                              ]}
-                            >
-                              <Input
-                                placeholder="VD: Giáo xứ Thái Hà"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
+                                  <Option value="GIAO_HO">Giáo Họ</Option>
+                                </Select>
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24}>
+                              <Form.Item
+                                label="Tên Giáo Xứ / Họ"
+                                name="name"
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: "Vui lòng nhập tên!",
+                                  },
+                                ]}
+                              >
+                                <Input
+                                  prefix={
+                                    <HomeOutlined className="input-icon" />
+                                  }
+                                  placeholder="VD: Giáo xứ Thái Hà"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24}>
+                              <Form.Item
+                                label="Linh Mục Quản Xứ / Phụ Trách"
+                                name="pastor_name"
+                              >
+                                <Input
+                                  prefix={
+                                    <UserOutlined className="input-icon" />
+                                  }
+                                  placeholder="VD: Lm. Giuse Nguyễn Văn A"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        ),
+                      },
+
+                      /* =========================================
+                         TAB 2
+                      ========================================= */
+
+                      {
+                        key: "2",
+
+                        label: (
+                          <span>
+                            <EnvironmentOutlined />
+                            Liên Hệ & Địa Chỉ
+                          </span>
+                        ),
+
+                        children: (
+                          <Row gutter={[18, 0]}>
+                            <Col xs={24} sm={12}>
+                              <Form.Item label="Số Điện Thoại" name="phone">
+                                <Input
+                                  prefix={
+                                    <PhoneOutlined className="input-icon" />
+                                  }
+                                  placeholder="0336 041 807"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Email Liên Hệ"
+                                name="email"
+                                rules={[
+                                  {
+                                    type: "email",
+                                    message: "Email không đúng định dạng!",
+                                  },
+                                ]}
+                              >
+                                <Input
+                                  prefix={
+                                    <MailOutlined className="input-icon" />
+                                  }
+                                  placeholder="giaoxu@gmail.com"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24}>
+                              <Form.Item
+                                label="Địa Chỉ Chi Tiết"
+                                name="address"
+                              >
+                                <Input
+                                  prefix={
+                                    <EnvironmentOutlined className="input-icon" />
+                                  }
+                                  placeholder="Số nhà, đường/thôn"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24} sm={12}>
+                              <Form.Item label="Phường / Xã" name="ward">
+                                <Input
+                                  placeholder="VD: Quang Trung"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Quận / Huyện / Thị Xã"
+                                name="district"
+                              >
+                                <Input
+                                  placeholder="VD: Đống Đa"
+                                  className="form-input"
+                                />
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Vĩ Độ (Latitude)"
+                                name="latitude"
+                              >
+                                <InputNumber
+                                  style={{
+                                    width: "100%",
+                                  }}
+                                  step={0.000001}
+                                  placeholder="VD: 21.012345"
+                                  className="form-input-number"
+                                />
+                              </Form.Item>
+                            </Col>
+
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Kinh Độ (Longitude)"
+                                name="longitude"
+                              >
+                                <InputNumber
+                                  style={{
+                                    width: "100%",
+                                  }}
+                                  step={0.000001}
+                                  placeholder="VD: 105.823456"
+                                  className="form-input-number"
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        ),
+                      },
+
+                      /* =========================================
+                         TAB 3
+                      ========================================= */
+
+                      {
+                        key: "3",
+
+                        label: (
+                          <span>
+                            <FileTextOutlined />
+                            Mô Tả Bổ Sung
+                          </span>
+                        ),
+
+                        children: (
+                          <div>
+                            <div className="description-heading">
+                              <div className="description-heading-icon">
+                                <InfoCircleOutlined />
+                              </div>
+
+                              <div>
+                                <Text strong>Giới thiệu / Ghi chú</Text>
+
+                                <Text type="secondary">
+                                  Thông tin bổ sung về giáo xứ
+                                </Text>
+                              </div>
+                            </div>
+
+                            <Form.Item label="Nội dung" name="description">
+                              <TextArea
+                                rows={8}
+                                placeholder="Nhập lược sử, thông tin giờ Lễ hoặc thông báo chung..."
+                                className="description-textarea"
                               />
                             </Form.Item>
-                          </Col>
-
-                          <Col xs={24}>
-                            <Form.Item
-                              label="Linh Mục Quản Xứ / Phụ Trách"
-                              name="pastor_name"
-                            >
-                              <Input
-                                prefix={
-                                  <UserOutlined
-                                    style={{
-                                      color: "#94A3B8",
-                                    }}
-                                  />
-                                }
-                                placeholder="VD: Lm. Giuse Nguyễn Văn A"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                      ),
-                    },
-
-                    // ==========================================
-                    // TAB 2
-                    // ==========================================
-
-                    {
-                      key: "2",
-
-                      label: (
-                        <span>
-                          <EnvironmentOutlined /> Liên Hệ & Địa Chỉ
-                        </span>
-                      ),
-
-                      children: (
-                        <Row gutter={[16, 0]}>
-                          <Col xs={24} sm={12}>
-                            <Form.Item label="Số Điện Thoại" name="phone">
-                              <Input
-                                prefix={
-                                  <PhoneOutlined
-                                    style={{
-                                      color: "#94A3B8",
-                                    }}
-                                  />
-                                }
-                                placeholder="0336 041 807"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          <Col xs={24} sm={12}>
-                            <Form.Item
-                              label="Email Liên Hệ"
-                              name="email"
-                              rules={[
-                                {
-                                  type: "email",
-                                  message: "Email không đúng định dạng!",
-                                },
-                              ]}
-                            >
-                              <Input
-                                prefix={
-                                  <MailOutlined
-                                    style={{
-                                      color: "#94A3B8",
-                                    }}
-                                  />
-                                }
-                                placeholder="giaoxu@gmail.com"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          <Col xs={24}>
-                            <Form.Item label="Địa Chỉ Chi Tiết" name="address">
-                              <Input
-                                placeholder="Số nhà, đường/thôn"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          <Col xs={24} sm={12}>
-                            <Form.Item label="Phường / Xã" name="ward">
-                              <Input
-                                placeholder="VD: Quang Trung"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          <Col xs={24} sm={12}>
-                            <Form.Item
-                              label="Quận / Huyện / Thị Xã"
-                              name="district"
-                            >
-                              <Input
-                                placeholder="VD: Đống Đa"
-                                style={{
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          <Col xs={24} sm={12}>
-                            <Form.Item label="Vĩ Độ (Latitude)" name="latitude">
-                              <InputNumber
-                                style={{
-                                  width: "100%",
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                                step={0.000001}
-                                placeholder="VD: 21.012345"
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          <Col xs={24} sm={12}>
-                            <Form.Item
-                              label="Kinh Độ (Longitude)"
-                              name="longitude"
-                            >
-                              <InputNumber
-                                style={{
-                                  width: "100%",
-                                  borderRadius: 12,
-                                  height: 42,
-                                }}
-                                step={0.000001}
-                                placeholder="VD: 105.823456"
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                      ),
-                    },
-
-                    // ==========================================
-                    // TAB 3
-                    // ==========================================
-
-                    {
-                      key: "3",
-
-                      label: (
-                        <span>
-                          <InfoCircleOutlined /> Mô Tả Bổ Sung
-                        </span>
-                      ),
-
-                      children: (
-                        <Form.Item
-                          label="Giới Thiệu / Ghi Chú"
-                          name="description"
-                        >
-                          <TextArea
-                            rows={6}
-                            placeholder="Nhập lược sử, thông tin giờ Lễ hoặc thông báo chung..."
-                            style={{
-                              borderRadius: 12,
-                            }}
-                          />
-                        </Form.Item>
-                      ),
-                    },
-                  ]}
-                />
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
+                </div>
               </Card>
 
-              {/* ==================================================
-                  SUMMARY
-              ================================================== */}
+              {/* ===============================================
+                  SYSTEM SUMMARY
+              =============================================== */}
 
               <Card
                 bordered={false}
-                style={{
-                  marginTop: 20,
-                  borderRadius: 24,
-                  border: `1px solid ${COLORS.border}`,
-                  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+                className="settings-card summary-card"
+                bodyStyle={{
+                  padding: 22,
                 }}
-                bodyStyle={{ padding: 20 }}
               >
-                <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                  <Text
-                    strong
-                    style={{
-                      color: COLORS.navy,
-                      fontSize: 14,
-                    }}
-                  >
-                    <BankOutlined style={{ marginRight: 8 }} />
-                    Thông tin hệ thống
-                  </Text>
+                <div className="summary-header">
+                  <div className="summary-header-icon">
+                    <GlobalOutlined />
+                  </div>
 
-                  <Divider style={{ margin: "12px 0" }} />
+                  <div>
+                    <Text className="summary-title">Thông tin hệ thống</Text>
 
-                  <Row gutter={[20, 12]}>
-                    <Col xs={24} sm={8}>
-                      <SummaryItem
-                        label="Mã giáo xứ"
-                        value={churchData?.code || "--"}
-                      />
-                    </Col>
+                    <Text className="summary-description">
+                      Thông tin định danh và trạng thái của giáo xứ
+                    </Text>
+                  </div>
+                </div>
 
-                    <Col xs={24} sm={8}>
-                      <SummaryItem
-                        label="Loại hình"
-                        value={
-                          churchData?.type === "GIAO_XU"
-                            ? "Giáo Xứ"
-                            : churchData?.type === "GIAO_HO"
-                              ? "Giáo Họ"
-                              : "--"
-                        }
-                      />
-                    </Col>
+                <Divider />
 
-                    <Col xs={24} sm={8}>
-                      <SummaryItem
-                        label="Ngày tạo"
-                        value={formatDate(churchData?.created_at)}
-                      />
-                    </Col>
-                  </Row>
-                </Space>
+                <Row gutter={[12, 12]}>
+                  <Col xs={24} sm={8}>
+                    <SummaryItem
+                      icon={<BankOutlined />}
+                      label="Mã giáo xứ"
+                      value={churchData?.code || "--"}
+                    />
+                  </Col>
+
+                  <Col xs={24} sm={8}>
+                    <SummaryItem
+                      icon={<HomeOutlined />}
+                      label="Loại hình"
+                      value={
+                        churchData?.type === "GIAO_XU"
+                          ? "Giáo Xứ"
+                          : churchData?.type === "GIAO_HO"
+                            ? "Giáo Họ"
+                            : "--"
+                      }
+                    />
+                  </Col>
+
+                  <Col xs={24} sm={8}>
+                    <SummaryItem
+                      icon={<CalendarOutlined />}
+                      label="Ngày tạo"
+                      value={formatDate(churchData?.created_at)}
+                    />
+                  </Col>
+                </Row>
               </Card>
             </Col>
           </Row>
         </Form>
       </Spin>
-    </div>
-  );
-};
 
-// ======================================================
-// LICENSE INFO ROW
-// ======================================================
+      {/* =====================================================
+          CSS
+      ===================================================== */}
 
-const LicenseInfoRow = ({ icon, label, value }) => {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "9px 0",
-        borderBottom: "1px solid rgba(148, 163, 184, 0.15)",
-      }}
-    >
-      <Space size={8}>
-        <span
-          style={{
-            color: "#94A3B8",
-            fontSize: 13,
-          }}
-        >
-          {icon}
-        </span>
+      <style>{`
+        /* =====================================================
+           BASE
+        ===================================================== */
 
-        <Text
-          style={{
-            fontSize: 12,
-            color: "#64748B",
-          }}
-        >
-          {label}
-        </Text>
-      </Space>
+        .parish-settings-page {
+          width: 100%;
+          min-height: 100%;
+          padding-bottom: 32px;
+          background: ${COLORS.bg};
+          color: ${COLORS.text};
+        }
 
-      <Text
-        strong
-        style={{
-          fontSize: 12,
-          color: "#1E293B",
-          textAlign: "right",
-        }}
-      >
-        {value}
-      </Text>
-    </div>
-  );
-};
+        .parish-settings-page .ant-card {
+          color: ${COLORS.text};
+        }
 
-// ======================================================
-// SUMMARY ITEM
-// ======================================================
+        /* =====================================================
+           COMMON CARD
+        ===================================================== */
 
-const SummaryItem = ({ label, value }) => {
-  return (
-    <div
-      style={{
-        padding: "12px 14px",
-        borderRadius: 14,
-        background: "#F8FAFC",
-        border: "1px solid #E2E8F0",
-      }}
-    >
-      <Text
-        type="secondary"
-        style={{
-          display: "block",
-          fontSize: 11,
-          marginBottom: 3,
-        }}
-      >
-        {label}
-      </Text>
+        .settings-card {
+          border-radius: 18px !important;
+          border: 1px solid ${COLORS.border} !important;
+          box-shadow: none !important;
+          background: ${COLORS.white} !important;
+          overflow: hidden;
+        }
 
-      <Text
-        strong
-        style={{
-          color: "#1E293B",
-          fontSize: 13,
-        }}
-      >
-        {value}
-      </Text>
+        /* =====================================================
+           IMAGE CARD
+        ===================================================== */
+
+        .image-card {
+          text-align: center;
+        }
+
+        .card-section-heading {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          text-align: left;
+          margin-bottom: 20px;
+        }
+
+        .card-section-icon {
+          width: 40px;
+          height: 40px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 11px;
+          background: ${COLORS.navyLight};
+          color: ${COLORS.navy};
+          font-size: 17px;
+        }
+
+        .card-section-title {
+          display: block;
+          color: ${COLORS.navyDark};
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .card-section-description {
+          display: block;
+          margin-top: 2px;
+          color: ${COLORS.textSecondary};
+          font-size: 11px;
+        }
+
+        .church-image-wrapper {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 16px;
+        }
+
+        .church-image {
+          width: 168px;
+          height: 168px;
+          padding: 5px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 20px;
+          border: 1px solid ${COLORS.gold};
+          background: #FFFCF4;
+        }
+
+        .church-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 15px;
+        }
+
+        .church-image .anticon {
+          color: ${COLORS.gold};
+          font-size: 46px;
+        }
+
+        .upload-button {
+          border-radius: 9px !important;
+        }
+
+        .image-hint {
+          display: block;
+          margin-top: 9px;
+          color: ${COLORS.muted};
+          font-size: 10px;
+        }
+
+        .view-only-alert {
+          margin-top: 14px;
+          padding: 10px 12px;
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          text-align: left;
+          border-radius: 9px;
+          border: 1px solid ${COLORS.border};
+          background: ${COLORS.navySoft};
+          color: ${COLORS.textSecondary};
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .view-only-alert .anticon {
+          color: ${COLORS.navy};
+          margin-top: 1px;
+        }
+
+        .image-card .ant-divider {
+          margin: 20px 0;
+          border-color: ${COLORS.border};
+        }
+
+        /* =====================================================
+           ACTIVE STATUS
+        ===================================================== */
+
+        .active-status-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          text-align: left;
+        }
+
+        .active-status-title {
+          display: block;
+          color: ${COLORS.text};
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .active-status-description {
+          display: block;
+          margin-top: 2px;
+          color: ${COLORS.muted};
+          font-size: 10px;
+        }
+
+        .active-status-row .ant-switch-checked {
+          background: ${COLORS.navy};
+        }
+
+        /* =====================================================
+           LICENSE
+        ===================================================== */
+
+        .license-card {
+          border-radius: 18px !important;
+          border: 1px solid ${COLORS.border} !important;
+          box-shadow: none !important;
+          overflow: hidden;
+        }
+
+        .license-card-top {
+          padding: 17px;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 10px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .license-heading {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .license-heading-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 11px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: ${COLORS.white};
+          color: ${COLORS.goldDark};
+          border: 1px solid rgba(217, 164, 65, 0.3);
+          font-size: 18px;
+        }
+
+        .license-heading-title {
+          display: block;
+          color: ${COLORS.text};
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .license-heading-subtitle {
+          display: block;
+          margin-top: 2px;
+          color: ${COLORS.textSecondary};
+          font-size: 10px;
+        }
+
+        .license-status-tag {
+          margin: 0 !important;
+          border-radius: 7px !important;
+          font-size: 10px !important;
+          font-weight: 700;
+          padding: 2px 7px !important;
+        }
+
+        .license-card-body {
+          padding: 17px;
+          background: ${COLORS.white};
+        }
+
+        .license-main-value {
+          padding: 15px;
+          margin-bottom: 13px;
+          border: 1px solid;
+          border-radius: 12px;
+          background: ${COLORS.white};
+        }
+
+        .license-value-label {
+          display: block;
+          margin-bottom: 3px;
+          color: ${COLORS.textSecondary};
+          font-size: 10px;
+        }
+
+        .license-value {
+          margin: 0 !important;
+          font-size: 26px !important;
+          line-height: 1.25 !important;
+          font-weight: 800 !important;
+        }
+
+        .license-info-list {
+          margin-bottom: 14px;
+        }
+
+        .license-info-row {
+          min-height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          border-bottom: 1px solid ${COLORS.border};
+        }
+
+        .license-info-label {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: ${COLORS.textSecondary};
+          font-size: 10px;
+        }
+
+        .license-info-icon {
+          color: ${COLORS.muted};
+          font-size: 12px;
+        }
+
+        .license-info-value {
+          color: ${COLORS.text};
+          font-size: 10px;
+          text-align: right;
+        }
+
+        .license-alert {
+          border-radius: 10px !important;
+          font-size: 10px;
+        }
+
+        .license-alert .ant-alert-message {
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .license-alert .ant-alert-description {
+          font-size: 10px;
+          line-height: 1.5;
+        }
+
+        /* =====================================================
+           INFORMATION CARD
+        ===================================================== */
+
+        .information-card {
+          overflow: hidden;
+        }
+
+        .information-card-header {
+          padding: 21px 22px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .section-eyebrow {
+          display: block;
+          margin-bottom: 4px;
+          color: ${COLORS.goldDark};
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 1.4px;
+        }
+
+        .information-card-title {
+          margin: 0 !important;
+          color: ${COLORS.navyDark} !important;
+          font-size: 18px !important;
+        }
+
+        .information-card-description {
+          display: block;
+          margin-top: 3px;
+          color: ${COLORS.textSecondary};
+          font-size: 11px;
+        }
+
+        .editable-tag {
+          margin: 0;
+          padding: 5px 9px;
+          border-radius: 7px;
+          border-color: #C9D7E4;
+          background: ${COLORS.navyLight};
+          color: ${COLORS.navy};
+          font-size: 10px;
+        }
+
+        .information-card-content {
+          padding: 0 22px 22px;
+        }
+
+        /* =====================================================
+           TABS
+        ===================================================== */
+
+        .parish-tabs .ant-tabs-nav {
+          margin-bottom: 22px;
+        }
+
+        .parish-tabs .ant-tabs-tab {
+          padding: 13px 4px;
+          margin-right: 25px;
+          color: ${COLORS.textSecondary};
+          font-size: 12px;
+        }
+
+        .parish-tabs .ant-tabs-tab:hover {
+          color: ${COLORS.navy};
+        }
+
+        .parish-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+          color: ${COLORS.navy};
+          font-weight: 700;
+        }
+
+        .parish-tabs .ant-tabs-ink-bar {
+          height: 2px;
+          background: ${COLORS.gold};
+        }
+
+        .parish-tabs .ant-tabs-tab .anticon {
+          margin-right: 6px;
+        }
+
+        /* =====================================================
+           FORM
+        ===================================================== */
+
+        .parish-settings-page .ant-form-item {
+          margin-bottom: 18px;
+        }
+
+        .parish-settings-page .ant-form-item-label {
+          padding-bottom: 6px;
+        }
+
+        .parish-settings-page .ant-form-item-label > label {
+          color: ${COLORS.text};
+          font-size: 11px;
+          font-weight: 600;
+        }
+
+        .form-input {
+          height: 42px;
+          border-radius: 9px !important;
+          border-color: ${COLORS.borderDark};
+          box-shadow: none !important;
+        }
+
+        .form-input:hover,
+        .form-input:focus {
+          border-color: ${COLORS.navy};
+        }
+
+        .form-input .ant-input {
+          box-shadow: none !important;
+        }
+
+        .input-icon {
+          color: ${COLORS.muted};
+        }
+
+        .form-select {
+          width: 100%;
+        }
+
+        .form-select .ant-select-selector {
+          height: 42px !important;
+          border-radius: 9px !important;
+          border-color: ${COLORS.borderDark} !important;
+          box-shadow: none !important;
+          display: flex;
+          align-items: center;
+        }
+
+        .form-select.ant-select-focused
+        .ant-select-selector {
+          border-color: ${COLORS.navy} !important;
+          box-shadow: none !important;
+        }
+
+        .form-input-number {
+          height: 42px;
+          border-radius: 9px !important;
+          border-color: ${COLORS.borderDark};
+          box-shadow: none !important;
+        }
+
+        .form-input-number:hover,
+        .form-input-number:focus {
+          border-color: ${COLORS.navy};
+        }
+
+        .description-heading {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 18px;
+          padding: 12px 14px;
+          border-radius: 10px;
+          background: ${COLORS.navySoft};
+          border: 1px solid ${COLORS.border};
+        }
+
+        .description-heading-icon {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          background: ${COLORS.navyLight};
+          color: ${COLORS.navy};
+        }
+
+        .description-heading > div:last-child {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .description-heading > div:last-child .ant-typography:first-child {
+          color: ${COLORS.text};
+          font-size: 12px;
+        }
+
+        .description-heading > div:last-child .ant-typography:last-child {
+          font-size: 10px;
+        }
+
+        .description-textarea {
+          border-radius: 10px !important;
+          border-color: ${COLORS.borderDark};
+          resize: vertical;
+          box-shadow: none !important;
+        }
+
+        .description-textarea:hover,
+        .description-textarea:focus {
+          border-color: ${COLORS.navy};
+        }
+
+        /* =====================================================
+           SUMMARY
+        ===================================================== */
+
+        .summary-card {
+          margin-top: 20px;
+        }
+
+        .summary-header {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+        }
+
+        .summary-header-icon {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: ${COLORS.goldLight};
+          color: ${COLORS.goldDark};
+          font-size: 17px;
+        }
+
+        .summary-title {
+          display: block;
+          color: ${COLORS.navyDark};
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .summary-description {
+          display: block;
+          margin-top: 2px;
+          color: ${COLORS.textSecondary};
+          font-size: 10px;
+        }
+
+        .summary-card .ant-divider {
+          margin: 16px 0;
+          border-color: ${COLORS.border};
+        }
+
+        .summary-item {
+          min-height: 70px;
+          padding: 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border-radius: 11px;
+          border: 1px solid ${COLORS.border};
+          background: ${COLORS.navySoft};
+        }
+
+        .summary-item-icon {
+          width: 32px;
+          height: 32px;
+          min-width: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          background: ${COLORS.white};
+          color: ${COLORS.navy};
+          border: 1px solid ${COLORS.border};
+          font-size: 13px;
+        }
+
+        .summary-item-content {
+          min-width: 0;
+        }
+
+        .summary-item-label {
+          display: block;
+          margin-bottom: 3px;
+          color: ${COLORS.muted};
+          font-size: 9px;
+        }
+
+        .summary-item-value {
+          display: block;
+          color: ${COLORS.text};
+          font-size: 12px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* =====================================================
+           RESPONSIVE - TABLET
+        ===================================================== */
+
+        @media (max-width: 1100px) {
+          .information-card-header {
+            padding: 18px;
+          }
+
+          .information-card-content {
+            padding: 0 18px 18px;
+          }
+
+          .church-image {
+            width: 145px;
+            height: 145px;
+          }
+        }
+
+        /* =====================================================
+           RESPONSIVE - MOBILE
+        ===================================================== */
+
+        @media (max-width: 768px) {
+          .parish-settings-page {
+            padding-bottom: 20px;
+          }
+
+          .settings-card,
+          .license-card {
+            border-radius: 14px !important;
+          }
+
+          .information-card-header {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 17px;
+          }
+
+          .information-card-content {
+            padding: 0 14px 16px;
+          }
+
+          .editable-tag {
+            width: fit-content;
+          }
+
+          .parish-tabs .ant-tabs-nav {
+            overflow-x: auto;
+          }
+
+          .parish-tabs .ant-tabs-tab {
+            margin-right: 17px;
+            white-space: nowrap;
+          }
+
+          .license-card-top {
+            padding: 14px;
+          }
+
+          .license-card-body {
+            padding: 14px;
+          }
+
+          .license-value {
+            font-size: 24px !important;
+          }
+
+          .church-image {
+            width: 150px;
+            height: 150px;
+          }
+
+          .summary-card {
+            margin-top: 14px;
+          }
+
+          .summary-item {
+            min-height: 62px;
+          }
+        }
+
+        /* =====================================================
+           RESPONSIVE - SMALL MOBILE
+        ===================================================== */
+
+        @media (max-width: 480px) {
+          .information-card-title {
+            font-size: 16px !important;
+          }
+
+          .information-card-description {
+            font-size: 10px;
+          }
+
+          .parish-tabs .ant-tabs-tab {
+            font-size: 11px;
+            margin-right: 14px;
+          }
+
+          .form-input,
+          .form-input-number {
+            height: 40px;
+          }
+
+          .form-select .ant-select-selector {
+            height: 40px !important;
+          }
+
+          .license-heading-title {
+            font-size: 12px;
+          }
+
+          .license-status-tag {
+            font-size: 9px !important;
+          }
+
+          .license-value {
+            font-size: 22px !important;
+          }
+
+          .license-info-label,
+          .license-info-value {
+            font-size: 9px;
+          }
+
+          .summary-item-value {
+            font-size: 11px;
+          }
+        }
+      `}</style>
     </div>
   );
 };

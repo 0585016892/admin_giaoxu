@@ -26,12 +26,12 @@ const { TextArea } = Input;
 const { Text } = Typography;
 
 /* =========================================================
-   THEME
+   THEME (NAVY & GOLD)
 ========================================================= */
 
-const primaryNavy = "#1B365D";
-const accentGold = "#D4AF37";
-const borderColor = "#E8ECF1";
+const primaryNavy = "#173B5E";
+const accentGold = "#D9A441";
+const borderColor = "#D9E2EC";
 
 /* =========================================================
    OPTIONS
@@ -135,7 +135,7 @@ const dayOptions = [
 ];
 
 /* =========================================================
-   SECTION
+   SECTION COMPONENT
 ========================================================= */
 
 const FormSection = ({ icon, title, children, marginBottom = 16 }) => {
@@ -144,9 +144,10 @@ const FormSection = ({ icon, title, children, marginBottom = 16 }) => {
       style={{
         padding: 16,
         marginBottom,
-        borderRadius: 16,
-        background: "#FAFBFC",
-        border: `1px solid ${borderColor}`,
+        borderRadius: 14,
+        background: "#F7F9FC",
+        border: `1.5px solid ${borderColor}`,
+        fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
       }}
     >
       <Space
@@ -159,6 +160,8 @@ const FormSection = ({ icon, title, children, marginBottom = 16 }) => {
           style={{
             color: accentGold,
             fontSize: 14,
+            display: "flex",
+            alignItems: "center",
           }}
         >
           {icon}
@@ -169,6 +172,7 @@ const FormSection = ({ icon, title, children, marginBottom = 16 }) => {
           style={{
             color: primaryNavy,
             fontSize: 13,
+            fontWeight: 700,
           }}
         >
           {title}
@@ -207,13 +211,9 @@ const normalizeTime = (value) => {
 
 const ClassForm = ({
   form,
-
   editingClass = null,
-
   loading = false,
-
   onFinish,
-
   onValuesChange,
 }) => {
   /*
@@ -229,7 +229,7 @@ const ClassForm = ({
       form.resetFields();
 
       form.setFieldsValue({
-        category: "Vui lòng chọn chương trình",
+        category: "Giáo lý Hôn Nhân",
         status: "active",
         name: undefined,
         description: undefined,
@@ -246,27 +246,18 @@ const ClassForm = ({
 
     form.setFieldsValue({
       name: editingClass.name || "",
-
       category: editingClass.category || "Giáo lý Hôn Nhân",
-
       description: editingClass.description || "",
-
       room: editingClass.room || "",
-
       day_of_week: editingClass.day_of_week
         ? Number(editingClass.day_of_week)
         : undefined,
-
       start_time: normalizeTime(editingClass.start_time),
-
       end_time: normalizeTime(editingClass.end_time),
-
       start_date: editingClass.start_date
         ? dayjs(editingClass.start_date)
         : null,
-
       end_date: editingClass.end_date ? dayjs(editingClass.end_date) : null,
-
       status: editingClass.status || "active",
     });
   }, [editingClass, form]);
@@ -277,28 +268,16 @@ const ClassForm = ({
 
   const disableStartDate = (current) => {
     if (!current) return false;
-
-    /*
-     * Không cho chọn ngày bắt đầu trong quá khứ.
-     *
-     * Nếu muốn cho phép sửa lớp cũ mà vẫn chọn ngày cũ,
-     * có thể bỏ đoạn này.
-     */
-
     const today = dayjs().startOf("day");
-
     return current.isBefore(today);
   };
 
   const disableEndDate = (current) => {
     if (!current) return false;
-
     const startDate = form?.getFieldValue("start_date");
-
     if (!startDate) {
       return false;
     }
-
     return current.isBefore(dayjs(startDate).startOf("day"));
   };
 
@@ -346,6 +325,7 @@ const ClassForm = ({
       onFinish={onFinish}
       onValuesChange={onValuesChange}
       disabled={loading}
+      style={{ fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif" }}
     >
       {/* ===================================================
           BASIC INFORMATION
@@ -380,6 +360,7 @@ const ClassForm = ({
                 placeholder="Ví dụ: Lớp Hôn Nhân K01"
                 style={{
                   borderRadius: 10,
+                  border: `1.5px solid ${borderColor}`,
                 }}
               />
             </Form.Item>
@@ -396,10 +377,13 @@ const ClassForm = ({
                 size="large"
                 disabled
                 value={editingClass?.code || "Tự động tạo"}
-                prefix={<IdcardOutlined />}
+                prefix={<IdcardOutlined style={{ color: primaryNavy }} />}
                 style={{
                   borderRadius: 10,
-                  background: "#F3F5F7",
+                  background: "#EDF2F7",
+                  border: `1.5px solid ${borderColor}`,
+                  color: "#64748B",
+                  fontWeight: 600,
                 }}
               />
             </Form.Item>
@@ -469,10 +453,11 @@ const ClassForm = ({
             <Form.Item name="room" label="Phòng học">
               <Input
                 size="large"
-                prefix={<EnvironmentOutlined />}
+                prefix={<EnvironmentOutlined style={{ color: primaryNavy }} />}
                 placeholder="Ví dụ: Phòng A01"
                 style={{
                   borderRadius: 10,
+                  border: `1.5px solid ${borderColor}`,
                 }}
               />
             </Form.Item>
@@ -505,6 +490,7 @@ const ClassForm = ({
                 style={{
                   width: "100%",
                   borderRadius: 10,
+                  border: `1.5px solid ${borderColor}`,
                 }}
               />
             </Form.Item>
@@ -525,7 +511,6 @@ const ClassForm = ({
                     }
 
                     const start = dayjs(startTime);
-
                     const end = dayjs(value);
 
                     if (end.isAfter(start)) {
@@ -547,6 +532,7 @@ const ClassForm = ({
                 style={{
                   width: "100%",
                   borderRadius: 10,
+                  border: `1.5px solid ${borderColor}`,
                 }}
               />
             </Form.Item>
@@ -596,6 +582,7 @@ const ClassForm = ({
                 style={{
                   width: "100%",
                   borderRadius: 10,
+                  border: `1.5px solid ${borderColor}`,
                 }}
               />
             </Form.Item>
@@ -642,6 +629,7 @@ const ClassForm = ({
                 style={{
                   width: "100%",
                   borderRadius: 10,
+                  border: `1.5px solid ${borderColor}`,
                 }}
               />
             </Form.Item>
@@ -667,6 +655,7 @@ const ClassForm = ({
             placeholder="Nhập mô tả hoặc thông tin thêm về lớp học..."
             style={{
               borderRadius: 10,
+              border: `1.5px solid ${borderColor}`,
             }}
           />
         </Form.Item>

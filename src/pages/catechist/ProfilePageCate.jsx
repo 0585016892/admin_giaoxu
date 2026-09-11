@@ -42,10 +42,36 @@ import { getAdminById, updateAdmin, changePassword } from "../../api/adminApi";
 const { Title, Text } = Typography;
 
 // =====================================================
-// HELPER FUNCTIONS & STYLES
+// HELPER FUNCTIONS & CONFIG
 // =====================================================
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  gold: "#D9A441",
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+  border: "#E2E8F0",
+
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
+
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
+  gray: "#64748B",
+  grayBg: "#F1F5F9",
+
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+};
 
 const translateRole = (role) => {
   const roleMap = {
@@ -73,16 +99,16 @@ const ProfileSidebar = memo(
       fileList.length > 0 ? fileList[0].url || fileList[0].thumbUrl : null;
 
     return (
-      <Card bordered={false} className="chibi-card">
-        <div className="chibi-avatar-upload-box">
-          <div className="chibi-avatar-ring">
+      <Card bordered={false} className="custom-card">
+        <div className="custom-avatar-upload-box">
+          <div className="custom-avatar-ring">
             <Avatar
               size={116}
               src={avatarUrl}
               icon={<UserOutlined />}
-              className="chibi-main-avatar"
+              className="custom-main-avatar"
             />
-            <span className={`chibi-star-badge ${accountType.key}`}>
+            <span className={`custom-star-badge ${accountType.key}`}>
               {accountType.key === "vip" ? <CrownFilled /> : <StarFilled />}
             </span>
           </div>
@@ -92,25 +118,25 @@ const ProfileSidebar = memo(
               type="primary"
               shape="circle"
               icon={<CameraOutlined />}
-              className="chibi-upload-btn"
+              className="custom-upload-btn"
             />
           </Upload>
         </div>
 
-        <div className="chibi-user-id-box">
-          <Title level={4} className="chibi-full-name">
+        <div className="custom-user-id-box">
+          <Title level={4} className="custom-full-name">
             {profileData?.saint_name && (
-              <span className="chibi-saint">{profileData.saint_name} </span>
+              <span className="custom-saint">{profileData.saint_name} </span>
             )}
             {userName}
           </Title>
 
-          <Text type="secondary" className="chibi-username-text">
+          <Text type="secondary" className="custom-username-text">
             @{profileData?.username || "username"}
           </Text>
 
-          <div className="chibi-tags-group">
-            <Tag className="chibi-tag-role">
+          <div className="custom-tags-group">
+            <Tag className="custom-tag-role">
               {translateRole(profileData?.role)}
             </Tag>
             <Tag
@@ -120,23 +146,23 @@ const ProfileSidebar = memo(
                 background: accountType.bg,
                 borderColor: accountType.border,
               }}
-              className="chibi-tag-account"
+              className="custom-tag-account"
             >
               {accountType.label}
             </Tag>
           </div>
         </div>
 
-        <Divider style={{ margin: "16px 0", borderColor: "#FFE4E6" }} />
+        <Divider style={{ margin: "20px 0", borderColor: COLORS.border }} />
 
-        <Descriptions column={1} size="small" className="chibi-quick-desc">
+        <Descriptions column={1} size="small" className="custom-quick-desc">
           <Descriptions.Item label="ID Hệ thống">
-            <strong style={{ color: "#FF6B8B" }}>
+            <strong style={{ color: COLORS.gold }}>
               #{profileData?.id || "—"}
             </strong>
           </Descriptions.Item>
           <Descriptions.Item label="Chức danh">
-            <span style={{ color: "#475569", fontWeight: 700 }}>
+            <span style={{ color: COLORS.text, fontWeight: 700 }}>
               {profileData?.position || "Chưa cập nhật"}
             </span>
           </Descriptions.Item>
@@ -147,9 +173,7 @@ const ProfileSidebar = memo(
             {profileData?.phone || "—"}
           </Descriptions.Item>
           <Descriptions.Item label="Trạng thái">
-            <Tag color="green" className="chibi-status-tag">
-              ● Đang hoạt động
-            </Tag>
+            <Tag className="custom-status-tag">● Đang hoạt động</Tag>
           </Descriptions.Item>
         </Descriptions>
       </Card>
@@ -161,9 +185,9 @@ const ProfileSidebar = memo(
 const ProfileSkeleton = () => (
   <Row gutter={[20, 20]}>
     <Col xs={24} lg={8}>
-      <Card bordered={false} className="chibi-card">
+      <Card bordered={false} className="custom-card">
         <Space
-          vertical
+          direction="vertical"
           align="center"
           style={{ width: "100%", padding: "20px 0" }}
         >
@@ -175,7 +199,7 @@ const ProfileSkeleton = () => (
       </Card>
     </Col>
     <Col xs={24} lg={16}>
-      <Card bordered={false} className="chibi-card">
+      <Card bordered={false} className="custom-card">
         <Skeleton active paragraph={{ rows: 10 }} />
       </Card>
     </Col>
@@ -208,18 +232,18 @@ export default function ProfilePageCate() {
         key: "vip",
         label: "Thành viên VIP",
         icon: <CrownFilled />,
-        color: "#D97706",
-        bg: "#FEF3C7",
-        border: "#FDE68A",
+        color: COLORS.gold,
+        bg: COLORS.goldLight,
+        border: COLORS.gold,
       };
     }
     return {
       key: "member",
       label: "Thành viên",
       icon: <StarFilled />,
-      color: "#64748B",
-      bg: "#F1F5F9",
-      border: "#CBD5E1",
+      color: COLORS.textSecondary,
+      bg: COLORS.grayBg,
+      border: COLORS.muted,
     };
   }, [profileData?.account_type, user?.account_type]);
 
@@ -362,22 +386,22 @@ export default function ProfilePageCate() {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#FF6B8B",
+          colorPrimary: COLORS.navy,
           borderRadius: 16,
-          colorBgLayout: "#FFF5F7",
+          colorBgLayout: COLORS.background,
           fontFamily: "'Quicksand', 'Be Vietnam Pro', sans-serif",
         },
       }}
     >
-      <div className="chibi-profile-layout">
-        <div className="chibi-profile-container">
+      <div className="custom-profile-layout">
+        <div className="custom-profile-container">
           {/* HEADER BANNER */}
-          <div className="chibi-header-banner">
+          <div className="custom-header-banner">
             <PageHeroHeader
               icon={<UserOutlined />}
-              badgeText="🌸 THÔNG TIN HỒ SƠ CÁ NHÂN"
-              title="Hồ Sơ Của Bạn"
-              description="Quản lý thông tin lý lịch, chức vụ giáo lý và bảo mật mật khẩu tài khoản."
+              badgeText="✦ HỒ SƠ QUẢN TRỊ VIÊN HỆ THỐNG"
+              title="Trung Tâm Hồ Sơ"
+              description="Quản lý định danh tài khoản, thông tin công tác mục vụ và bảo mật hệ thống."
             />
           </div>
 
@@ -401,10 +425,10 @@ export default function ProfilePageCate() {
                   {/* 1. FORM CẬP NHẬT THÔNG TIN */}
                   <Card
                     bordered={false}
-                    className="chibi-card"
+                    className="custom-card"
                     title={
-                      <div className="chibi-card-header">
-                        <IdcardOutlined style={{ color: "#FF6B8B" }} />
+                      <div className="custom-card-header">
+                        <IdcardOutlined style={{ color: COLORS.gold }} />
                         <span>Cập Nhật Thông Tin Hồ Sơ</span>
                       </div>
                     }
@@ -422,13 +446,13 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={8}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">Tên Thánh</span>
+                              <span className="custom-label">Tên Thánh</span>
                             }
                             name="saint_name"
                           >
                             <Input
                               placeholder="Ví dụ: Giuse, Maria..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -436,7 +460,7 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={16}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">Họ và tên *</span>
+                              <span className="custom-label">Họ và tên *</span>
                             }
                             name="full_name"
                             rules={[
@@ -448,7 +472,7 @@ export default function ProfilePageCate() {
                           >
                             <Input
                               placeholder="Nhập họ và tên..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -458,7 +482,7 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">
+                              <span className="custom-label">
                                 Email liên hệ *
                               </span>
                             }
@@ -473,10 +497,10 @@ export default function ProfilePageCate() {
                           >
                             <Input
                               prefix={
-                                <MailOutlined style={{ color: "#FF85A1" }} />
+                                <MailOutlined style={{ color: COLORS.navy }} />
                               }
                               placeholder="email@example.com"
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -484,16 +508,18 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">Số điện thoại</span>
+                              <span className="custom-label">
+                                Số điện thoại
+                              </span>
                             }
                             name="phone"
                           >
                             <Input
                               prefix={
-                                <PhoneOutlined style={{ color: "#FF85A1" }} />
+                                <PhoneOutlined style={{ color: COLORS.navy }} />
                               }
                               placeholder="09xxxx..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -503,15 +529,15 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">
+                              <span className="custom-label">
                                 Chức danh / Nhiệm vụ
                               </span>
                             }
                             name="position"
                           >
                             <Input
-                              placeholder="Ví dụ: Huynh trưởng, GLV Lớp Chiên..."
-                              className="chibi-input"
+                              placeholder="Ví dụ: Huynh trưởng, Quản trị viên..."
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -519,7 +545,7 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">Ngày sinh</span>
+                              <span className="custom-label">Ngày sinh</span>
                             }
                             name="birthday"
                           >
@@ -527,7 +553,7 @@ export default function ProfilePageCate() {
                               style={{ width: "100%" }}
                               format="YYYY-MM-DD"
                               placeholder="Chọn ngày sinh..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -537,16 +563,16 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">Quê quán</span>
+                              <span className="custom-label">Quê quán</span>
                             }
                             name="hometown"
                           >
                             <Input
                               prefix={
-                                <HomeOutlined style={{ color: "#FF85A1" }} />
+                                <HomeOutlined style={{ color: COLORS.navy }} />
                               }
                               placeholder="Quê hương..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -554,7 +580,7 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">
+                              <span className="custom-label">
                                 Địa chỉ hiện tại
                               </span>
                             }
@@ -562,10 +588,10 @@ export default function ProfilePageCate() {
                           >
                             <Input
                               prefix={
-                                <HomeOutlined style={{ color: "#FF85A1" }} />
+                                <HomeOutlined style={{ color: COLORS.navy }} />
                               }
                               placeholder="Nơi cư trú..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -573,14 +599,14 @@ export default function ProfilePageCate() {
 
                       {/* KHỐI DÀNH RIÊNG CHO LINH MỤC */}
                       {profileData?.role === "priest" && (
-                        <div className="chibi-priest-box">
+                        <div className="custom-priest-box">
                           <Divider
                             orientation="left"
-                            style={{ borderColor: "#FDE68A" }}
+                            style={{ borderColor: COLORS.goldLight }}
                           >
                             <span
                               style={{
-                                color: "#D97706",
+                                color: COLORS.gold,
                                 fontWeight: 700,
                                 fontSize: 13,
                               }}
@@ -593,7 +619,7 @@ export default function ProfilePageCate() {
                             <Col xs={24} sm={12}>
                               <Form.Item
                                 label={
-                                  <span className="chibi-label">
+                                  <span className="custom-label">
                                     Ngày thụ phong
                                   </span>
                                 }
@@ -603,7 +629,7 @@ export default function ProfilePageCate() {
                                   style={{ width: "100%" }}
                                   format="YYYY-MM-DD"
                                   placeholder="Ngày thụ phong..."
-                                  className="chibi-input"
+                                  className="custom-input"
                                 />
                               </Form.Item>
                             </Col>
@@ -611,7 +637,7 @@ export default function ProfilePageCate() {
                             <Col xs={24} sm={12}>
                               <Form.Item
                                 label={
-                                  <span className="chibi-label">
+                                  <span className="custom-label">
                                     Khẩu hiệu Mục vụ
                                   </span>
                                 }
@@ -620,11 +646,11 @@ export default function ProfilePageCate() {
                                 <Input
                                   prefix={
                                     <BookOutlined
-                                      style={{ color: "#F59E0B" }}
+                                      style={{ color: COLORS.gold }}
                                     />
                                   }
                                   placeholder="Châm ngôn dâng hiến..."
-                                  className="chibi-input"
+                                  className="custom-input"
                                 />
                               </Form.Item>
                             </Col>
@@ -632,7 +658,7 @@ export default function ProfilePageCate() {
 
                           <Form.Item
                             label={
-                              <span className="chibi-label">
+                              <span className="custom-label">
                                 Tiểu sử tóm tắt
                               </span>
                             }
@@ -641,7 +667,7 @@ export default function ProfilePageCate() {
                             <Input.TextArea
                               rows={3}
                               placeholder="Đoạn giới thiệu ngắn..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </div>
@@ -665,11 +691,11 @@ export default function ProfilePageCate() {
                   {/* 2. FORM ĐỔI MẬT KHẨU */}
                   <Card
                     bordered={false}
-                    className="chibi-card"
+                    className="custom-card"
                     title={
-                      <div className="chibi-card-header">
-                        <KeyOutlined style={{ color: "#A855F7" }} />
-                        <span>Đổi Mật Khẩu Bảo Mật</span>
+                      <div className="custom-card-header">
+                        <KeyOutlined style={{ color: COLORS.navy }} />
+                        <span>Bảo Mật & Đổi Mật Khẩu</span>
                       </div>
                     }
                   >
@@ -682,7 +708,7 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">
+                              <span className="custom-label">
                                 Mật khẩu hiện tại *
                               </span>
                             }
@@ -696,10 +722,10 @@ export default function ProfilePageCate() {
                           >
                             <Input.Password
                               prefix={
-                                <LockOutlined style={{ color: "#C084FC" }} />
+                                <LockOutlined style={{ color: COLORS.navy }} />
                               }
                               placeholder="Mật khẩu cũ..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -707,7 +733,7 @@ export default function ProfilePageCate() {
                         <Col xs={24} sm={12}>
                           <Form.Item
                             label={
-                              <span className="chibi-label">
+                              <span className="custom-label">
                                 Mật khẩu mới *
                               </span>
                             }
@@ -719,10 +745,10 @@ export default function ProfilePageCate() {
                           >
                             <Input.Password
                               prefix={
-                                <LockOutlined style={{ color: "#C084FC" }} />
+                                <LockOutlined style={{ color: COLORS.navy }} />
                               }
                               placeholder="Mật khẩu mới..."
-                              className="chibi-input"
+                              className="custom-input"
                             />
                           </Form.Item>
                         </Col>
@@ -752,55 +778,56 @@ export default function ProfilePageCate() {
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 
-          .chibi-profile-layout {
+          .custom-profile-layout {
             min-height: 100vh;
             font-family: 'Quicksand', 'Be Vietnam Pro', sans-serif;
             padding: 12px 0;
+            background-color: ${COLORS.background};
           }
 
-          .chibi-profile-container {
+          .custom-profile-container {
             max-width: 1080px;
             margin: 0 auto;
           }
 
-          .chibi-header-banner {
+          .custom-header-banner {
             margin-bottom: 20px;
           }
 
-          .chibi-card {
-            background: rgba(255, 255, 255, 0.95) !important;
+          .custom-card {
+            background: ${COLORS.white} !important;
             border-radius: 20px !important;
-            border: 1.5px solid #FFE4E6 !important;
-            box-shadow: 0 10px 25px -5px rgba(255, 182, 193, 0.2) !important;
+            border: 1px solid ${COLORS.border} !important;
+            box-shadow: 0 10px 25px -5px rgba(23, 59, 94, 0.08) !important;
           }
 
-          .chibi-card-header {
+          .custom-card-header {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #334155;
+            gap: 10px;
+            color: ${COLORS.text};
             font-size: 15px;
             font-weight: 800;
           }
 
-          .chibi-avatar-upload-box {
+          .custom-avatar-upload-box {
             position: relative;
             width: 120px;
             margin: 8px auto 16px;
           }
 
-          .chibi-avatar-ring {
+          .custom-avatar-ring {
             position: relative;
             display: inline-block;
           }
 
-          .chibi-main-avatar {
-            border: 3px solid #FFF;
-            box-shadow: 0 6px 18px rgba(255, 107, 139, 0.25);
-            background: #FF85A1;
+          .custom-main-avatar {
+            border: 3px solid ${COLORS.white};
+            box-shadow: 0 6px 18px rgba(23, 59, 94, 0.15);
+            background: ${COLORS.navy};
           }
 
-          .chibi-star-badge {
+          .custom-star-badge {
             position: absolute;
             bottom: 2px;
             right: 2px;
@@ -811,45 +838,48 @@ export default function ProfilePageCate() {
             align-items: center;
             justify-content: center;
             font-size: 11px;
-            color: #FFF;
-            border: 2px solid #FFF;
+            color: ${COLORS.white};
+            border: 2px solid ${COLORS.white};
             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
           }
-          .chibi-star-badge.vip { background: #F59E0B; }
-          .chibi-star-badge.member { background: #94A3B8; }
+          .custom-star-badge.vip { background: ${COLORS.gold}; }
+          .custom-star-badge.member { background: ${COLORS.gray}; }
 
-          .chibi-upload-btn {
+          .custom-upload-btn {
             position: absolute;
             bottom: -2px;
             left: 2px;
-            background: #FF6B8B !important;
-            border-color: #FFF !important;
-            color: #FFF !important;
-            box-shadow: 0 4px 10px rgba(255, 107, 139, 0.3);
+            background: ${COLORS.navy} !important;
+            border-color: ${COLORS.white} !important;
+            color: ${COLORS.white} !important;
+            box-shadow: 0 4px 10px rgba(23, 59, 94, 0.3);
+          }
+          .custom-upload-btn:hover {
+            background: ${COLORS.navyHover} !important;
           }
 
-          .chibi-user-id-box {
+          .custom-user-id-box {
             text-align: center;
           }
 
-          .chibi-full-name {
-            color: #1E293B !important;
+          .custom-full-name {
+            color: ${COLORS.text} !important;
             font-weight: 800 !important;
             margin: 0 !important;
             font-size: 18px !important;
           }
 
-          .chibi-saint {
-            color: #FF6B8B;
+          .custom-saint {
+            color: ${COLORS.gold};
           }
 
-          .chibi-username-text {
+          .custom-username-text {
             font-size: 12px;
             font-weight: 700;
-            color: #94A3B8;
+            color: ${COLORS.textSecondary};
           }
 
-          .chibi-tags-group {
+          .custom-tags-group {
             display: flex;
             justify-content: center;
             gap: 6px;
@@ -857,18 +887,18 @@ export default function ProfilePageCate() {
             flex-wrap: wrap;
           }
 
-          .chibi-tag-role {
+          .custom-tag-role {
             margin: 0;
             border-radius: 10px;
-            border: 1px solid #E9D5FF;
-            background: #FAF5FF;
-            color: #9333EA;
+            border: 1px solid ${COLORS.border};
+            background: ${COLORS.navyLight};
+            color: ${COLORS.navy};
             font-size: 11px;
             font-weight: 700;
             padding: 2px 10px;
           }
 
-          .chibi-tag-account {
+          .custom-tag-account {
             margin: 0;
             border-radius: 10px;
             font-size: 11px;
@@ -876,38 +906,48 @@ export default function ProfilePageCate() {
             padding: 2px 10px;
           }
 
-          .chibi-quick-desc .ant-descriptions-item-label {
-            color: #64748B !important;
+          .custom-quick-desc .ant-descriptions-item-label {
+            color: ${COLORS.textSecondary} !important;
             font-weight: 600;
           }
+          .custom-quick-desc .ant-descriptions-item-content {
+            color: ${COLORS.text} !important;
+          }
 
-          .chibi-status-tag {
+          .custom-status-tag {
             border-radius: 8px;
             font-weight: 700;
             font-size: 10px;
+            background: ${COLORS.successBg} !important;
+            color: ${COLORS.success} !important;
+            border: 1px solid ${COLORS.success} !important;
           }
 
-          .chibi-label {
+          .custom-label {
             font-weight: 700;
-            color: #475569;
+            color: ${COLORS.text};
             font-size: 12.5px;
           }
 
-          .chibi-input {
+          .custom-input {
             border-radius: 12px !important;
-            border-color: #F1F5F9 !important;
-            background: #FAF5F7 !important;
+            border-color: ${COLORS.border} !important;
+            background: ${COLORS.grayBg} !important;
+            color: ${COLORS.text} !important;
             transition: all 0.2s ease;
           }
-          .chibi-input:hover, .chibi-input:focus {
-            background: #FFF !important;
-            border-color: #FF6B8B !important;
-            box-shadow: 0 0 0 3px rgba(255, 107, 139, 0.1) !important;
+          .custom-input input, .custom-input textarea {
+            color: ${COLORS.text} !important;
+          }
+          .custom-input:hover, .custom-input:focus {
+            background: ${COLORS.white} !important;
+            border-color: ${COLORS.navy} !important;
+            box-shadow: 0 0 0 3px rgba(23, 59, 94, 0.1) !important;
           }
 
-          .chibi-priest-box {
-            background: #FFFBEB;
-            border: 1.5px dashed #FDE68A;
+          .custom-priest-box {
+            background: ${COLORS.warningBg};
+            border: 1.5px dashed ${COLORS.gold};
             padding: 14px;
             border-radius: 16px;
             margin-bottom: 16px;

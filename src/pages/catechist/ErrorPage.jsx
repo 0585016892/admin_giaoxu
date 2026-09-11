@@ -11,6 +11,36 @@ import AppButton from "../../components/common/AppButton";
 
 const { Title, Text } = Typography;
 
+// =========================================================
+// COLORS CONFIG
+// =========================================================
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  gold: "#D9A441",
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+  border: "#E2E8F0",
+
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
+
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
+  gray: "#64748B",
+  grayBg: "#F1F5F9",
+
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+};
+
 const ErrorPage = ({
   title = "Không thể tải dữ liệu",
   message = "Đã xảy ra lỗi trong quá trình tải dữ liệu. Vui lòng thử lại hoặc quay về trang chủ.",
@@ -52,7 +82,7 @@ const ErrorPage = ({
               onClick={onRetry}
               className="error-primary-button"
             >
-              Thử lại
+              Thử lại ✨
             </AppButton>
           )}
 
@@ -97,11 +127,12 @@ const ErrorPage = ({
           background:
             radial-gradient(
               circle at 50% 0%,
-              rgba(212, 175, 55, 0.08),
+              rgba(217, 164, 65, 0.08),
               transparent 35%
             ),
-            #FAFAFA;
+            ${COLORS.background};
           box-sizing: border-box;
+          font-family: 'Quicksand', 'Be Vietnam Pro', sans-serif;
         }
 
         /* =========================
@@ -120,7 +151,7 @@ const ErrorPage = ({
           height: clamp(180px, 30vw, 360px);
           top: -120px;
           left: -120px;
-          background: rgba(27, 54, 93, 0.035);
+          background: rgba(23, 59, 94, 0.035);
         }
 
         .error-circle-2 {
@@ -128,7 +159,7 @@ const ErrorPage = ({
           height: clamp(200px, 35vw, 420px);
           right: -160px;
           bottom: -180px;
-          background: rgba(212, 175, 55, 0.05);
+          background: rgba(217, 164, 65, 0.06);
         }
 
         /* =========================
@@ -158,7 +189,7 @@ const ErrorPage = ({
           align-items: center;
           justify-content: center;
           margin-bottom: 18px;
-          background: rgba(27, 54, 93, 0.06);
+          background: ${COLORS.navyLight};
         }
 
         .error-icon-inner {
@@ -168,15 +199,14 @@ const ErrorPage = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #FFFFFF;
-          border: 1px solid rgba(27, 54, 93, 0.1);
-          box-shadow:
-            0 12px 30px rgba(27, 54, 93, 0.1);
+          background: ${COLORS.white};
+          border: 1px solid ${COLORS.border};
+          box-shadow: 0 12px 30px rgba(23, 59, 94, 0.08);
         }
 
         .error-icon-inner .anticon {
           font-size: clamp(34px, 7vw, 48px);
-          color: #1B365D;
+          color: ${COLORS.navy};
         }
 
         /* =========================
@@ -188,8 +218,8 @@ const ErrorPage = ({
           line-height: 0.95;
           font-weight: 900;
           letter-spacing: -5px;
-          color: #1B365D;
-          opacity: 0.08;
+          color: ${COLORS.navy};
+          opacity: 0.06;
           margin-bottom: -4px;
           user-select: none;
         }
@@ -200,7 +230,7 @@ const ErrorPage = ({
 
         .error-title {
           margin: 0 !important;
-          color: #1E293B !important;
+          color: ${COLORS.text} !important;
           font-size: clamp(22px, 5vw, 32px) !important;
           line-height: 1.25 !important;
           font-weight: 800 !important;
@@ -215,7 +245,7 @@ const ErrorPage = ({
           display: block;
           max-width: 500px;
           margin-top: 12px;
-          color: #64748B !important;
+          color: ${COLORS.textSecondary} !important;
           font-size: clamp(13px, 2.5vw, 15px);
           line-height: 1.7;
         }
@@ -236,20 +266,20 @@ const ErrorPage = ({
           padding: 0 20px;
           border-radius: 12px !important;
           font-weight: 700;
-          transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .error-primary-button {
-          border-color: #1B365D !important;
-          box-shadow: 0 8px 20px rgba(27, 54, 93, 0.18);
+          background: ${COLORS.navy} !important;
+          border-color: ${COLORS.navy} !important;
+          color: ${COLORS.white} !important;
+          box-shadow: 0 8px 20px rgba(23, 59, 94, 0.18);
         }
 
         .error-home-button {
-          color: #334155 !important;
-          background: #FFFFFF !important;
-          border: 1px solid #E2E8F0 !important;
+          color: ${COLORS.text} !important;
+          background: ${COLORS.white} !important;
+          border: 1px solid ${COLORS.border} !important;
         }
 
         .error-primary-button:hover,
@@ -258,7 +288,13 @@ const ErrorPage = ({
         }
 
         .error-primary-button:hover {
-          box-shadow: 0 10px 24px rgba(27, 54, 93, 0.25);
+          background: ${COLORS.navyHover} !important;
+          box-shadow: 0 10px 24px rgba(23, 59, 94, 0.25);
+        }
+
+        .error-home-button:hover {
+          border-color: ${COLORS.navy} !important;
+          color: ${COLORS.navy} !important;
         }
 
         /* =========================
@@ -271,19 +307,20 @@ const ErrorPage = ({
           justify-content: center;
           gap: 8px;
           margin-top: 42px;
-          color: #94A3B8;
+          color: ${COLORS.muted};
           font-size: 12px;
+          font-weight: 600;
         }
 
         .error-footer-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: #D4AF37;
+          background: ${COLORS.gold};
         }
 
         /* =========================
-           TABLET
+           RESPONSIVE BREAKPOINTS
         ========================= */
 
         @media (max-width: 768px) {
@@ -291,40 +328,30 @@ const ErrorPage = ({
             min-height: 70vh;
             padding: 40px 20px;
           }
-
           .error-content {
             max-width: 540px;
           }
-
           .error-actions {
             width: 100%;
           }
         }
-
-        /* =========================
-           MOBILE
-        ========================= */
 
         @media (max-width: 480px) {
           .error-page {
             min-height: calc(100vh - 80px);
             padding: 32px 16px;
           }
-
           .error-icon-wrapper {
             margin-bottom: 14px;
           }
-
           .error-code {
             letter-spacing: -3px;
           }
-
           .error-message {
             max-width: 330px;
             margin-top: 10px;
             line-height: 1.6;
           }
-
           .error-actions {
             width: 100%;
             display: flex;
@@ -332,41 +359,29 @@ const ErrorPage = ({
             align-items: stretch;
             gap: 10px !important;
           }
-
           .error-primary-button,
           .error-home-button {
             width: 100%;
             min-width: 0;
             height: 46px;
           }
-
           .error-footer {
             margin-top: 32px;
           }
         }
-
-        /* =========================
-           VERY SMALL MOBILE
-        ========================= */
 
         @media (max-width: 360px) {
           .error-page {
             padding-left: 12px;
             padding-right: 12px;
           }
-
           .error-title {
             font-size: 21px !important;
           }
-
           .error-message {
             font-size: 13px;
           }
         }
-
-        /* =========================
-           REDUCE MOTION
-        ========================= */
 
         @media (prefers-reduced-motion: reduce) {
           .error-primary-button,

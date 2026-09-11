@@ -28,7 +28,6 @@ import {
   Plus,
   Save,
   Trash2,
-  Sparkles,
   Settings,
   Palette,
   PlayCircle,
@@ -36,6 +35,15 @@ import {
   RotateCcw,
   Type,
   Image as ImageIcon,
+  Layers3,
+  Trophy,
+  Timer,
+  BarChart3,
+  Lightbulb,
+  SkipForward,
+  Eye,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 import { createGame, updateGame } from "../../../api/gameApi";
@@ -43,19 +51,48 @@ import { createGame, updateGame } from "../../../api/gameApi";
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-/**
- * =========================================================
- * API URL
- * =========================================================
- */
+/* =========================================================
+   COLORS
+========================================================= */
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  gold: "#D9A441",
+
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+
+  border: "#E2E8F0",
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
+
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
+
+  gray: "#64748B",
+  grayBg: "#F1F5F9",
+
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+};
+
+/* =========================================================
+   API URL
+========================================================= */
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
-/**
- * =========================================================
- * DEFAULT DATA
- * =========================================================
- */
+/* =========================================================
+   DEFAULT DATA
+========================================================= */
 
 const DEFAULT_CARDS = [
   {
@@ -88,34 +125,17 @@ const DEFAULT_CARDS = [
   },
 ];
 
-/**
- * =========================================================
- * URL HELPERS
- * =========================================================
- */
+/* =========================================================
+   URL HELPERS
+========================================================= */
 
-/**
- * Chuyển:
- * /uploads/games/game9/thumbnail.png
- *
- * thành:
- * https://domain-api.com/uploads/games/game9/thumbnail.png
- *
- * Nếu API_URL rỗng thì giữ nguyên path.
- */
 const getFileUrl = (file) => {
   if (!file) return null;
 
-  /**
-   * File mới từ Upload
-   */
   if (file instanceof File || file instanceof Blob) {
     return URL.createObjectURL(file);
   }
 
-  /**
-   * String
-   */
   if (typeof file === "string") {
     if (
       file.startsWith("http://") ||
@@ -129,27 +149,6 @@ const getFileUrl = (file) => {
 
     return `${API_URL}${normalized}`;
   }
-
-  /**
-   * Object từ Ant Design Upload / backend
-   *
-   * Có thể có:
-   * {
-   *   url: "/uploads/..."
-   * }
-   *
-   * hoặc:
-   * {
-   *   path: "/uploads/..."
-   * }
-   *
-   * hoặc:
-   * {
-   *   response: {
-   *      url: "/uploads/..."
-   *   }
-   * }
-   */
 
   if (typeof file === "object") {
     const possibleUrl =
@@ -169,9 +168,6 @@ const getFileUrl = (file) => {
   return null;
 };
 
-/**
- * Lấy tên file
- */
 const getFileName = (file) => {
   if (!file) return "";
 
@@ -184,60 +180,36 @@ const getFileName = (file) => {
   return "File";
 };
 
-/**
- * =========================================================
- * COMPONENT
- * =========================================================
- */
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
   const [form] = Form.useForm();
-  console.log(game);
 
   const [loading, setLoading] = useState(false);
 
-  /**
-   * Cards
-   */
   const [cards, setCards] = useState(DEFAULT_CARDS);
 
-  /**
-   * Theme
-   */
-  const [primaryColor, setPrimaryColor] = useState("#6C4BFF");
-  const [secondaryColor, setSecondaryColor] = useState("#FFD54F");
+  const [primaryColor, setPrimaryColor] = useState(COLORS.navy);
+  const [secondaryColor, setSecondaryColor] = useState(COLORS.gold);
+  const [backgroundColor, setBackgroundColor] = useState(COLORS.background);
 
-  /**
-   * Background color
-   */
-  const [backgroundColor, setBackgroundColor] = useState("#F8F9FC");
-
-  /**
-   * Media
-   *
-   * null = không chọn file mới
-   * File = file mới
-   */
   const [thumbnail, setThumbnail] = useState(null);
   const [background, setBackground] = useState(null);
   const [backgroundMusic, setBackgroundMusic] = useState(null);
   const [correctSound, setCorrectSound] = useState(null);
   const [wrongSound, setWrongSound] = useState(null);
 
-  /**
-   * Preview
-   */
   const [previewCards, setPreviewCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
   const [matched, setMatched] = useState([]);
 
   const isEdit = Boolean(game);
 
-  /**
-   * =========================================================
-   * LOAD GAME
-   * =========================================================
-   */
+  /* =========================================================
+     LOAD GAME
+  ========================================================= */
 
   useEffect(() => {
     if (!game) {
@@ -259,9 +231,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       setCards(DEFAULT_CARDS);
 
-      setPrimaryColor("#6C4BFF");
-      setSecondaryColor("#FFD54F");
-      setBackgroundColor("#F8F9FC");
+      setPrimaryColor(COLORS.navy);
+      setSecondaryColor(COLORS.gold);
+      setBackgroundColor(COLORS.background);
 
       setThumbnail(null);
       setBackground(null);
@@ -276,9 +248,6 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     const theme = game?.theme || {};
     const gameBackground = game?.background || {};
 
-    /**
-     * Form
-     */
     form.setFieldsValue({
       name: game?.name || "",
       description: game?.description || "",
@@ -286,23 +255,16 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       timeLimit: settings.timeLimit ?? 120,
 
       shuffleQuestions: settings.shuffleQuestions ?? true,
-
       shuffleAnswers: settings.shuffleAnswers ?? true,
 
       showScore: settings.showScore ?? true,
-
       showTimer: settings.showTimer ?? true,
-
       showProgress: settings.showProgress ?? true,
 
       allowHint: settings.allowHint ?? true,
-
       allowSkip: settings.allowSkip ?? false,
     });
 
-    /**
-     * Cards
-     */
     if (Array.isArray(game?.cards) && game.cards.length > 0) {
       setCards(
         game.cards.map((card) => ({
@@ -317,33 +279,10 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       setCards([]);
     }
 
-    /**
-     * Theme
-     */
-    setPrimaryColor(theme.primary || "#6C4BFF");
+    setPrimaryColor(theme.primary || COLORS.navy);
+    setSecondaryColor(theme.secondary || COLORS.gold);
 
-    setSecondaryColor(theme.secondary || "#FFD54F");
-
-    /**
-     * Background
-     */
-    setBackgroundColor(gameBackground.color || "#F8F9FC");
-
-    /**
-     * Khi edit:
-     *
-     * KHÔNG set các file cũ vào state File.
-     *
-     * Vì nếu set string vào thumbnail/background
-     * thì khi submit cần phân biệt:
-     *
-     * - File mới
-     * - URL cũ
-     *
-     * Ta sẽ lấy trực tiếp game.thumbnail,
-     * game.background.image,
-     * game.media...
-     */
+    setBackgroundColor(gameBackground.color || COLORS.background);
 
     setThumbnail(null);
     setBackground(null);
@@ -351,19 +290,14 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     setCorrectSound(null);
     setWrongSound(null);
 
-    /**
-     * Reset preview
-     */
     setPreviewCards([]);
     setFlipped([]);
     setMatched([]);
   }, [game, form]);
 
-  /**
-   * =========================================================
-   * CARD ID
-   * =========================================================
-   */
+  /* =========================================================
+     CARD ID
+  ========================================================= */
 
   const getNextCardId = () => {
     if (!cards.length) return 1;
@@ -371,11 +305,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     return Math.max(...cards.map((card) => Number(card.id) || 0)) + 1;
   };
 
-  /**
-   * =========================================================
-   * PAIR ID
-   * =========================================================
-   */
+  /* =========================================================
+     PAIR ID
+  ========================================================= */
 
   const getNextPairId = () => {
     if (!cards.length) return 1;
@@ -383,11 +315,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     return Math.max(...cards.map((card) => Number(card.pairId) || 0)) + 1;
   };
 
-  /**
-   * =========================================================
-   * ADD PAIR
-   * =========================================================
-   */
+  /* =========================================================
+     ADD PAIR
+  ========================================================= */
 
   const addPair = () => {
     const pairId = getNextPairId();
@@ -397,7 +327,6 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
     setCards((prev) => [
       ...prev,
-
       {
         id: firstId,
         type: "text",
@@ -405,7 +334,6 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         image: null,
         pairId,
       },
-
       {
         id: secondId,
         type: "text",
@@ -416,11 +344,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     ]);
   };
 
-  /**
-   * =========================================================
-   * REMOVE PAIR
-   * =========================================================
-   */
+  /* =========================================================
+     REMOVE PAIR
+  ========================================================= */
 
   const removeCard = (id) => {
     const target = cards.find((card) => Number(card.id) === Number(id));
@@ -445,11 +371,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     });
   };
 
-  /**
-   * =========================================================
-   * UPDATE CARD
-   * =========================================================
-   */
+  /* =========================================================
+     UPDATE CARD
+  ========================================================= */
 
   const updateCard = (id, field, value) => {
     setCards((prev) =>
@@ -464,11 +388,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     );
   };
 
-  /**
-   * =========================================================
-   * GROUP PAIRS
-   * =========================================================
-   */
+  /* =========================================================
+     GROUP PAIRS
+  ========================================================= */
 
   const pairs = useMemo(() => {
     const map = new Map();
@@ -489,11 +411,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     }));
   }, [cards]);
 
-  /**
-   * =========================================================
-   * VALIDATE
-   * =========================================================
-   */
+  /* =========================================================
+     VALIDATE
+  ========================================================= */
 
   const validateCards = () => {
     if (!cards.length) {
@@ -535,11 +455,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     }
   };
 
-  /**
-   * =========================================================
-   * BUILD CARD DATA
-   * =========================================================
-   */
+  /* =========================================================
+     BUILD CARD DATA
+  ========================================================= */
 
   const buildCards = () => {
     return cards.map((card) => {
@@ -561,23 +479,17 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       return {
         id: Number(card.id),
-
         type: card.type,
-
         content: card.type === "text" ? card.content || "" : "",
-
         image,
-
         pairId: Number(card.pairId),
       };
     });
   };
 
-  /**
-   * =========================================================
-   * SUBMIT
-   * =========================================================
-   */
+  /* =========================================================
+     SUBMIT
+  ========================================================= */
 
   const handleSubmit = async () => {
     try {
@@ -589,28 +501,7 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       const memoryCards = buildCards();
 
-      /**
-       * Background
-       *
-       * API hiện tại trả:
-       *
-       * background: {
-       *   image: "/uploads/...",
-       *   color: "#F8F9FC"
-       * }
-       *
-       * Khi tạo:
-       * background.image = File nếu có
-       *
-       * Khi edit mà không chọn ảnh mới:
-       * giữ ảnh cũ game.background.image
-       */
-
       const backgroundImage = background || game?.background?.image || null;
-
-      /**
-       * Media
-       */
 
       const finalBackgroundMusic =
         backgroundMusic || game?.media?.backgroundMusic || null;
@@ -620,15 +511,7 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       const finalWrongSound = wrongSound || game?.media?.wrongSound || null;
 
-      /**
-       * Thumbnail
-       */
-
       const finalThumbnail = thumbnail || game?.thumbnail || null;
-
-      /**
-       * DATA
-       */
 
       const gameData = {
         teacher_id: teacherId,
@@ -714,11 +597,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     }
   };
 
-  /**
-   * =========================================================
-   * PREVIEW
-   * =========================================================
-   */
+  /* =========================================================
+     PREVIEW
+  ========================================================= */
 
   const startPreview = () => {
     const shuffled = [...cards].sort(() => Math.random() - 0.5);
@@ -728,11 +609,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     setMatched([]);
   };
 
-  /**
-   * =========================================================
-   * PREVIEW CARD
-   * =========================================================
-   */
+  /* =========================================================
+     PREVIEW CARD
+  ========================================================= */
 
   const handlePreviewCard = (id) => {
     if (flipped.length >= 2 || flipped.includes(id) || matched.includes(id)) {
@@ -766,11 +645,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     }
   };
 
-  /**
-   * =========================================================
-   * FILE UPLOAD
-   * =========================================================
-   */
+  /* =========================================================
+     FILE UPLOAD
+  ========================================================= */
 
   const FileUpload = ({ title, icon, accept, file, setter, existing }) => {
     const existingUrl = getFileUrl(existing);
@@ -778,70 +655,92 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     return (
       <div
         style={{
-          border: "1px dashed #CBD5E1",
+          border: `1px solid ${COLORS.border}`,
           borderRadius: 12,
-          padding: 12,
-          background: "#F8FAFC",
-          textAlign: "center",
+          padding: 14,
+          background: COLORS.white,
+          minHeight: 105,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
         }}
       >
         <Space
           style={{
-            marginBottom: 6,
-            color: "#475569",
+            marginBottom: 9,
+            color: COLORS.text,
           }}
         >
-          {icon}
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              background: COLORS.navyLight,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: COLORS.navy,
+            }}
+          >
+            {icon}
+          </div>
 
           <Text
             strong
             style={{
               fontSize: 13,
+              color: COLORS.text,
             }}
           >
             {title}
           </Text>
         </Space>
 
-        <div>
-          <Upload
-            maxCount={1}
-            beforeUpload={(file) => {
-              setter(file);
-
-              return false;
+        <Upload
+          maxCount={1}
+          beforeUpload={(uploadFile) => {
+            setter(uploadFile);
+            return false;
+          }}
+          showUploadList={false}
+          accept={accept}
+        >
+          <Button
+            size="small"
+            style={{
+              borderRadius: 8,
+              width: "100%",
+              borderColor: COLORS.border,
             }}
-            showUploadList={false}
-            accept={accept}
           >
-            <Button
-              size="small"
-              style={{
-                borderRadius: 8,
-              }}
-            >
-              {file ? "Đổi tệp" : "Chọn tệp"}
-            </Button>
-          </Upload>
-        </div>
+            {file ? "Đổi tệp" : "Chọn tệp"}
+          </Button>
+        </Upload>
 
         {file ? (
           <Tag
-            color="purple"
             icon={<FileCheck size={12} />}
             style={{
-              marginTop: 6,
+              marginTop: 7,
               fontSize: 11,
+              width: "fit-content",
+              color: COLORS.success,
+              background: COLORS.successBg,
+              borderColor: "#C8E8D8",
             }}
           >
             {file.name}
           </Tag>
         ) : existingUrl ? (
           <Tag
-            color="blue"
             style={{
-              marginTop: 6,
+              marginTop: 7,
               fontSize: 11,
+              width: "fit-content",
+              color: COLORS.navy,
+              background: COLORS.navyLight,
+              borderColor: "#D7E2EB",
             }}
           >
             Đang có file
@@ -851,11 +750,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
     );
   };
 
-  /**
-   * =========================================================
-   * CARD EDITOR
-   * =========================================================
-   */
+  /* =========================================================
+     CARD EDITOR
+  ========================================================= */
 
   const renderCardEditor = (card, index) => {
     const imageUrl = getFileUrl(card.image);
@@ -864,31 +761,30 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       <div
         key={card.id}
         style={{
-          border: "1px solid #E2E8F0",
-          borderRadius: 16,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 14,
           padding: 16,
-          background: "#FFFFFF",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+          background: COLORS.white,
         }}
       >
-        {/* CARD HEADER */}
+        {/* HEADER */}
 
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 12,
+            marginBottom: 14,
           }}
         >
-          <Space>
+          <Space size={9}>
             <div
               style={{
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 borderRadius: 8,
-                background: primaryColor,
-                color: "#FFF",
+                background: COLORS.navy,
+                color: COLORS.white,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -899,9 +795,26 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               {index + 1}
             </div>
 
-            <Text strong>Thẻ #{card.id}</Text>
+            <div>
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  color: COLORS.text,
+                }}
+              >
+                Thẻ #{card.id}
+              </Text>
 
-            <Tag color="purple">Cặp {card.pairId}</Tag>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: COLORS.muted,
+                }}
+              >
+                Cặp {card.pairId}
+              </Text>
+            </div>
           </Space>
 
           <Button
@@ -909,10 +822,13 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             type="text"
             icon={<Trash2 size={16} />}
             onClick={() => removeCard(card.id)}
+            style={{
+              borderRadius: 8,
+            }}
           />
         </div>
 
-        {/* CARD CONFIG */}
+        {/* CONFIG */}
 
         <Row gutter={[12, 12]} align="middle">
           <Col xs={24} md={10}>
@@ -979,7 +895,6 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               addonBefore="Cặp"
               style={{
                 width: "100%",
-                borderRadius: 8,
               }}
             />
           </Col>
@@ -990,7 +905,10 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         {card.type === "image" && imageUrl && (
           <div
             style={{
-              marginTop: 10,
+              marginTop: 12,
+              padding: 10,
+              background: COLORS.grayBg,
+              borderRadius: 10,
               display: "flex",
               alignItems: "center",
               gap: 10,
@@ -1000,50 +918,59 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               src={imageUrl}
               alt="Card preview"
               style={{
-                width: 70,
-                height: 70,
+                width: 64,
+                height: 64,
                 objectFit: "cover",
                 borderRadius: 8,
-                border: "1px solid #E2E8F0",
+                border: `1px solid ${COLORS.border}`,
               }}
             />
 
-            <Text
-              type="secondary"
-              style={{
-                fontSize: 12,
-              }}
-            >
-              {getFileName(card.image)}
-            </Text>
+            <div>
+              <Text
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: COLORS.text,
+                }}
+              >
+                Hình ảnh thẻ
+              </Text>
+
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: 11,
+                }}
+              >
+                {getFileName(card.image)}
+              </Text>
+            </div>
           </div>
         )}
       </div>
     );
   };
 
-  /**
-   * =========================================================
-   * BACKGROUND PREVIEW
-   * =========================================================
-   */
+  /* =========================================================
+     BACKGROUND PREVIEW
+  ========================================================= */
 
   const backgroundPreviewUrl = getFileUrl(
     background || game?.background?.image,
   );
 
-  /**
-   * =========================================================
-   * RENDER
-   * =========================================================
-   */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div
       style={{
-        background: "#F8FAFC",
+        background: COLORS.background,
         minHeight: "100vh",
-        padding: 24,
+        padding: 20,
       }}
     >
       {/* =====================================================
@@ -1052,41 +979,59 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
       <div
         style={{
+          background: COLORS.white,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 14,
+          padding: "14px 18px",
+          marginBottom: 18,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 20,
-          background: "#FFF",
-          padding: "16px 24px",
-          borderRadius: 16,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+          gap: 16,
         }}
       >
-        <Space size={16}>
+        <Space size={14}>
           <Button
             icon={<ArrowLeft size={16} />}
             onClick={onBack}
             style={{
-              borderRadius: 10,
+              borderRadius: 9,
             }}
           >
             Quay lại
           </Button>
+
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 10,
+              background: COLORS.navyLight,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: COLORS.navy,
+            }}
+          >
+            <Brain size={22} />
+          </div>
 
           <div>
             <Title
               level={4}
               style={{
                 margin: 0,
+                color: COLORS.text,
+                fontSize: 20,
               }}
             >
-              🧠 {isEdit ? "Chỉnh sửa Game Ghi Nhớ" : "Tạo Game Ghi Nhớ"}
+              {isEdit ? "Chỉnh sửa Game Ghi Nhớ" : "Tạo Game Ghi Nhớ"}
             </Title>
 
             <Text
-              type="secondary"
               style={{
-                fontSize: 13,
+                color: COLORS.textSecondary,
+                fontSize: 12,
               }}
             >
               Tạo game lật thẻ ghép cặp kiến thức giáo lý
@@ -1097,15 +1042,15 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
         <Button
           type="primary"
           size="large"
-          icon={<Save size={18} />}
+          icon={<Save size={17} />}
           loading={loading}
           onClick={handleSubmit}
           style={{
-            borderRadius: 12,
-            background: primaryColor,
-            borderColor: primaryColor,
+            borderRadius: 9,
+            background: COLORS.navy,
+            borderColor: COLORS.navy,
             fontWeight: 600,
-            padding: "0 28px",
+            padding: "0 24px",
           }}
         >
           {isEdit ? "Lưu thay đổi" : "Hoàn tất & Tạo"}
@@ -1113,7 +1058,7 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
       </div>
 
       <Form form={form} layout="vertical">
-        <Row gutter={[20, 20]}>
+        <Row gutter={[18, 18]}>
           {/* =================================================
               LEFT
           ================================================= */}
@@ -1122,27 +1067,34 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             {/* BASIC */}
 
             <Card
-              bordered={false}
+              bordered
               style={{
-                borderRadius: 16,
-                marginBottom: 20,
+                borderRadius: 14,
+                marginBottom: 18,
+                borderColor: COLORS.border,
+              }}
+              styles={{
+                body: {
+                  padding: 20,
+                },
               }}
             >
-              <Title level={5}>
-                <Settings
-                  size={18}
-                  color={primaryColor}
-                  style={{
-                    verticalAlign: "middle",
-                    marginRight: 8,
-                  }}
-                />
-                Thông tin cơ bản
-              </Title>
+              <SectionTitle
+                icon={<Settings size={18} />}
+                title="Thông tin cơ bản"
+              />
 
               <Form.Item
                 name="name"
-                label="Tên trò chơi"
+                label={
+                  <span
+                    style={{
+                      fontWeight: 600,
+                    }}
+                  >
+                    Tên trò chơi
+                  </span>
+                }
                 rules={[
                   {
                     required: true,
@@ -1154,39 +1106,65 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   size="large"
                   placeholder="Ví dụ: Lật thẻ Đức Tin"
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 9,
                   }}
                 />
               </Form.Item>
 
-              <Form.Item name="description" label="Mô tả">
+              <Form.Item
+                name="description"
+                label={
+                  <span
+                    style={{
+                      fontWeight: 600,
+                    }}
+                  >
+                    Mô tả
+                  </span>
+                }
+              >
                 <TextArea
                   rows={3}
                   placeholder="Mô tả ngắn về trò chơi..."
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 9,
                   }}
                 />
               </Form.Item>
             </Card>
 
-            {/* =================================================
-                CARDS
-            ================================================= */}
+            {/* CARDS */}
 
             <Card
-              bordered={false}
+              bordered
               style={{
-                borderRadius: 16,
-                marginBottom: 20,
+                borderRadius: 14,
+                marginBottom: 18,
+                borderColor: COLORS.border,
               }}
               title={
-                <Space>
-                  <Brain size={18} color={primaryColor} />
+                <Space size={9}>
+                  <Layers3 size={18} color={COLORS.navy} />
 
-                  <span>
-                    Cấu hình Thẻ ({pairs.length} cặp - {cards.length} thẻ)
+                  <span
+                    style={{
+                      color: COLORS.text,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Cấu hình thẻ
                   </span>
+
+                  <Tag
+                    style={{
+                      margin: 0,
+                      color: COLORS.navy,
+                      background: COLORS.navyLight,
+                      borderColor: "#D7E2EB",
+                    }}
+                  >
+                    {pairs.length} cặp · {cards.length} thẻ
+                  </Tag>
                 </Space>
               }
               extra={
@@ -1195,9 +1173,9 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   icon={<Plus size={15} />}
                   onClick={addPair}
                   style={{
-                    borderRadius: 10,
-                    background: primaryColor,
-                    borderColor: primaryColor,
+                    borderRadius: 9,
+                    background: COLORS.navy,
+                    borderColor: COLORS.navy,
                   }}
                 >
                   Thêm cặp
@@ -1210,6 +1188,10 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     type="primary"
                     icon={<Plus size={16} />}
                     onClick={addPair}
+                    style={{
+                      background: COLORS.navy,
+                      borderColor: COLORS.navy,
+                    }}
                   >
                     Tạo cặp đầu tiên
                   </Button>
@@ -1230,20 +1212,27 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
               )}
             </Card>
 
-            {/* =================================================
-                SETTINGS
-            ================================================= */}
+            {/* SETTINGS */}
 
             <Card
-              bordered={false}
+              bordered
               style={{
-                borderRadius: 16,
-                marginBottom: 20,
+                borderRadius: 14,
+                marginBottom: 18,
+                borderColor: COLORS.border,
+              }}
+              styles={{
+                body: {
+                  padding: 20,
+                },
               }}
             >
-              <Title level={5}>⚙️ Cài đặt trò chơi</Title>
+              <SectionTitle
+                icon={<Settings size={18} />}
+                title="Cài đặt trò chơi"
+              />
 
-              <Row gutter={[16, 12]}>
+              <Row gutter={[16, 10]}>
                 <Col xs={24} md={12}>
                   <Form.Item name="timeLimit" label="Thời gian chơi">
                     <InputNumber
@@ -1257,98 +1246,82 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   </Form.Item>
                 </Col>
 
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="shuffleQuestions"
-                    label="Xáo trộn thẻ"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
+                <SettingItem
+                  col={6}
+                  name="shuffleQuestions"
+                  label="Xáo trộn thẻ"
+                  icon={<Layers3 size={15} />}
+                />
 
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="shuffleAnswers"
-                    label="Xáo trộn đáp án"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
+                <SettingItem
+                  col={6}
+                  name="shuffleAnswers"
+                  label="Xáo trộn đáp án"
+                  icon={<RotateCcw size={15} />}
+                />
 
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="showScore"
-                    label="Hiện điểm"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
+                <SettingItem
+                  col={6}
+                  name="showScore"
+                  label="Hiện điểm"
+                  icon={<Trophy size={15} />}
+                />
 
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="showTimer"
-                    label="Hiện thời gian"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
+                <SettingItem
+                  col={6}
+                  name="showTimer"
+                  label="Hiện thời gian"
+                  icon={<Timer size={15} />}
+                />
 
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="showProgress"
-                    label="Hiện tiến độ"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
+                <SettingItem
+                  col={6}
+                  name="showProgress"
+                  label="Hiện tiến độ"
+                  icon={<BarChart3 size={15} />}
+                />
 
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="allowHint"
-                    label="Cho phép gợi ý"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
+                <SettingItem
+                  col={6}
+                  name="allowHint"
+                  label="Cho phép gợi ý"
+                  icon={<Lightbulb size={15} />}
+                />
 
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="allowSkip"
-                    label="Cho phép bỏ qua"
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </Col>
+                <SettingItem
+                  col={6}
+                  name="allowSkip"
+                  label="Cho phép bỏ qua"
+                  icon={<SkipForward size={15} />}
+                />
               </Row>
             </Card>
 
-            {/* =================================================
-                MEDIA
-            ================================================= */}
+            {/* MEDIA */}
 
             <Card
-              bordered={false}
+              bordered
               style={{
-                borderRadius: 16,
-                marginBottom: 20,
+                borderRadius: 14,
+                marginBottom: 18,
+                borderColor: COLORS.border,
+              }}
+              styles={{
+                body: {
+                  padding: 20,
+                },
               }}
             >
-              <Title level={5}>🎨 Hình ảnh & Âm thanh</Title>
+              <SectionTitle
+                icon={<ImagePlus size={18} />}
+                title="Hình ảnh & Âm thanh"
+              />
 
               <Row gutter={[12, 12]}>
-                {/* THUMBNAIL */}
-
                 <Col xs={24} sm={12}>
                   <FileUpload
                     title="Thumbnail"
-                    icon={<ImagePlus size={16} />}
+                    icon={<ImagePlus size={15} />}
                     accept="image/*"
                     file={thumbnail}
                     setter={setThumbnail}
@@ -1356,12 +1329,10 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   />
                 </Col>
 
-                {/* BACKGROUND */}
-
                 <Col xs={24} sm={12}>
                   <FileUpload
                     title="Background"
-                    icon={<ImagePlus size={16} />}
+                    icon={<ImageIcon size={15} />}
                     accept="image/*"
                     file={background}
                     setter={setBackground}
@@ -1369,12 +1340,10 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   />
                 </Col>
 
-                {/* MUSIC */}
-
                 <Col xs={24} sm={8}>
                   <FileUpload
                     title="Nhạc nền"
-                    icon={<Music size={16} />}
+                    icon={<Music size={15} />}
                     accept="audio/*"
                     file={backgroundMusic}
                     setter={setBackgroundMusic}
@@ -1382,12 +1351,10 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   />
                 </Col>
 
-                {/* CORRECT */}
-
                 <Col xs={24} sm={8}>
                   <FileUpload
                     title="Âm đúng"
-                    icon={<Sparkles size={16} />}
+                    icon={<CheckCircle2 size={15} />}
                     accept="audio/*"
                     file={correctSound}
                     setter={setCorrectSound}
@@ -1395,12 +1362,10 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   />
                 </Col>
 
-                {/* WRONG */}
-
                 <Col xs={24} sm={8}>
                   <FileUpload
                     title="Âm sai"
-                    icon={<RotateCcw size={16} />}
+                    icon={<XCircle size={15} />}
                     accept="audio/*"
                     file={wrongSound}
                     setter={setWrongSound}
@@ -1419,32 +1384,76 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
             <div
               style={{
                 position: "sticky",
-                top: 20,
+                top: 16,
               }}
             >
               <Card
-                bordered={false}
+                bordered
                 style={{
-                  borderRadius: 16,
+                  borderRadius: 14,
+                  borderColor: COLORS.border,
+                }}
+                styles={{
+                  body: {
+                    padding: 18,
+                  },
                 }}
               >
+                {/* PREVIEW HEADER */}
+
                 <div
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    gap: 10,
                   }}
                 >
-                  <Space>
-                    <Sparkles size={18} color={primaryColor} />
+                  <Space size={9}>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        background: COLORS.goldLight,
+                        color: COLORS.gold,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Eye size={17} />
+                    </div>
 
-                    <Text strong>Xem trước Game</Text>
+                    <div>
+                      <Text
+                        strong
+                        style={{
+                          display: "block",
+                          color: COLORS.text,
+                        }}
+                      >
+                        Xem trước Game
+                      </Text>
+
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: COLORS.muted,
+                        }}
+                      >
+                        Kiểm tra trước khi lưu
+                      </Text>
+                    </div>
                   </Space>
 
                   <Button
                     size="small"
                     icon={<PlayCircle size={14} />}
                     onClick={startPreview}
+                    style={{
+                      borderRadius: 8,
+                    }}
                   >
                     Chơi thử
                   </Button>
@@ -1452,7 +1461,7 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
 
                 <Divider
                   style={{
-                    margin: "12px 0",
+                    margin: "14px 0",
                   }}
                 />
 
@@ -1463,26 +1472,57 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                     background: backgroundPreviewUrl
                       ? `url(${backgroundPreviewUrl}) center/cover`
                       : backgroundColor,
-                    borderRadius: 16,
+                    borderRadius: 12,
                     padding: 16,
-                    minHeight: 300,
+                    minHeight: 320,
+                    border: `1px solid ${COLORS.border}`,
                   }}
                 >
                   {!previewCards.length ? (
                     <div
                       style={{
                         textAlign: "center",
-                        padding: "70px 10px",
+                        padding: "78px 10px",
                       }}
                     >
-                      <Brain size={44} color={primaryColor} />
+                      <div
+                        style={{
+                          width: 64,
+                          height: 64,
+                          borderRadius: 16,
+                          margin: "0 auto",
+                          background: COLORS.navy,
+                          color: COLORS.white,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Brain size={30} />
+                      </div>
 
                       <div
                         style={{
-                          marginTop: 10,
+                          marginTop: 14,
                         }}
                       >
-                        <Text type="secondary">
+                        <Text
+                          strong
+                          style={{
+                            display: "block",
+                            color: COLORS.text,
+                            marginBottom: 4,
+                          }}
+                        >
+                          Game ghi nhớ
+                        </Text>
+
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: COLORS.textSecondary,
+                          }}
+                        >
                           Bấm "Chơi thử" để test lật thẻ
                         </Text>
                       </div>
@@ -1504,34 +1544,27 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                               onClick={() => handlePreviewCard(card.id)}
                               style={{
                                 height: 90,
-
-                                borderRadius: 12,
-
+                                borderRadius: 10,
                                 cursor: "pointer",
 
                                 background: isFlipped
                                   ? isMatched
-                                    ? "#DCFCE7"
-                                    : "#FFFFFF"
+                                    ? COLORS.successBg
+                                    : COLORS.white
                                   : primaryColor,
 
                                 border: isMatched
-                                  ? "2px solid #22C55E"
-                                  : "1px solid #E2E8F0",
+                                  ? `2px solid ${COLORS.success}`
+                                  : `1px solid ${COLORS.border}`,
 
                                 display: "flex",
-
                                 alignItems: "center",
-
                                 justifyContent: "center",
-
                                 padding: 6,
-
                                 textAlign: "center",
-
                                 overflow: "hidden",
 
-                                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                                boxShadow: "0 2px 5px rgba(23,59,94,0.06)",
 
                                 transition: "all .2s ease",
                               }}
@@ -1552,13 +1585,14 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                                     style={{
                                       fontSize: 11,
                                       fontWeight: 700,
+                                      color: COLORS.text,
                                     }}
                                   >
                                     {card.content || "—"}
                                   </Text>
                                 )
                               ) : (
-                                <Brain size={24} color="#FFF" />
+                                <Brain size={24} color={COLORS.white} />
                               )}
                             </div>
                           </Col>
@@ -1568,113 +1602,221 @@ const MemoryGameEditor = ({ teacherId, game = null, onSuccess, onBack }) => {
                   )}
                 </div>
 
-                {/* BACKGROUND COLOR */}
+                {/* COLOR */}
 
                 <Divider
                   style={{
-                    margin: "16px 0",
+                    margin: "18px 0",
                   }}
                 />
 
-                <Title
-                  level={5}
+                <Space
+                  size={8}
                   style={{
-                    fontSize: 14,
+                    marginBottom: 14,
                   }}
                 >
-                  <Palette
-                    size={16}
-                    color={primaryColor}
+                  <Palette size={17} color={COLORS.navy} />
+
+                  <Text
+                    strong
                     style={{
-                      verticalAlign: "middle",
-                      marginRight: 6,
+                      color: COLORS.text,
                     }}
-                  />
-                  Màu giao diện
-                </Title>
+                  >
+                    Màu giao diện
+                  </Text>
+                </Space>
 
                 <Row gutter={12}>
-                  <Col span={8}>
-                    <Text
-                      type="secondary"
-                      style={{
-                        fontSize: 12,
-                      }}
-                    >
-                      Màu chính
-                    </Text>
+                  <ColorSetting
+                    span={8}
+                    label="Màu chính"
+                    value={primaryColor}
+                    onChange={(color) => setPrimaryColor(color.toHexString())}
+                  />
 
-                    <div
-                      style={{
-                        marginTop: 4,
-                      }}
-                    >
-                      <ColorPicker
-                        value={primaryColor}
-                        onChange={(color) =>
-                          setPrimaryColor(color.toHexString())
-                        }
-                        showText
-                      />
-                    </div>
-                  </Col>
+                  <ColorSetting
+                    span={8}
+                    label="Màu phụ"
+                    value={secondaryColor}
+                    onChange={(color) => setSecondaryColor(color.toHexString())}
+                  />
 
-                  <Col span={8}>
-                    <Text
-                      type="secondary"
-                      style={{
-                        fontSize: 12,
-                      }}
-                    >
-                      Màu phụ
-                    </Text>
-
-                    <div
-                      style={{
-                        marginTop: 4,
-                      }}
-                    >
-                      <ColorPicker
-                        value={secondaryColor}
-                        onChange={(color) =>
-                          setSecondaryColor(color.toHexString())
-                        }
-                        showText
-                      />
-                    </div>
-                  </Col>
-
-                  <Col span={8}>
-                    <Text
-                      type="secondary"
-                      style={{
-                        fontSize: 12,
-                      }}
-                    >
-                      Background
-                    </Text>
-
-                    <div
-                      style={{
-                        marginTop: 4,
-                      }}
-                    >
-                      <ColorPicker
-                        value={backgroundColor}
-                        onChange={(color) =>
-                          setBackgroundColor(color.toHexString())
-                        }
-                        showText
-                      />
-                    </div>
-                  </Col>
+                  <ColorSetting
+                    span={8}
+                    label="Background"
+                    value={backgroundColor}
+                    onChange={(color) =>
+                      setBackgroundColor(color.toHexString())
+                    }
+                  />
                 </Row>
+
+                {/* CURRENT COLORS */}
+
+                <div
+                  style={{
+                    marginTop: 18,
+                    padding: 12,
+                    background: COLORS.grayBg,
+                    borderRadius: 10,
+                  }}
+                >
+                  <Text
+                    style={{
+                      display: "block",
+                      fontSize: 11,
+                      color: COLORS.muted,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Màu hiện tại
+                  </Text>
+
+                  <Space size={8}>
+                    <ColorDot color={primaryColor} label="Chính" />
+
+                    <ColorDot color={secondaryColor} label="Phụ" />
+
+                    <ColorDot color={backgroundColor} label="Nền" />
+                  </Space>
+                </div>
               </Card>
             </div>
           </Col>
         </Row>
       </Form>
     </div>
+  );
+};
+
+/* =========================================================
+   SECTION TITLE
+========================================================= */
+
+const SectionTitle = ({ icon, title }) => {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        marginBottom: 20,
+      }}
+    >
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 9,
+          background: COLORS.navyLight,
+          color: COLORS.navy,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {icon}
+      </div>
+
+      <Title
+        level={5}
+        style={{
+          margin: 0,
+          color: COLORS.text,
+        }}
+      >
+        {title}
+      </Title>
+    </div>
+  );
+};
+
+/* =========================================================
+   SETTING ITEM
+========================================================= */
+
+const SettingItem = ({ col = 6, name, label, icon }) => {
+  return (
+    <Col xs={12} md={col}>
+      <Form.Item
+        name={name}
+        label={
+          <Space size={5}>
+            <span
+              style={{
+                color: COLORS.textSecondary,
+                display: "flex",
+              }}
+            >
+              {icon}
+            </span>
+
+            <span>{label}</span>
+          </Space>
+        }
+        valuePropName="checked"
+      >
+        <Switch />
+      </Form.Item>
+    </Col>
+  );
+};
+
+/* =========================================================
+   COLOR SETTING
+========================================================= */
+
+const ColorSetting = ({ span, label, value, onChange }) => {
+  return (
+    <Col span={span}>
+      <Text
+        style={{
+          fontSize: 11,
+          color: COLORS.textSecondary,
+        }}
+      >
+        {label}
+      </Text>
+
+      <div
+        style={{
+          marginTop: 6,
+        }}
+      >
+        <ColorPicker value={value} onChange={onChange} showText />
+      </div>
+    </Col>
+  );
+};
+
+/* =========================================================
+   COLOR DOT
+========================================================= */
+
+const ColorDot = ({ color, label }) => {
+  return (
+    <Space size={5}>
+      <div
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 6,
+          background: color,
+          border: `1px solid ${COLORS.border}`,
+        }}
+      />
+
+      <Text
+        style={{
+          fontSize: 11,
+          color: COLORS.textSecondary,
+        }}
+      >
+        {label}
+      </Text>
+    </Space>
   );
 };
 

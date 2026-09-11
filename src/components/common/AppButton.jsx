@@ -2,22 +2,32 @@ import React from "react";
 import { Button } from "antd";
 
 /**
- * Modern Slate Design Tokens
+ * Modern Navy & Gold Design Tokens
  */
 const BUTTON_STYLES = {
   primary: {
-    bg: "#0F172A",
+    bg: "linear-gradient(135deg, #173B5E 0%, #244F78 100%)",
     color: "#FFFFFF",
-    border: "#0F172A",
-    hoverBg: "#1E293B",
-    hoverBorder: "#1E293B",
-    activeBg: "#020617",
-    shadow: "0 1px 2px rgba(15, 23, 42, 0.08)",
-    hoverShadow: "0 4px 12px rgba(15, 23, 42, 0.15)",
+    border: "#173B5E",
+    hoverBg: "linear-gradient(135deg, #244F78 0%, #173B5E 100%)",
+    hoverBorder: "#244F78",
+    activeBg: "#0F2842",
+    shadow: "0 4px 12px rgba(23, 59, 94, 0.2)",
+    hoverShadow: "0 6px 16px rgba(23, 59, 94, 0.3)",
+  },
+  gold: {
+    bg: "linear-gradient(135deg, #D9A441 0%, #C28D2B 100%)",
+    color: "#FFFFFF",
+    border: "#D9A441",
+    hoverBg: "linear-gradient(135deg, #E2B254 0%, #D9A441 100%)",
+    hoverBorder: "#E2B254",
+    activeBg: "#B07D20",
+    shadow: "0 4px 12px rgba(217, 164, 65, 0.25)",
+    hoverShadow: "0 6px 16px rgba(217, 164, 65, 0.35)",
   },
   secondary: {
-    bg: "#F1F5F9",
-    color: "#334155",
+    bg: "#EEF2F7",
+    color: "#173B5E",
     border: "transparent",
     hoverBg: "#E2E8F0",
     hoverBorder: "transparent",
@@ -37,23 +47,23 @@ const BUTTON_STYLES = {
   },
   ghost: {
     bg: "transparent",
-    color: "#475569",
+    color: "#173B5E",
     border: "transparent",
-    hoverBg: "#F8FAFC",
+    hoverBg: "#F7F9FC",
     hoverBorder: "transparent",
-    activeBg: "#F1F5F9",
+    activeBg: "#EEF2F7",
     shadow: "none",
     hoverShadow: "none",
   },
   default: {
     bg: "#FFFFFF",
-    color: "#334155",
-    border: "#E2E8F0",
-    hoverBg: "#F8FAFC",
-    hoverBorder: "#CBD5E1",
-    activeBg: "#F1F5F9",
-    shadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
-    hoverShadow: "0 2px 6px rgba(0, 0, 0, 0.06)",
+    color: "#173B5E",
+    border: "#D9E2EC",
+    hoverBg: "#F7F9FC",
+    hoverBorder: "#173B5E",
+    activeBg: "#EEF2F7",
+    shadow: "0 1px 2px rgba(23, 59, 94, 0.04)",
+    hoverShadow: "0 2px 6px rgba(23, 59, 94, 0.08)",
   },
 };
 
@@ -66,7 +76,7 @@ const SIZES = {
 const AppButton = ({
   children,
   type = "default",
-  variant, // "primary" | "secondary" | "outline" | "ghost" | "danger"
+  variant, // "primary" | "gold" | "secondary" | "ghost" | "danger"
   icon,
   loading = false,
   disabled = false,
@@ -82,9 +92,10 @@ const AppButton = ({
   className = "",
   ...props
 }) => {
-  // 1. Phân giải Variant
+  // 1. Phân giải Variant theo tone Navy & Gold
   const resolveVariant = () => {
     if (danger || variant === "danger") return "danger";
+    if (variant === "gold") return "gold";
     if (type === "primary" || variant === "primary") return "primary";
     if (variant === "secondary") return "secondary";
     if (variant === "ghost" || type === "text") return "ghost";
@@ -119,23 +130,60 @@ const AppButton = ({
   };
 
   return (
-    <Button
-      htmlType={htmlType}
-      icon={icon}
-      loading={loading}
-      disabled={disabled}
-      block={block}
-      onClick={onClick}
-      shape={shape}
-      className={`app-btn-slate ${className}`}
-      style={{
-        ...dynamicVars,
-        ...style,
-      }}
-      {...props}
-    >
-      {children}
-    </Button>
+    <>
+      <Button
+        htmlType={htmlType}
+        icon={icon}
+        loading={loading}
+        disabled={disabled}
+        block={block}
+        onClick={onClick}
+        shape={shape}
+        className={`app-btn-navy-gold ${className}`}
+        style={{
+          ...dynamicVars,
+          ...style,
+        }}
+        {...props}
+      >
+        {children}
+      </Button>
+
+      <style>{`
+        .app-btn-navy-gold {
+          background: var(--btn-bg) !important;
+          color: var(--btn-color) !important;
+          border-color: var(--btn-border) !important;
+          box-shadow: var(--btn-shadow) !important;
+          border-radius: var(--btn-radius) !important;
+          font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif !important;
+          font-weight: 600 !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .app-btn-navy-gold:hover:not(:disabled) {
+          background: var(--btn-hover-bg) !important;
+          border-color: var(--btn-hover-border) !important;
+          box-shadow: var(--btn-hover-shadow) !important;
+          transform: translateY(-1px);
+        }
+
+        .app-btn-navy-gold:active:not(:disabled) {
+          background: var(--btn-active-bg) !important;
+          transform: translateY(0);
+        }
+
+        .app-btn-navy-gold:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+          transform: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+    </>
   );
 };
 

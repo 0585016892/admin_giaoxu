@@ -71,11 +71,20 @@ export default function Login() {
     const progressTimer = setInterval(() => {
       setLoadingProgress((prev) => {
         if (prev >= 88) return 88;
-        if (prev < 30) return prev + 5;
-        if (prev < 60) return prev + 3;
-        return prev + 1;
+
+        // Chia nhỏ từng phân khúc để thanh loading trôi mượt như nước
+        let increment = 1;
+        if (prev < 20)
+          increment = 1.5; // Đầu chạy nhanh một chút cho phấn khích
+        else if (prev < 50)
+          increment = 0.8; // Đoạn giữa chạy đều đặn
+        else if (prev < 75)
+          increment = 0.4; // Đoạn gần cuối bắt đầu chậm dần
+        else increment = 0.2; // Gần mốc 88% bò rất chậm tạo cảm giác đang xử lý dữ liệu nặng
+
+        return Math.min(prev + increment, 88);
       });
-    }, 70);
+    }, 30); // Giảm interval xuống 30ms để các bước nhảy nhỏ liên tục không bị giật
 
     try {
       const res = await api.post("/auth/login", {
@@ -118,7 +127,7 @@ export default function Login() {
 
       setTimeout(() => {
         navigate("/catechist", { replace: true });
-      }, 800);
+      }, 700);
     } catch (error) {
       clearInterval(progressTimer);
       setLoadingProgress(0);

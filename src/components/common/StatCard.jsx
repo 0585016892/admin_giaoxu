@@ -9,7 +9,7 @@ const StatCard = ({
   suffix,
   description,
   icon,
-  iconColor = "#FF6B8B", // Tông hồng pastel mặc định
+  iconColor = "#D9A441", // Tông Gold mặc định sang trọng
   loading = false,
   trend, // { value: "+12.5%", isUp: true }
   className = "",
@@ -19,35 +19,35 @@ const StatCard = ({
   return (
     <Card
       bordered={false}
-      className={`chibi-stat-card ${className}`}
+      className={`stat-card-navy-gold ${className}`}
       style={{
         height: "100%",
-        borderRadius: 24,
+        borderRadius: 20,
         background: "#FFFFFF",
-        border: "2px solid #FFE4E6",
-        boxShadow: "0 12px 28px rgba(255, 182, 193, 0.18)",
+        border: "1.5px solid #D9E2EC",
+        boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
         overflow: "hidden",
-        transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         cursor: "pointer",
         position: "relative",
         ...style,
       }}
       styles={{
         body: {
-          padding: "20px 22px",
+          padding: "20px 24px",
         },
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-6px) scale(1.02)";
+        e.currentTarget.style.transform = "translateY(-4px)";
         e.currentTarget.style.boxShadow =
-          "0 20px 35px rgba(255, 182, 193, 0.35)";
-        e.currentTarget.style.borderColor = "#FFB6C1";
+          "0 16px 36px -6px rgba(23, 59, 94, 0.12)";
+        e.currentTarget.style.borderColor = "#173B5E";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0) scale(1)";
+        e.currentTarget.style.transform = "translateY(0)";
         e.currentTarget.style.boxShadow =
-          "0 12px 28px rgba(255, 182, 193, 0.18)";
-        e.currentTarget.style.borderColor = "#FFE4E6";
+          "0 10px 30px -5px rgba(23, 59, 94, 0.06)";
+        e.currentTarget.style.borderColor = "#D9E2EC";
       }}
       {...props}
     >
@@ -57,12 +57,12 @@ const StatCard = ({
           <Text
             style={{
               display: "block",
-              color: "#94A3B8",
+              color: "#64748B",
               fontSize: 12,
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: "0.5px",
               textTransform: "uppercase",
-              fontFamily: "'Quicksand', sans-serif",
+              fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
             }}
           >
             {title}
@@ -85,19 +85,20 @@ const StatCard = ({
                 style={{
                   width: 100,
                   height: 34,
-                  borderRadius: 12,
+                  borderRadius: 8,
                 }}
               />
             ) : (
               <>
                 <span
                   style={{
-                    color: "#334155",
-                    fontSize: 32,
+                    color: "#173B5E",
+                    fontSize: 30,
                     lineHeight: 1,
-                    fontWeight: 900,
+                    fontWeight: 800,
                     letterSpacing: "-0.5px",
-                    fontFamily: "'Fredoka', 'Quicksand', sans-serif",
+                    fontFamily:
+                      "'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif",
                   }}
                 >
                   {value}
@@ -108,8 +109,8 @@ const StatCard = ({
                     style={{
                       fontSize: 13,
                       fontWeight: 700,
-                      color: "#94A3B8",
-                      fontFamily: "'Quicksand', sans-serif",
+                      color: "#64748B",
+                      fontFamily: "'Be Vietnam Pro', sans-serif",
                     }}
                   >
                     {suffix}
@@ -133,20 +134,20 @@ const StatCard = ({
                 <span
                   style={{
                     fontSize: 11,
-                    fontWeight: 800,
-                    padding: "3px 10px",
-                    borderRadius: 12,
-                    color: trend.isUp ? "#0284C7" : "#E11D48",
-                    background: trend.isUp ? "#E0F2FE" : "#FFE4E6",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: 8,
+                    color: trend.isUp ? "#0284C7" : "#DC2626",
+                    background: trend.isUp ? "#E0F2FE" : "#FEF2F2",
                     border: trend.isUp
                       ? "1px solid #BAE6FD"
-                      : "1px solid #FFD1D9",
+                      : "1px solid #FECACA",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 3,
                   }}
                 >
-                  {trend.isUp ? "✨ ↑" : "🌸 ↓"} {trend.value}
+                  {trend.isUp ? "↑" : "↓"} {trend.value}
                 </span>
               )}
 
@@ -154,9 +155,9 @@ const StatCard = ({
                 <Text
                   style={{
                     fontSize: 12,
-                    color: "#94A3B8",
-                    fontWeight: 600,
-                    fontFamily: "'Quicksand', sans-serif",
+                    color: "#64748B",
+                    fontWeight: 500,
+                    fontFamily: "'Be Vietnam Pro', sans-serif",
                   }}
                 >
                   {description}
@@ -166,24 +167,23 @@ const StatCard = ({
           )}
         </Col>
 
-        {/* ICON BOX CHIBI */}
+        {/* ICON BOX */}
         {icon && (
           <Col>
             <div
               style={{
-                width: 52,
-                height: 52,
-                borderRadius: 20,
+                width: 48,
+                height: 48,
+                borderRadius: 14,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "#FFF5F7",
+                background: "#F7F9FC",
                 color: iconColor,
                 fontSize: 22,
                 flexShrink: 0,
-                border: `2px solid ${iconColor}40`,
-                boxShadow: `0 8px 18px ${iconColor}25`,
-                transition: "transform 0.3s ease",
+                border: `1.5px solid ${iconColor}40`,
+                boxShadow: `0 6px 16px ${iconColor}15`,
               }}
             >
               {icon}
@@ -192,18 +192,19 @@ const StatCard = ({
         )}
       </Row>
 
-      {/* CHIBI SPARKLE DECORATION */}
+      {/* DECORATION CORNER ACCENT */}
       <div
         style={{
           position: "absolute",
-          top: 6,
-          right: 12,
-          fontSize: 10,
-          opacity: 0.3,
+          top: 8,
+          right: 14,
+          fontSize: 12,
+          color: "#D9A441",
+          opacity: 0.4,
           pointerEvents: "none",
         }}
       >
-        ✨
+        ✦
       </div>
     </Card>
   );

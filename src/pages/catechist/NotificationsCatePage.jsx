@@ -47,80 +47,108 @@ import StatCard from "../../components/common/StatCard";
 import notificationApi from "../../api/notificationApi";
 import { useUser } from "../../context/UserContext";
 
+const { Text, Title, Paragraph } = Typography;
+
+/* =========================================================
+   COLOR SYSTEM
+========================================================= */
+
+const COLORS = {
+  navy: "#173B5E",
+  navyDark: "#102C46",
+  navyLight: "#EEF3F7",
+  navySoft: "#F5F8FB",
+
+  gold: "#D9A441",
+  goldDark: "#B8862F",
+  goldLight: "#FBF5E7",
+
+  white: "#FFFFFF",
+  background: "#F6F8FB",
+
+  text: "#172B3A",
+  textSecondary: "#6B7A89",
+  muted: "#8A98A8",
+
+  border: "#E4EAF0",
+  borderDark: "#D5DEE8",
+
+  danger: "#C93C3C",
+  success: "#328A62",
+};
+
 /* =========================================================
    CONFIG
 ========================================================= */
 
-const { Text, Title, Paragraph } = Typography;
-
 const TYPE_CONFIG = {
   system: {
     label: "Hệ thống",
-    color: "#1677ff",
-    bg: "#e6f4ff",
+    color: "#2F6B9A",
+    bg: "#EAF2F8",
     icon: <InfoCircleOutlined />,
   },
 
   announcement: {
     label: "Thông báo",
-    color: "#d48806",
-    bg: "#fff7e6",
+    color: "#B27A16",
+    bg: "#FBF3DF",
     icon: <SoundOutlined />,
   },
 
   class: {
     label: "Lớp học",
-    color: "#389e0d",
-    bg: "#f6ffed",
+    color: "#43815D",
+    bg: "#EDF7F0",
     icon: <BookOutlined />,
   },
 
   attendance: {
     label: "Điểm danh",
-    color: "#722ed1",
-    bg: "#f9f0ff",
+    color: "#73569A",
+    bg: "#F4EFF9",
     icon: <CalendarOutlined />,
   },
 
   student: {
     label: "Học viên",
-    color: "#08979c",
-    bg: "#e6fffb",
+    color: "#287C80",
+    bg: "#EAF7F7",
     icon: <UserOutlined />,
   },
 
   catechist: {
     label: "Giáo lý viên",
-    color: "#c41d7f",
-    bg: "#fff0f6",
+    color: "#9A4D78",
+    bg: "#F9EEF5",
     icon: <TeamOutlined />,
   },
 
   exam: {
     label: "Bài thi",
-    color: "#d46b08",
-    bg: "#fff7e6",
+    color: "#A76621",
+    bg: "#FAF1E7",
     icon: <TrophyOutlined />,
   },
 
   achievement: {
     label: "Thành tích",
-    color: "#d4b106",
-    bg: "#fffbe6",
+    color: "#9B7A18",
+    bg: "#FBF6DF",
     icon: <TrophyOutlined />,
   },
 
   warning: {
     label: "Cảnh báo",
-    color: "#cf1322",
-    bg: "#fff1f0",
+    color: "#B83B3B",
+    bg: "#FBECEC",
     icon: <WarningOutlined />,
   },
 
   security: {
     label: "Bảo mật",
-    color: "#531dab",
-    bg: "#f9f0ff",
+    color: "#654A91",
+    bg: "#F2EFF8",
     icon: <SafetyOutlined />,
   },
 };
@@ -128,22 +156,22 @@ const TYPE_CONFIG = {
 const PRIORITY_CONFIG = {
   low: {
     label: "Thấp",
-    color: "#8c8c8c",
+    color: "#8793A0",
   },
 
   normal: {
     label: "Bình thường",
-    color: "#1677ff",
+    color: COLORS.navy,
   },
 
   high: {
     label: "Quan trọng",
-    color: "#fa8c16",
+    color: COLORS.goldDark,
   },
 
   urgent: {
     label: "Khẩn cấp",
-    color: "#f5222d",
+    color: COLORS.danger,
   },
 };
 
@@ -296,12 +324,12 @@ const getRelativeTime = (date) => {
 
 const getAvatarColor = (name = "") => {
   const colors = [
-    "#1677ff",
-    "#722ed1",
-    "#eb2f96",
-    "#13c2c2",
-    "#52c41a",
-    "#fa8c16",
+    "#2F6B9A",
+    "#73569A",
+    "#9A4D78",
+    "#287C80",
+    "#43815D",
+    "#B27A16",
   ];
 
   let hash = 0;
@@ -414,9 +442,6 @@ const NotificationsCatePage = () => {
         limit: pageSize,
       };
 
-      /*
-       * Bộ lọc trạng thái đọc
-       */
       if (filter === "unread") {
         params.unread_only = true;
       }
@@ -425,9 +450,6 @@ const NotificationsCatePage = () => {
         params.read_only = true;
       }
 
-      /*
-       * Bộ lọc loại thông báo
-       */
       if (typeFilter !== "all") {
         params.type = typeFilter;
       }
@@ -442,10 +464,6 @@ const NotificationsCatePage = () => {
 
       setPaginationTotal(Number(getPaginationTotal(response) ?? list.length));
 
-      /*
-       * Nếu chưa chọn notification nào
-       * thì tự động chọn notification đầu tiên
-       */
       if (list.length > 0) {
         setSelectedNotification((current) => {
           if (!current) {
@@ -767,37 +785,36 @@ const NotificationsCatePage = () => {
         title="Trung tâm thông báo"
         description="Theo dõi tin tức, sự kiện và các cập nhật quan trọng từ FaithEdu"
         extra={
-          <div className="notifications-page-header-extra">
-            <Space wrap>
-              <AppButton
-                icon={<ReloadOutlined />}
-                onClick={handleRefresh}
-                disabled={loading}
-              >
-                Làm mới
-              </AppButton>
+          <div className="notifications-header-actions">
+            <AppButton
+              icon={<ReloadOutlined />}
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              Làm mới
+            </AppButton>
 
-              <AppButton
-                type="primary"
-                icon={<CheckOutlined />}
-                disabled={stats.unread === 0 || actionLoading}
-                loading={actionLoading}
-                onClick={handleMarkAllRead}
-              >
-                Đọc tất cả ({stats.unread})
-              </AppButton>
+            <AppButton
+              type="primary"
+              icon={<CheckOutlined />}
+              disabled={stats.unread === 0 || actionLoading}
+              loading={actionLoading}
+              onClick={handleMarkAllRead}
+            >
+              Đọc tất cả
+              {stats.unread > 0 && ` (${stats.unread})`}
+            </AppButton>
 
-              {canDelete && (
-                <AppButton
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={handleDeleteAll}
-                  disabled={actionLoading}
-                >
-                  Xóa tất cả
-                </AppButton>
-              )}
-            </Space>
+            {canDelete && (
+              <AppButton
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleDeleteAll}
+                disabled={actionLoading}
+              >
+                Xóa tất cả
+              </AppButton>
+            )}
           </div>
         }
       />
@@ -812,7 +829,7 @@ const NotificationsCatePage = () => {
           value={stats.total}
           loading={loading}
           icon={<BellOutlined />}
-          iconColor="#FF6B8B"
+          iconColor={COLORS.navy}
           description="Toàn bộ hệ thống"
         />
 
@@ -821,7 +838,7 @@ const NotificationsCatePage = () => {
           value={stats.unread}
           loading={loading}
           icon={<NotificationOutlined />}
-          iconColor="#FF6B8B"
+          iconColor={COLORS.gold}
           description="Thông báo của bạn"
         />
 
@@ -830,7 +847,7 @@ const NotificationsCatePage = () => {
           value={stats.read}
           loading={loading}
           icon={<CheckCircleFilled />}
-          iconColor="#FF6B8B"
+          iconColor={COLORS.success}
           description="Thông báo của bạn"
         />
       </div>
@@ -842,16 +859,15 @@ const NotificationsCatePage = () => {
       <Card
         bordered={false}
         className="notifications-filter-card"
-        bodyStyle={{
-          padding: "12px 20px",
-        }}
-        style={{
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-        }}
+        bodyStyle={{ padding: 0 }}
       >
-        <div className="notifications-filter">
-          <div className="notifications-filter-left">
+        <div className="filter-card-inner">
+          <div className="filter-left">
+            <div className="filter-title">
+              <BellOutlined />
+              <span>Bộ lọc</span>
+            </div>
+
             <Radio.Group
               value={filter}
               onChange={(e) => {
@@ -861,11 +877,12 @@ const NotificationsCatePage = () => {
               }}
               optionType="button"
               buttonStyle="solid"
+              className="notification-filter-radio"
             >
               <Radio.Button value="all">Tất cả</Radio.Button>
 
               <Radio.Button value="unread">
-                Chưa đọc{" "}
+                Chưa đọc
                 {stats.unread > 0 && (
                   <Badge
                     count={stats.unread}
@@ -886,28 +903,18 @@ const NotificationsCatePage = () => {
                 setPage(1);
                 setSelectedNotification(null);
               }}
-              style={{
-                width: 180,
-              }}
+              className="notification-type-select"
+              suffixIcon={<BellOutlined />}
             />
           </div>
 
           <Input
             className="notifications-search"
             placeholder="Tìm kiếm thông báo..."
-            prefix={
-              <SearchOutlined
-                style={{
-                  color: "#bfbfbf",
-                }}
-              />
-            }
+            prefix={<SearchOutlined />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             allowClear
-            style={{
-              borderRadius: 8,
-            }}
           />
         </div>
       </Card>
@@ -918,7 +925,7 @@ const NotificationsCatePage = () => {
 
       <div className="notifications-main">
         {/* =================================================
-            LEFT - LIST
+            LEFT LIST
         ================================================= */}
 
         <Card
@@ -926,33 +933,39 @@ const NotificationsCatePage = () => {
           className="notifications-list-card"
           bodyStyle={{
             padding: 0,
+            height: "100%",
             display: "flex",
             flexDirection: "column",
-            height: "100%",
-          }}
-          style={{
-            borderRadius: 12,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
           }}
         >
+          <div className="list-card-header">
+            <div>
+              <Text className="section-label">DANH SÁCH</Text>
+
+              <Title level={5} className="list-card-title">
+                Thông báo
+              </Title>
+            </div>
+
+            <Tag className="total-tag">{paginationTotal} thông báo</Tag>
+          </div>
+
+          <Divider style={{ margin: 0 }} />
+
           <div className="notifications-list-body">
             {loading ? (
-              <div
-                style={{
-                  padding: 40,
-                  textAlign: "center",
-                }}
-              >
-                <Spin tip="Đang tải..." />
+              <div className="notification-loading">
+                <Spin />
+
+                <Text>Đang tải thông báo...</Text>
               </div>
             ) : displayedNotifications.length === 0 ? (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Không có thông báo"
-                style={{
-                  margin: "60px 0",
-                }}
-              />
+              <div className="notification-empty">
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="Không có thông báo"
+                />
+              </div>
             ) : (
               <List
                 itemLayout="horizontal"
@@ -967,39 +980,26 @@ const NotificationsCatePage = () => {
 
                   return (
                     <div
-                      className="notification-item"
+                      className={`notification-item ${
+                        isSelected ? "selected" : ""
+                      } ${!item.is_read ? "unread" : ""}`}
                       onClick={() => handleSelectNotification(item)}
                       style={{
-                        backgroundColor: isSelected
-                          ? "#e6f4ff"
-                          : item.is_read
-                            ? "#fff"
-                            : "#f0f7ff",
-
-                        borderLeft: `4px solid ${
-                          isSelected ? "#1677ff" : priority.color
-                        }`,
-
-                        border: isSelected
-                          ? "1px solid #91caff"
-                          : "1px solid #f0f0f0",
+                        "--item-accent": isSelected
+                          ? COLORS.navy
+                          : priority.color,
                       }}
                     >
                       <div className="notification-item-inner">
-                        {/* ICON */}
-
-                        <Avatar
+                        <div
+                          className="notification-type-icon"
                           style={{
-                            backgroundColor: type.bg,
-
+                            background: type.bg,
                             color: type.color,
-
-                            flexShrink: 0,
                           }}
-                          icon={type.icon}
-                        />
-
-                        {/* CONTENT */}
+                        >
+                          {type.icon}
+                        </div>
 
                         <div className="notification-item-content">
                           <div className="notification-item-title-row">
@@ -1007,35 +1007,16 @@ const NotificationsCatePage = () => {
                               ellipsis
                               strong={!item.is_read}
                               className="notification-item-title"
-                              style={{
-                                fontSize: 14,
-
-                                color: item.is_read ? "#434343" : "#1f1f1f",
-                              }}
                             >
                               {item.title}
                             </Text>
 
-                            {!item.is_read && (
-                              <Badge
-                                status="processing"
-                                style={{
-                                  marginLeft: 6,
-                                }}
-                              />
-                            )}
+                            {!item.is_read && <span className="unread-dot" />}
                           </div>
 
                           <Paragraph
-                            ellipsis={{
-                              rows: 1,
-                            }}
-                            type="secondary"
-                            style={{
-                              fontSize: 12,
-                              margin: "4px 0 6px",
-                              color: "#8c8c8c",
-                            }}
+                            ellipsis={{ rows: 1 }}
+                            className="notification-item-description"
                           >
                             {item.content}
                           </Paragraph>
@@ -1044,22 +1025,14 @@ const NotificationsCatePage = () => {
                             <Tag
                               bordered={false}
                               style={{
-                                margin: 0,
-                                fontSize: 10,
-                                padding: "0 6px",
-                                backgroundColor: type.bg,
+                                background: type.bg,
                                 color: type.color,
                               }}
                             >
                               {type.label}
                             </Tag>
 
-                            <Text
-                              type="secondary"
-                              style={{
-                                fontSize: 11,
-                              }}
-                            >
+                            <Text className="notification-time">
                               {getRelativeTime(item.created_at)}
                             </Text>
                           </div>
@@ -1072,72 +1045,67 @@ const NotificationsCatePage = () => {
             )}
           </div>
 
-          {/* PAGINATION */}
-
           <div className="notifications-pagination-footer">
-            <Text
-              type="secondary"
-              style={{
-                fontSize: 12,
-              }}
-            >
-              Tổng: {paginationTotal}
+            <Text>
+              Trang <strong>{page}</strong>
+            </Text>
+
+            <Text>
+              Tổng <strong>{paginationTotal}</strong>
             </Text>
           </div>
         </Card>
 
         {/* =================================================
-            RIGHT - DETAIL
+            RIGHT DETAIL
         ================================================= */}
 
         <Card
           bordered={false}
           className="notifications-reader-card"
           bodyStyle={{
-            padding: 28,
-            flex: 1,
-            minHeight: 0,
-            overflowY: "auto",
-          }}
-          style={{
-            borderRadius: 12,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            padding: 0,
+            height: "100%",
           }}
         >
           {selectedNotification ? (
-            <div>
-              {/* DETAIL HEADER */}
+            <div className="reader-wrapper">
+              {/* DETAIL TOP */}
 
-              <div className="notification-detail-header">
-                <Space size={8} wrap>
-                  <Tag
-                    color={selectedType.color}
-                    style={{
-                      borderRadius: 12,
-                      padding: "2px 10px",
-                      fontSize: 12,
-                    }}
-                  >
-                    {selectedType.icon} {selectedType.label}
-                  </Tag>
+              <div className="reader-top">
+                <div className="reader-top-left">
+                  <span className="reader-label">
+                    <ReadOutlined />
+                    CHI TIẾT THÔNG BÁO
+                  </span>
 
-                  {selectedNotification.priority !== "normal" && (
+                  <Space size={8} wrap>
                     <Tag
-                      color={
-                        selectedNotification.priority === "urgent"
-                          ? "red"
-                          : "orange"
-                      }
+                      className="detail-type-tag"
                       style={{
-                        borderRadius: 12,
-                        padding: "2px 10px",
-                        fontSize: 12,
+                        color: selectedType.color,
+                        background: selectedType.bg,
+                        borderColor: "transparent",
                       }}
                     >
-                      {selectedPriority.label}
+                      {selectedType.icon}
+                      {selectedType.label}
                     </Tag>
-                  )}
-                </Space>
+
+                    {selectedNotification.priority !== "normal" && (
+                      <Tag
+                        className="detail-priority-tag"
+                        style={{
+                          color: selectedPriority.color,
+                          borderColor: `${selectedPriority.color}33`,
+                          background: `${selectedPriority.color}10`,
+                        }}
+                      >
+                        {selectedPriority.label}
+                      </Tag>
+                    )}
+                  </Space>
+                </div>
 
                 {canDelete && (
                   <Tooltip title="Xóa thông báo">
@@ -1147,6 +1115,7 @@ const NotificationsCatePage = () => {
                       icon={<DeleteOutlined />}
                       loading={actionLoading}
                       onClick={() => handleDelete(selectedNotification)}
+                      className="detail-delete-button"
                     />
                   </Tooltip>
                 )}
@@ -1154,163 +1123,167 @@ const NotificationsCatePage = () => {
 
               {/* TITLE */}
 
-              <Title
-                level={3}
-                className="notification-detail-title"
-                style={{
-                  marginTop: 0,
-                  marginBottom: 16,
-                }}
-              >
-                {selectedNotification.title}
-              </Title>
+              <div className="reader-content">
+                <Title className="notification-detail-title">
+                  {selectedNotification.title}
+                </Title>
 
-              {/* AUTHOR */}
+                {/* AUTHOR */}
 
-              <div className="notification-author">
-                <Avatar
-                  style={{
-                    backgroundColor: getAvatarColor(
-                      selectedNotification.created_by_name,
-                    ),
-                  }}
-                >
-                  {getInitial(selectedNotification.created_by_name)}
-                </Avatar>
-
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  <Text
-                    strong
+                <div className="notification-author">
+                  <Avatar
+                    size={44}
                     style={{
-                      display: "block",
-                      fontSize: 13,
+                      background: getAvatarColor(
+                        selectedNotification.created_by_name,
+                      ),
                     }}
                   >
-                    {selectedNotification.created_by_name}
-                  </Text>
+                    {getInitial(selectedNotification.created_by_name)}
+                  </Avatar>
 
-                  <Text
-                    type="secondary"
-                    style={{
-                      fontSize: 12,
-                    }}
-                  >
-                    <ClockCircleOutlined
-                      style={{
-                        marginRight: 4,
-                      }}
-                    />
+                  <div className="author-info">
+                    <Text strong>{selectedNotification.created_by_name}</Text>
 
-                    {formatDate(selectedNotification.created_at)}
-                  </Text>
+                    <Text className="author-date">
+                      <ClockCircleOutlined />
+                      {formatDate(selectedNotification.created_at)}
+                    </Text>
+                  </div>
                 </div>
-              </div>
 
-              {/* CONTENT */}
+                <Divider />
 
-              <div className="notification-content">
-                <Paragraph
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    marginBottom: 0,
-                  }}
-                >
-                  {selectedNotification.content ||
-                    "Không có nội dung chi tiết."}
-                </Paragraph>
-              </div>
+                {/* CONTENT */}
 
-              {/* READ PROGRESS */}
+                <div className="notification-content">
+                  <Paragraph>
+                    {selectedNotification.content ||
+                      "Không có nội dung chi tiết."}
+                  </Paragraph>
+                </div>
 
-              {selectedNotification.recipient_count > 0 && (
-                <>
-                  <Divider
-                    style={{
-                      margin: "24px 0 16px",
-                    }}
-                  />
+                {/* READ PROGRESS */}
 
-                  <div className="notification-progress">
-                    <div className="notification-progress-header">
-                      <Text
-                        type="secondary"
-                        style={{
-                          fontSize: 13,
-                        }}
-                      >
-                        <ReadOutlined
-                          style={{
-                            marginRight: 6,
-                          }}
-                        />
-                        Tiến độ đọc thông báo
-                      </Text>
+                {selectedNotification.recipient_count > 0 && (
+                  <div className="notification-progress-section">
+                    <div className="progress-heading">
+                      <div>
+                        <span className="progress-icon">
+                          <ReadOutlined />
+                        </span>
 
-                      <Text
-                        strong
-                        style={{
-                          fontSize: 13,
-                        }}
-                      >
-                        {selectedNotification.read_count} /{" "}
-                        {selectedNotification.recipient_count} đã xem (
-                        {readPercent}%)
-                      </Text>
+                        <div>
+                          <Text strong>Tiến độ đọc thông báo</Text>
+
+                          <Text className="progress-subtitle">
+                            Mức độ tiếp cận của thông báo
+                          </Text>
+                        </div>
+                      </div>
+
+                      <div className="progress-number">
+                        <strong>{readPercent}%</strong>
+
+                        <span>
+                          {selectedNotification.read_count}/
+                          {selectedNotification.recipient_count} đã xem
+                        </span>
+                      </div>
                     </div>
 
                     <Progress
                       percent={readPercent}
-                      strokeColor={selectedType.color}
+                      strokeColor={COLORS.gold}
+                      trailColor="#E9EEF3"
                       size="small"
                       showInfo={false}
                     />
                   </div>
-                </>
-              )}
+                )}
+
+                {/* META */}
+
+                <div className="notification-detail-meta">
+                  <div className="detail-meta-item">
+                    <span>Danh mục</span>
+
+                    <strong>{selectedType.label}</strong>
+                  </div>
+
+                  <div className="detail-meta-item">
+                    <span>Mức độ</span>
+
+                    <strong
+                      style={{
+                        color: selectedPriority.color,
+                      }}
+                    >
+                      {selectedPriority.label}
+                    </strong>
+                  </div>
+
+                  <div className="detail-meta-item">
+                    <span>Trạng thái</span>
+
+                    <strong
+                      style={{
+                        color: selectedNotification.is_read
+                          ? COLORS.success
+                          : COLORS.goldDark,
+                      }}
+                    >
+                      {selectedNotification.is_read ? "Đã đọc" : "Chưa đọc"}
+                    </strong>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <div
-              style={{
-                height: "100%",
-                minHeight: 400,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-              }}
-            >
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Chọn một thông báo ở danh sách bên trái để xem nội dung"
-              />
+            <div className="reader-empty">
+              <div className="reader-empty-icon">
+                <NotificationOutlined />
+              </div>
+
+              <Title level={4}>Chưa chọn thông báo</Title>
+
+              <Text>
+                Chọn một thông báo ở danh sách bên trái để xem nội dung
+              </Text>
             </div>
           )}
         </Card>
       </div>
 
       {/* ===================================================
-          RESPONSIVE CSS
+          CSS
       =================================================== */}
 
       <style>{`
-        /* ================================================
-           BASE
-        ================================================= */
+        * {
+          box-sizing: border-box;
+        }
 
         .notifications-page {
           width: 100%;
-          max-width: 1400px;
+          max-width: 1440px;
           margin: 0 auto;
-          padding-bottom: 24px;
+          padding-bottom: 28px;
+          color: ${COLORS.text};
         }
 
-        /* ================================================
+        /* =================================================
+           HEADER
+        ================================================= */
+
+        .notifications-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        /* =================================================
            STATS
         ================================================= */
 
@@ -1318,43 +1291,108 @@ const NotificationsCatePage = () => {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 16px;
-          margin: 16px 0 20px;
+          margin: 18px 0;
         }
 
-        /* ================================================
+        /* =================================================
            FILTER
         ================================================= */
 
         .notifications-filter-card {
+          border-radius: 14px !important;
+          border: 1px solid ${COLORS.border};
+          box-shadow: none !important;
           margin-bottom: 16px;
+          overflow: hidden;
+          background: ${COLORS.white};
         }
 
-        .notifications-filter {
+        .filter-card-inner {
+          min-height: 72px;
+          padding: 14px 18px;
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 12px;
+          gap: 16px;
         }
 
-        .notifications-filter-left {
+        .filter-left {
           display: flex;
           align-items: center;
-          flex-wrap: wrap;
           gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .filter-title {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: ${COLORS.navy};
+          font-size: 13px;
+          font-weight: 700;
+          padding-right: 4px;
+        }
+
+        .filter-title .anticon {
+          color: ${COLORS.goldDark};
+        }
+
+        .notification-filter-radio .ant-radio-button-wrapper {
+          height: 38px;
+          line-height: 36px;
+          border-color: ${COLORS.borderDark};
+          color: ${COLORS.textSecondary};
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .notification-filter-radio
+        .ant-radio-button-wrapper:hover {
+          color: ${COLORS.navy};
+        }
+
+        .notification-filter-radio
+        .ant-radio-button-wrapper-checked {
+          background: ${COLORS.navy} !important;
+          border-color: ${COLORS.navy} !important;
+          color: #fff !important;
+        }
+
+        .notification-type-select {
+          min-width: 190px;
+        }
+
+        .notification-type-select .ant-select-selector {
+          height: 38px !important;
+          border-radius: 8px !important;
+          border-color: ${COLORS.borderDark} !important;
+          display: flex;
+          align-items: center;
         }
 
         .notifications-search {
-          width: 260px;
+          width: 280px;
+          height: 38px;
+          border-radius: 8px;
+          border-color: ${COLORS.borderDark};
         }
 
-        /* ================================================
+        .notifications-search:hover,
+        .notifications-search:focus {
+          border-color: ${COLORS.navy};
+        }
+
+        .notifications-search .anticon {
+          color: ${COLORS.muted};
+        }
+
+        /* =================================================
            MAIN
         ================================================= */
 
         .notifications-main {
           display: grid;
-          grid-template-columns: 400px minmax(0, 1fr);
+          grid-template-columns: 420px minmax(0, 1fr);
           gap: 16px;
           align-items: stretch;
         }
@@ -1362,29 +1400,91 @@ const NotificationsCatePage = () => {
         .notifications-list-card,
         .notifications-reader-card {
           height: 720px;
+          border-radius: 14px !important;
+          border: 1px solid ${COLORS.border};
+          box-shadow: none !important;
+          overflow: hidden;
+          background: ${COLORS.white};
         }
 
-        /* ================================================
+        /* =================================================
+           LIST HEADER
+        ================================================= */
+
+        .list-card-header {
+          min-height: 78px;
+          padding: 16px 18px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .section-label {
+          display: block;
+          color: ${COLORS.goldDark};
+          font-size: 10px;
+          letter-spacing: 1.3px;
+          font-weight: 800;
+          margin-bottom: 3px;
+        }
+
+        .list-card-title {
+          margin: 0 !important;
+          color: ${COLORS.navyDark};
+        }
+
+        .total-tag {
+          margin: 0;
+          border: 1px solid ${COLORS.border};
+          background: ${COLORS.navySoft};
+          color: ${COLORS.navy};
+          border-radius: 20px;
+          font-size: 11px;
+        }
+
+        /* =================================================
            LIST
         ================================================= */
 
         .notifications-list-body {
           flex: 1;
-          overflow-y: auto;
-          padding: 12px;
           min-height: 0;
+          overflow-y: auto;
+          padding: 10px;
+          background: #FAFBFC;
         }
 
         .notification-item {
-          padding: 12px 14px;
+          position: relative;
+          margin-bottom: 7px;
+          padding: 13px 13px 13px 15px;
           border-radius: 10px;
-          margin-bottom: 8px;
+          border: 1px solid transparent;
+          border-left: 3px solid var(--item-accent);
+          background: ${COLORS.white};
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition:
+            background 0.18s ease,
+            border-color 0.18s ease;
         }
 
         .notification-item:hover {
-          transform: translateY(-1px);
+          background: ${COLORS.navySoft};
+          border-color: ${COLORS.border};
+        }
+
+        .notification-item.selected {
+          background: ${COLORS.navyLight};
+          border-color: #C8D7E5;
+        }
+
+        .notification-item.unread {
+          background: #FDFBF6;
+        }
+
+        .notification-item.selected.unread {
+          background: ${COLORS.navyLight};
         }
 
         .notification-item-inner {
@@ -1393,20 +1493,50 @@ const NotificationsCatePage = () => {
           align-items: flex-start;
         }
 
+        .notification-type-icon {
+          width: 38px;
+          height: 38px;
+          min-width: 38px;
+          border-radius: 9px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+        }
+
         .notification-item-content {
-          flex: 1;
           min-width: 0;
+          flex: 1;
         }
 
         .notification-item-title-row {
           display: flex;
-          justify-content: space-between;
-          align-items: baseline;
-          gap: 8px;
+          align-items: center;
+          gap: 7px;
+          min-width: 0;
         }
 
         .notification-item-title {
           min-width: 0;
+          flex: 1;
+          color: ${COLORS.navyDark};
+          font-size: 13px;
+          line-height: 1.4;
+        }
+
+        .unread-dot {
+          width: 7px;
+          height: 7px;
+          min-width: 7px;
+          border-radius: 50%;
+          background: ${COLORS.gold};
+        }
+
+        .notification-item-description {
+          margin: 5px 0 8px !important;
+          color: ${COLORS.muted};
+          font-size: 11px;
+          line-height: 1.45;
         }
 
         .notification-item-meta {
@@ -1416,175 +1546,390 @@ const NotificationsCatePage = () => {
           gap: 8px;
         }
 
-        .notifications-pagination-footer {
-          padding: 10px 16px;
-          border-top: 1px solid #f0f0f0;
-          text-align: right;
-          background: #fafafa;
-          border-radius: 0 0 12px 12px;
+        .notification-item-meta .ant-tag {
+          margin: 0;
+          padding: 1px 7px;
+          border-radius: 5px;
+          font-size: 9px;
+          line-height: 18px;
         }
 
-        /* ================================================
+        .notification-time {
+          color: ${COLORS.muted};
+          font-size: 10px;
+          white-space: nowrap;
+        }
+
+        .notification-loading {
+          height: 100%;
+          min-height: 300px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          gap: 12px;
+          color: ${COLORS.muted};
+        }
+
+        .notification-empty {
+          min-height: 360px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+        .notifications-pagination-footer {
+          min-height: 42px;
+          padding: 10px 16px;
+          border-top: 1px solid ${COLORS.border};
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: ${COLORS.white};
+          color: ${COLORS.muted};
+          font-size: 11px;
+        }
+
+        /* =================================================
            READER
         ================================================= */
 
-        .notification-detail-header {
+        .reader-wrapper {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .reader-top {
+          min-height: 82px;
+          padding: 17px 24px;
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 12px;
-          margin-bottom: 16px;
+          gap: 16px;
+          border-bottom: 1px solid ${COLORS.border};
+          background: ${COLORS.white};
+        }
+
+        .reader-top-left {
+          display: flex;
+          flex-direction: column;
+          gap: 9px;
+        }
+
+        .reader-label {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: ${COLORS.goldDark};
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 1.2px;
+        }
+
+        .detail-type-tag,
+        .detail-priority-tag {
+          margin: 0;
+          border-radius: 6px;
+          font-size: 11px;
+          padding: 2px 8px;
+        }
+
+        .detail-delete-button {
+          width: 36px;
+          height: 36px;
+        }
+
+        .reader-content {
+          flex: 1;
+          overflow-y: auto;
+          padding: 28px 32px 34px;
+        }
+
+        .notification-detail-title {
+          max-width: 850px;
+          margin: 0 0 20px !important;
+          color: ${COLORS.navyDark} !important;
+          font-size: 27px !important;
+          line-height: 1.35 !important;
         }
 
         .notification-author {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 12px 16px;
-          background: #fafafa;
-          border-radius: 10px;
-          margin-bottom: 24px;
+          max-width: 850px;
+          padding: 11px 0;
+        }
+
+        .author-info {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .author-info > .ant-typography:first-child {
+          color: ${COLORS.navyDark};
+          font-size: 13px;
+        }
+
+        .author-date {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: ${COLORS.muted} !important;
+          font-size: 11px;
         }
 
         .notification-content {
-          min-height: 200px;
+          max-width: 850px;
+          min-height: 190px;
+          color: ${COLORS.text};
+        }
+
+        .notification-content .ant-typography {
+          margin: 0;
+          white-space: pre-wrap;
           font-size: 15px;
-          line-height: 1.8;
-          color: #262626;
+          line-height: 1.85;
+          color: ${COLORS.text};
         }
 
-        .notification-progress {
-          padding: 16px;
-          background: #f9f9f9;
+        /* =================================================
+           PROGRESS
+        ================================================= */
+
+        .notification-progress-section {
+          max-width: 850px;
+          margin-top: 26px;
+          padding: 17px 18px;
+          border: 1px solid ${COLORS.border};
           border-radius: 10px;
-          border: 1px solid #f0f0f0;
+          background: ${COLORS.navySoft};
         }
 
-        .notification-progress-header {
+        .progress-heading {
           display: flex;
           justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 8px;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 12px;
         }
 
-        /* ================================================
+        .progress-heading > div:first-child {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .progress-icon {
+          width: 34px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          background: ${COLORS.goldLight};
+          color: ${COLORS.goldDark};
+        }
+
+        .progress-heading > div:first-child > div {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .progress-subtitle {
+          color: ${COLORS.muted};
+          font-size: 10px;
+        }
+
+        .progress-number {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+        }
+
+        .progress-number strong {
+          color: ${COLORS.navy};
+          font-size: 18px;
+        }
+
+        .progress-number span {
+          color: ${COLORS.muted};
+          font-size: 10px;
+        }
+
+        /* =================================================
+           DETAIL META
+        ================================================= */
+
+        .notification-detail-meta {
+          max-width: 850px;
+          margin-top: 22px;
+          padding-top: 20px;
+          border-top: 1px solid ${COLORS.border};
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+        }
+
+        .detail-meta-item {
+          padding: 12px;
+          border: 1px solid ${COLORS.border};
+          border-radius: 8px;
+          background: ${COLORS.white};
+        }
+
+        .detail-meta-item span {
+          display: block;
+          color: ${COLORS.muted};
+          font-size: 10px;
+          margin-bottom: 4px;
+        }
+
+        .detail-meta-item strong {
+          color: ${COLORS.navyDark};
+          font-size: 12px;
+        }
+
+        /* =================================================
+           EMPTY READER
+        ================================================= */
+
+        .reader-empty {
+          height: 100%;
+          min-height: 500px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          padding: 30px;
+        }
+
+        .reader-empty-icon {
+          width: 70px;
+          height: 70px;
+          margin-bottom: 18px;
+          border-radius: 18px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: ${COLORS.navyLight};
+          color: ${COLORS.navy};
+          font-size: 28px;
+        }
+
+        .reader-empty .ant-typography {
+          margin-bottom: 5px;
+        }
+
+        .reader-empty > span {
+          color: ${COLORS.muted};
+          font-size: 12px;
+          max-width: 360px;
+        }
+
+        /* =================================================
+           SCROLLBAR
+        ================================================= */
+
+        .notifications-list-body::-webkit-scrollbar,
+        .reader-content::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .notifications-list-body::-webkit-scrollbar-thumb,
+        .reader-content::-webkit-scrollbar-thumb {
+          background: #CBD5DF;
+          border-radius: 10px;
+        }
+
+        /* =================================================
            TABLET
         ================================================= */
 
-        @media (max-width: 1100px) {
-
+        @media (max-width: 1150px) {
           .notifications-main {
-            grid-template-columns: 340px minmax(0, 1fr);
+            grid-template-columns: 350px minmax(0, 1fr);
           }
 
           .notifications-search {
-            width: 220px;
+            width: 230px;
           }
 
-          .notifications-reader-card {
-            height: 720px;
+          .reader-content {
+            padding: 24px;
           }
 
-          .notifications-reader-card .ant-card-body {
-            padding: 22px !important;
+          .notification-detail-title {
+            font-size: 24px !important;
           }
         }
 
-        /* ================================================
+        /* =================================================
            MOBILE
         ================================================= */
 
         @media (max-width: 768px) {
-
           .notifications-page {
             padding-bottom: 16px;
           }
 
-          /* ---------------------------------------------
-             HEADER
-          --------------------------------------------- */
-
-          .notifications-page-header-extra {
+          .notifications-header-actions {
             width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
           }
 
-          .notifications-page-header-extra
-          .ant-space {
+          .notifications-header-actions .ant-btn {
             width: 100%;
+            padding-inline: 7px;
+            font-size: 11px;
           }
-
-          .notifications-page-header-extra
-          .ant-space-item {
-            flex: 1;
-          }
-
-          .notifications-page-header-extra
-          button {
-            width: 100%;
-          }
-
-          /* ---------------------------------------------
-             STATS
-          --------------------------------------------- */
 
           .notifications-stats {
             grid-template-columns: 1fr;
             gap: 10px;
-            margin: 12px 0 14px;
+            margin: 12px 0;
           }
 
-          /* ---------------------------------------------
-             FILTER
-          --------------------------------------------- */
-
-          .notifications-filter-card {
-            margin-bottom: 12px;
-          }
-
-          .notifications-filter-card
-          .ant-card-body {
-            padding: 12px !important;
-          }
-
-          .notifications-filter {
+          .filter-card-inner {
             flex-direction: column;
             align-items: stretch;
-            gap: 10px;
+            padding: 12px;
           }
 
-          .notifications-filter-left {
-            width: 100%;
+          .filter-left {
             flex-direction: column;
             align-items: stretch;
-            gap: 8px;
           }
 
-          .notifications-filter-left
-          .ant-radio-group {
-            width: 100%;
+          .filter-title {
+            display: none;
+          }
+
+          .notification-filter-radio {
             display: flex;
+            width: 100%;
           }
 
-          .notifications-filter-left
+          .notification-filter-radio
           .ant-radio-button-wrapper {
             flex: 1;
             text-align: center;
             padding-inline: 5px;
-            font-size: 12px;
+            font-size: 11px;
           }
 
-          .notifications-filter-left
-          .ant-select {
-            width: 100% !important;
+          .notification-type-select {
+            width: 100%;
           }
 
           .notifications-search {
             width: 100%;
           }
-
-          /* ---------------------------------------------
-             MAIN
-          --------------------------------------------- */
 
           .notifications-main {
             display: flex;
@@ -1592,193 +1937,112 @@ const NotificationsCatePage = () => {
             gap: 12px;
           }
 
-          /* ---------------------------------------------
-             LIST
-          --------------------------------------------- */
-
           .notifications-list-card {
             height: 430px;
           }
 
-          .notifications-list-body {
-            padding: 8px;
-          }
-
-          .notification-item {
-            padding: 11px 10px;
-            margin-bottom: 6px;
-          }
-
-          .notification-item-inner {
-            gap: 9px;
-          }
-
-          .notification-item-inner
-          .ant-avatar {
-            width: 34px !important;
-            height: 34px !important;
-            min-width: 34px !important;
-            line-height: 34px !important;
-          }
-
-          .notification-item-title-row {
-            gap: 4px;
-          }
-
-          .notification-item-title {
-            font-size: 13px !important;
-          }
-
-          .notification-item-content
-          .ant-typography {
-            font-size: 11px !important;
-          }
-
-          .notification-item-meta {
-            gap: 4px;
-          }
-
-          .notification-item-meta
-          .ant-tag {
-            font-size: 9px !important;
-          }
-
-          .notification-item-meta
-          .ant-typography {
-            font-size: 10px !important;
-          }
-
-          .notifications-pagination-footer {
-            padding: 8px 12px;
-          }
-
-          /* ---------------------------------------------
-             READER
-          --------------------------------------------- */
-
           .notifications-reader-card {
             height: auto;
-            min-height: 500px;
+            min-height: 560px;
           }
 
-          .notifications-reader-card
-          .ant-card-body {
-            padding: 18px 16px !important;
+          .reader-top {
+            padding: 14px 16px;
           }
 
-          .notification-detail-header {
-            margin-bottom: 12px;
-          }
-
-          .notification-detail-header
-          .ant-tag {
-            font-size: 11px;
-            padding: 1px 8px;
+          .reader-content {
+            padding: 20px 16px 26px;
           }
 
           .notification-detail-title {
             font-size: 22px !important;
-            line-height: 1.35 !important;
-            margin-bottom: 14px !important;
-          }
-
-          .notification-author {
-            padding: 10px 12px;
-            margin-bottom: 18px;
+            line-height: 1.4 !important;
           }
 
           .notification-content {
-            min-height: 150px;
+            min-height: 140px;
+          }
+
+          .notification-content .ant-typography {
             font-size: 14px;
             line-height: 1.75;
           }
 
-          .notification-progress {
-            padding: 12px;
+          .progress-heading {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 10px;
           }
 
-          .notification-progress-header {
-            flex-direction: column;
-            gap: 4px;
+          .progress-number {
+            align-items: flex-start;
+          }
+
+          .notification-detail-meta {
+            grid-template-columns: 1fr;
           }
         }
 
-        /* ================================================
+        /* =================================================
            SMALL MOBILE
         ================================================= */
 
         @media (max-width: 480px) {
-
-          .notifications-page {
-            padding-bottom: 12px;
+          .notifications-header-actions {
+            grid-template-columns: 1fr;
+            gap: 6px;
           }
-
-          .notifications-stats {
-            gap: 8px;
-          }
-
-          /* ---------------------------------------------
-             HEADER BUTTONS
-          --------------------------------------------- */
-
-          .notifications-page-header-extra
-          .ant-space {
-            gap: 6px !important;
-          }
-
-          .notifications-page-header-extra
-          .ant-space-item {
-            flex: 1;
-            min-width: 0;
-          }
-
-          .notifications-page-header-extra
-          button {
-            font-size: 11px;
-            padding-inline: 8px;
-          }
-
-          /* ---------------------------------------------
-             FILTER
-          --------------------------------------------- */
-
-          .notifications-filter-left
-          .ant-radio-button-wrapper {
-            font-size: 11px;
-            padding-inline: 4px;
-          }
-
-          /* ---------------------------------------------
-             LIST
-          --------------------------------------------- */
 
           .notifications-list-card {
             height: 390px;
           }
 
+          .list-card-header {
+            min-height: 66px;
+            padding: 12px 14px;
+          }
+
           .notification-item {
-            padding: 9px 8px;
+            padding: 11px 10px 11px 12px;
           }
 
-          .notification-item-inner {
-            gap: 8px;
+          .notification-type-icon {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            font-size: 14px;
           }
 
-          /* ---------------------------------------------
-             READER
-          --------------------------------------------- */
+          .notification-item-title {
+            font-size: 12px;
+          }
 
-          .notifications-reader-card
-          .ant-card-body {
-            padding: 16px 14px !important;
+          .notification-item-description {
+            font-size: 10px;
+          }
+
+          .notification-time {
+            font-size: 9px;
+          }
+
+          .reader-top {
+            padding: 12px;
+          }
+
+          .reader-content {
+            padding: 18px 14px 22px;
           }
 
           .notification-detail-title {
             font-size: 20px !important;
           }
 
-          .notification-content {
-            font-size: 14px;
+          .notification-author {
+            padding: 8px 0;
+          }
+
+          .notification-progress-section {
+            padding: 13px;
           }
         }
       `}</style>

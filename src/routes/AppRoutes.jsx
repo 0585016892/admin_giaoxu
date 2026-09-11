@@ -28,6 +28,7 @@ import SendNotificationPage from "../pages/catechist/SendNotificationPage";
 import NotificationsCatePage from "../pages/catechist/NotificationsCatePage";
 import ErrorPage from "../pages/catechist/ErrorPage";
 import FaithEduRegister from "../pages/catechist/FaithEduRegister";
+import Statistics from "../pages/catechist/Statistics";
 
 import LandingPage from "../pages/LandingPage/LandingPage";
 
@@ -126,6 +127,7 @@ export default function AppRoutes() {
               path="/catechist/my-notifications"
               element={<NotificationsCatePage />}
             />
+            <Route path="/catechist/statistics" element={<Statistics />} />
             <Route
               path="/catechist/settings"
               element={<ParishSettingsPage />}

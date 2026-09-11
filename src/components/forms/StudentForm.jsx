@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { Col, DatePicker, Divider, Form, Input, Row, Select, Tabs } from "antd";
 
+/* =========================================================
+   THEME (NAVY & GOLD)
+========================================================= */
+
+const primaryNavy = "#173B5E";
+const borderColor = "#D9E2EC";
+
 const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
   const [activeTab, setActiveTab] = useState("basic");
 
@@ -63,11 +70,22 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
       key: "basic",
       label: "Thông tin cá nhân",
       children: (
-        <>
+        <div style={{ paddingTop: 8 }}>
           <Row gutter={16}>
             <Col xs={24} md={8}>
               <Form.Item name="code" label="Mã học sinh">
-                <Input disabled placeholder="Tự động tạo" />
+                <Input
+                  disabled
+                  placeholder="Tự động tạo"
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    background: "#EDF2F7",
+                    border: `1.5px solid ${borderColor}`,
+                    color: "#64748B",
+                    fontWeight: 600,
+                  }}
+                />
               </Form.Item>
             </Col>
 
@@ -84,6 +102,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập họ và tên học sinh"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -100,11 +123,13 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Chọn giới tính"
                   allowClear
+                  size="large"
                   options={[
                     { value: "male", label: "Nam" },
                     { value: "female", label: "Nữ" },
                     { value: "other", label: "Khác" },
                   ]}
+                  style={{ width: "100%" }}
                 />
               </Form.Item>
             </Col>
@@ -120,7 +145,12 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                 ]}
               >
                 <DatePicker
-                  style={{ width: "100%" }}
+                  size="large"
+                  style={{
+                    width: "100%",
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                   format="DD/MM/YYYY"
                   placeholder="Chọn ngày sinh"
                   disabled={saving}
@@ -134,6 +164,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập nơi sinh (Tỉnh/Thành phố)"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -144,7 +179,16 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                 label="Quốc tịch"
                 initialValue="Việt Nam"
               >
-                <Input disabled={saving} placeholder="Việt Nam" allowClear />
+                <Input
+                  disabled={saving}
+                  placeholder="Việt Nam"
+                  allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -156,6 +200,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập số điện thoại"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -172,6 +221,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="example@email.com"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -186,12 +240,14 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   showSearch
                   allowClear
+                  size="large"
                   optionFilterProp="label"
                   placeholder="Chọn lớp"
                   options={classes.map((item) => ({
                     value: String(item.id),
                     label: item.name || item.class_name || `Lớp ${item.id}`,
                   }))}
+                  style={{ width: "100%" }}
                 />
               </Form.Item>
             </Col>
@@ -204,6 +260,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Số nhà, đường, phường/xã, quận/huyện..."
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -214,11 +275,16 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập tên giáo xứ hiện tại"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
-        </>
+        </div>
       ),
     },
 
@@ -226,9 +292,13 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
       key: "family",
       label: "Gia đình",
       children: (
-        <>
-          <Divider orientation="left" plain>
-            <b>Thông tin cha</b>
+        <div style={{ paddingTop: 8 }}>
+          <Divider
+            orientation="left"
+            plain
+            style={{ color: primaryNavy, fontWeight: 700 }}
+          >
+            Thông tin cha
           </Divider>
 
           <Row gutter={16}>
@@ -238,6 +308,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập họ và tên cha"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -252,13 +327,22 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập số điện thoại cha"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider orientation="left" plain>
-            <b>Thông tin mẹ</b>
+          <Divider
+            orientation="left"
+            plain
+            style={{ color: primaryNavy, fontWeight: 700 }}
+          >
+            Thông tin mẹ
           </Divider>
 
           <Row gutter={16}>
@@ -268,6 +352,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập họ và tên mẹ"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -282,13 +371,22 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập số điện thoại mẹ"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider orientation="left" plain>
-            <b>Người giám hộ (nếu có)</b>
+          <Divider
+            orientation="left"
+            plain
+            style={{ color: primaryNavy, fontWeight: 700 }}
+          >
+            Người giám hộ (nếu có)
           </Divider>
 
           <Row gutter={16}>
@@ -298,6 +396,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập họ và tên"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -312,6 +415,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập số điện thoại"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -325,11 +433,16 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="VD: Ông, bà, cô, chú..."
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
-        </>
+        </div>
       ),
     },
 
@@ -337,9 +450,13 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
       key: "sacraments",
       label: "Bí tích",
       children: (
-        <>
-          <Divider orientation="left" plain>
-            <b>Bí tích Rửa Tội</b>
+        <div style={{ paddingTop: 8 }}>
+          <Divider
+            orientation="left"
+            plain
+            style={{ color: primaryNavy, fontWeight: 700 }}
+          >
+            Bí tích Rửa Tội
           </Divider>
 
           <Row gutter={16}>
@@ -349,6 +466,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="VD: Phêrô, Maria..."
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -356,7 +478,12 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
             <Col xs={24} md={8}>
               <Form.Item name="baptism_date" label="Ngày Rửa tội">
                 <DatePicker
-                  style={{ width: "100%" }}
+                  size="large"
+                  style={{
+                    width: "100%",
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                   format="DD/MM/YYYY"
                   placeholder="Chọn ngày"
                   disabled={saving}
@@ -370,6 +497,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập nơi Rửa tội"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -382,6 +514,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập giáo xứ"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -395,13 +532,22 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập số chứng thư"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider orientation="left" plain>
-            <b>Bí tích Rước Lễ Lần Đầu</b>
+          <Divider
+            orientation="left"
+            plain
+            style={{ color: primaryNavy, fontWeight: 700 }}
+          >
+            Bí tích Rước Lễ Lần Đầu
           </Divider>
 
           <Row gutter={16}>
@@ -411,7 +557,12 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                 label="Ngày Rước lễ lần đầu"
               >
                 <DatePicker
-                  style={{ width: "100%" }}
+                  size="large"
+                  style={{
+                    width: "100%",
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                   format="DD/MM/YYYY"
                   placeholder="Chọn ngày"
                   disabled={saving}
@@ -428,13 +579,22 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập tên giáo xứ / nhà thờ"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider orientation="left" plain>
-            <b>Bí tích Thêm Sức</b>
+          <Divider
+            orientation="left"
+            plain
+            style={{ color: primaryNavy, fontWeight: 700 }}
+          >
+            Bí tích Thêm Sức
           </Divider>
 
           <Row gutter={16}>
@@ -447,6 +607,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Tên thánh nhận khi Thêm sức"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -454,7 +619,12 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
             <Col xs={24} md={8}>
               <Form.Item name="confirmation_date" label="Ngày Thêm sức">
                 <DatePicker
-                  style={{ width: "100%" }}
+                  size="large"
+                  style={{
+                    width: "100%",
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                   format="DD/MM/YYYY"
                   placeholder="Chọn ngày"
                   disabled={saving}
@@ -468,11 +638,16 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="Nhập nơi Thêm sức"
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
-        </>
+        </div>
       ),
     },
 
@@ -480,7 +655,7 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
       key: "catechism",
       label: "Giáo lý & Khác",
       children: (
-        <>
+        <div style={{ paddingTop: 8 }}>
           <Row gutter={16}>
             <Col xs={24} md={8}>
               <Form.Item name="catechism_level" label="Cấp giáo lý">
@@ -488,6 +663,11 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   disabled={saving}
                   placeholder="VD: Khai tâm 1, Rước lễ 2..."
                   allowClear
+                  size="large"
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -501,6 +681,7 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                 <Select
                   disabled={saving}
                   allowClear
+                  size="large"
                   placeholder="Chọn trạng thái"
                   options={[
                     { value: "new", label: "Mới đăng ký" },
@@ -509,6 +690,7 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                     { value: "graduated", label: "Đã tốt nghiệp" },
                     { value: "dropped", label: "Đã nghỉ học" },
                   ]}
+                  style={{ width: "100%" }}
                 />
               </Form.Item>
             </Col>
@@ -516,7 +698,12 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
             <Col xs={24} md={8}>
               <Form.Item name="enrollment_date" label="Ngày nhập học">
                 <DatePicker
-                  style={{ width: "100%" }}
+                  size="large"
+                  style={{
+                    width: "100%",
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                   format="DD/MM/YYYY"
                   placeholder="Chọn ngày nhập học"
                   disabled={saving}
@@ -525,8 +712,12 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
             </Col>
           </Row>
 
-          <Divider orientation="left" plain>
-            <b>Trạng thái & Ghi chú</b>
+          <Divider
+            orientation="left"
+            plain
+            style={{ color: primaryNavy, fontWeight: 700 }}
+          >
+            Trạng thái & Ghi chú
           </Divider>
 
           <Row gutter={16}>
@@ -542,6 +733,7 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                 <Select
                   disabled={saving}
                   allowClear
+                  size="large"
                   placeholder="Chọn trạng thái"
                   options={[
                     { value: "active", label: "Đang hoạt động" },
@@ -550,6 +742,7 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                     { value: "transferred", label: "Đã chuyển giáo xứ" },
                     { value: "dropped", label: "Đã nghỉ" },
                   ]}
+                  style={{ width: "100%" }}
                 />
               </Form.Item>
             </Col>
@@ -563,33 +756,47 @@ const StudentForm = ({ form, classes = [], saving = false, onFinish }) => {
                   showCount
                   maxLength={1000}
                   allowClear
+                  style={{
+                    borderRadius: 10,
+                    border: `1.5px solid ${borderColor}`,
+                  }}
                 />
               </Form.Item>
             </Col>
           </Row>
-        </>
+        </div>
       ),
     },
   ];
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={onFinish}
-      onFinishFailed={handleFinishFailed}
-      preserve={true}
-      requiredMark={(label, { required }) => (
-        <span>
-          {label}
-          {required && (
-            <span style={{ color: "#ff4d4f", marginLeft: 4 }}>*</span>
-          )}
-        </span>
-      )}
-    >
-      <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
-    </Form>
+    <div style={{ fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif" }}>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        onFinishFailed={handleFinishFailed}
+        preserve={true}
+        requiredMark={(label, { required }) => (
+          <span>
+            {label}
+            {required && (
+              <span style={{ color: "#ff4d4f", marginLeft: 4 }}>*</span>
+            )}
+          </span>
+        )}
+      >
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={tabItems}
+          type="card"
+          tabBarStyle={{
+            marginBottom: 16,
+          }}
+        />
+      </Form>
+    </div>
   );
 };
 

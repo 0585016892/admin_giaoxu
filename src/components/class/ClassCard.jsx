@@ -23,7 +23,7 @@ import {
   TeamOutlined,
   UserOutlined,
   ArrowRightOutlined,
-  HeartFilled,
+  StarFilled,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -34,21 +34,22 @@ const getDayName = (day) => day || "Chủ Nhật";
 const formatTime = (time) => time || "08:00";
 
 const StatusTag = ({ status }) => {
-  const isFinished = status === "finished" || status === "Đã kết thúc";
+  const isFinished = status === "active";
   return (
     <Tag
       bordered={false}
       style={{
-        borderRadius: 12,
-        fontSize: 10,
-        fontWeight: 800,
+        borderRadius: 8,
+        fontSize: 11,
+        fontWeight: 700,
         padding: "2px 8px",
         margin: 0,
         backgroundColor: isFinished ? "#F1F5F9" : "#E0F2FE",
         color: isFinished ? "#64748B" : "#0284C7",
+        fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
       }}
     >
-      {status || "Đang hoạt động"}
+      {status === "active" ? "Đang hoạt động" : "Tạm dừng"}
     </Tag>
   );
 };
@@ -57,9 +58,9 @@ const InfoItem = ({ icon, label, value }) => (
   <div
     style={{
       padding: "8px 10px",
-      borderRadius: 14,
-      background: "#FFF9FA",
-      border: "1px solid #FFE4E6",
+      borderRadius: 12,
+      background: "#F7F9FC",
+      border: "1.5px solid #D9E2EC",
       display: "flex",
       alignItems: "center",
       gap: 8,
@@ -67,7 +68,7 @@ const InfoItem = ({ icon, label, value }) => (
   >
     <div
       style={{
-        color: "#FF6B8B",
+        color: "#173B5E",
         fontSize: 14,
         display: "flex",
         alignItems: "center",
@@ -80,8 +81,8 @@ const InfoItem = ({ icon, label, value }) => (
         style={{
           display: "block",
           fontSize: 10,
-          color: "#94A3B8",
-          fontWeight: 700,
+          color: "#64748B",
+          fontWeight: 600,
           lineHeight: 1,
         }}
       >
@@ -93,7 +94,7 @@ const InfoItem = ({ icon, label, value }) => (
         style={{
           display: "block",
           fontSize: 11,
-          color: "#334155",
+          color: "#173B5E",
           marginTop: 2,
         }}
       >
@@ -119,15 +120,15 @@ const ClassCard = ({
       bordered={false}
       hoverable
       onClick={() => onView?.(item)}
-      className="chibi-class-card"
+      className="class-card-navy-gold"
       style={{
         height: "100%",
-        borderRadius: 26,
+        borderRadius: 20,
         overflow: "hidden",
         cursor: "pointer",
         background: "#FFFFFF",
-        border: "2px solid #FFE4E6",
-        boxShadow: "0 12px 28px rgba(255, 182, 193, 0.2)",
+        border: "1.5px solid #D9E2EC",
+        boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
         transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
       styles={{
@@ -136,26 +137,25 @@ const ClassCard = ({
         },
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-6px) scale(1.01)";
+        e.currentTarget.style.transform = "translateY(-4px)";
         e.currentTarget.style.boxShadow =
-          "0 20px 35px rgba(255, 182, 193, 0.35)";
-        e.currentTarget.style.borderColor = "#FFB6C1";
+          "0 20px 35px -10px rgba(23, 59, 94, 0.12)";
+        e.currentTarget.style.borderColor = "#173B5E";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0) scale(1)";
+        e.currentTarget.style.transform = "translateY(0)";
         e.currentTarget.style.boxShadow =
-          "0 12px 28px rgba(255, 182, 193, 0.2)";
-        e.currentTarget.style.borderColor = "#FFE4E6";
+          "0 10px 30px -5px rgba(23, 59, 94, 0.06)";
+        e.currentTarget.style.borderColor = "#D9E2EC";
       }}
     >
-      {/* HEADER PASTEL */}
+      {/* HEADER SECTION */}
       <div
         style={{
           position: "relative",
           padding: 20,
-          background:
-            "linear-gradient(135deg, #FFF5F7 0%, #FFF0F3 50%, #FFE4E6 100%)",
-          borderBottom: "1.5px dashed #FFD1D9",
+          background: "linear-gradient(135deg, #173B5E 0%, #1E4976 100%)",
+          borderBottom: "1.5px solid #D9E2EC",
         }}
       >
         <div
@@ -166,7 +166,7 @@ const ClassCard = ({
             width: 90,
             height: 90,
             borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.5)",
+            background: "rgba(255, 255, 255, 0.04)",
             pointerEvents: "none",
           }}
         />
@@ -184,15 +184,14 @@ const ClassCard = ({
                   width: 48,
                   height: 48,
                   flexShrink: 0,
-                  borderRadius: 18,
-                  background: "#FFFFFF",
-                  color: "#FF6B8B",
+                  borderRadius: 14,
+                  background: "rgba(255, 255, 255, 0.1)",
+                  color: "#D9A441",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 22,
-                  border: "1.5px solid #FFD1D9",
-                  boxShadow: "0 4px 10px rgba(255, 107, 139, 0.2)",
+                  border: "1.5px solid rgba(217, 164, 65, 0.3)",
                 }}
               >
                 <BookOutlined />
@@ -205,10 +204,10 @@ const ClassCard = ({
                   style={{
                     display: "block",
                     maxWidth: 200,
-                    color: "#334155",
+                    color: "#FFFFFF",
                     fontSize: 16,
-                    fontWeight: 800,
-                    fontFamily: "'Quicksand', sans-serif",
+                    fontWeight: 700,
+                    fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
                     lineHeight: 1.3,
                   }}
                 >
@@ -221,23 +220,23 @@ const ClassCard = ({
                       style={{
                         margin: 0,
                         border: 0,
-                        borderRadius: 12,
-                        background: "#FEF3C7",
-                        color: "#D97706",
-                        fontSize: 10,
-                        fontWeight: 800,
+                        borderRadius: 8,
+                        background: "rgba(217, 164, 65, 0.2)",
+                        color: "#F3C65D",
+                        fontSize: 11,
+                        fontWeight: 700,
                         padding: "1px 8px",
                       }}
                     >
-                      ✨ {item.code}
+                      {item.code}
                     </Tag>
                   )}
 
                   <Text
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
-                      color: "#FF6B8B",
+                      fontWeight: 600,
+                      color: "rgba(255, 255, 255, 0.7)",
                     }}
                   >
                     {getCategoryShortName(item.category)}
@@ -312,9 +311,9 @@ const ClassCard = ({
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  color: "#FF6B8B",
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #FFD1D9",
+                  color: "#FFFFFF",
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
                 }}
               />
             </Dropdown>
@@ -327,7 +326,13 @@ const ClassCard = ({
           style={{ marginTop: 14, position: "relative", zIndex: 1 }}
         >
           <Col>
-            <Text style={{ color: "#94A3B8", fontSize: 11, fontWeight: 700 }}>
+            <Text
+              style={{
+                color: "rgba(255, 255, 255, 0.6)",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
               {item.category || "Chưa phân loại"}
             </Text>
           </Col>
@@ -338,7 +343,7 @@ const ClassCard = ({
         </Row>
       </div>
 
-      {/* BODY PASTEL */}
+      {/* BODY SECTION */}
       <div style={{ padding: 18 }}>
         <Row gutter={[10, 10]}>
           <Col span={12}>
@@ -381,9 +386,9 @@ const ClassCard = ({
           style={{
             marginTop: 14,
             padding: "10px 14px",
-            borderRadius: 18,
-            background: "#FFF5F7",
-            border: "1.5px solid #FFE4E6",
+            borderRadius: 14,
+            background: "#F7F9FC",
+            border: "1.5px solid #D9E2EC",
           }}
         >
           <Row justify="space-between" align="middle">
@@ -393,10 +398,10 @@ const ClassCard = ({
                   max={{
                     count: 3,
                     style: {
-                      background: "#FF6B8B",
+                      background: "#173B5E",
                       color: "#FFFFFF",
                       fontSize: 10,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       border: "2px solid #FFFFFF",
                     },
                   }}
@@ -410,10 +415,10 @@ const ClassCard = ({
                         <Avatar
                           size={32}
                           style={{
-                            background: index % 2 === 0 ? "#FF6B8B" : "#FFC048",
+                            background: index % 2 === 0 ? "#173B5E" : "#D9A441",
                             color: "#FFFFFF",
                             fontSize: 12,
-                            fontWeight: 800,
+                            fontWeight: 700,
                             border: "2px solid #FFFFFF",
                           }}
                         >
@@ -427,7 +432,7 @@ const ClassCard = ({
                       icon={<UserOutlined />}
                       style={{
                         background: "#E2E8F0",
-                        color: "#94A3B8",
+                        color: "#64748B",
                         border: "2px solid #FFFFFF",
                       }}
                     />
@@ -439,9 +444,9 @@ const ClassCard = ({
                     strong
                     style={{
                       display: "block",
-                      color: "#334155",
+                      color: "#173B5E",
                       fontSize: 12,
-                      fontWeight: 800,
+                      fontWeight: 700,
                     }}
                   >
                     {catechists.length > 0
@@ -450,9 +455,9 @@ const ClassCard = ({
                   </Text>
 
                   <Text
-                    style={{ fontSize: 10, color: "#94A3B8", fontWeight: 700 }}
+                    style={{ fontSize: 10, color: "#64748B", fontWeight: 600 }}
                   >
-                    <HeartFilled style={{ color: "#FF6B8B", marginRight: 3 }} />
+                    <StarFilled style={{ color: "#D9A441", marginRight: 3 }} />
                     Phụ trách lớp
                   </Text>
                 </div>
@@ -471,10 +476,10 @@ const ClassCard = ({
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  color: "#FF6B8B",
+                  color: "#173B5E",
                   background: "#FFFFFF",
-                  border: "1px solid #FFD1D9",
-                  boxShadow: "0 2px 6px rgba(255, 107, 139, 0.15)",
+                  border: "1.5px solid #D9E2EC",
+                  boxShadow: "0 2px 6px rgba(23, 59, 94, 0.05)",
                 }}
                 icon={<ArrowRightOutlined />}
               />

@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Space, Typography, Tag } from "antd";
-import { CloseOutlined, HeartFilled } from "@ant-design/icons";
+import { CloseOutlined, StarFilled } from "@ant-design/icons";
 import AppButton from "./AppButton";
 
 const { Text, Title } = Typography;
@@ -22,8 +22,8 @@ const AppFormModal = ({
   onOk,
   okText,
   cancelText = "Hủy",
-  createText = "Tạo mới ✨",
-  editText = "Lưu thay đổi 💖",
+  createText = "Tạo mới",
+  editText = "Lưu thay đổi",
   destroyOnClose = true,
   maskClosable = true,
   form,
@@ -67,7 +67,7 @@ const AppFormModal = ({
       maskClosable={!isSubmitting && maskClosable}
       closable={!isSubmitting}
       onCancel={handleCancel}
-      className={`chibi-pastel-modal ${className}`}
+      className={`navy-gold-modal ${className}`}
       closeIcon={
         <div
           style={{
@@ -77,43 +77,43 @@ const AppFormModal = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#FF6B8B",
-            backgroundColor: "#FFE4E6",
-            border: "1.5px solid #FFD1D9",
-            transition: "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            color: "#173B5E",
+            backgroundColor: "#EEF2F7",
+            border: "1.5px solid #D9E2EC",
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
             cursor: "pointer",
           }}
-          className="chibi-close-hover"
+          className="modal-close-hover"
         >
           <CloseOutlined style={{ fontSize: 13, fontWeight: "bold" }} />
         </div>
       }
       styles={{
         content: {
-          borderRadius: 28,
+          borderRadius: 24,
           padding: 0,
-          boxShadow: "0 20px 40px rgba(255, 182, 193, 0.25)",
-          border: "2px solid #FFE4E6",
+          boxShadow: "0 20px 40px rgba(23, 59, 94, 0.15)",
+          border: "1.5px solid #D9E2EC",
           overflow: "hidden",
           background: "#FFFFFF",
         },
         header: {
           marginBottom: 0,
-          padding: "20px 26px 16px",
-          borderBottom: "1.5px dashed #FFE4E6",
-          backgroundColor: "#FFF9FA",
+          padding: "20px 24px 16px",
+          borderBottom: "1.5px dashed #D9E2EC",
+          backgroundColor: "#F7F9FC",
         },
         body: {
-          padding: "24px 26px",
+          padding: "24px",
           maxHeight: "calc(80vh - 140px)",
           overflowY: "auto",
           backgroundColor: "#FFFFFF",
         },
         footer: {
           marginTop: 0,
-          padding: "16px 26px",
-          borderTop: "1.5px dashed #FFE4E6",
-          backgroundColor: "#FFF9FA",
+          padding: "16px 24px",
+          borderTop: "1.5px dashed #D9E2EC",
+          backgroundColor: "#F7F9FC",
           display: "flex",
           justifyContent: "flex-end",
           alignItems: "center",
@@ -128,11 +128,8 @@ const AppFormModal = ({
           variant="secondary"
           size="middle"
           style={{
-            borderRadius: 20,
-            background: "#F1F5F9",
-            color: "#64748B",
+            borderRadius: 12,
             fontWeight: 700,
-            border: "none",
           }}
         >
           {cancelText}
@@ -140,17 +137,13 @@ const AppFormModal = ({
 
         <AppButton
           key="submit"
-          type="primary"
+          variant="gold"
           loading={isSubmitting}
           onClick={handleSubmit}
           size="middle"
           style={{
-            borderRadius: 20,
-            background: "linear-gradient(135deg, #FF6B8B 0%, #FF8E9E 100%)",
-            borderColor: "transparent",
-            color: "#FFFFFF",
-            fontWeight: 800,
-            boxShadow: "0 6px 16px rgba(255, 107, 139, 0.3)",
+            borderRadius: 12,
+            fontWeight: 700,
           }}
         >
           {finalOkText}
@@ -166,16 +159,16 @@ const AppFormModal = ({
                 style={{
                   width: 44,
                   height: 44,
-                  borderRadius: 16,
-                  backgroundColor: "#FFE4E6",
-                  color: "#FF6B8B",
+                  borderRadius: 14,
+                  backgroundColor: "#EEF2F7",
+                  color: "#173B5E",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 22,
                   flexShrink: 0,
-                  border: "1.5px solid #FFC0CB",
-                  boxShadow: "0 4px 10px rgba(255, 182, 193, 0.3)",
+                  border: "1.5px solid #D9E2EC",
+                  boxShadow: "0 4px 10px rgba(23, 59, 94, 0.08)",
                 }}
               >
                 {icon}
@@ -185,17 +178,18 @@ const AppFormModal = ({
                 style={{
                   width: 44,
                   height: 44,
-                  borderRadius: 16,
-                  backgroundColor: "#FFE4E6",
-                  color: "#FF6B8B",
+                  borderRadius: 14,
+                  backgroundColor: "#EEF2F7",
+                  color: "#D9A441",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 20,
                   flexShrink: 0,
+                  border: "1.5px solid #D9E2EC",
                 }}
               >
-                <HeartFilled />
+                <StarFilled />
               </div>
             )}
 
@@ -205,11 +199,11 @@ const AppFormModal = ({
                   level={5}
                   style={{
                     margin: 0,
-                    color: "#334155",
+                    color: "#173B5E",
                     fontSize: 17,
                     fontWeight: 800,
                     lineHeight: "24px",
-                    fontFamily: "'Quicksand', sans-serif",
+                    fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
                   }}
                 >
                   {finalTitle}
@@ -218,17 +212,17 @@ const AppFormModal = ({
                 <Tag
                   bordered={false}
                   style={{
-                    borderRadius: 14,
+                    borderRadius: 8,
                     fontSize: 11,
-                    fontWeight: 800,
-                    padding: "2px 10px",
+                    fontWeight: 700,
+                    padding: "2px 8px",
                     margin: 0,
                     backgroundColor: editing ? "#FEF3C7" : "#E0F2FE",
-                    color: editing ? "#D97706" : "#0284C7",
+                    color: editing ? "#B45309" : "#0369A1",
                     border: editing ? "1px solid #FDE68A" : "1px solid #BAE6FD",
                   }}
                 >
-                  {editing ? "🌸 Chỉnh sửa" : "✨ Tạo mới"}
+                  {editing ? "Chỉnh sửa" : "Tạo mới"}
                 </Tag>
               </Space>
 
@@ -238,8 +232,8 @@ const AppFormModal = ({
                     display: "block",
                     marginTop: 3,
                     fontSize: 13,
-                    color: "#94A3B8",
-                    fontWeight: 600,
+                    color: "#64748B",
+                    fontWeight: 500,
                     lineHeight: "18px",
                   }}
                 >

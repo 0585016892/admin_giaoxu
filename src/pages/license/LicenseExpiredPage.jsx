@@ -1,25 +1,45 @@
 import React from "react";
 import { Button, Typography, Tag } from "antd";
 import {
-  SafetyCertificateFilled,
-  LoginOutlined,
-  MailOutlined,
-  PhoneOutlined,
-  ReloadOutlined,
-  UserOutlined,
-  WechatOutlined,
-  ArrowRightOutlined,
-  LockOutlined,
-  CrownFilled,
-  DatabaseOutlined,
-  ThunderboltFilled,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-} from "@ant-design/icons";
+  ShieldCheck,
+  LogIn,
+  Mail,
+  Phone,
+  RefreshCw,
+  UserRound,
+  MessageCircle,
+  ArrowRight,
+  LockKeyhole,
+  Crown,
+  Database,
+  Zap,
+  CircleCheck,
+  Clock3,
+  CheckCircle2,
+  Sparkles,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLicense } from "../../context/LicenseContext";
 
 const { Title, Paragraph, Text } = Typography;
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  gold: "#D9A441",
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+  border: "#E2E8F0",
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+};
 
 const LicenseExpiredPage = () => {
   const navigate = useNavigate();
@@ -55,527 +75,691 @@ const LicenseExpiredPage = () => {
   };
 
   return (
-    <div className="license-split-wrapper">
+    <div className="license-expired-page">
       {/* =========================================
-          LEFT SIDE: CONTROL CENTER & SYSTEM STATUS
+          LEFT - SYSTEM STATUS
       ========================================= */}
-      <div className="split-left">
-        <div className="left-glow" />
+      <section className="license-left">
+        <div className="left-decoration decoration-one" />
+        <div className="left-decoration decoration-two" />
 
-        {/* BRAND HEADER */}
+        {/* Brand */}
         <div className="brand-header">
           <div className="brand-logo">
-            <SafetyCertificateFilled />
+            <ShieldCheck size={25} strokeWidth={2.2} />
           </div>
+
           <div className="brand-info">
             <span className="brand-name">FaithEdu</span>
             <span className="brand-tag">Hệ thống quản lý giáo lý</span>
           </div>
         </div>
 
-        {/* HERO STATUS */}
-        <div className="hero-status">
-          <div className="status-pill">
-            <span className="pulse-dot" />
+        {/* Main status */}
+        <div className="status-content">
+          <div className="status-badge">
+            <span className="status-dot" />
             THỜI GIAN DÙNG THỬ ĐÃ HẾT HẠN
           </div>
 
-          <Title level={1} className="left-title">
-            Giữ kết nối cho <br />
+          <Title level={1} className="license-title">
+            Giữ kết nối cho
+            <br />
             <span>Giáo xứ của bạn</span>
           </Title>
 
-          <Paragraph className="left-desc">
+          <Paragraph className="license-description">
             Thời gian trải nghiệm miễn phí đã kết thúc. Mọi dữ liệu lớp học,
-            giáo lý viên và thiếu nhi vẫn được **bảo toàn tuyệt đối** trên hệ
-            thống.
+            giáo lý viên và thiếu nhi vẫn được <strong>bảo toàn an toàn</strong>{" "}
+            trên hệ thống.
           </Paragraph>
         </div>
 
-        {/* DATA METRICS CARD */}
+        {/* Data safety */}
         <div className="data-safety-card">
-          <div className="safety-header">
-            <DatabaseOutlined className="safety-icon" />
-            <div>
+          <div className="safety-main">
+            <div className="safety-icon">
+              <Database size={22} strokeWidth={2} />
+            </div>
+
+            <div className="safety-content">
               <Text className="safety-title">Bảo lưu dữ liệu an toàn</Text>
-              <Text className="safety-sub">
+
+              <Text className="safety-description">
                 Sẵn sàng khôi phục ngay sau khi kích hoạt
               </Text>
             </div>
+
+            <div className="safety-check">
+              <CheckCircle2 size={18} />
+            </div>
           </div>
+
           {license?.trial_expires_at && (
-            <div className="expiry-date-tag">
-              <ClockCircleOutlined />
+            <div className="expiry-info">
+              <Clock3 size={15} />
+
               <span>
                 Hết hạn dùng thử:{" "}
-                {new Date(license.trial_expires_at).toLocaleDateString("vi-VN")}
+                <strong>
+                  {new Date(license.trial_expires_at).toLocaleDateString(
+                    "vi-VN",
+                  )}
+                </strong>
               </span>
             </div>
           )}
         </div>
 
-        {/* FOOTER ACTIONS */}
-        <div className="left-footer-actions">
+        {/* Bottom actions */}
+        <div className="left-actions">
           <Button
-            icon={<ReloadOutlined />}
+            icon={<RefreshCw size={16} />}
             onClick={handleRefresh}
-            className="glass-btn"
+            className="outline-action"
           >
             Kiểm tra lại
           </Button>
+
           <Button
-            icon={<LoginOutlined />}
+            icon={<LogIn size={16} />}
             onClick={handleLogout}
-            className="glass-btn danger-glass"
+            className="outline-action logout-action"
           >
             Đổi tài khoản
           </Button>
         </div>
-      </div>
+      </section>
 
       {/* =========================================
-          RIGHT SIDE: ACTIVATION BENTO & CONTACT
+          RIGHT - ACTIVATION
       ========================================= */}
-      <div className="split-right">
-        <div className="bento-container">
-          {/* MAIN PRICING BENTO */}
-          <div className="bento-card bento-pricing">
-            <div className="pricing-badge">
-              <CrownFilled />
-              <span>GÓI CHÍNH THỨC</span>
+      <section className="license-right">
+        <div className="activation-container">
+          {/* Pricing */}
+          <div className="activation-card pricing-card">
+            <div className="official-badge">
+              <Crown size={13} />
+              GÓI CHÍNH THỨC
             </div>
 
-            <div className="pricing-content">
-              <div className="pricing-text">
-                <Text className="pricing-label">CHI PHÍ KÍCH HOẠT</Text>
-                <div className="price-tag">
-                  <span className="amount">299.000</span>
-                  <span className="currency">đ</span>
+            <div className="pricing-header">
+              <div>
+                <div className="pricing-label">CHI PHÍ KÍCH HOẠT</div>
+
+                <div className="price">
+                  <span className="price-number">299.000</span>
+                  <span className="price-currency">đ</span>
                 </div>
-                <Text className="pricing-sub">
+
+                <div className="price-note">
                   Thanh toán 1 lần · Sử dụng ổn định
-                </Text>
+                </div>
               </div>
 
-              <Button
-                type="primary"
-                size="large"
-                icon={<ThunderboltFilled />}
-                onClick={handleActivate}
-                className="btn-activate-main"
-              >
-                Kích hoạt ngay <ArrowRightOutlined />
-              </Button>
+              <div className="price-icon">
+                <Zap size={25} fill="currentColor" />
+              </div>
             </div>
 
+            <Button
+              type="primary"
+              size="large"
+              icon={<Zap size={17} />}
+              onClick={handleActivate}
+              className="activate-button"
+            >
+              Kích hoạt ngay
+              <ArrowRight size={17} />
+            </Button>
+
+            {/* Features */}
             <div className="features-grid">
-              <div className="feat-item">
-                <CheckCircleOutlined /> <span>Không giới hạn tính năng</span>
+              <div className="feature-item">
+                <CircleCheck size={16} />
+                <span>Không giới hạn tính năng</span>
               </div>
-              <div className="feat-item">
-                <CheckCircleOutlined /> <span>Đồng bộ dữ liệu tức thì</span>
+
+              <div className="feature-item">
+                <CircleCheck size={16} />
+                <span>Đồng bộ dữ liệu tức thì</span>
               </div>
-              <div className="feat-item">
-                <CheckCircleOutlined /> <span>Hỗ trợ kỹ thuật 24/7</span>
+
+              <div className="feature-item">
+                <CircleCheck size={16} />
+                <span>Hỗ trợ kỹ thuật 24/7</span>
               </div>
-              <div className="feat-item">
-                <CheckCircleOutlined /> <span>Cập nhật miễn phí</span>
+
+              <div className="feature-item">
+                <CircleCheck size={16} />
+                <span>Cập nhật miễn phí</span>
               </div>
             </div>
           </div>
 
-          {/* ADMIN & CONTACT BENTO */}
-          <div className="bento-grid-bottom">
-            {/* ADMIN INFO */}
-            <div className="bento-card bento-admin">
+          {/* Bottom cards */}
+          <div className="bottom-grid">
+            {/* Admin */}
+            <div className="activation-card admin-card">
               <div className="admin-header">
-                <div className="avatar-box">
-                  <UserOutlined />
+                <div className="admin-avatar">
+                  <UserRound size={19} />
                 </div>
-                <div>
+
+                <div className="admin-info">
                   <Text className="admin-name">Trần Khánh Hưng</Text>
+
                   <Text className="admin-role">Quản trị viên hệ thống</Text>
                 </div>
               </div>
-              <Tag color="gold" className="verified-tag">
-                <SafetyCertificateFilled /> Quản trị viên đã xác minh
+
+              <Tag className="verified-tag">
+                <ShieldCheck size={12} />
+                Quản trị viên đã xác minh
               </Tag>
             </div>
 
-            {/* ACTION BUTTONS */}
-            <div className="bento-card bento-actions">
-              <Text className="contact-title">Liên hệ hỗ trợ nhanh</Text>
-              <div className="quick-actions-list">
-                <button className="action-tile zalo" onClick={handleZalo}>
-                  <WechatOutlined />
+            {/* Contact */}
+            <div className="activation-card contact-card">
+              <div className="contact-heading">
+                <div>
+                  <Text className="contact-title">Liên hệ hỗ trợ nhanh</Text>
+
+                  <Text className="contact-subtitle">
+                    Chọn phương thức bạn muốn sử dụng
+                  </Text>
+                </div>
+
+                <Sparkles size={18} className="contact-sparkle" />
+              </div>
+
+              <div className="quick-actions">
+                <button
+                  type="button"
+                  className="contact-action"
+                  onClick={handleZalo}
+                >
+                  <div className="contact-icon zalo-icon">
+                    <MessageCircle size={18} />
+                  </div>
+
                   <span>Zalo</span>
                 </button>
-                <button className="action-tile phone" onClick={handleCall}>
-                  <PhoneOutlined />
+
+                <button
+                  type="button"
+                  className="contact-action"
+                  onClick={handleCall}
+                >
+                  <div className="contact-icon phone-icon">
+                    <Phone size={18} />
+                  </div>
+
                   <span>Gọi ngay</span>
                 </button>
-                <button className="action-tile email" onClick={handleEmail}>
-                  <MailOutlined />
+
+                <button
+                  type="button"
+                  className="contact-action"
+                  onClick={handleEmail}
+                >
+                  <div className="contact-icon email-icon">
+                    <Mail size={18} />
+                  </div>
+
                   <span>Email</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* SECURITY FOOTER NOTE */}
-          <div className="bento-security-note">
-            <LockOutlined />
+          {/* Security note */}
+          <div className="security-note">
+            <div className="security-icon">
+              <LockKeyhole size={15} />
+            </div>
+
             <span>
               Thanh toán và kích hoạt được xác nhận trực tiếp qua Zalo/SĐT chính
               thức của Quản trị viên.
             </span>
           </div>
         </div>
-      </div>
+      </section>
 
       <style>{`
         * {
           box-sizing: border-box;
         }
 
-        .license-split-wrapper {
-          display: flex;
-          min-height: 100vh;
+        .license-expired-page {
           width: 100%;
-          background: #0d1527;
-          font-family: "Be Vietnam Pro", "Inter", -apple-system, sans-serif;
+          min-height: 100vh;
+          display: flex;
+          background: ${COLORS.background};
+          font-family:
+            "Be Vietnam Pro",
+            "Inter",
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
         }
 
         /* =========================================
-           LEFT PANEL (DARK & GLASS)
+           LEFT
         ========================================= */
-        .split-left {
-          flex: 1.1;
+
+        .license-left {
+          width: 52%;
+          min-height: 100vh;
           position: relative;
-          background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%);
-          padding: 60px 80px;
+          overflow: hidden;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          overflow: hidden;
-          border-right: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 48px 64px;
+          background:
+            linear-gradient(
+              145deg,
+              #102f4d 0%,
+              ${COLORS.navy} 55%,
+              #0f304d 100%
+            );
+          border-right: 1px solid rgba(255,255,255,0.08);
         }
 
-        .left-glow {
+        .left-decoration {
           position: absolute;
-          top: -20%;
-          left: -20%;
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
           pointer-events: none;
+          border-radius: 50%;
+          border: 1px solid rgba(217,164,65,0.13);
+        }
+
+        .decoration-one {
+          width: 420px;
+          height: 420px;
+          top: -220px;
+          right: -160px;
+        }
+
+        .decoration-two {
+          width: 600px;
+          height: 600px;
+          bottom: -430px;
+          left: -300px;
+          background: rgba(255,255,255,0.015);
         }
 
         .brand-header {
+          position: relative;
+          z-index: 2;
           display: flex;
           align-items: center;
-          gap: 14px;
-          z-index: 2;
+          gap: 13px;
         }
 
         .brand-logo {
           width: 46px;
           height: 46px;
-          background: linear-gradient(135deg, #d4af37, #aa820a);
-          border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 22px;
-          color: #fff;
-          box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+          border-radius: 13px;
+          background: ${COLORS.gold};
+          color: ${COLORS.navy};
+          box-shadow:
+            0 8px 24px rgba(0,0,0,0.18);
         }
 
         .brand-info {
           display: flex;
           flex-direction: column;
+          gap: 1px;
         }
 
         .brand-name {
-          color: #ffffff;
+          color: ${COLORS.white};
           font-size: 20px;
           font-weight: 800;
           letter-spacing: -0.5px;
         }
 
         .brand-tag {
-          color: #7d8fb3;
+          color: #AFC0D0;
           font-size: 11px;
+          font-weight: 500;
         }
 
-        .hero-status {
+        .status-content {
+          position: relative;
           z-index: 2;
-          margin: 40px 0;
+          max-width: 570px;
+          margin: 35px 0;
         }
 
-        .status-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 14px;
-          background: rgba(229, 72, 77, 0.15);
-          border: 1px solid rgba(229, 72, 77, 0.3);
-          border-radius: 30px;
-          color: #ff6b6b;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          margin-bottom: 24px;
-        }
-
-        .pulse-dot {
-          width: 8px;
-          height: 8px;
-          background: #e5484d;
-          border-radius: 50%;
-          box-shadow: 0 0 10px #e5484d;
-        }
-
-        .left-title {
-          color: #ffffff !important;
-          font-size: 42px !important;
-          font-weight: 800 !important;
-          line-height: 1.2 !important;
-          margin-bottom: 16px !important;
-        }
-
-        .left-title span {
-          background: linear-gradient(90deg, #f3d06b, #d4af37);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
-        .left-desc {
-          color: #94a3b8 !important;
-          font-size: 15px;
-          line-height: 1.7;
-          max-width: 480px;
-        }
-
-        .left-desc strong {
-          color: #e2e8f0;
-        }
-
-        .data-safety-card {
-          z-index: 2;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(12px);
-          padding: 20px;
-          border-radius: 20px;
-          margin-bottom: 30px;
-        }
-
-        .safety-header {
+        .status-badge {
+          width: fit-content;
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 8px;
+          padding: 7px 12px;
+          border-radius: 8px;
+          color: #F5D98C;
+          background: rgba(217,164,65,0.10);
+          border: 1px solid rgba(217,164,65,0.24);
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.45px;
+        }
+
+        .status-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: ${COLORS.gold};
+          box-shadow: 0 0 0 4px rgba(217,164,65,0.10);
+        }
+
+        .license-title {
+          margin: 22px 0 17px !important;
+          color: ${COLORS.white} !important;
+          font-size: clamp(34px, 4vw, 48px) !important;
+          line-height: 1.16 !important;
+          font-weight: 800 !important;
+          letter-spacing: -1.4px;
+        }
+
+        .license-title span {
+          color: ${COLORS.gold};
+        }
+
+        .license-description {
+          max-width: 500px;
+          margin: 0 !important;
+          color: #AFC0D0 !important;
+          font-size: 14px;
+          line-height: 1.8;
+        }
+
+        .license-description strong {
+          color: #E7EDF3;
+          font-weight: 700;
+        }
+
+        /* Data card */
+
+        .data-safety-card {
+          position: relative;
+          z-index: 2;
+          padding: 17px;
+          border-radius: 15px;
+          background: rgba(255,255,255,0.045);
+          border: 1px solid rgba(255,255,255,0.10);
+        }
+
+        .safety-main {
+          display: flex;
+          align-items: center;
+          gap: 13px;
         }
 
         .safety-icon {
-          font-size: 24px;
-          color: #d4af37;
-          background: rgba(212, 175, 55, 0.1);
-          padding: 10px;
-          border-radius: 12px;
+          width: 42px;
+          height: 42px;
+          flex: 0 0 42px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 11px;
+          color: ${COLORS.gold};
+          background: rgba(217,164,65,0.10);
+        }
+
+        .safety-content {
+          flex: 1;
+          min-width: 0;
         }
 
         .safety-title {
           display: block;
-          color: #ffffff;
+          color: ${COLORS.white};
+          font-size: 13px;
           font-weight: 700;
-          font-size: 14px;
         }
 
-        .safety-sub {
+        .safety-description {
           display: block;
-          color: #64748b;
-          font-size: 12px;
+          margin-top: 2px;
+          color: #8095A9;
+          font-size: 11px;
         }
 
-        .expiry-date-tag {
-          margin-top: 14px;
-          padding-top: 12px;
-          border-top: 1px dashed rgba(255, 255, 255, 0.1);
-          color: #94a3b8;
-          font-size: 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .left-footer-actions {
-          z-index: 2;
-          display: flex;
-          gap: 12px;
-        }
-
-        .glass-btn {
-          background: rgba(255, 255, 255, 0.05) !important;
-          border: 1px solid rgba(255, 255, 255, 0.15) !important;
-          color: #ffffff !important;
-          border-radius: 12px !important;
-          height: 44px !important;
-          font-weight: 600 !important;
-        }
-
-        .glass-btn:hover {
-          background: rgba(255, 255, 255, 0.1) !important;
-          border-color: #d4af37 !important;
-          color: #d4af37 !important;
-        }
-
-        .danger-glass:hover {
-          border-color: #ff6b6b !important;
-          color: #ff6b6b !important;
-        }
-
-        /* =========================================
-           RIGHT PANEL (BENTO LIGHT/NEUMORPHIC)
-        ========================================= */
-        .split-right {
-          flex: 1;
-          background: #f4f6f9;
-          padding: 60px;
+        .safety-check {
+          width: 28px;
+          height: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
+          border-radius: 50%;
+          color: #77C9A4;
+          background: rgba(46,125,91,0.14);
         }
 
-        .bento-container {
+        .expiry-info {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-top: 13px;
+          padding-top: 12px;
+          border-top: 1px dashed rgba(255,255,255,0.10);
+          color: #91A4B6;
+          font-size: 11px;
+        }
+
+        .expiry-info svg {
+          color: ${COLORS.gold};
+        }
+
+        .expiry-info strong {
+          color: #DCE5ED;
+        }
+
+        /* Actions */
+
+        .left-actions {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          gap: 10px;
+        }
+
+        .outline-action {
+          height: 42px !important;
+          padding: 0 16px !important;
+          border-radius: 10px !important;
+          border: 1px solid rgba(255,255,255,0.16) !important;
+          background: rgba(255,255,255,0.045) !important;
+          color: #E7EDF3 !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          box-shadow: none !important;
+        }
+
+        .outline-action:hover {
+          color: ${COLORS.gold} !important;
+          border-color: ${COLORS.gold} !important;
+          background: rgba(217,164,65,0.07) !important;
+        }
+
+        .logout-action:hover {
+          color: #E8A19A !important;
+          border-color: #C97B73 !important;
+          background: rgba(192,57,43,0.08) !important;
+        }
+
+        /* =========================================
+           RIGHT
+        ========================================= */
+
+        .license-right {
+          width: 48%;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 45px 50px;
+          background: ${COLORS.background};
+        }
+
+        .activation-container {
           width: 100%;
-          max-width: 520px;
+          max-width: 590px;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 14px;
         }
 
-        .bento-card {
-          background: #ffffff;
-          border-radius: 24px;
-          padding: 28px;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
-        }
-
-        /* PRICING BENTO */
-        .bento-pricing {
-          background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%);
-          border: 2px solid rgba(212, 175, 55, 0.3);
+        .activation-card {
           position: relative;
+          background: ${COLORS.white};
+          border: 1px solid ${COLORS.border};
+          border-radius: 18px;
+          box-shadow: 0 5px 20px rgba(23,59,94,0.045);
         }
 
-        .pricing-badge {
+        /* Pricing */
+
+        .pricing-card {
+          padding: 27px;
+          border: 1px solid rgba(217,164,65,0.42);
+        }
+
+        .official-badge {
           position: absolute;
-          top: -12px;
-          right: 28px;
-          background: #1b263b;
-          color: #d4af37;
-          font-size: 10px;
-          font-weight: 800;
-          padding: 4px 12px;
-          border-radius: 20px;
+          top: -11px;
+          right: 23px;
           display: flex;
           align-items: center;
           gap: 6px;
-          letter-spacing: 0.5px;
+          padding: 5px 11px;
+          border-radius: 7px;
+          background: ${COLORS.navy};
+          color: ${COLORS.gold};
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.6px;
         }
 
-        .pricing-content {
+        .pricing-header {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          margin-bottom: 24px;
+          justify-content: space-between;
+          gap: 20px;
         }
 
         .pricing-label {
-          font-size: 11px;
+          color: ${COLORS.gold};
+          font-size: 10px;
           font-weight: 800;
-          color: #d4af37;
           letter-spacing: 1px;
         }
 
-        .price-tag {
+        .price {
           display: flex;
           align-items: baseline;
-          margin: 4px 0;
+          margin: 5px 0 3px;
         }
 
-        .price-tag .amount {
-          font-size: 36px;
-          font-weight: 900;
-          color: #0f172a;
+        .price-number {
+          color: ${COLORS.navy};
+          font-size: 38px;
           line-height: 1;
+          font-weight: 900;
+          letter-spacing: -1.3px;
         }
 
-        .price-tag .currency {
+        .price-currency {
+          margin-left: 5px;
+          color: ${COLORS.gold};
           font-size: 20px;
-          font-weight: 700;
-          color: #d4af37;
-          margin-left: 4px;
+          font-weight: 800;
         }
 
-        .pricing-sub {
+        .price-note {
+          color: ${COLORS.textSecondary};
           font-size: 11px;
-          color: #64748b;
-          display: block;
         }
 
-        .btn-activate-main {
-          height: 52px !important;
-          padding: 0 24px !important;
-          border-radius: 16px !important;
-          background: linear-gradient(135deg, #1b263b, #0d1b2a) !important;
+        .price-icon {
+          width: 50px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 14px;
+          color: ${COLORS.gold};
+          background: ${COLORS.goldLight};
+          border: 1px solid #F0DFB5;
+        }
+
+        .activate-button {
+          width: 100%;
+          height: 48px !important;
+          margin-top: 22px;
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
           border: none !important;
-          font-size: 14px !important;
+          border-radius: 10px !important;
+          background: ${COLORS.navy} !important;
+          color: ${COLORS.white} !important;
+          font-size: 13px !important;
           font-weight: 700 !important;
-          box-shadow: 0 10px 20px rgba(13, 27, 42, 0.2) !important;
+          box-shadow: none !important;
         }
 
-        .btn-activate-main:hover {
-          transform: translateY(-2px);
+        .activate-button:hover {
+          background: ${COLORS.navyHover} !important;
+          transform: translateY(-1px);
         }
 
         .features-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 12px;
-          padding-top: 20px;
-          border-top: 1px solid #f1f5f9;
+          gap: 11px 20px;
+          margin-top: 20px;
+          padding-top: 18px;
+          border-top: 1px solid #EEF2F6;
         }
 
-        .feat-item {
+        .feature-item {
+          min-width: 0;
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 12px;
-          color: #475569;
-          font-weight: 500;
+          gap: 7px;
+          color: #536477;
+          font-size: 11px;
+          font-weight: 600;
         }
 
-        .feat-item span {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+        .feature-item svg {
+          flex: 0 0 auto;
+          color: ${COLORS.gold};
         }
 
-        .feat-item .anticon {
-          color: #d4af37;
-        }
+        /* Bottom */
 
-        /* BOTTOM BENTO GRID */
-        .bento-grid-bottom {
+        .bottom-grid {
           display: grid;
-          grid-template-columns: 1fr 1.2fr;
-          gap: 16px;
+          grid-template-columns: 0.95fr 1.35fr;
+          gap: 14px;
         }
 
-        .bento-admin {
+        .admin-card {
+          min-height: 138px;
+          padding: 20px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -585,122 +769,261 @@ const LicenseExpiredPage = () => {
           display: flex;
           align-items: center;
           gap: 10px;
-          margin-bottom: 12px;
         }
 
-        .avatar-box {
-          width: 38px;
-          height: 38px;
-          background: #f1f5f9;
-          border-radius: 12px;
+        .admin-avatar {
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #1b263b;
-          font-size: 16px;
+          border-radius: 11px;
+          color: ${COLORS.navy};
+          background: ${COLORS.navyLight};
+        }
+
+        .admin-info {
+          min-width: 0;
         }
 
         .admin-name {
           display: block;
-          font-size: 13px;
-          font-weight: 700;
-          color: #0f172a;
+          color: ${COLORS.navy};
+          font-size: 12px;
+          font-weight: 800;
         }
 
         .admin-role {
           display: block;
+          margin-top: 2px;
+          color: ${COLORS.textSecondary};
           font-size: 10px;
-          color: #64748b;
         }
 
         .verified-tag {
-          border-radius: 8px;
-          font-size: 9px;
-          padding: 2px 6px;
-          border: none;
-        }
-
-        /* ACTIONS BENTO */
-        .contact-title {
-          font-size: 11px;
+          width: fit-content;
+          margin: 12px 0 0 !important;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 7px !important;
+          border: 1px solid #E8D5A7 !important;
+          border-radius: 6px !important;
+          background: ${COLORS.goldLight} !important;
+          color: #8A671D !important;
+          font-size: 9px !important;
           font-weight: 700;
-          color: #64748b;
+        }
+
+        /* Contact */
+
+        .contact-card {
+          min-height: 138px;
+          padding: 20px;
+        }
+
+        .contact-heading {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 13px;
+        }
+
+        .contact-title {
           display: block;
-          margin-bottom: 10px;
+          color: ${COLORS.navy};
+          font-size: 12px;
+          font-weight: 800;
         }
 
-        .quick-actions-list {
-          display: flex;
-          gap: 8px;
+        .contact-subtitle {
+          display: block;
+          margin-top: 2px;
+          color: ${COLORS.textSecondary};
+          font-size: 10px;
         }
 
-        .action-tile {
-          flex: 1;
+        .contact-sparkle {
+          color: ${COLORS.gold};
+        }
+
+        .quick-actions {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 7px;
+        }
+
+        .contact-action {
+          min-height: 57px;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 6px;
-          padding: 10px 4px;
-          border-radius: 14px;
-          border: 1px solid #e2e8f0;
-          background: #f8fafc;
+          gap: 7px;
+          border: 1px solid ${COLORS.border};
+          border-radius: 10px;
+          background: #FAFBFC;
           cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 16px;
-        }
-
-        .action-tile span {
+          color: ${COLORS.text};
+          font-family: inherit;
           font-size: 10px;
           font-weight: 700;
+          transition: all 0.18s ease;
         }
 
-        .action-tile.zalo { color: #0068ff; }
-        .action-tile.phone { color: #16a34a; }
-        .action-tile.email { color: #d4af37; }
-
-        .action-tile:hover {
-          transform: translateY(-2px);
-          background: #ffffff;
-          box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        .contact-action:hover {
+          border-color: #C9D4DF;
+          background: ${COLORS.white};
+          transform: translateY(-1px);
         }
 
-        .bento-security-note {
+        .contact-icon {
+          width: 29px;
+          height: 29px;
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 12px 16px;
-          background: #ffffff;
-          border-radius: 14px;
-          border: 1px solid #e2e8f0;
-          color: #64748b;
-          font-size: 11px;
+          justify-content: center;
+          border-radius: 8px;
         }
 
-        .bento-security-note .anticon {
-          color: #d4af37;
+        .zalo-icon {
+          color: #1976D2;
+          background: #EAF3FC;
         }
 
-        /* RESPONSIVE LAYOUT */
-        @media (max-width: 1024px) {
-          .license-split-wrapper {
+        .phone-icon {
+          color: ${COLORS.success};
+          background: ${COLORS.successBg};
+        }
+
+        .email-icon {
+          color: #967221;
+          background: ${COLORS.goldLight};
+        }
+
+        /* Security */
+
+        .security-note {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 11px 14px;
+          border: 1px solid ${COLORS.border};
+          border-radius: 11px;
+          background: #FBFCFD;
+          color: ${COLORS.textSecondary};
+          font-size: 10px;
+          line-height: 1.5;
+        }
+
+        .security-icon {
+          width: 27px;
+          height: 27px;
+          flex: 0 0 27px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 7px;
+          color: ${COLORS.gold};
+          background: ${COLORS.goldLight};
+        }
+
+        /* =========================================
+           RESPONSIVE
+        ========================================= */
+
+        @media (max-width: 1100px) {
+          .license-left {
+            padding: 40px;
+          }
+
+          .license-right {
+            padding: 35px;
+          }
+
+          .license-title {
+            font-size: 38px !important;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .license-expired-page {
             flex-direction: column;
           }
 
-          .split-left {
-            padding: 40px 24px;
+          .license-left,
+          .license-right {
+            width: 100%;
+            min-height: auto;
           }
 
-          .left-title {
-            font-size: 32px !important;
+          .license-left {
+            padding: 35px 28px;
+            gap: 25px;
           }
 
-          .split-right {
-            padding: 32px 20px;
+          .status-content {
+            margin: 20px 0;
           }
 
-          .bento-grid-bottom {
+          .license-right {
+            padding: 30px 20px 40px;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .license-left {
+            padding: 28px 20px;
+          }
+
+          .license-title {
+            font-size: 31px !important;
+            letter-spacing: -0.8px;
+          }
+
+          .license-description {
+            font-size: 13px;
+          }
+
+          .left-actions {
+            flex-direction: column;
+          }
+
+          .outline-action {
+            width: 100%;
+          }
+
+          .pricing-card {
+            padding: 22px 18px;
+          }
+
+          .pricing-header {
+            align-items: flex-start;
+          }
+
+          .price-number {
+            font-size: 32px;
+          }
+
+          .price-icon {
+            width: 42px;
+            height: 42px;
+          }
+
+          .features-grid {
             grid-template-columns: 1fr;
+          }
+
+          .bottom-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .admin-card,
+          .contact-card {
+            min-height: auto;
+          }
+
+          .security-note {
+            align-items: flex-start;
           }
         }
       `}</style>

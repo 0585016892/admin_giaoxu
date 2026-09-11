@@ -58,6 +58,40 @@ import classApi from "../../api/classApi";
 const { Text, Title } = Typography;
 
 /* =========================================================
+   COLORS
+========================================================= */
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  navyLight: "#EEF3F7",
+
+  gold: "#D9A441",
+  goldLight: "#FBF5E7",
+
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+
+  border: "#E2E8F0",
+
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
+
+  gray: "#64748B",
+  grayBg: "#F1F5F9",
+
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+};
+
+/* =========================================================
    ATTENDANCE TYPE
 ========================================================= */
 
@@ -366,7 +400,9 @@ const AttendancePage = () => {
   const loadAttendance = useCallback(async () => {
     if (!selectedClassId || !attendanceType) {
       setStudents([]);
+
       setStatistics(DEFAULT_STATISTICS);
+
       setPagination(DEFAULT_PAGINATION);
 
       return;
@@ -424,24 +460,16 @@ const AttendancePage = () => {
   ]);
 
   /* =======================================================
-     EFFECT - CLASSES
+     EFFECT
   ======================================================= */
 
   useEffect(() => {
     loadClasses();
   }, [loadClasses]);
 
-  /* =======================================================
-     EFFECT - ATTENDANCE
-  ======================================================= */
-
   useEffect(() => {
     loadAttendance();
   }, [loadAttendance]);
-
-  /* =======================================================
-     SEARCH DEBOUNCE
-  ======================================================= */
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -453,12 +481,9 @@ const AttendancePage = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  /* =======================================================
-     RESET PAGE
-  ======================================================= */
-
   useEffect(() => {
     setPage(1);
+
     setIsQrOpen(false);
   }, [selectedClassId, dateString, attendanceType, statusFilter]);
 
@@ -562,7 +587,7 @@ const AttendancePage = () => {
   );
 
   /* =======================================================
-     QR SUCCESS
+     QR
   ======================================================= */
 
   const handleQRSuccess = useCallback(
@@ -573,10 +598,6 @@ const AttendancePage = () => {
     },
     [loadAttendance],
   );
-
-  /* =======================================================
-     FINISH QR
-  ======================================================= */
 
   const handleFinishQRAttendance = useCallback(async () => {
     if (!selectedClassId) {
@@ -625,23 +646,19 @@ const AttendancePage = () => {
     loadAttendance,
   ]);
 
-  /* =======================================================
-     TOGGLE QR
-  ======================================================= */
-
   const handleToggleQR = useCallback(() => {
     if (!selectedClassId) {
       message.warning("Vui lòng chọn lớp trước.");
-
       return;
     }
+
     if (!attendanceType) {
       message.warning("Vui lòng chọn loại điểm danh trước.");
       return;
     }
+
     if (isLocked) {
       message.warning("Ngày này đã khóa điểm danh.");
-
       return;
     }
 
@@ -755,7 +772,7 @@ const AttendancePage = () => {
       {
         title: "TRẠNG THÁI",
         key: "status",
-        width: 170,
+        width: 165,
         align: "center",
 
         render: (_, record) => {
@@ -777,7 +794,7 @@ const AttendancePage = () => {
       {
         title: "GIỜ VÀO",
         key: "check_in_time",
-        width: 120,
+        width: 110,
         align: "center",
 
         render: (_, record) => {
@@ -788,10 +805,6 @@ const AttendancePage = () => {
           return <Text strong>{String(record.check_in_time).slice(0, 5)}</Text>;
         },
       },
-
-      /* =====================================================
-         MANUAL ATTENDANCE
-      ===================================================== */
 
       {
         title: "ĐIỂM DANH",
@@ -806,60 +819,50 @@ const AttendancePage = () => {
 
           return (
             <div className="manual-attendance-actions">
-              {/* CÓ MẶT */}
-              <Tooltip title="Đánh dấu Có mặt">
+              <Tooltip title="Có mặt">
                 <Button
                   className="manual-action-btn manual-present"
                   shape="circle"
-                  size="middle"
                   icon={<CheckOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "present")}
                 />
               </Tooltip>
 
-              {/* ĐI MUỘN */}
-              <Tooltip title="Đánh dấu Đi muộn">
+              <Tooltip title="Đi muộn">
                 <Button
                   className="manual-action-btn manual-late"
                   shape="circle"
-                  size="middle"
                   icon={<ClockCircleOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "late")}
                 />
               </Tooltip>
 
-              {/* VẮNG */}
-              <Tooltip title="Đánh dấu Vắng">
+              <Tooltip title="Vắng">
                 <Button
                   className="manual-action-btn manual-absent"
                   shape="circle"
-                  size="middle"
                   icon={<CloseOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "absent")}
                 />
               </Tooltip>
 
-              {/* CÓ PHÉP */}
-              <Tooltip title="Đánh dấu Có phép">
+              <Tooltip title="Có phép">
                 <Button
                   className="manual-action-btn manual-excused"
                   shape="circle"
-                  size="middle"
                   icon={<ExclamationCircleOutlined />}
                   disabled={disabled}
                   onClick={() => updateAttendance(record, "excused")}
                 />
               </Tooltip>
 
-              {/* LỊCH SỬ */}
-              <Tooltip title="Xem lịch sử điểm danh">
+              <Tooltip title="Xem lịch sử">
                 <Button
                   className="manual-action-btn manual-history"
                   shape="circle"
-                  size="middle"
                   icon={<HistoryOutlined />}
                   onClick={() => openHistory(record)}
                 />
@@ -939,26 +942,50 @@ const AttendancePage = () => {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#FF8FAB",
+          colorPrimary: COLORS.navy,
 
-          colorInfo: "#FF8FAB",
+          colorInfo: COLORS.navy,
 
-          borderRadius: 14,
+          colorSuccess: COLORS.success,
 
-          fontFamily: "'Quicksand', sans-serif",
+          colorWarning: COLORS.warning,
+
+          colorError: COLORS.danger,
+
+          colorText: COLORS.text,
+
+          colorTextSecondary: COLORS.textSecondary,
+
+          colorBorder: COLORS.border,
+
+          colorBgContainer: COLORS.white,
+
+          borderRadius: 12,
+
+          fontFamily: "'Be Vietnam Pro', 'Inter', Arial, sans-serif",
         },
 
         components: {
           Table: {
-            headerBg: "#FFF4F7",
+            headerBg: COLORS.navyLight,
 
-            headerColor: "#7A4050",
+            headerColor: COLORS.navy,
 
-            rowHoverBg: "#FFF9FB",
+            rowHoverBg: "#F8FAFC",
+
+            borderColor: COLORS.border,
           },
 
           Select: {
-            optionSelectedBg: "#FFF0F4",
+            optionSelectedBg: COLORS.navyLight,
+          },
+
+          Button: {
+            primaryShadow: "0 6px 16px rgba(23, 59, 94, 0.18)",
+          },
+
+          Card: {
+            colorBorderSecondary: COLORS.border,
           },
         },
       }}
@@ -982,11 +1009,25 @@ const AttendancePage = () => {
         ================================================= */}
 
         <Card bordered={false} className="attendance-filter-card">
+          <div className="filter-header">
+            <div>
+              <Title level={5} className="filter-title">
+                Bộ lọc điểm danh
+              </Title>
+
+              <Text type="secondary">Chọn lớp, ngày và loại điểm danh</Text>
+            </div>
+
+            <div className="filter-header-icon">
+              <SearchOutlined />
+            </div>
+          </div>
+
           <div className="attendance-filter">
-            {/* LOẠI */}
             <div className="filter-item type-filter">
               <Text className="filter-label">
-                Loại điểm danh <span style={{ color: "#ff4d4f" }}>*</span>
+                Loại điểm danh
+                <span className="required">*</span>
               </Text>
 
               <Select
@@ -996,24 +1037,35 @@ const AttendancePage = () => {
                 allowClear
                 onChange={(value) => {
                   setAttendanceType(value || null);
+
                   setPage(1);
+
                   setIsQrOpen(false);
                 }}
                 options={[
                   {
                     value: "catechism",
+
                     label: (
                       <div className="type-option">
-                        <BookOutlined />
+                        <span className="type-option-icon catechism">
+                          <BookOutlined />
+                        </span>
+
                         <span>Học Giáo lý</span>
                       </div>
                     ),
                   },
+
                   {
                     value: "mass",
+
                     label: (
                       <div className="type-option">
-                        <HeartOutlined />
+                        <span className="type-option-icon mass">
+                          <HeartOutlined />
+                        </span>
+
                         <span>Tham dự Thánh lễ</span>
                       </div>
                     ),
@@ -1022,7 +1074,6 @@ const AttendancePage = () => {
               />
             </div>
 
-            {/* LỚP */}
             <div className="filter-item class-filter">
               <Text className="filter-label">Lớp học</Text>
 
@@ -1044,8 +1095,7 @@ const AttendancePage = () => {
               />
             </div>
 
-            {/* NGÀY */}
-            <div className="filter-item">
+            <div className="filter-item date-filter">
               <Text className="filter-label">Ngày điểm danh</Text>
 
               <DatePicker
@@ -1066,7 +1116,6 @@ const AttendancePage = () => {
               />
             </div>
 
-            {/* SEARCH */}
             <div className="filter-item search-filter">
               <Text className="filter-label">Tìm học sinh</Text>
 
@@ -1080,8 +1129,7 @@ const AttendancePage = () => {
               />
             </div>
 
-            {/* STATUS */}
-            <div className="filter-item">
+            <div className="filter-item status-filter">
               <Text className="filter-label">Trạng thái</Text>
 
               <Select
@@ -1097,22 +1145,27 @@ const AttendancePage = () => {
                     value: "all",
                     label: "Tất cả",
                   },
+
                   {
                     value: "present",
                     label: "Có mặt",
                   },
+
                   {
                     value: "absent",
                     label: "Vắng",
                   },
+
                   {
                     value: "late",
                     label: "Đi muộn",
                   },
+
                   {
                     value: "excused",
                     label: "Có phép",
                   },
+
                   {
                     value: "not_attended",
                     label: "Chưa điểm danh",
@@ -1129,27 +1182,38 @@ const AttendancePage = () => {
 
         {attendanceType ? (
           <div className={`attendance-type-banner ${attendanceType}`}>
-            <div className="type-banner-icon">{currentTypeConfig.icon}</div>
+            <div className="type-banner-left">
+              <div className="type-banner-icon">{currentTypeConfig.icon}</div>
 
-            <div>
-              <Text strong>Đang điểm danh: {currentTypeConfig.label}</Text>
+              <div className="type-banner-content">
+                <Text strong>Đang điểm danh {currentTypeConfig.label}</Text>
 
-              <div>
-                <Text type="secondary">{currentTypeConfig.description}</Text>
+                <span>{currentTypeConfig.description}</span>
               </div>
             </div>
 
-            <Tag color={attendanceType === "mass" ? "purple" : "blue"}>
-              {dateString}
-            </Tag>
+            <div className="type-banner-meta">
+              <span className="banner-class">
+                <TeamOutlined />
+                {selectedClass?.name || "Chưa chọn lớp"}
+              </span>
+
+              <span className="banner-date">
+                <CalendarOutlined />
+                {dayjs(dateString).format("DD/MM/YYYY")}
+              </span>
+            </div>
           </div>
         ) : (
           <Alert
-            style={{ marginTop: 16, borderRadius: 14 }}
+            style={{
+              marginTop: 16,
+              borderRadius: 14,
+            }}
             type="info"
             showIcon
             message="Chưa chọn loại điểm danh"
-            description="Vui lòng chọn điểm danh Học Giáo lý hoặc Tham dự Thánh lễ để bắt đầu."
+            description="Vui lòng chọn Học Giáo lý hoặc Tham dự Thánh lễ để bắt đầu."
           />
         )}
 
@@ -1174,12 +1238,12 @@ const AttendancePage = () => {
         <Row gutter={[16, 16]} className="attendance-stat-row">
           <Col xs={12} sm={8} lg={4}>
             <StatCard
-              title="Tổng học sinh"
+              title="Tổng "
               value={total}
               loading={loadingAttendance}
               icon={<TeamOutlined />}
-              iconColor="#FF6B8B"
-              description="Tổng số học sinh trong lớp"
+              iconColor={COLORS.navy}
+              description="Học sinh trong lớp"
             />
           </Col>
 
@@ -1189,7 +1253,7 @@ const AttendancePage = () => {
               value={present}
               loading={loadingAttendance}
               icon={<CheckCircleFilled />}
-              iconColor="#52B788"
+              iconColor={COLORS.success}
               description="Học sinh có mặt"
             />
           </Col>
@@ -1200,7 +1264,7 @@ const AttendancePage = () => {
               value={late}
               loading={loadingAttendance}
               icon={<ClockCircleOutlined />}
-              iconColor="#E6A23C"
+              iconColor={COLORS.gold}
               description="Học sinh đi muộn"
             />
           </Col>
@@ -1211,7 +1275,7 @@ const AttendancePage = () => {
               value={absent}
               loading={loadingAttendance}
               icon={<CloseCircleFilled />}
-              iconColor="#E56B7D"
+              iconColor={COLORS.danger}
               description="Học sinh vắng mặt"
             />
           </Col>
@@ -1222,7 +1286,7 @@ const AttendancePage = () => {
               value={excused}
               loading={loadingAttendance}
               icon={<ExclamationCircleOutlined />}
-              iconColor="#9274DF"
+              iconColor="#7C5AC2"
               description="Học sinh có phép"
             />
           </Col>
@@ -1233,8 +1297,8 @@ const AttendancePage = () => {
               value={attendanceRate}
               loading={loadingAttendance}
               icon={<CheckCircleFilled />}
-              iconColor="#1677FF"
-              description="Tỷ lệ tham dự hôm nay"
+              iconColor={COLORS.navy}
+              description="Tỷ lệ tham dự"
               suffix="%"
             />
           </Col>
@@ -1252,27 +1316,60 @@ const AttendancePage = () => {
           <Col xs={24} xl={16}>
             <Card bordered={false} className="student-list-card">
               <div className="student-list-header">
-                <div>
-                  <Title level={4} className="section-title">
-                    Danh sách học sinh
-                  </Title>
+                <div className="student-list-heading">
+                  <div className="section-heading-icon">
+                    <TeamOutlined />
+                  </div>
 
-                  <Text type="secondary">
-                    {selectedClass?.name || "Chưa chọn lớp"}
+                  <div>
+                    <Title level={4} className="section-title">
+                      Danh sách học sinh
+                    </Title>
 
-                    {" • "}
+                    <Text type="secondary">
+                      {selectedClass?.name || "Chưa chọn lớp"}
 
-                    {currentTypeConfig.shortLabel}
+                      {" • "}
 
-                    {" • "}
+                      {currentTypeConfig.shortLabel}
 
-                    {dateString}
-                  </Text>
+                      {" • "}
+
+                      {dayjs(dateString).format("DD/MM/YYYY")}
+                    </Text>
+                  </div>
                 </div>
 
-                <Tag className="total-student-tag">
-                  {pagination.total || 0} học sinh
-                </Tag>
+                <div className="total-student-tag">
+                  <strong>{pagination.total || 0}</strong>
+
+                  <span>học sinh</span>
+                </div>
+              </div>
+
+              <div className="table-toolbar">
+                <div className="table-toolbar-left">
+                  <span className="toolbar-dot" />
+
+                  <span>Nhấn vào nút trạng thái để điểm danh thủ công</span>
+                </div>
+
+                <div className="toolbar-legend">
+                  <span>
+                    <i className="legend-dot present" />
+                    Có mặt
+                  </span>
+
+                  <span>
+                    <i className="legend-dot late" />
+                    Đi muộn
+                  </span>
+
+                  <span>
+                    <i className="legend-dot absent" />
+                    Vắng
+                  </span>
+                </div>
               </div>
 
               <div className="attendance-table-wrap">
@@ -1283,10 +1380,15 @@ const AttendancePage = () => {
                   loading={loadingAttendance}
                   pagination={false}
                   locale={{
-                    emptyText: <Empty description="Không có học sinh" />,
+                    emptyText: (
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="Không có học sinh"
+                      />
+                    ),
                   }}
                   scroll={{
-                    x: 950,
+                    x: 900,
                   }}
                 />
               </div>
@@ -1316,12 +1418,11 @@ const AttendancePage = () => {
           </Col>
 
           {/* =================================================
-              MODERN QR PANEL
+              QR PANEL
           ================================================= */}
 
           <Col xs={24} xl={8}>
             <Card bordered={false} className="qr-panel-card">
-              {/* HEADER */}
               <div className="qr-modern-header">
                 <div className="qr-modern-title">
                   <div className="qr-modern-icon">
@@ -1332,7 +1433,7 @@ const AttendancePage = () => {
                     <span className="qr-modern-title-text">Điểm danh QR</span>
 
                     <span className="qr-modern-title-sub">
-                      {currentTypeConfig.label}
+                      Quét mã QR học viên
                     </span>
                   </div>
                 </div>
@@ -1348,7 +1449,6 @@ const AttendancePage = () => {
                 </div>
               </div>
 
-              {/* CLASS */}
               <div className="qr-class-card">
                 <div className="qr-class-left">
                   <div className="qr-class-icon">
@@ -1364,22 +1464,17 @@ const AttendancePage = () => {
                   </div>
                 </div>
 
-                <Tag
-                  color={attendanceType === "mass" ? "purple" : "blue"}
-                  className="qr-modern-type-tag"
-                >
+                <Tag className="qr-modern-type-tag">
                   {currentTypeConfig.shortLabel}
                 </Tag>
               </div>
 
-              {/* DATE */}
               <div className="qr-date-info">
                 <CalendarOutlined />
 
                 <span>{dayjs(dateString).format("dddd, DD/MM/YYYY")}</span>
               </div>
 
-              {/* SCANNER */}
               <div
                 className={`qr-scanner-box ${isQrOpen ? "scanner-active" : ""}`}
               >
@@ -1404,7 +1499,6 @@ const AttendancePage = () => {
                 )}
               </div>
 
-              {/* BUTTON */}
               <Button
                 block
                 size="large"
@@ -1419,7 +1513,6 @@ const AttendancePage = () => {
                 {isQrOpen ? "Kết thúc điểm danh" : "Bật camera điểm danh"}
               </Button>
 
-              {/* NOTE */}
               <div className="qr-attendance-note">
                 <div className="qr-note-icon">
                   <ExclamationCircleOutlined />
@@ -1435,7 +1528,6 @@ const AttendancePage = () => {
                 </div>
               </div>
 
-              {/* GUIDE */}
               <div className="qr-guide">
                 <div className="qr-guide-title">Trạng thái điểm danh</div>
 
@@ -1485,24 +1577,30 @@ const AttendancePage = () => {
           open={historyOpen}
           onCancel={() => setHistoryOpen(false)}
           footer={null}
-          width={700}
+          width={720}
           centered
           title={
             <div className="history-modal-title">
-              <HistoryOutlined />
+              <div className="history-modal-icon">
+                <HistoryOutlined />
+              </div>
 
-              <span>Lịch sử điểm danh</span>
+              <div>
+                <strong>Lịch sử điểm danh</strong>
+
+                <span>Theo dõi quá trình tham dự</span>
+              </div>
             </div>
           }
         >
           <div className="history-student">
             <Avatar
-              size={46}
+              size={52}
               icon={<UserOutlined />}
               src={historyStudent?.avatar || historyStudent?.avatar_url}
             />
 
-            <div>
+            <div className="history-student-info">
               <Text strong>
                 {historyStudent?.name ||
                   historyStudent?.student_name ||
@@ -1535,76 +1633,124 @@ const AttendancePage = () => {
       </div>
 
       {/* =====================================================
-          STYLE
+          CSS
       ===================================================== */}
 
       <style>{`
 
         /* =====================================================
-           PAGE
+           GLOBAL
         ===================================================== */
 
         .attendance-page {
           min-height: 100%;
-          padding-bottom: 40px;
-          background: #fff9fb;
+          padding: 0 0 40px;
+          background: ${COLORS.background};
+        }
+
+        .required {
+          color: ${COLORS.danger};
+          margin-left: 3px;
         }
 
 
         /* =====================================================
-           FILTER
+           FILTER CARD
         ===================================================== */
 
         .attendance-filter-card {
-          margin-top: 18px;
-          border: 1px solid #f5dfe7 !important;
+          margin-top: 20px;
+
+          border: 1px solid ${COLORS.border} !important;
+
           border-radius: 18px !important;
 
+          background: ${COLORS.white};
+
           box-shadow:
-            0 8px 25px
-            rgba(225, 93, 130, 0.06);
+            0 8px 24px
+            rgba(23, 59, 94, 0.05);
+        }
+
+        .filter-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          margin-bottom: 18px;
+
+          padding-bottom: 16px;
+
+          border-bottom:
+            1px solid ${COLORS.border};
+        }
+
+        .filter-title {
+          margin: 0 0 3px !important;
+
+          color: ${COLORS.navy} !important;
+
+          font-weight: 800 !important;
+        }
+
+        .filter-header-icon {
+          width: 40px;
+          height: 40px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 11px;
+
+          color: ${COLORS.navy};
+
+          background: ${COLORS.navyLight};
+
+          font-size: 17px;
         }
 
         .attendance-filter {
-          display: flex;
-          align-items: flex-end;
+          display: grid;
+
+          grid-template-columns:
+            1.15fr
+            1.15fr
+            0.95fr
+            1.5fr
+            0.9fr;
+
           gap: 14px;
-          flex-wrap: wrap;
+
+          align-items: end;
         }
 
         .filter-item {
           display: flex;
           flex-direction: column;
+
           gap: 7px;
-          min-width: 170px;
-        }
 
-        .type-filter {
-          min-width: 200px;
-        }
-
-        .class-filter {
-          min-width: 220px;
-        }
-
-        .search-filter {
-          flex: 1;
-          min-width: 220px;
+          min-width: 0;
         }
 
         .filter-label {
-          font-size: 12px;
-          font-weight: 700;
-          color: #8b5363;
+          font-size: 11px;
+
+          font-weight: 800;
+
+          color: ${COLORS.textSecondary};
+
           text-transform: uppercase;
-          letter-spacing: 0.4px;
+
+          letter-spacing: 0.35px;
         }
 
         .attendance-select,
-        .attendance-date,
-        .attendance-search,
+        .attendance-type-select,
         .attendance-status-filter,
-        .attendance-type-select {
+        .attendance-date,
+        .attendance-search {
           width: 100%;
         }
 
@@ -1614,14 +1760,81 @@ const AttendancePage = () => {
         .attendance-date,
         .attendance-search {
           min-height: 42px !important;
-          border-radius: 12px !important;
-          border-color: #f0d9e2 !important;
+
+          border-radius: 10px !important;
+
+          border-color:
+            ${COLORS.border} !important;
+
+          box-shadow: none !important;
+        }
+
+        .attendance-select:hover .ant-select-selector,
+        .attendance-type-select:hover .ant-select-selector,
+        .attendance-status-filter:hover .ant-select-selector,
+        .attendance-search:hover,
+        .attendance-date:hover {
+          border-color:
+            ${COLORS.navy} !important;
+        }
+
+        .attendance-select.ant-select-focused
+          .ant-select-selector,
+        .attendance-type-select.ant-select-focused
+          .ant-select-selector,
+        .attendance-status-filter.ant-select-focused
+          .ant-select-selector {
+          border-color:
+            ${COLORS.navy} !important;
+
+          box-shadow:
+            0 0 0 2px
+            rgba(23, 59, 94, 0.08) !important;
+        }
+
+        .attendance-search:focus,
+        .attendance-date:focus {
+          border-color:
+            ${COLORS.navy} !important;
+
+          box-shadow:
+            0 0 0 2px
+            rgba(23, 59, 94, 0.08) !important;
         }
 
         .type-option {
           display: flex;
+
           align-items: center;
+
           gap: 8px;
+        }
+
+        .type-option-icon {
+          width: 25px;
+          height: 25px;
+
+          display: inline-flex;
+
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 7px;
+
+          font-size: 12px;
+        }
+
+        .type-option-icon.catechism {
+          color: ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
+        }
+
+        .type-option-icon.mass {
+          color: #7045a5;
+
+          background: #f2ecfb;
         }
 
 
@@ -1631,72 +1844,144 @@ const AttendancePage = () => {
 
         .attendance-type-banner {
           display: flex;
+
           align-items: center;
-          gap: 14px;
+
+          justify-content: space-between;
+
+          gap: 20px;
 
           margin-top: 16px;
+
           padding: 15px 18px;
 
-          border-radius: 16px;
+          border-radius: 15px;
 
-          background: #fff;
+          border: 1px solid
+            ${COLORS.border};
 
-          border: 1px solid #f1dce4;
-        }
+          background:
+            ${COLORS.white};
 
-        .attendance-type-banner.mass {
-          border-color: #e5d5ff;
-          background: #fbf8ff;
+          box-shadow:
+            0 5px 16px
+            rgba(23, 59, 94, 0.035);
         }
 
         .attendance-type-banner.catechism {
-          border-color: #d7e9ff;
-          background: #f8fbff;
+          border-left:
+            4px solid ${COLORS.navy};
+        }
+
+        .attendance-type-banner.mass {
+          border-left:
+            4px solid ${COLORS.gold};
+        }
+
+        .type-banner-left {
+          display: flex;
+
+          align-items: center;
+
+          gap: 12px;
+
+          min-width: 0;
         }
 
         .type-banner-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
           width: 42px;
           height: 42px;
 
           flex-shrink: 0;
 
-          border-radius: 12px;
+          display: flex;
 
-          color: #fff;
-          background: #ff8fab;
+          align-items: center;
+          justify-content: center;
 
-          font-size: 20px;
+          border-radius: 11px;
+
+          font-size: 18px;
         }
 
-        .attendance-type-banner.mass .type-banner-icon {
-          background: #9254de;
+        .attendance-type-banner.catechism
+          .type-banner-icon {
+          color: ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
         }
 
-        .attendance-type-banner.catechism .type-banner-icon {
-          background: #1677ff;
+        .attendance-type-banner.mass
+          .type-banner-icon {
+          color: ${COLORS.warning};
+
+          background:
+            ${COLORS.goldLight};
         }
 
-        .attendance-type-banner .ant-tag {
-          margin-left: auto;
+        .type-banner-content {
+          display: flex;
+
+          flex-direction: column;
+
+          gap: 3px;
+        }
+
+        .type-banner-content strong {
+          color: ${COLORS.navy};
+
+          font-size: 14px;
+        }
+
+        .type-banner-content span {
+          color: ${COLORS.textSecondary};
+
+          font-size: 11px;
+        }
+
+        .type-banner-meta {
+          display: flex;
+
+          align-items: center;
+
+          gap: 18px;
+
+          color: ${COLORS.textSecondary};
+
+          font-size: 12px;
+
+          white-space: nowrap;
+        }
+
+        .banner-class,
+        .banner-date {
+          display: inline-flex;
+
+          align-items: center;
+
+          gap: 6px;
+        }
+
+        .banner-class .anticon,
+        .banner-date .anticon {
+          color: ${COLORS.gold};
         }
 
 
         /* =====================================================
-           LOCK
+           ALERT
         ===================================================== */
 
         .attendance-lock-alert {
           margin-top: 16px;
-          border-radius: 14px;
+
+          border-radius: 13px;
         }
 
 
         /* =====================================================
-           STATISTICS
+           STAT
         ===================================================== */
 
         .attendance-stat-row {
@@ -1705,7 +1990,7 @@ const AttendancePage = () => {
 
 
         /* =====================================================
-           MAIN
+           MAIN CARDS
         ===================================================== */
 
         .attendance-main-row {
@@ -1716,229 +2001,198 @@ const AttendancePage = () => {
         .qr-panel-card {
           height: 100%;
 
-          border-radius: 20px !important;
+          border-radius: 18px !important;
 
-          border: 1px solid #f4dfe6 !important;
+          border:
+            1px solid
+            ${COLORS.border} !important;
+
+          background:
+            ${COLORS.white} !important;
 
           box-shadow:
-            0 8px 25px
-            rgba(225, 93, 130, 0.05);
+            0 8px 26px
+            rgba(23, 59, 94, 0.05) !important;
         }
+
+
+        /* =====================================================
+           STUDENT HEADER
+        ===================================================== */
 
         .student-list-header {
           display: flex;
+
           align-items: center;
+
           justify-content: space-between;
+
+          gap: 15px;
 
           padding: 20px;
 
           border-bottom:
-            1px solid #f5e5ea;
+            1px solid
+            ${COLORS.border};
         }
 
-        .section-title {
-          margin-bottom: 4px !important;
-          color: #71384a !important;
-        }
-
-        .total-student-tag {
-          border-radius: 20px;
-          padding: 5px 12px;
-          border: none;
-
-          color: #b04464;
-          background: #fff0f4;
-        }
-
-
-        /* =====================================================
-           STUDENT
-        ===================================================== */
-
-        .student-cell {
+        .student-list-heading {
           display: flex;
+
           align-items: center;
+
           gap: 12px;
         }
 
-        .student-info {
+        .section-heading-icon {
+          width: 42px;
+          height: 42px;
+
           display: flex;
-          flex-direction: column;
-          gap: 3px;
-        }
 
-        .student-name {
-          color: #58313d;
-        }
-
-        .student-code {
-          font-size: 12px;
-        }
-
-
-        /* =====================================================
-           MANUAL ATTENDANCE
-        ===================================================== */
-
-        .manual-attendance-actions {
-          display: flex;
           align-items: center;
           justify-content: center;
 
-          gap: 8px;
+          border-radius: 11px;
+
+          color: ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
+
+          font-size: 18px;
+        }
+
+        .section-title {
+          margin:
+            0 0 3px !important;
+
+          color:
+            ${COLORS.navy} !important;
+
+          font-size: 17px !important;
+
+          font-weight: 800 !important;
+        }
+
+        .total-student-tag {
+          display: flex;
+
+          align-items: baseline;
+
+          gap: 4px;
+
+          padding: 7px 12px;
+
+          border-radius: 9px;
+
+          color: ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
 
           white-space: nowrap;
         }
 
-        .manual-action-btn {
-          width: 34px !important;
-          height: 34px !important;
-
-          min-width: 34px !important;
-
-          display: inline-flex !important;
-          align-items: center;
-          justify-content: center;
-
-          padding: 0 !important;
-
-          border-radius: 50% !important;
-
-          border: 1px solid #f0dfe5 !important;
-
-          background: #fff !important;
-
-          box-shadow:
-            0 3px 10px
-            rgba(100, 60, 75, 0.06);
-
-          transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            background 0.18s ease,
-            border-color 0.18s ease;
-        }
-
-        .manual-action-btn .anticon {
+        .total-student-tag strong {
           font-size: 15px;
         }
 
+        .total-student-tag span {
+          font-size: 10px;
 
-        /* CÓ MẶT */
-
-        .manual-present {
-          color: #38a169 !important;
-          border-color: #bce8cd !important;
-          background: #f2fff6 !important;
-        }
-
-        .manual-present:hover:not(:disabled) {
-          color: #fff !important;
-          border-color: #52b788 !important;
-          background: #52b788 !important;
-
-          transform: translateY(-2px);
-
-          box-shadow:
-            0 6px 14px
-            rgba(82, 183, 136, 0.25);
+          font-weight: 600;
         }
 
 
-        /* ĐI MUỘN */
+        /* =====================================================
+           TOOLBAR
+        ===================================================== */
 
-        .manual-late {
-          color: #d99432 !important;
-          border-color: #f5dfb6 !important;
-          background: #fffaf0 !important;
+        .table-toolbar {
+          display: flex;
+
+          align-items: center;
+
+          justify-content: space-between;
+
+          gap: 15px;
+
+          padding:
+            10px 20px;
+
+          background:
+            #FAFBFC;
+
+          border-bottom:
+            1px solid
+            ${COLORS.border};
         }
 
-        .manual-late:hover:not(:disabled) {
-          color: #fff !important;
-          border-color: #e6a23c !important;
-          background: #e6a23c !important;
+        .table-toolbar-left {
+          display: flex;
 
-          transform: translateY(-2px);
+          align-items: center;
 
-          box-shadow:
-            0 6px 14px
-            rgba(230, 162, 60, 0.25);
+          gap: 7px;
+
+          color:
+            ${COLORS.muted};
+
+          font-size: 10px;
         }
 
+        .toolbar-dot {
+          width: 6px;
+          height: 6px;
 
-        /* VẮNG */
+          border-radius: 50%;
 
-        .manual-absent {
-          color: #e56b7d !important;
-          border-color: #f4cbd3 !important;
-          background: #fff5f7 !important;
+          background:
+            ${COLORS.gold};
         }
 
-        .manual-absent:hover:not(:disabled) {
-          color: #fff !important;
-          border-color: #e56b7d !important;
-          background: #e56b7d !important;
+        .toolbar-legend {
+          display: flex;
 
-          transform: translateY(-2px);
+          align-items: center;
 
-          box-shadow:
-            0 6px 14px
-            rgba(229, 107, 125, 0.25);
+          gap: 12px;
+
+          font-size: 10px;
+
+          color:
+            ${COLORS.textSecondary};
         }
 
+        .toolbar-legend span {
+          display: flex;
 
-        /* CÓ PHÉP */
+          align-items: center;
 
-        .manual-excused {
-          color: #8b6bd6 !important;
-          border-color: #ddd2fa !important;
-          background: #f8f5ff !important;
+          gap: 4px;
         }
 
-        .manual-excused:hover:not(:disabled) {
-          color: #fff !important;
-          border-color: #9274df !important;
-          background: #9274df !important;
+        .legend-dot {
+          width: 6px;
+          height: 6px;
 
-          transform: translateY(-2px);
-
-          box-shadow:
-            0 6px 14px
-            rgba(146, 116, 223, 0.25);
+          border-radius: 50%;
         }
 
-
-        /* LỊCH SỬ */
-
-        .manual-history {
-          color: #7a6570 !important;
-          border-color: #eadde2 !important;
-          background: #faf7f8 !important;
+        .legend-dot.present {
+          background:
+            ${COLORS.success};
         }
 
-        .manual-history:hover:not(:disabled) {
-          color: #fff !important;
-          border-color: #8f7782 !important;
-          background: #8f7782 !important;
-
-          transform: translateY(-2px);
-
-          box-shadow:
-            0 6px 14px
-            rgba(100, 80, 90, 0.18);
+        .legend-dot.late {
+          background:
+            ${COLORS.gold};
         }
 
-        .manual-action-btn:active:not(:disabled) {
-          transform: scale(0.92);
-        }
-
-        .manual-action-btn:disabled {
-          opacity: 0.38 !important;
-          cursor: not-allowed !important;
-
-          transform: none !important;
-
-          box-shadow: none !important;
+        .legend-dot.absent {
+          background:
+            ${COLORS.danger};
         }
 
 
@@ -1950,144 +2204,453 @@ const AttendancePage = () => {
           overflow-x: auto;
         }
 
-        .attendance-pagination {
-          display: flex;
-          justify-content: flex-end;
+        .attendance-table-wrap
+          .ant-table {
+          font-size: 13px;
+        }
 
-          padding: 18px;
+        .attendance-table-wrap
+          .ant-table-thead
+          > tr
+          > th {
+          height: 46px;
 
-          border-top:
-            1px solid #f5e5ea;
+          padding:
+            10px 16px;
+
+          color:
+            ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight} !important;
+
+          border-bottom:
+            1px solid
+            ${COLORS.border};
+
+          font-size: 10px;
+
+          font-weight: 800;
+
+          letter-spacing:
+            0.3px;
+        }
+
+        .attendance-table-wrap
+          .ant-table-tbody
+          > tr
+          > td {
+          padding:
+            12px 16px;
+
+          border-bottom:
+            1px solid
+            #EEF2F5;
+        }
+
+        .attendance-table-wrap
+          .ant-table-tbody
+          > tr:hover
+          > td {
+          background:
+            #F8FAFC !important;
         }
 
 
         /* =====================================================
-           MODERN QR
+           STUDENT
+        ===================================================== */
+
+        .student-cell {
+          display: flex;
+
+          align-items: center;
+
+          gap: 11px;
+        }
+
+        .student-avatar {
+          flex-shrink: 0;
+
+          border:
+            2px solid
+            ${COLORS.navyLight};
+        }
+
+        .student-info {
+          display: flex;
+
+          flex-direction: column;
+
+          gap: 2px;
+
+          min-width: 0;
+        }
+
+        .student-name {
+          color:
+            ${COLORS.text};
+
+          font-size: 13px;
+        }
+
+        .student-code {
+          color:
+            ${COLORS.muted};
+
+          font-size: 10px;
+        }
+
+        .attendance-status-tag {
+          min-width: 105px;
+
+          padding:
+            4px 8px;
+
+          border-radius: 7px;
+
+          font-size: 10px;
+
+          font-weight: 700;
+        }
+
+
+        /* =====================================================
+           MANUAL ACTION
+        ===================================================== */
+
+        .manual-attendance-actions {
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          gap: 7px;
+
+          white-space: nowrap;
+        }
+
+        .manual-action-btn {
+          width: 32px !important;
+          height: 32px !important;
+
+          min-width: 32px !important;
+
+          display: inline-flex !important;
+
+          align-items: center;
+          justify-content: center;
+
+          padding: 0 !important;
+
+          border-radius: 9px !important;
+
+          border:
+            1px solid
+            ${COLORS.border} !important;
+
+          background:
+            ${COLORS.white} !important;
+
+          box-shadow: none !important;
+
+          transition:
+            all 0.18s ease;
+        }
+
+        .manual-action-btn:hover:not(:disabled) {
+          transform:
+            translateY(-2px);
+
+          box-shadow:
+            0 5px 12px
+            rgba(23, 59, 94, 0.12) !important;
+        }
+
+        .manual-present {
+          color:
+            ${COLORS.success} !important;
+
+          border-color:
+            #B9DEC9 !important;
+
+          background:
+            ${COLORS.successBg} !important;
+        }
+
+        .manual-present:hover:not(:disabled) {
+          color:
+            ${COLORS.white} !important;
+
+          background:
+            ${COLORS.success} !important;
+
+          border-color:
+            ${COLORS.success} !important;
+        }
+
+        .manual-late {
+          color:
+            ${COLORS.warning} !important;
+
+          border-color:
+            #E9D18D !important;
+
+          background:
+            ${COLORS.goldLight} !important;
+        }
+
+        .manual-late:hover:not(:disabled) {
+          color:
+            ${COLORS.white} !important;
+
+          background:
+            ${COLORS.gold} !important;
+
+          border-color:
+            ${COLORS.gold} !important;
+        }
+
+        .manual-absent {
+          color:
+            ${COLORS.danger} !important;
+
+          border-color:
+            #E9C4C0 !important;
+
+          background:
+            ${COLORS.dangerBg} !important;
+        }
+
+        .manual-absent:hover:not(:disabled) {
+          color:
+            ${COLORS.white} !important;
+
+          background:
+            ${COLORS.danger} !important;
+
+          border-color:
+            ${COLORS.danger} !important;
+        }
+
+        .manual-excused {
+          color:
+            #7052B4 !important;
+
+          border-color:
+            #D8CDEF !important;
+
+          background:
+            #F4F0FB !important;
+        }
+
+        .manual-excused:hover:not(:disabled) {
+          color:
+            ${COLORS.white} !important;
+
+          background:
+            #7052B4 !important;
+
+          border-color:
+            #7052B4 !important;
+        }
+
+        .manual-history {
+          color:
+            ${COLORS.navy} !important;
+
+          border-color:
+            #C9D7E3 !important;
+
+          background:
+            ${COLORS.navyLight} !important;
+        }
+
+        .manual-history:hover:not(:disabled) {
+          color:
+            ${COLORS.white} !important;
+
+          background:
+            ${COLORS.navy} !important;
+
+          border-color:
+            ${COLORS.navy} !important;
+        }
+
+        .manual-action-btn:disabled {
+          opacity: 0.35 !important;
+
+          cursor:
+            not-allowed !important;
+
+          transform:
+            none !important;
+        }
+
+
+        /* =====================================================
+           PAGINATION
+        ===================================================== */
+
+        .attendance-pagination {
+          display: flex;
+
+          justify-content: flex-end;
+
+          padding:
+            17px 20px;
+
+          border-top:
+            1px solid
+            ${COLORS.border};
+        }
+
+        .attendance-pagination
+          .ant-pagination-item-active {
+          border-color:
+            ${COLORS.navy};
+        }
+
+        .attendance-pagination
+          .ant-pagination-item-active
+          a {
+          color:
+            ${COLORS.navy};
+        }
+
+
+        /* =====================================================
+           QR PANEL
         ===================================================== */
 
         .qr-panel-card {
           overflow: hidden;
-
-          border-radius: 22px !important;
-
-          background: #fff !important;
-
-          box-shadow:
-            0 12px 35px
-            rgba(225, 93, 130, 0.08) !important;
         }
 
         .qr-modern-header {
           display: flex;
+
           align-items: center;
+
           justify-content: space-between;
 
           gap: 12px;
 
-          padding: 20px;
+          padding:
+            20px;
 
           border-bottom:
-            1px solid #f7e9ed;
+            1px solid
+            ${COLORS.border};
         }
 
         .qr-modern-title {
           display: flex;
+
           align-items: center;
 
-          gap: 12px;
-
-          min-width: 0;
+          gap: 11px;
         }
 
         .qr-modern-icon {
-          width: 46px;
-          height: 46px;
-
-          flex-shrink: 0;
+          width: 44px;
+          height: 44px;
 
           display: flex;
+
           align-items: center;
           justify-content: center;
 
-          border-radius: 14px;
+          border-radius: 11px;
 
-          color: #fff;
+          color:
+            ${COLORS.navy};
 
           background:
-            linear-gradient(
-              135deg,
-              #ff6b8b,
-              #ff9eb2
-            );
+            ${COLORS.navyLight};
 
-          font-size: 21px;
+          border:
+            1px solid
+            #D7E2EB;
 
-          box-shadow:
-            0 7px 18px
-            rgba(255, 107, 139, 0.22);
+          font-size: 20px;
         }
 
         .qr-modern-heading {
           display: flex;
+
           flex-direction: column;
 
-          gap: 3px;
-
-          min-width: 0;
+          gap: 2px;
         }
 
         .qr-modern-title-text {
-          color: #55313d;
+          color:
+            ${COLORS.navy};
 
           font-size: 16px;
+
           font-weight: 800;
         }
 
         .qr-modern-title-sub {
-          color: #a48791;
+          color:
+            ${COLORS.muted};
 
-          font-size: 12px;
+          font-size: 10px;
         }
 
 
-        /* STATUS */
+        /* =====================================================
+           QR STATUS
+        ===================================================== */
 
         .qr-live-status {
           display: flex;
+
           align-items: center;
 
           gap: 6px;
 
-          flex-shrink: 0;
-
-          padding: 6px 10px;
+          padding:
+            5px 9px;
 
           border-radius: 20px;
 
-          font-size: 11px;
+          font-size: 10px;
+
           font-weight: 700;
         }
 
         .qr-live-status.active {
-          color: #32945b;
-          background: #edfff4;
+          color:
+            ${COLORS.success};
+
+          background:
+            ${COLORS.successBg};
         }
 
         .qr-live-status.inactive {
-          color: #9b7d87;
-          background: #f8f4f6;
+          color:
+            ${COLORS.gray};
+
+          background:
+            ${COLORS.grayBg};
         }
 
         .qr-live-dot {
-          width: 7px;
-          height: 7px;
+          width: 6px;
+          height: 6px;
 
           border-radius: 50%;
 
-          background: currentColor;
+          background:
+            currentColor;
         }
 
-        .qr-live-status.active .qr-live-dot {
+        .qr-live-status.active
+          .qr-live-dot {
           animation:
             qrPulse 1.5s infinite;
         }
@@ -2097,10 +2660,10 @@ const AttendancePage = () => {
             box-shadow:
               0 0 0 0
               rgba(
-                82,
-                183,
-                136,
-                0.35
+                46,
+                125,
+                91,
+                0.3
               );
           }
 
@@ -2108,9 +2671,9 @@ const AttendancePage = () => {
             box-shadow:
               0 0 0 6px
               rgba(
-                82,
-                183,
-                136,
+                46,
+                125,
+                91,
                 0
               );
           }
@@ -2119,38 +2682,47 @@ const AttendancePage = () => {
             box-shadow:
               0 0 0 0
               rgba(
-                82,
-                183,
-                136,
+                46,
+                125,
+                91,
                 0
               );
           }
         }
 
 
-        /* CLASS */
+        /* =====================================================
+           QR CLASS
+        ===================================================== */
 
         .qr-class-card {
           display: flex;
+
           align-items: center;
+
           justify-content: space-between;
 
           gap: 10px;
 
-          margin: 16px;
+          margin:
+            16px;
 
-          padding: 13px;
+          padding:
+            12px;
 
-          border-radius: 15px;
+          border-radius: 12px;
 
-          background: #fff8fa;
+          background:
+            ${COLORS.navyLight};
 
           border:
-            1px solid #f5e1e7;
+            1px solid
+            #DDE7EF;
         }
 
         .qr-class-left {
           display: flex;
+
           align-items: center;
 
           gap: 10px;
@@ -2159,40 +2731,46 @@ const AttendancePage = () => {
         }
 
         .qr-class-icon {
-          width: 38px;
-          height: 38px;
+          width: 36px;
+          height: 36px;
 
           flex-shrink: 0;
 
           display: flex;
+
           align-items: center;
           justify-content: center;
 
-          border-radius: 11px;
+          border-radius: 9px;
 
-          color: #ff6b8b;
+          color:
+            ${COLORS.navy};
 
-          background: #ffeaf0;
+          background:
+            ${COLORS.white};
 
-          font-size: 16px;
+          font-size: 15px;
         }
 
         .qr-class-info {
           display: flex;
+
           flex-direction: column;
 
           min-width: 0;
+
+          gap: 2px;
         }
 
         .qr-class-label {
-          color: #a48a94;
+          color:
+            ${COLORS.muted};
 
-          font-size: 10px;
-          font-weight: 600;
+          font-size: 9px;
         }
 
         .qr-class-name {
-          max-width: 170px;
+          max-width: 180px;
 
           overflow: hidden;
 
@@ -2200,9 +2778,10 @@ const AttendancePage = () => {
 
           white-space: nowrap;
 
-          color: #55313d;
+          color:
+            ${COLORS.navy};
 
-          font-size: 14px;
+          font-size: 13px;
         }
 
         .qr-modern-type-tag {
@@ -2212,75 +2791,91 @@ const AttendancePage = () => {
 
           border: none !important;
 
-          border-radius: 8px !important;
+          border-radius: 7px !important;
 
-          font-size: 10px;
+          color:
+            ${COLORS.navy} !important;
+
+          background:
+            ${COLORS.white} !important;
+
+          font-size: 9px;
+
           font-weight: 700;
         }
 
 
-        /* DATE */
+        /* =====================================================
+           QR DATE
+        ===================================================== */
 
         .qr-date-info {
           display: flex;
+
           align-items: center;
+
           justify-content: center;
 
-          gap: 7px;
+          gap: 6px;
 
-          margin: 0 16px 13px;
+          margin:
+            0 16px 13px;
 
-          color: #987e88;
+          color:
+            ${COLORS.textSecondary};
 
-          font-size: 12px;
+          font-size: 11px;
         }
 
         .qr-date-info .anticon {
-          color: #ff8fab;
+          color:
+            ${COLORS.gold};
         }
 
 
-        /* SCANNER */
+        /* =====================================================
+           QR SCANNER
+        ===================================================== */
 
         .qr-scanner-box {
           position: relative;
 
           min-height: 260px;
 
-          margin: 0 16px 14px;
+          margin:
+            0 16px 14px;
 
           overflow: hidden;
 
-          border-radius: 18px;
+          border-radius: 15px;
 
           background:
-            linear-gradient(
-              145deg,
-              #fff7fa,
-              #fffafd
-            );
+            ${COLORS.background};
 
           border:
-            1px dashed #efcdd8;
+            1px dashed
+            #C9D6E0;
         }
 
         .qr-scanner-box.scanner-active {
-          border-style: solid;
-
-          border-color: #ff9eb2;
+          border:
+            1px solid
+            ${COLORS.navy};
 
           box-shadow:
             inset 0 0 0 1px
             rgba(
-              255,
-              107,
-              139,
-              0.08
+              23,
+              59,
+              94,
+              0.06
             );
         }
 
 
-        /* PLACEHOLDER */
+        /* =====================================================
+           QR PLACEHOLDER
+        ===================================================== */
 
         .qr-scanner-placeholder {
           position: absolute;
@@ -2300,142 +2895,43 @@ const AttendancePage = () => {
         }
 
         .qr-placeholder-icon {
-          width: 64px;
-          height: 64px;
+          width: 60px;
+          height: 60px;
 
           display: flex;
+
           align-items: center;
           justify-content: center;
 
           margin-bottom: 4px;
 
-          border-radius: 20px;
+          border-radius: 16px;
 
-          color: #ff6b8b;
+          color:
+            ${COLORS.navy};
 
-          background: #ffeaf0;
+          background:
+            ${COLORS.navyLight};
 
-          font-size: 30px;
+          border:
+            1px solid
+            #D4E0E9;
 
-          box-shadow:
-            0 8px 20px
-            rgba(
-              255,
-              107,
-              139,
-              0.12
-            );
+          font-size: 28px;
         }
 
         .qr-scanner-placeholder strong {
-          color: #55313d;
+          color:
+            ${COLORS.navy};
 
-          font-size: 14px;
+          font-size: 13px;
         }
 
         .qr-scanner-placeholder span {
-          max-width: 220px;
+          max-width: 230px;
 
-          color: #a58b95;
-
-          font-size: 11px;
-
-          line-height: 1.5;
-        }
-
-
-        /* BUTTON */
-
-        .qr-main-button {
-          height: 46px !important;
-
-          margin: 0 16px;
-
-          width:
-            calc(100% - 32px) !important;
-
-          border-radius: 13px !important;
-
-          font-weight: 700;
-
-          box-shadow:
-            0 7px 18px
-            rgba(
-              255,
-              107,
-              139,
-              0.18
-            );
-        }
-
-        .qr-main-button.ant-btn-primary {
-          border: none;
-
-          background:
-            linear-gradient(
-              135deg,
-              #ff6b8b,
-              #ff8fab
-            );
-        }
-
-        .qr-main-button.ant-btn-primary:hover {
-          background:
-            linear-gradient(
-              135deg,
-              #ff5d80,
-              #ff7f9f
-            ) !important;
-        }
-
-        .qr-stop-button {
-          box-shadow: none !important;
-        }
-
-
-        /* NOTE */
-
-        .qr-attendance-note {
-          display: flex;
-          align-items: flex-start;
-
-          gap: 9px;
-
-          margin: 14px 16px;
-
-          padding: 11px 12px;
-
-          border-radius: 12px;
-
-          background: #fffbf2;
-
-          border:
-            1px solid #f6e6bf;
-        }
-
-        .qr-note-icon {
-          flex-shrink: 0;
-
-          color: #d99a37;
-
-          font-size: 15px;
-        }
-
-        .qr-note-content {
-          display: flex;
-          flex-direction: column;
-
-          gap: 2px;
-        }
-
-        .qr-note-content strong {
-          color: #80602d;
-
-          font-size: 11px;
-        }
-
-        .qr-note-content span {
-          color: #9b8662;
+          color:
+            ${COLORS.muted};
 
           font-size: 10px;
 
@@ -2443,22 +2939,136 @@ const AttendancePage = () => {
         }
 
 
-        /* GUIDE */
+        /* =====================================================
+           QR BUTTON
+        ===================================================== */
+
+        .qr-main-button {
+          height: 44px !important;
+
+          width:
+            calc(100% - 32px) !important;
+
+          margin:
+            0 16px;
+
+          border-radius: 10px !important;
+
+          font-weight: 700;
+
+          box-shadow:
+            0 6px 15px
+            rgba(
+              23,
+              59,
+              94,
+              0.14
+            );
+        }
+
+        .qr-main-button.ant-btn-primary {
+          border-color:
+            ${COLORS.navy} !important;
+
+          background:
+            ${COLORS.navy} !important;
+        }
+
+        .qr-main-button.ant-btn-primary:hover {
+          border-color:
+            ${COLORS.navyHover} !important;
+
+          background:
+            ${COLORS.navyHover} !important;
+        }
+
+        .qr-stop-button {
+          box-shadow: none !important;
+        }
+
+
+        /* =====================================================
+           QR NOTE
+        ===================================================== */
+
+        .qr-attendance-note {
+          display: flex;
+
+          align-items: flex-start;
+
+          gap: 9px;
+
+          margin:
+            14px 16px;
+
+          padding:
+            11px 12px;
+
+          border-radius: 10px;
+
+          background:
+            ${COLORS.goldLight};
+
+          border:
+            1px solid
+            #EBDCA8;
+        }
+
+        .qr-note-icon {
+          flex-shrink: 0;
+
+          color:
+            ${COLORS.warning};
+
+          font-size: 14px;
+        }
+
+        .qr-note-content {
+          display: flex;
+
+          flex-direction: column;
+
+          gap: 2px;
+        }
+
+        .qr-note-content strong {
+          color:
+            #805F1C;
+
+          font-size: 10px;
+        }
+
+        .qr-note-content span {
+          color:
+            #92773D;
+
+          font-size: 9px;
+
+          line-height: 1.5;
+        }
+
+
+        /* =====================================================
+           QR GUIDE
+        ===================================================== */
 
         .qr-guide {
           padding:
             15px 16px 17px;
 
           border-top:
-            1px solid #f7e9ed;
+            1px solid
+            ${COLORS.border};
         }
 
         .qr-guide-title {
           margin-bottom: 9px;
 
-          color: #775563;
+          color:
+            ${COLORS.navy};
 
-          font-size: 11px;
+          font-size: 10px;
+
           font-weight: 800;
         }
 
@@ -2473,6 +3083,7 @@ const AttendancePage = () => {
 
         .qr-guide-item {
           display: flex;
+
           align-items: center;
           justify-content: center;
 
@@ -2480,15 +3091,19 @@ const AttendancePage = () => {
 
           gap: 5px;
 
-          padding: 8px 3px;
+          padding:
+            8px 3px;
 
-          border-radius: 10px;
+          border-radius: 8px;
 
-          background: #fff9fb;
+          background:
+            ${COLORS.background};
 
-          color: #8e7580;
+          color:
+            ${COLORS.textSecondary};
 
           font-size: 9px;
+
           font-weight: 600;
         }
 
@@ -2497,141 +3112,234 @@ const AttendancePage = () => {
           height: 25px;
 
           display: flex;
+
           align-items: center;
           justify-content: center;
 
-          border-radius: 8px;
+          border-radius: 7px;
 
           font-size: 11px;
         }
 
         .qr-guide-icon.present {
-          color: #3da568;
-          background: #eafff1;
+          color:
+            ${COLORS.success};
+
+          background:
+            ${COLORS.successBg};
         }
 
         .qr-guide-icon.late {
-          color: #d89732;
-          background: #fff5df;
+          color:
+            ${COLORS.warning};
+
+          background:
+            ${COLORS.warningBg};
         }
 
         .qr-guide-icon.absent {
-          color: #df697c;
-          background: #fff0f3;
+          color:
+            ${COLORS.danger};
+
+          background:
+            ${COLORS.dangerBg};
         }
 
         .qr-guide-icon.excused {
-          color: #8d6bd4;
-          background: #f3efff;
+          color:
+            #7052B4;
+
+          background:
+            #F1EEFA;
         }
 
 
         /* =====================================================
-           HISTORY
+           HISTORY MODAL
         ===================================================== */
 
         .history-modal-title {
           display: flex;
+
           align-items: center;
 
-          gap: 8px;
+          gap: 10px;
+        }
 
-          color: #71384a;
+        .history-modal-icon {
+          width: 38px;
+          height: 38px;
+
+          display: flex;
+
+          align-items: center;
+          justify-content: center;
+
+          border-radius: 10px;
+
+          color:
+            ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
+        }
+
+        .history-modal-title > div:last-child {
+          display: flex;
+
+          flex-direction: column;
+
+          gap: 2px;
+        }
+
+        .history-modal-title strong {
+          color:
+            ${COLORS.navy};
+
+          font-size: 15px;
+        }
+
+        .history-modal-title span {
+          color:
+            ${COLORS.muted};
+
+          font-size: 10px;
+
+          font-weight: 400;
         }
 
         .history-student {
           display: flex;
+
           align-items: center;
 
           gap: 12px;
 
           margin-bottom: 18px;
 
-          padding: 12px;
+          padding: 13px;
 
-          border-radius: 13px;
+          border-radius: 12px;
 
-          background: #fff8fa;
+          background:
+            ${COLORS.navyLight};
 
           border:
-            1px solid #f5dfe7;
+            1px solid
+            #DCE6EE;
         }
 
-        .history-student > div {
+        .history-student-info {
           display: flex;
+
           flex-direction: column;
 
-          gap: 2px;
+          gap: 3px;
+        }
+
+        .history-student-info .ant-typography:first-child {
+          color:
+            ${COLORS.navy};
         }
 
 
         /* =====================================================
-           MOBILE
+           RESPONSIVE
         ===================================================== */
+
+        @media (max-width: 1200px) {
+
+          .attendance-filter {
+            grid-template-columns:
+              repeat(3, 1fr);
+          }
+
+          .search-filter {
+            grid-column:
+              span 2;
+          }
+
+        }
 
         @media (max-width: 767px) {
 
           .attendance-filter {
-            display: grid;
-
             grid-template-columns:
               1fr;
           }
 
-          .filter-item,
-          .type-filter,
-          .class-filter,
           .search-filter {
-            width: 100%;
-            min-width: 0;
+            grid-column:
+              auto;
           }
 
           .attendance-type-banner {
-            align-items: flex-start;
+            align-items:
+              flex-start;
+
+            flex-direction:
+              column;
           }
 
-          .attendance-type-banner .ant-tag {
-            display: none;
+          .type-banner-meta {
+            width: 100%;
+
+            padding-top: 10px;
+
+            border-top:
+              1px solid
+              ${COLORS.border};
           }
 
           .student-list-header {
-            padding: 16px;
+            padding: 15px;
+          }
+
+          .student-list-heading {
+            align-items:
+              flex-start;
+          }
+
+          .table-toolbar {
+            align-items:
+              flex-start;
+
+            flex-direction:
+              column;
+          }
+
+          .toolbar-legend {
+            flex-wrap: wrap;
           }
 
           .attendance-pagination {
-            justify-content: center;
+            justify-content:
+              center;
 
-            overflow-x: auto;
+            overflow-x:
+              auto;
           }
 
           .manual-attendance-actions {
-            min-width: 205px;
+            min-width:
+              205px;
 
-            gap: 6px;
+            gap: 5px;
           }
 
           .manual-action-btn {
-            width: 32px !important;
-            height: 32px !important;
+            width:
+              30px !important;
 
-            min-width: 32px !important;
-          }
+            height:
+              30px !important;
 
-          .manual-action-btn .anticon {
-            font-size: 14px;
+            min-width:
+              30px !important;
           }
 
           .qr-modern-header {
             padding: 16px;
-          }
-
-          .qr-modern-icon {
-            width: 42px;
-            height: 42px;
-          }
-
-          .qr-live-status {
-            font-size: 10px;
           }
 
           .qr-class-card {
@@ -2639,13 +3347,15 @@ const AttendancePage = () => {
           }
 
           .qr-scanner-box {
-            min-height: 240px;
+            min-height:
+              230px;
           }
 
           .qr-guide-list {
             grid-template-columns:
               repeat(2, 1fr);
           }
+
         }
 
       `}</style>

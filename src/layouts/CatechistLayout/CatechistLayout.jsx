@@ -10,11 +10,9 @@ const { Content, Footer } = Layout;
 const { Text } = Typography;
 
 export default function CatechistLayout() {
-  /**
-   * =========================================================
-   * SIDEBAR STATE
-   * =========================================================
-   */
+  /* =========================================================
+     SIDEBAR STATE
+  ========================================================= */
 
   // Desktop sidebar
   const [collapsed, setCollapsed] = useState(false);
@@ -26,39 +24,82 @@ export default function CatechistLayout() {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#FF6B8B",
-          colorInfo: "#FF6B8B",
+          /* =====================================================
+             FAITHEDU BRAND
+          ===================================================== */
 
-          borderRadius: 16,
+          colorPrimary: "#173B5E",
+          colorInfo: "#173B5E",
+
+          /* =====================================================
+             GLOBAL
+          ===================================================== */
+
+          borderRadius: 12,
 
           fontFamily:
             "'Quicksand', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+
+          colorText: "#172B3A",
+          colorTextSecondary: "#526273",
+
+          colorBgBase: "#F7F9FC",
+
+          colorBorder: "#E4EAF0",
         },
 
         components: {
+          /* =====================================================
+             LAYOUT
+          ===================================================== */
+
           Layout: {
-            bodyBg: "#FFF5F7",
+            bodyBg: "#F7F9FC",
             headerBg: "transparent",
             footerBg: "transparent",
-            siderBg: "#FFFFFF",
+            siderBg: "#173B5E",
           },
 
+          /* =====================================================
+             DRAWER
+          ===================================================== */
+
           Drawer: {
-            colorBgElevated: "#FFFFFF",
+            colorBgElevated: "#173B5E",
             borderRadiusLG: 0,
           },
 
+          /* =====================================================
+             BUTTON
+          ===================================================== */
+
           Button: {
-            borderRadius: 12,
+            borderRadius: 10,
           },
 
+          /* =====================================================
+             MENU
+          ===================================================== */
+
           Menu: {
-            itemBorderRadius: 14,
+            itemBorderRadius: 10,
+            itemSelectedColor: "#FFFFFF",
+            itemColor: "#D9E4ED",
+            itemHoverColor: "#FFFFFF",
+            itemSelectedBg: "#244F78",
+          },
+
+          /* =====================================================
+             CARD
+          ===================================================== */
+
+          Card: {
+            borderRadiusLG: 14,
           },
         },
       }}
     >
-      <Layout className="chibi-layout-root">
+      <Layout className="faith-layout-root">
         {/* =====================================================
             SIDEBAR
         ===================================================== */}
@@ -74,12 +115,12 @@ export default function CatechistLayout() {
             MAIN LAYOUT
         ===================================================== */}
 
-        <Layout className="chibi-layout-main">
+        <Layout className="faith-layout-main">
           {/* ===================================================
               HEADER
           =================================================== */}
 
-          <div className="chibi-header-wrapper">
+          <div className="faith-header-container">
             <CatechistHeader
               mobileOpen={mobileOpen}
               setMobileOpen={setMobileOpen}
@@ -90,8 +131,8 @@ export default function CatechistLayout() {
               CONTENT
           =================================================== */}
 
-          <Content className="chibi-layout-content">
-            <main className="chibi-content-inner">
+          <Content className="faith-layout-content">
+            <main className="faith-content-inner">
               <Outlet />
             </main>
           </Content>
@@ -100,15 +141,17 @@ export default function CatechistLayout() {
               FOOTER
           =================================================== */}
 
-          <Footer className="chibi-layout-footer">
-            <div className="chibi-footer-pill">
-              <span className="chibi-footer-sparkle">
+          <Footer className="faith-layout-footer">
+            <div className="faith-footer-pill">
+              <span className="faith-footer-icon">
                 <SmileOutlined />
               </span>
 
-              <Text className="chibi-footer-text">FaithEdu - Giáo Lý Số</Text>
+              <Text className="faith-footer-text">FaithEdu · Giáo Lý Số</Text>
 
-              <span className="chibi-footer-heart">
+              <span className="faith-footer-cross">✝</span>
+
+              <span className="faith-footer-heart">
                 <HeartFilled />
               </span>
             </div>
@@ -120,9 +163,54 @@ export default function CatechistLayout() {
         ===================================================== */}
 
         <style>{`
+
+          /* =====================================================
+             GOOGLE FONT
+          ===================================================== */
+
           @import url(
             'https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap'
           );
+
+
+          /* =====================================================
+             DESIGN TOKENS
+          ===================================================== */
+
+          :root {
+
+            /* Brand */
+            --faith-navy: #173B5E;
+            --faith-navy-hover: #244F78;
+            --faith-navy-light: #EEF4F8;
+
+            --faith-gold: #D9A441;
+            --faith-gold-light: #FFF7E5;
+
+            /* Background */
+            --faith-background: #F7F9FC;
+            --faith-surface: #FFFFFF;
+
+            /* Text */
+            --faith-heading: #172B3A;
+            --faith-text: #526273;
+            --faith-muted: #8A97A6;
+
+            /* Border */
+            --faith-border: #E4EAF0;
+
+            /* Status */
+            --faith-success: #2E8B68;
+            --faith-warning: #D98A2B;
+            --faith-error: #D9534F;
+            --faith-info: #3B82B6;
+
+            /* Radius */
+            --faith-radius-sm: 8px;
+            --faith-radius-md: 12px;
+            --faith-radius-lg: 16px;
+          }
+
 
           /* =====================================================
              RESET
@@ -134,22 +222,27 @@ export default function CatechistLayout() {
             box-sizing: border-box;
           }
 
+
           html {
             width: 100%;
             min-height: 100%;
+
             margin: 0;
             padding: 0;
           }
 
+
           body {
             width: 100%;
             min-height: 100%;
+
             margin: 0;
             padding: 0;
 
             overflow-x: hidden;
 
-            background: #FFF5F7;
+            background:
+              var(--faith-background);
 
             font-family:
               'Quicksand',
@@ -159,15 +252,21 @@ export default function CatechistLayout() {
               'Segoe UI',
               sans-serif;
 
+            color:
+              var(--faith-heading);
+
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
           }
 
+
           #root {
             width: 100%;
+
             min-height: 100vh;
             min-height: 100dvh;
           }
+
 
           button,
           input,
@@ -176,27 +275,19 @@ export default function CatechistLayout() {
             font-family: inherit;
           }
 
+
           /* =====================================================
              ROOT LAYOUT
           ===================================================== */
 
-          .chibi-layout-root {
+          .faith-layout-root {
             width: 100%;
+
             min-height: 100vh;
             min-height: 100dvh;
 
             background:
-              radial-gradient(
-                circle at 8% 5%,
-                rgba(255, 107, 139, 0.035),
-                transparent 22%
-              ),
-              radial-gradient(
-                circle at 92% 8%,
-                rgba(168, 85, 247, 0.035),
-                transparent 24%
-              ),
-              #FFF5F7 !important;
+              var(--faith-background) !important;
 
             font-family:
               'Quicksand',
@@ -204,11 +295,12 @@ export default function CatechistLayout() {
               sans-serif;
           }
 
+
           /* =====================================================
              MAIN
           ===================================================== */
 
-          .chibi-layout-main {
+          .faith-layout-main {
             min-width: 0 !important;
 
             width: 100%;
@@ -217,23 +309,21 @@ export default function CatechistLayout() {
             min-height: 100dvh;
 
             display: flex;
+
             flex-direction: column;
 
             background:
-              radial-gradient(
-                circle at 85% 10%,
-                rgba(255, 107, 139, 0.045),
-                transparent 25%
-              ),
-              #FFF5F7 !important;
+              var(--faith-background) !important;
           }
 
+
           /* =====================================================
-             HEADER WRAPPER
+             HEADER CONTAINER
           ===================================================== */
 
-          .chibi-header-wrapper {
+          .faith-header-container {
             position: sticky;
+
             top: 0;
 
             z-index: 1000;
@@ -241,138 +331,305 @@ export default function CatechistLayout() {
             width: 100%;
 
             flex-shrink: 0;
+
+            background:
+              rgba(247, 249, 252, 0.94);
+
+            backdrop-filter:
+              blur(12px);
+
+            -webkit-backdrop-filter:
+              blur(12px);
           }
+
 
           /* =====================================================
              CONTENT
           ===================================================== */
 
-          .chibi-layout-content {
+          .faith-layout-content {
             flex: 1 1 auto;
 
             min-width: 0;
 
-            margin: 25px ;
-
-            padding: 0;
-
-            overflow-x: hidden;
-          }
-
-          .chibi-content-inner {
             width: 100%;
-            min-width: 0;
 
             margin: 0;
-            padding: 0;
+
+            padding:
+              22px 24px 10px;
+
+            overflow-x: hidden;
+
+            background:
+              var(--faith-background) !important;
           }
+
+
+          .faith-content-inner {
+            width: 100%;
+
+            min-width: 0;
+
+            margin: 0 auto;
+
+            padding: 0;
+
+            max-width: 1600px;
+          }
+
 
           /* =====================================================
              FOOTER
           ===================================================== */
 
-          .chibi-layout-footer {
+          .faith-layout-footer {
             width: 100%;
 
             flex-shrink: 0;
 
             display: flex;
+
             justify-content: center;
             align-items: center;
 
-            padding: 10px 20px 18px !important;
+            padding:
+              10px 20px 18px !important;
 
-            background: transparent !important;
+            background:
+              transparent !important;
           }
 
-          .chibi-footer-pill {
+
+          /* =====================================================
+             FOOTER PILL
+          ===================================================== */
+
+          .faith-footer-pill {
             display: inline-flex;
 
             align-items: center;
             justify-content: center;
 
-            gap: 8px;
+            gap: 7px;
 
-            min-height: 34px;
+            min-height: 32px;
 
-            padding: 6px 16px;
+            padding:
+              5px 14px;
 
             background:
-              rgba(255, 255, 255, 0.88);
+              rgba(
+                255,
+                255,
+                255,
+                0.9
+              );
 
-            border: 1px solid #FFE4E6;
+            border:
+              1px solid
+              var(--faith-border);
 
             border-radius: 999px;
 
             box-shadow:
-              0 4px 14px rgba(255, 182, 193, 0.12);
-
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+              0 3px 12px
+              rgba(
+                23,
+                59,
+                94,
+                0.05
+              );
 
             transition:
-              transform 0.2s ease,
-              box-shadow 0.2s ease,
-              background 0.2s ease;
+              all 0.2s ease;
           }
 
-          .chibi-footer-pill:hover {
-            transform: translateY(-2px);
 
-            background: #FFFFFF;
+          .faith-footer-pill:hover {
+            background:
+              #FFFFFF;
+
+            border-color:
+              #CCD9E3;
+
+            transform:
+              translateY(-1px);
 
             box-shadow:
-              0 8px 22px rgba(255, 107, 139, 0.15);
+              0 6px 18px
+              rgba(
+                23,
+                59,
+                94,
+                0.08
+              );
           }
 
-          .chibi-footer-sparkle {
+
+          /* =====================================================
+             FOOTER ICON
+          ===================================================== */
+
+          .faith-footer-icon {
             display: inline-flex;
 
             align-items: center;
             justify-content: center;
 
-            color: #A855F7;
+            color:
+              var(--faith-navy);
 
-            font-size: 14px;
+            font-size: 13px;
 
             flex-shrink: 0;
           }
 
-          .chibi-footer-text {
-            color: #64748B !important;
 
-            font-size: 12px;
+          /* =====================================================
+             FOOTER TEXT
+          ===================================================== */
+
+          .faith-footer-text {
+            color:
+              var(--faith-muted) !important;
+
+            font-family:
+              'Quicksand',
+              sans-serif;
+
+            font-size: 11px;
+
             font-weight: 700;
 
             white-space: nowrap;
           }
 
-          .chibi-footer-heart {
+
+          /* =====================================================
+             CROSS
+          ===================================================== */
+
+          .faith-footer-cross {
             display: inline-flex;
 
             align-items: center;
             justify-content: center;
 
-            color: #FF6B8B;
+            color:
+              var(--faith-gold);
 
-            font-size: 13px;
+            font-size: 14px;
+
+            font-weight: 700;
+
+            line-height: 1;
+          }
+
+
+          /* =====================================================
+             HEART
+          ===================================================== */
+
+          .faith-footer-heart {
+            display: inline-flex;
+
+            align-items: center;
+            justify-content: center;
+
+            color:
+              var(--faith-navy);
+
+            font-size: 11px;
 
             flex-shrink: 0;
 
             animation:
-              chibiHeartBeat 1.8s infinite ease-in-out;
+              faithHeartBeat
+              2.4s
+              infinite
+              ease-in-out;
           }
 
-          @keyframes chibiHeartBeat {
+
+          @keyframes faithHeartBeat {
+
             0%,
             100% {
-              transform: scale(1);
+              transform:
+                scale(1);
             }
 
             50% {
-              transform: scale(1.25);
+              transform:
+                scale(1.12);
             }
+
           }
+
+
+          /* =====================================================
+             ANT DESIGN LAYOUT FIX
+          ===================================================== */
+
+          .faith-layout-root
+          .ant-layout {
+            min-width: 0;
+          }
+
+
+          .faith-layout-root
+          .ant-layout-content {
+            min-width: 0;
+          }
+
+
+          /* =====================================================
+             ANT MENU GLOBAL
+          ===================================================== */
+
+          .faith-layout-root
+          .ant-menu {
+            font-family:
+              'Quicksand',
+              sans-serif;
+          }
+
+
+          /* =====================================================
+             SCROLLBAR
+          ===================================================== */
+
+          .faith-layout-root
+          ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+          }
+
+
+          .faith-layout-root
+          ::-webkit-scrollbar-track {
+            background:
+              transparent;
+          }
+
+
+          .faith-layout-root
+          ::-webkit-scrollbar-thumb {
+            background:
+              #CBD5DF;
+
+            border-radius:
+              999px;
+          }
+
+
+          .faith-layout-root
+          ::-webkit-scrollbar-thumb:hover {
+            background:
+              #AEBBC7;
+          }
+
 
           /* =====================================================
              TABLET
@@ -380,19 +637,32 @@ export default function CatechistLayout() {
 
           @media (max-width: 1200px) {
 
-            .chibi-layout-content {
-              margin: 14px 16px 8px;
+            .faith-layout-content {
+              padding:
+                18px 18px 8px;
+            }
+
+            .faith-content-inner {
+              max-width:
+                100%;
             }
 
           }
+
+
+          /* =====================================================
+             TABLET SMALL
+          ===================================================== */
 
           @media (max-width: 1024px) {
 
-            .chibi-layout-content {
-              margin: 12px 14px 8px;
+            .faith-layout-content {
+              padding:
+                16px 14px 8px;
             }
 
           }
+
 
           /* =====================================================
              MOBILE
@@ -400,69 +670,109 @@ export default function CatechistLayout() {
 
           @media (max-width: 767px) {
 
-            .chibi-layout-root {
-              min-height: 100dvh;
+            .faith-layout-root {
+              min-height:
+                100dvh;
             }
 
-            .chibi-layout-main {
-              min-height: 100dvh;
 
+            .faith-layout-main {
               width: 100%;
+
+              min-height:
+                100dvh;
             }
+
+
+            /* -----------------------------
+               HEADER
+            ----------------------------- */
+
+            .faith-header-container {
+              position:
+                sticky;
+
+              top: 0;
+
+              z-index: 1000;
+            }
+
 
             /* -----------------------------
                CONTENT
             ----------------------------- */
 
-            .chibi-layout-content {
+            .faith-layout-content {
               width: 100%;
 
-              margin: 6px 0 4px;
+              margin: 0;
 
-              padding: 0 8px;
+              padding:
+                8px 8px 4px;
 
               min-height: 0;
 
               overflow-x: hidden;
             }
 
-            .chibi-content-inner {
+
+            .faith-content-inner {
               width: 100%;
 
               padding: 0;
             }
 
+
             /* -----------------------------
                FOOTER
             ----------------------------- */
 
-            .chibi-layout-footer {
-              padding: 7px 10px 14px !important;
+            .faith-layout-footer {
+              padding:
+                7px 10px 14px !important;
             }
 
-            .chibi-footer-pill {
-              min-height: 30px;
 
-              gap: 6px;
+            .faith-footer-pill {
+              min-height:
+                30px;
 
-              padding: 5px 12px;
+              gap:
+                6px;
 
-              max-width: calc(100vw - 24px);
+              padding:
+                5px 12px;
+
+              max-width:
+                calc(100vw - 24px);
             }
 
-            .chibi-footer-text {
-              font-size: 10.5px;
+
+            .faith-footer-text {
+              font-size:
+                10px;
             }
 
-            .chibi-footer-sparkle {
-              font-size: 12px;
+
+            .faith-footer-icon {
+              font-size:
+                12px;
             }
 
-            .chibi-footer-heart {
-              font-size: 11px;
+
+            .faith-footer-cross {
+              font-size:
+                12px;
+            }
+
+
+            .faith-footer-heart {
+              font-size:
+                10px;
             }
 
           }
+
 
           /* =====================================================
              SMALL MOBILE
@@ -470,42 +780,63 @@ export default function CatechistLayout() {
 
           @media (max-width: 480px) {
 
-            .chibi-layout-content {
-              margin-top: 4px;
-
-              padding-left: 6px;
-              padding-right: 6px;
+            .faith-layout-content {
+              padding:
+                6px 6px 3px;
             }
 
-            .chibi-layout-footer {
+
+            .faith-layout-footer {
               padding:
                 6px
                 8px
-                max(12px, env(safe-area-inset-bottom))
+                max(
+                  12px,
+                  env(
+                    safe-area-inset-bottom
+                  )
+                )
                 !important;
             }
 
-            .chibi-footer-pill {
-              min-height: 28px;
 
-              gap: 5px;
+            .faith-footer-pill {
+              min-height:
+                28px;
 
-              padding: 4px 10px;
+              gap:
+                5px;
+
+              padding:
+                4px 10px;
             }
 
-            .chibi-footer-text {
-              font-size: 10px;
+
+            .faith-footer-text {
+              font-size:
+                9.5px;
             }
 
-            .chibi-footer-sparkle {
-              font-size: 11px;
+
+            .faith-footer-icon {
+              font-size:
+                11px;
             }
 
-            .chibi-footer-heart {
-              font-size: 10px;
+
+            .faith-footer-cross {
+              font-size:
+                11px;
+            }
+
+
+            .faith-footer-heart {
+              font-size:
+                9px;
             }
 
           }
+
 
           /* =====================================================
              VERY SMALL MOBILE
@@ -513,83 +844,59 @@ export default function CatechistLayout() {
 
           @media (max-width: 360px) {
 
-            .chibi-layout-content {
-              padding-left: 5px;
-              padding-right: 5px;
+            .faith-layout-content {
+              padding-left:
+                5px;
+
+              padding-right:
+                5px;
             }
 
-            .chibi-footer-pill {
-              padding: 4px 9px;
+
+            .faith-footer-pill {
+              padding:
+                4px 9px;
             }
 
-            .chibi-footer-text {
-              font-size: 9.5px;
+
+            .faith-footer-text {
+              font-size:
+                9px;
             }
 
           }
+
 
           /* =====================================================
-             SAFE AREA
-          ===================================================== */
-
-          @supports (padding: max(0px)) {
-
-            .chibi-layout-footer {
-              padding-bottom:
-                max(
-                  18px,
-                  env(safe-area-inset-bottom)
-                ) !important;
-            }
-
-            @media (max-width: 767px) {
-
-              .chibi-layout-footer {
-                padding-bottom:
-                  max(
-                    14px,
-                    env(safe-area-inset-bottom)
-                  ) !important;
-              }
-
-            }
-
-          }
-
-          /* =====================================================
-             ANT DESIGN FIX
-          ===================================================== */
-
-          .chibi-layout-root .ant-layout {
-            min-width: 0;
-          }
-
-          .chibi-layout-root .ant-layout-content {
-            min-width: 0;
-          }
-
-          /* =====================================================
-             MOBILE DRAWER
+             DESKTOP MOBILE DRAWER
           ===================================================== */
 
           @media (max-width: 767px) {
 
             .mobile-sidebar-drawer {
-              z-index: 2000;
+              z-index:
+                2000;
             }
+
 
             .mobile-sidebar-drawer
             .ant-drawer-content {
-              border-radius: 0 22px 22px 0;
-              overflow: hidden;
+              border-radius:
+                0 18px 18px 0;
+
+              overflow:
+                hidden;
             }
+
 
             .mobile-sidebar-drawer
             .ant-drawer-body {
-              padding: 0 !important;
+              padding:
+                0 !important;
             }
 
           }
+
 
           /* =====================================================
              DESKTOP
@@ -598,25 +905,32 @@ export default function CatechistLayout() {
           @media (min-width: 768px) {
 
             .mobile-sidebar-drawer {
-              display: none;
+              display:
+                none;
             }
 
           }
+
 
           /* =====================================================
              REDUCE MOTION
           ===================================================== */
 
-          @media (prefers-reduced-motion: reduce) {
+          @media (
+            prefers-reduced-motion: reduce
+          ) {
 
-            .chibi-footer-pill,
-            .chibi-footer-heart {
-              animation: none !important;
+            .faith-footer-pill,
+            .faith-footer-heart {
+              animation:
+                none !important;
 
-              transition: none !important;
+              transition:
+                none !important;
             }
 
           }
+
         `}</style>
       </Layout>
     </ConfigProvider>

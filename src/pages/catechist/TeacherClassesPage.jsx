@@ -37,17 +37,17 @@ import ErrorPage from "./ErrorPage";
 const { Title, Text } = Typography;
 
 /* =========================================================
-   DESIGN SYSTEM COLORS (FaithEdu Soft Pastel)
+   DESIGN SYSTEM COLORS (Navy & Gold Professional Theme)
 ========================================================= */
 
 const COLORS = {
-  primary: "#F4729A",
-  primaryDark: "#E85D87",
-  primaryLight: "#FFF0F5",
-  primaryBorder: "#F8C8D8",
+  primary: "#173B5E", // Navy chủ đạo
+  primaryDark: "#0F2942", // Navy đậm
+  primaryLight: "#F0F4F8", // Nền phụ Navy nhạt
+  primaryBorder: "#D9E2EC", // Viền xám ánh Navy
 
-  lavender: "#B98AE8",
-  lavenderLight: "#F6EEFF",
+  gold: "#D9A441", // Vàng Gold điểm nhấn
+  goldLight: "#FDF8ED", // Nền Gold nhạt
 
   green: "#10B981",
   greenLight: "#ECFDF5",
@@ -58,8 +58,8 @@ const COLORS = {
   slate: "#64748B",
   slateLight: "#F8FAFC",
 
-  textMain: "#334155",
-  textMuted: "#94A3B8",
+  textMain: "#1E293B",
+  textMuted: "#64748B",
   cardBg: "#FFFFFF",
 };
 
@@ -132,7 +132,7 @@ const InfoBlock = ({ icon, label, value }) => (
       padding: "12px 14px",
       borderRadius: 14,
       background: COLORS.primaryLight,
-      border: `1px solid ${COLORS.primaryBorder}60`,
+      border: `1.5px solid ${COLORS.primaryBorder}`,
       display: "flex",
       alignItems: "center",
       gap: 10,
@@ -155,6 +155,7 @@ const InfoBlock = ({ icon, label, value }) => (
           fontSize: 10,
           color: COLORS.textMuted,
           fontWeight: 700,
+          textTransform: "uppercase",
         }}
       >
         {label}
@@ -180,13 +181,13 @@ const ClassCard = ({ classData }) => {
     <Card
       bordered={false}
       style={{
-        borderRadius: 22,
+        borderRadius: 20,
         background: COLORS.cardBg,
-        border: `1px solid ${COLORS.primaryBorder}`,
-        boxShadow: "0 8px 24px rgba(244, 114, 154, 0.06)",
+        border: `1.5px solid ${COLORS.primaryBorder}`,
+        boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
       }}
-      bodyStyle={{ padding: "20px 24px" }}
+      styles={{ body: { padding: "20px 24px" } }}
     >
       {/* HEADER LỚP HỌC */}
       <div
@@ -203,15 +204,15 @@ const ClassCard = ({ classData }) => {
             style={{
               width: 48,
               height: 48,
-              borderRadius: 16,
-              background: "linear-gradient(135deg, #FFF0F5 0%, #F6EEFF 100%)",
-              color: COLORS.primary,
+              borderRadius: 14,
+              background: "linear-gradient(135deg, #173B5E 0%, #204E7A 100%)",
+              color: "#FFFFFF",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 22,
-              border: `1px solid ${COLORS.primaryBorder}`,
               flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(23, 59, 94, 0.2)",
             }}
           >
             <ReadOutlined />
@@ -225,6 +226,7 @@ const ClassCard = ({ classData }) => {
                   fontWeight: 800,
                   color: COLORS.primaryDark,
                   background: COLORS.primaryLight,
+                  border: `1px solid ${COLORS.primaryBorder}`,
                   margin: 0,
                 }}
               >
@@ -232,8 +234,15 @@ const ClassCard = ({ classData }) => {
               </Tag>
               {classData?.category && (
                 <Tag
-                  color="purple"
-                  style={{ borderRadius: 6, fontWeight: 700, margin: 0 }}
+                  bordered={false}
+                  style={{
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    color: "#9A6B1F",
+                    background: COLORS.goldLight,
+                    border: "1px solid #F3E2C2",
+                    margin: 0,
+                  }}
                 >
                   {classData.category}
                 </Tag>
@@ -269,7 +278,7 @@ const ClassCard = ({ classData }) => {
       </div>
 
       {/* GRID LỊCH HỌC VÀ ĐỊA ĐIỂM */}
-      <Row gutter={[10, 10]} style={{ marginBottom: 16 }}>
+      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
         <Col xs={12} sm={6}>
           <InfoBlock
             icon={<CalendarOutlined />}
@@ -305,8 +314,8 @@ const ClassCard = ({ classData }) => {
         style={{
           padding: "10px 16px",
           borderRadius: 14,
-          background: "#FAF8FA",
-          border: `1px solid ${COLORS.primaryBorder}40`,
+          background: COLORS.primaryLight,
+          border: `1.5px solid ${COLORS.primaryBorder}`,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -315,14 +324,14 @@ const ClassCard = ({ classData }) => {
         }}
       >
         <Space size={6}>
-          <CalendarOutlined style={{ color: COLORS.slate }} />
+          <CalendarOutlined style={{ color: COLORS.primary }} />
           <Text style={{ fontSize: 12, color: COLORS.slate, fontWeight: 600 }}>
             Thời gian:{" "}
-            <span style={{ color: COLORS.textMain }}>
+            <span style={{ color: COLORS.textMain, fontWeight: 700 }}>
               {classData?.start_date
                 ? dayjs(classData.start_date).format("DD/MM/YYYY")
                 : "—"}
-              {" ~ "}
+              {" đến "}
               {classData?.end_date
                 ? dayjs(classData.end_date).format("DD/MM/YYYY")
                 : "—"}
@@ -336,9 +345,9 @@ const ClassCard = ({ classData }) => {
             margin: 0,
             borderRadius: 8,
             fontWeight: 700,
-            color: isMainRole ? COLORS.primaryDark : COLORS.lavender,
-            background: isMainRole ? COLORS.primaryLight : COLORS.lavenderLight,
-            padding: "2px 10px",
+            color: isMainRole ? "#9A6B1F" : COLORS.primary,
+            background: isMainRole ? COLORS.goldLight : "#E2E8F0",
+            padding: "3px 10px",
           }}
         >
           Vai trò: {classData?.catechist_role || "Giáo lý viên"}
@@ -434,7 +443,14 @@ const TeacherClassesPage = () => {
   }
 
   return (
-    <div style={{ maxWidth: 1250, margin: "0 auto", paddingBottom: 40 }}>
+    <div
+      style={{
+        maxWidth: 1250,
+        margin: "0 auto",
+        paddingBottom: 40,
+        fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
+      }}
+    >
       {/* PAGE HERO HEADER */}
       <PageHeroHeader
         icon={<BookOutlined />}
@@ -462,8 +478,8 @@ const TeacherClassesPage = () => {
             value={totalStudents}
             suffix="học viên"
             icon={<TeamOutlined />}
-            color={COLORS.lavender}
-            bg={COLORS.lavenderLight}
+            color="#2563EB"
+            bg="#EFF6FF"
           />
         </Col>
         <Col xs={24} sm={8}>
@@ -474,8 +490,8 @@ const TeacherClassesPage = () => {
             }
             suffix="em / lớp"
             icon={<IdcardOutlined />}
-            color={COLORS.green}
-            bg={COLORS.greenLight}
+            color={COLORS.gold}
+            bg={COLORS.goldLight}
           />
         </Col>
       </Row>
@@ -485,12 +501,12 @@ const TeacherClassesPage = () => {
         bordered={false}
         style={{
           borderRadius: 20,
-          background: "linear-gradient(135deg, #FFF0F5 0%, #F6EEFF 100%)",
-          border: `1px solid ${COLORS.primaryBorder}`,
-          boxShadow: "0 6px 20px rgba(244, 114, 154, 0.06)",
+          background: "linear-gradient(135deg, #173B5E 0%, #204E7A 100%)",
+          border: `1.5px solid ${COLORS.primaryBorder}`,
+          boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.1)",
           marginTop: 20,
         }}
-        bodyStyle={{ padding: "20px 24px" }}
+        styles={{ body: { padding: "20px 24px" } }}
       >
         <Row align="middle" justify="space-between" gutter={[16, 16]}>
           <Col xs={24} sm={18}>
@@ -499,16 +515,18 @@ const TeacherClassesPage = () => {
                 size={54}
                 icon={<UserOutlined />}
                 style={{
-                  backgroundColor: COLORS.primary,
-                  boxShadow: "0 4px 12px rgba(244, 114, 154, 0.25)",
+                  backgroundColor: COLORS.gold,
+                  color: "#173B5E",
+                  boxShadow: "0 4px 12px rgba(217, 164, 65, 0.3)",
                   border: "2px solid #FFFFFF",
+                  fontWeight: 700,
                 }}
               />
               <div>
                 <Text
                   style={{
                     fontSize: 11,
-                    color: COLORS.primaryDark,
+                    color: COLORS.gold,
                     fontWeight: 800,
                     letterSpacing: 0.8,
                     textTransform: "uppercase",
@@ -520,7 +538,7 @@ const TeacherClassesPage = () => {
                   level={4}
                   style={{
                     margin: "2px 0 4px",
-                    color: COLORS.textMain,
+                    color: "#FFFFFF",
                     fontWeight: 800,
                   }}
                 >
@@ -528,14 +546,26 @@ const TeacherClassesPage = () => {
                 </Title>
                 <Space wrap size={8}>
                   <Tag
-                    color="magenta"
-                    style={{ borderRadius: 8, fontWeight: 700, margin: 0 }}
+                    bordered={false}
+                    style={{
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      margin: 0,
+                      background: "rgba(255,255,255,0.15)",
+                      color: "#FFFFFF",
+                    }}
                   >
                     Thánh danh: {user?.holy_name || "Chưa cập nhật"}
                   </Tag>
                   <Tag
-                    color="volcano"
-                    style={{ borderRadius: 8, fontWeight: 700, margin: 0 }}
+                    bordered={false}
+                    style={{
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      margin: 0,
+                      background: COLORS.gold,
+                      color: "#173B5E",
+                    }}
                   >
                     Mã GLV: {user?.catechist_code || "N/A"}
                   </Tag>
@@ -560,7 +590,10 @@ const TeacherClassesPage = () => {
             onChange={(e) => setSearchText(e.target.value)}
             allowClear
             size="large"
-            style={{ borderRadius: 14 }}
+            style={{
+              borderRadius: 12,
+              border: `1.5px solid ${COLORS.primaryBorder}`,
+            }}
           />
         </Col>
         <Col xs={24} sm={10} md={8}>
@@ -584,7 +617,12 @@ const TeacherClassesPage = () => {
         <Row gutter={[16, 16]}>
           {[1, 2].map((k) => (
             <Col span={24} key={k}>
-              <Card style={{ borderRadius: 22 }}>
+              <Card
+                style={{
+                  borderRadius: 20,
+                  border: `1.5px solid ${COLORS.primaryBorder}`,
+                }}
+              >
                 <Skeleton active paragraph={{ rows: 4 }} />
               </Card>
             </Col>
@@ -603,11 +641,11 @@ const TeacherClassesPage = () => {
         <Card
           bordered={false}
           style={{
-            borderRadius: 22,
-            border: `1px solid ${COLORS.primaryBorder}`,
+            borderRadius: 20,
+            border: `1.5px solid ${COLORS.primaryBorder}`,
             textAlign: "center",
           }}
-          bodyStyle={{ padding: "40px 20px" }}
+          styles={{ body: { padding: "40px 20px" } }}
         >
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -615,7 +653,7 @@ const TeacherClassesPage = () => {
               <Text style={{ color: COLORS.textMuted, fontWeight: 600 }}>
                 {searchText || statusFilter !== "all"
                   ? "Không tìm thấy lớp học phù hợp với bộ lọc"
-                  : "Bạn chưa được phân công quản lý lớp học nào 🌸"}
+                  : "Bạn chưa được phân công quản lý lớp học nào ✝"}
               </Text>
             }
           />

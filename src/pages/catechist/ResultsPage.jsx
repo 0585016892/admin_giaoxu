@@ -32,10 +32,12 @@ import {
   FilterOutlined,
   FormOutlined,
   PlusOutlined,
+  ReloadOutlined,
   RiseOutlined,
   SearchOutlined,
   TeamOutlined,
   TrophyOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -55,8 +57,6 @@ import studentApi from "../../api/studentApi";
 
 import AppDetailModal from "../../components/common/AppDetailModal";
 import AppFormModal from "../../components/common/AppFormModal";
-import PageHeroHeader from "../../components/common/PageHeroHeader";
-import StatCard from "../../components/common/StatCard";
 import ResultForm from "../../components/forms/ResultForm";
 
 const { Text, Title } = Typography;
@@ -66,33 +66,41 @@ const { Text, Title } = Typography;
 ============================================================ */
 
 const COLORS = {
-  primary: "#F4729A",
-  primaryDark: "#E85D87",
-  primaryLight: "#FFF0F5",
-  primaryBorder: "#F8C8D8",
+  navy: "#173B5E",
+  navyDark: "#102C46",
+  navyHover: "#244F78",
+  navyLight: "#EEF3F7",
 
-  lavender: "#B98AE8",
-  lavenderLight: "#F6EEFF",
+  gold: "#D9A441",
+  goldDark: "#B8862F",
+  goldLight: "#FBF5E7",
 
-  green: "#34B27B",
-  greenLight: "#ECFDF5",
-
-  orange: "#F59E0B",
-  orangeLight: "#FEF3C7",
-
-  red: "#EF4444",
-  redLight: "#FEF2F2",
-
-  blue: "#3B82F6",
-  blueLight: "#EFF6FF",
-
-  text: "#493F47",
-  textSecondary: "#918792",
-  textMuted: "#A59BA3",
-
-  border: "#F3E8EE",
-  background: "#FAF8FA",
+  background: "#F7F9FC",
   white: "#FFFFFF",
+
+  text: "#173B5E",
+  textDark: "#1E293B",
+  textSecondary: "#64748B",
+  textMuted: "#94A3B8",
+
+  border: "#E2E8F0",
+
+  success: "#2E7D5B",
+  successLight: "#EAF6F0",
+
+  warning: "#B7791F",
+  warningLight: "#FFF7E5",
+
+  danger: "#C0392B",
+  dangerLight: "#FDEDEC",
+
+  blue: "#356FA3",
+  blueLight: "#EDF4FA",
+
+  purple: "#7653A6",
+  purpleLight: "#F4EFFA",
+
+  grayLight: "#F1F5F9",
 };
 
 /* ============================================================
@@ -102,17 +110,14 @@ const COLORS = {
 const unwrapResponse = (response) => {
   if (!response) return {};
 
-  // axios response
   if (response?.data?.success !== undefined) {
     return response.data;
   }
 
-  // API response
   if (response?.success !== undefined) {
     return response;
   }
 
-  // trường hợp response.data là object
   if (response?.data) {
     return response.data;
   }
@@ -137,9 +142,9 @@ const getScoreStatus = (score) => {
 
   if (value >= 8) {
     return {
-      label: "Giỏi / Tốt",
-      color: COLORS.green,
-      background: COLORS.greenLight,
+      label: "Giỏi",
+      color: COLORS.success,
+      background: COLORS.successLight,
       tagColor: "success",
     };
   }
@@ -147,16 +152,16 @@ const getScoreStatus = (score) => {
   if (value >= 5) {
     return {
       label: "Đạt",
-      color: COLORS.orange,
-      background: COLORS.orangeLight,
+      color: COLORS.warning,
+      background: COLORS.warningLight,
       tagColor: "warning",
     };
   }
 
   return {
     label: "Chưa đạt",
-    color: COLORS.red,
-    background: COLORS.redLight,
+    color: COLORS.danger,
+    background: COLORS.dangerLight,
     tagColor: "error",
   };
 };
@@ -175,18 +180,24 @@ const ScoreDisplay = ({ score, large = false }) => {
     <Space size={8} align="center">
       <div
         style={{
-          minWidth: large ? 60 : 44,
-          height: large ? 42 : 32,
+          minWidth: large ? 64 : 48,
+          height: large ? 44 : 34,
           padding: "0 10px",
-          borderRadius: 10,
+          borderRadius: 8,
+
           background: status.background,
+
           color: status.color,
-          border: `1px solid ${status.color}30`,
+
+          border: `1px solid ${status.color}35`,
+
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+
           fontSize: large ? 18 : 14,
-          fontWeight: 700,
+
+          fontWeight: 800,
         }}
       >
         {value.toFixed(1)}
@@ -197,10 +208,15 @@ const ScoreDisplay = ({ score, large = false }) => {
           bordered={false}
           style={{
             margin: 0,
-            borderRadius: 8,
+
+            borderRadius: 6,
+
             color: status.color,
+
             background: status.background,
-            fontWeight: 600,
+
+            fontWeight: 700,
+
             padding: "4px 10px",
           }}
         >
@@ -221,12 +237,17 @@ const ResultsPage = () => {
   ============================================================ */
 
   const [loading, setLoading] = useState(false);
+
   const [studentsLoading, setStudentsLoading] = useState(false);
+
   const [statsLoading, setStatsLoading] = useState(false);
+
   const [teacherClassesLoading, setTeacherClassesLoading] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
+
   const [deletingId, setDeletingId] = useState(null);
+
   const [detailLoading, setDetailLoading] = useState(false);
 
   /* ============================================================
@@ -234,8 +255,11 @@ const ResultsPage = () => {
   ============================================================ */
 
   const [results, setResults] = useState([]);
+
   const [students, setStudents] = useState([]);
+
   const [statistics, setStatistics] = useState(null);
+
   const [teacherClasses, setTeacherClasses] = useState([]);
 
   /* ============================================================
@@ -243,10 +267,13 @@ const ResultsPage = () => {
   ============================================================ */
 
   const [searchText, setSearchText] = useState("");
+
   const [scoreFilter, setScoreFilter] = useState("all");
+
   const [classId, setClassId] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
+
   const [pageSize, setPageSize] = useState(10);
 
   /* ============================================================
@@ -254,9 +281,11 @@ const ResultsPage = () => {
   ============================================================ */
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+
   const [selectedStudent, setSelectedStudent] = useState(null);
 
   const [studentResults, setStudentResults] = useState([]);
+
   const [studentStats, setStudentStats] = useState(null);
 
   /* ============================================================
@@ -264,6 +293,7 @@ const ResultsPage = () => {
   ============================================================ */
 
   const [modalOpen, setModalOpen] = useState(false);
+
   const [editingResult, setEditingResult] = useState(null);
 
   const [form] = Form.useForm();
@@ -277,6 +307,7 @@ const ResultsPage = () => {
       setTeacherClassesLoading(true);
 
       const response = await classApi.getClassTeacher();
+
       const resData = unwrapResponse(response);
 
       if (resData?.success === false) {
@@ -308,7 +339,6 @@ const ResultsPage = () => {
 
       setTeacherClasses(list);
 
-      // Nếu lớp đang chọn không còn tồn tại
       if (
         classId &&
         !list.some((item) => String(item.id) === String(classId))
@@ -316,7 +346,6 @@ const ResultsPage = () => {
         setClassId(null);
       }
 
-      // Chỉ có 1 lớp thì tự chọn
       if (list.length === 1) {
         setClassId(String(list[0].id));
       }
@@ -339,9 +368,6 @@ const ResultsPage = () => {
 
   /* ============================================================
      LOAD RESULTS
-     
-     API:
-     GET /api/results/class/:classId
   ============================================================ */
 
   const loadResults = useCallback(async (selectedClassId) => {
@@ -387,9 +413,6 @@ const ResultsPage = () => {
 
   /* ============================================================
      LOAD STUDENTS
-     
-     API:
-     GET /api/students?class_id=xxx
   ============================================================ */
 
   const loadStudents = useCallback(async (selectedClassId) => {
@@ -433,9 +456,6 @@ const ResultsPage = () => {
 
   /* ============================================================
      LOAD CLASS STATISTICS
-     
-     API:
-     GET /api/results/class/:classId/statistics
   ============================================================ */
 
   const loadStatistics = useCallback(async (selectedClassId) => {
@@ -447,9 +467,6 @@ const ResultsPage = () => {
     try {
       setStatsLoading(true);
 
-      // QUAN TRỌNG:
-      // getClassStatistics(classId)
-      // KHÔNG phải getClassStatistics({ class_id })
       const response = await getClassStatistics(selectedClassId);
 
       const resData = unwrapResponse(response);
@@ -479,6 +496,7 @@ const ResultsPage = () => {
         setResults([]);
         setStudents([]);
         setStatistics(null);
+
         return;
       }
 
@@ -492,7 +510,7 @@ const ResultsPage = () => {
   );
 
   /* ============================================================
-     INITIAL LOAD CLASSES
+     INITIAL LOAD
   ============================================================ */
 
   useEffect(() => {
@@ -500,12 +518,14 @@ const ResultsPage = () => {
   }, [loadTeacherClasses]);
 
   /* ============================================================
-     LOAD WHEN CLASS CHANGES
+     CLASS CHANGE
   ============================================================ */
 
   useEffect(() => {
     setCurrentPage(1);
+
     setSearchText("");
+
     setScoreFilter("all");
 
     loadData(classId);
@@ -527,7 +547,7 @@ const ResultsPage = () => {
   }, [classId, loadTeacherClasses, loadData]);
 
   /* ============================================================
-     MAP STUDENTS
+     STUDENTS MAP
   ============================================================ */
 
   const studentsMap = useMemo(() => {
@@ -559,13 +579,11 @@ const ResultsPage = () => {
   }, [classList, classId]);
 
   /* ============================================================
-     FILTER RESULTS
+     FILTER
   ============================================================ */
 
   const filteredResults = useMemo(() => {
     let data = [...results];
-
-    /* SEARCH */
 
     if (searchText.trim()) {
       const keyword = searchText.trim().toLowerCase();
@@ -588,8 +606,6 @@ const ResultsPage = () => {
         );
       });
     }
-
-    /* SCORE FILTER */
 
     if (scoreFilter !== "all") {
       data = data.filter((item) => {
@@ -626,17 +642,6 @@ const ResultsPage = () => {
 
   /* ============================================================
      COMPUTED STATISTICS
-     
-     API statistics:
-       total_students
-       total_results
-       average_score
-       highest_score
-       lowest_score
-       passed_students
-       failed_students
-
-     API chưa trả good_students nên tính từ results.
   ============================================================ */
 
   const computedStats = useMemo(() => {
@@ -678,7 +683,7 @@ const ResultsPage = () => {
   }, [statistics, students.length, results]);
 
   /* ============================================================
-     LOAD STUDENT DETAIL
+     LOAD STUDENT DETAILS
   ============================================================ */
 
   const fetchStudentDetailsData = useCallback(
@@ -693,10 +698,6 @@ const ResultsPage = () => {
           getStudentStatistics(studentId),
         ]);
 
-        /* ==========================
-             RESULTS
-          ========================== */
-
         if (resultsResponse.status === "fulfilled") {
           const resData = unwrapResponse(resultsResponse.value);
 
@@ -706,7 +707,6 @@ const ResultsPage = () => {
               ? resData
               : [];
 
-          // Chỉ hiển thị kết quả của lớp đang chọn
           const classResults = classId
             ? list.filter((item) => String(item.class_id) === String(classId))
             : list;
@@ -715,10 +715,6 @@ const ResultsPage = () => {
         } else {
           setStudentResults([]);
         }
-
-        /* ==========================
-             STUDENT STATISTICS
-          ========================== */
 
         if (statsResponse.status === "fulfilled") {
           const resData = unwrapResponse(statsResponse.value);
@@ -731,6 +727,7 @@ const ResultsPage = () => {
         console.error("FETCH STUDENT DETAIL ERROR:", error);
 
         setStudentResults([]);
+
         setStudentStats(null);
 
         message.error("Không thể lấy chi tiết điểm của học viên");
@@ -772,11 +769,13 @@ const ResultsPage = () => {
   const handleCreate = () => {
     if (!classId) {
       message.warning("Vui lòng chọn lớp trước khi nhập điểm");
+
       return;
     }
 
     if (!students.length) {
       message.warning("Lớp này hiện chưa có học viên");
+
       return;
     }
 
@@ -786,8 +785,11 @@ const ResultsPage = () => {
 
     form.setFieldsValue({
       exam_type: "paper",
+
       exam_date: dayjs(),
+
       score: undefined,
+
       note: "",
     });
 
@@ -805,6 +807,7 @@ const ResultsPage = () => {
       String(record.class_id) !== String(classId)
     ) {
       message.error("Kết quả không thuộc lớp đang chọn");
+
       return;
     }
 
@@ -829,7 +832,7 @@ const ResultsPage = () => {
   };
 
   /* ============================================================
-     SUBMIT CREATE / UPDATE
+     SUBMIT
   ============================================================ */
 
   const handleSubmit = async () => {
@@ -838,6 +841,7 @@ const ResultsPage = () => {
 
       if (!classId) {
         message.error("Vui lòng chọn lớp");
+
         return;
       }
 
@@ -849,6 +853,7 @@ const ResultsPage = () => {
 
       if (!validStudent) {
         message.error("Học viên không thuộc lớp đang chọn");
+
         return;
       }
 
@@ -857,9 +862,6 @@ const ResultsPage = () => {
       const payload = {
         student_id: selectedStudentId,
 
-        // Giữ class_id trong payload.
-        // Backend hiện tại có thể chưa lưu,
-        // nhưng dùng để tương thích về sau.
         class_id: Number(classId),
 
         score: Number(values.score),
@@ -885,6 +887,7 @@ const ResultsPage = () => {
 
       if (resData?.success === false) {
         message.error(resData?.message || "Không thể lưu điểm");
+
         return;
       }
 
@@ -893,6 +896,7 @@ const ResultsPage = () => {
       );
 
       setModalOpen(false);
+
       setEditingResult(null);
 
       form.resetFields();
@@ -931,6 +935,7 @@ const ResultsPage = () => {
 
       if (resData?.success === false) {
         message.error(resData?.message || "Không thể xóa điểm");
+
         return;
       }
 
@@ -957,20 +962,24 @@ const ResultsPage = () => {
   const columns = [
     {
       title: "STT",
-      width: 60,
+
+      width: 65,
+
       align: "center",
 
       render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
     },
 
-    /* ==========================
+    /* ========================================================
        STUDENT
-    ========================== */
+    ======================================================== */
 
     {
       title: "Học viên",
+
       key: "student",
-      width: 280,
+
+      width: 290,
 
       render: (_, record) => {
         const student = studentsMap.get(Number(record.student_id));
@@ -983,30 +992,34 @@ const ResultsPage = () => {
           <Space size={12} align="center">
             <Avatar
               size={42}
+              icon={<UserOutlined />}
               style={{
-                backgroundColor: COLORS.primaryLight,
+                background: COLORS.navyLight,
 
-                color: COLORS.primaryDark,
+                color: COLORS.navy,
 
-                fontWeight: 700,
-
-                border: `1px solid ${COLORS.primaryBorder}`,
+                border: `1px solid ${COLORS.border}`,
               }}
             >
-              {name.charAt(0).toUpperCase()}
+              {!student && name ? name.charAt(0).toUpperCase() : null}
             </Avatar>
 
-            <div>
+            <div
+              style={{
+                minWidth: 0,
+              }}
+            >
               <Text
                 strong
+                ellipsis
                 style={{
                   display: "block",
 
-                  color: COLORS.text,
+                  maxWidth: 210,
+
+                  color: COLORS.textDark,
 
                   fontSize: 14,
-
-                  lineHeight: 1.3,
                 }}
               >
                 {name}
@@ -1021,17 +1034,17 @@ const ResultsPage = () => {
                 <Text
                   style={{
                     fontSize: 11,
+
                     color: COLORS.textMuted,
                   }}
                 >
-                  ID: #{record.student_id}
+                  ID #{record.student_id}
                 </Text>
 
                 {guardian && (
                   <>
                     <Text
                       style={{
-                        fontSize: 10,
                         color: COLORS.textMuted,
                       }}
                     >
@@ -1041,6 +1054,7 @@ const ResultsPage = () => {
                     <Text
                       style={{
                         fontSize: 11,
+
                         color: COLORS.textSecondary,
                       }}
                     >
@@ -1055,43 +1069,53 @@ const ResultsPage = () => {
       },
     },
 
-    /* ==========================
+    /* ========================================================
        TOTAL RESULTS
-    ========================== */
+    ======================================================== */
 
     {
       title: "Bài thi",
+
       dataIndex: "total_results",
 
       key: "total_results",
 
-      width: 100,
+      width: 110,
 
       align: "center",
 
       render: (value) => (
-        <Tag
-          color="purple"
+        <div
           style={{
-            borderRadius: 12,
-            padding: "2px 10px",
-            fontWeight: 600,
+            display: "inline-flex",
+
+            alignItems: "center",
+
+            gap: 6,
+
+            padding: "5px 10px",
+
+            borderRadius: 7,
+
+            background: COLORS.navyLight,
+
+            color: COLORS.navy,
+
+            fontSize: 12,
+
+            fontWeight: 700,
           }}
         >
-          <BookOutlined
-            style={{
-              marginRight: 4,
-            }}
-          />
+          <BookOutlined />
 
           {Number(value) || 0}
-        </Tag>
+        </div>
       ),
     },
 
-    /* ==========================
-       AVERAGE
-    ========================== */
+    /* ========================================================
+       AVERAGE SCORE
+    ======================================================== */
 
     {
       title: "Điểm trung bình",
@@ -1114,33 +1138,49 @@ const ResultsPage = () => {
           <div
             style={{
               width: "100%",
-              paddingRight: 10,
+
+              paddingRight: 12,
             }}
           >
             <div
               style={{
                 display: "flex",
 
+                alignItems: "center",
+
                 justifyContent: "space-between",
 
-                marginBottom: 4,
+                marginBottom: 6,
               }}
             >
-              <Text
-                strong
-                style={{
-                  color: status.color,
+              <Space size={7}>
+                <Text
+                  strong
+                  style={{
+                    color: status.color,
 
-                  fontSize: 13,
-                }}
-              >
-                {value.toFixed(1)} / 10
-              </Text>
+                    fontSize: 14,
+                  }}
+                >
+                  {value.toFixed(1)}
+                </Text>
+
+                <Text
+                  style={{
+                    color: COLORS.textMuted,
+
+                    fontSize: 11,
+                  }}
+                >
+                  / 10
+                </Text>
+              </Space>
 
               <Text
                 style={{
-                  fontSize: 11,
                   color: COLORS.textMuted,
+
+                  fontSize: 10,
                 }}
               >
                 {Math.round(value * 10)}%
@@ -1150,18 +1190,18 @@ const ResultsPage = () => {
             <Progress
               percent={Math.min(value * 10, 100)}
               showInfo={false}
-              strokeWidth={8}
+              strokeWidth={6}
               strokeColor={status.color}
-              trailColor="#F3E8EE"
+              trailColor="#EDF1F5"
             />
           </div>
         );
       },
     },
 
-    /* ==========================
+    /* ========================================================
        STATUS
-    ========================== */
+    ======================================================== */
 
     {
       title: "Xếp loại",
@@ -1179,14 +1219,21 @@ const ResultsPage = () => {
           <Tag
             bordered={false}
             style={{
-              borderRadius: 8,
-              padding: "4px 12px",
+              margin: 0,
+
+              minWidth: 76,
+
+              textAlign: "center",
+
+              borderRadius: 6,
+
+              padding: "4px 10px",
 
               color: status.color,
 
               background: status.background,
 
-              fontWeight: 600,
+              fontWeight: 700,
             }}
           >
             {status.label}
@@ -1195,9 +1242,9 @@ const ResultsPage = () => {
       },
     },
 
-    /* ==========================
+    /* ========================================================
        LATEST EXAM
-    ========================== */
+    ======================================================== */
 
     {
       title: "Thi gần nhất",
@@ -1206,14 +1253,14 @@ const ResultsPage = () => {
 
       key: "latest_exam_date",
 
-      width: 140,
+      width: 145,
 
       render: (date) =>
         date ? (
-          <Space size={6}>
+          <Space size={7}>
             <CalendarOutlined
               style={{
-                color: COLORS.primary,
+                color: COLORS.goldDark,
               }}
             />
 
@@ -1221,7 +1268,7 @@ const ResultsPage = () => {
               style={{
                 color: COLORS.textSecondary,
 
-                fontSize: 13,
+                fontSize: 12,
               }}
             >
               {dayjs(date).format("DD/MM/YYYY")}
@@ -1238,12 +1285,12 @@ const ResultsPage = () => {
         ),
     },
 
-    /* ==========================
+    /* ========================================================
        ACTION
-    ========================== */
+    ======================================================== */
 
     {
-      title: "Thao tác",
+      title: "Chi tiết",
 
       key: "action",
 
@@ -1254,22 +1301,24 @@ const ResultsPage = () => {
       align: "center",
 
       render: (_, record) => (
-        <Tooltip title="Xem chi tiết điểm">
+        <Tooltip title="Xem bảng điểm">
           <Button
             type="text"
             shape="circle"
             icon={
               <EyeOutlined
                 style={{
-                  color: COLORS.primary,
-
                   fontSize: 16,
+
+                  color: COLORS.navy,
                 }}
               />
             }
             onClick={() => handleViewDetail(record)}
             style={{
-              background: COLORS.primaryLight,
+              background: COLORS.navyLight,
+
+              border: `1px solid ${COLORS.border}`,
             }}
           />
         </Tooltip>
@@ -1278,13 +1327,15 @@ const ResultsPage = () => {
   ];
 
   /* ============================================================
-     DETAIL TABLE
+     DETAIL COLUMNS
   ============================================================ */
 
   const detailColumns = [
     {
       title: "#",
+
       width: 50,
+
       align: "center",
 
       render: (_, __, index) => index + 1,
@@ -1311,9 +1362,15 @@ const ResultsPage = () => {
         type === "online" ? (
           <Tag
             icon={<DesktopOutlined />}
-            color="blue"
+            bordered={false}
             style={{
-              borderRadius: 8,
+              color: COLORS.blue,
+
+              background: COLORS.blueLight,
+
+              borderRadius: 6,
+
+              fontWeight: 600,
             }}
           >
             Online
@@ -1321,9 +1378,15 @@ const ResultsPage = () => {
         ) : (
           <Tag
             icon={<FormOutlined />}
-            color="orange"
+            bordered={false}
             style={{
-              borderRadius: 8,
+              color: COLORS.warning,
+
+              background: COLORS.warningLight,
+
+              borderRadius: 6,
+
+              fontWeight: 600,
             }}
           >
             Bài giấy
@@ -1351,7 +1414,8 @@ const ResultsPage = () => {
           <Text
             style={{
               fontSize: 13,
-              color: COLORS.text,
+
+              color: COLORS.textDark,
             }}
           >
             {note}
@@ -1360,6 +1424,7 @@ const ResultsPage = () => {
           <Text
             style={{
               fontSize: 12,
+
               color: COLORS.textMuted,
 
               fontStyle: "italic",
@@ -1373,12 +1438,12 @@ const ResultsPage = () => {
     {
       title: "Thao tác",
 
-      width: 90,
+      width: 100,
 
       align: "right",
 
       render: (_, record) => (
-        <Space size={4}>
+        <Space size={2}>
           <Tooltip title="Chỉnh sửa">
             <Button
               type="text"
@@ -1386,7 +1451,7 @@ const ResultsPage = () => {
               icon={
                 <EditOutlined
                   style={{
-                    color: COLORS.primary,
+                    color: COLORS.navy,
                   }}
                 />
               }
@@ -1401,6 +1466,7 @@ const ResultsPage = () => {
             cancelText="Hủy"
             okButtonProps={{
               danger: true,
+
               loading: deletingId === record.id,
             }}
             onConfirm={() => handleDelete(record.id)}
@@ -1424,129 +1490,1006 @@ const ResultsPage = () => {
   ============================================================ */
 
   return (
-    <div
-      style={{
-        maxWidth: 1250,
-        margin: "0 auto",
-        paddingBottom: 40,
-      }}
-    >
+    <div className="results-page">
+      <style>{`
+
+        /* ======================================================
+           GLOBAL
+        ====================================================== */
+
+        .results-page {
+          min-height: 100%;
+
+          padding-bottom: 40px;
+
+          background:
+            ${COLORS.background};
+
+          font-family:
+            "Be Vietnam Pro",
+            "Inter",
+            Arial,
+            sans-serif;
+        }
+
+        .results-page * {
+          box-sizing: border-box;
+        }
+
+
+        /* ======================================================
+           PAGE HEADER
+        ====================================================== */
+
+        .results-header {
+          position: relative;
+
+          overflow: hidden;
+
+          min-height: 142px;
+
+          padding: 28px 30px;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 24px;
+
+          background:
+            ${COLORS.navy};
+
+          border-radius: 16px;
+
+          box-shadow:
+            0 8px 24px
+            rgba(23, 59, 94, 0.10);
+        }
+
+        .results-header::after {
+          content: "";
+
+          position: absolute;
+
+          width: 230px;
+          height: 230px;
+
+          right: -80px;
+          top: -115px;
+
+          border-radius: 50%;
+
+          border:
+            1px solid
+            rgba(217, 164, 65, 0.28);
+        }
+
+        .results-header::before {
+          content: "";
+
+          position: absolute;
+
+          width: 120px;
+          height: 120px;
+
+          right: 80px;
+          bottom: -75px;
+
+          border-radius: 50%;
+
+          background:
+            rgba(217, 164, 65, 0.08);
+        }
+
+        .results-header-content {
+          position: relative;
+
+          z-index: 2;
+
+          display: flex;
+
+          align-items: center;
+
+          gap: 18px;
+        }
+
+        .results-header-icon {
+          width: 58px;
+          height: 58px;
+
+          flex-shrink: 0;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          border-radius: 14px;
+
+          background:
+            rgba(217, 164, 65, 0.14);
+
+          border:
+            1px solid
+            rgba(217, 164, 65, 0.38);
+
+          color:
+            ${COLORS.gold};
+
+          font-size: 25px;
+        }
+
+        .results-header-title {
+          margin: 0 !important;
+
+          color:
+            ${COLORS.white} !important;
+
+          font-size: 25px !important;
+
+          font-weight: 800 !important;
+        }
+
+        .results-header-description {
+          display: block;
+
+          margin-top: 5px;
+
+          max-width: 650px;
+
+          color:
+            rgba(255,255,255,0.72);
+
+          font-size: 13px;
+        }
+
+        .results-header-actions {
+          position: relative;
+
+          z-index: 2;
+
+          display: flex;
+
+          gap: 10px;
+        }
+
+        .results-refresh-btn {
+          height: 42px;
+
+          border-radius: 8px;
+
+          color:
+            ${COLORS.white};
+
+          background:
+            rgba(255,255,255,0.08);
+
+          border:
+            1px solid
+            rgba(255,255,255,0.18);
+        }
+
+        .results-refresh-btn:hover {
+          color:
+            ${COLORS.white} !important;
+
+          background:
+            rgba(255,255,255,0.14) !important;
+
+          border-color:
+            rgba(255,255,255,0.3) !important;
+        }
+
+        .results-create-btn {
+          height: 42px;
+
+          padding:
+            0 18px;
+
+          border-radius: 8px;
+
+          background:
+            ${COLORS.gold};
+
+          border-color:
+            ${COLORS.gold};
+
+          color:
+            ${COLORS.navy};
+
+          font-weight: 800;
+
+          box-shadow:
+            none;
+        }
+
+        .results-create-btn:hover {
+          background:
+            ${COLORS.goldDark} !important;
+
+          border-color:
+            ${COLORS.goldDark} !important;
+
+          color:
+            ${COLORS.white} !important;
+        }
+
+
+        /* ======================================================
+           CLASS SELECTOR
+        ====================================================== */
+
+        .results-class-card {
+          margin-top: 18px;
+
+          border-radius: 14px !important;
+
+          border:
+            1px solid
+            ${COLORS.border} !important;
+
+          background:
+            ${COLORS.white};
+
+          box-shadow:
+            0 4px 15px
+            rgba(15, 23, 42, 0.03);
+        }
+
+        .results-class-inner {
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 20px;
+        }
+
+        .results-class-info {
+          display: flex;
+
+          align-items: center;
+
+          gap: 13px;
+        }
+
+        .results-class-icon {
+          width: 44px;
+          height: 44px;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          border-radius: 10px;
+
+          color:
+            ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
+
+          border:
+            1px solid
+            ${COLORS.border};
+
+          font-size: 19px;
+        }
+
+        .results-class-label {
+          display: block;
+
+          color:
+            ${COLORS.text};
+
+          font-size: 14px;
+
+          font-weight: 800;
+        }
+
+        .results-class-note {
+          display: block;
+
+          margin-top: 3px;
+
+          color:
+            ${COLORS.textMuted};
+
+          font-size: 11px;
+        }
+
+        .results-class-select {
+          width: 320px;
+        }
+
+        .results-class-select .ant-select-selector {
+          border-radius: 8px !important;
+
+          border-color:
+            ${COLORS.border} !important;
+
+          min-height: 42px !important;
+
+          display: flex !important;
+
+          align-items: center !important;
+
+          box-shadow: none !important;
+        }
+
+        .results-class-select.ant-select-focused
+        .ant-select-selector {
+          border-color:
+            ${COLORS.gold} !important;
+
+          box-shadow:
+            0 0 0 2px
+            rgba(217,164,65,0.10) !important;
+        }
+
+
+        /* ======================================================
+           STATISTICS
+        ====================================================== */
+
+        .results-stat-row {
+          margin-top: 18px;
+        }
+
+        .results-stat-card {
+          height: 100%;
+
+          min-height: 105px;
+
+          border-radius: 14px !important;
+
+          border:
+            1px solid
+            ${COLORS.border} !important;
+
+          background:
+            ${COLORS.white};
+
+          box-shadow:
+            0 4px 15px
+            rgba(15, 23, 42, 0.03);
+        }
+
+        .results-stat-content {
+          height: 100%;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 12px;
+        }
+
+        .results-stat-label {
+          display: block;
+
+          margin-bottom: 7px;
+
+          color:
+            ${COLORS.textSecondary};
+
+          font-size: 11px;
+
+          font-weight: 600;
+        }
+
+        .results-stat-value {
+          color:
+            ${COLORS.text};
+
+          font-size: 24px;
+
+          font-weight: 800;
+
+          line-height: 1;
+        }
+
+        .results-stat-icon {
+          width: 42px;
+          height: 42px;
+
+          flex-shrink: 0;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          border-radius: 10px;
+
+          font-size: 18px;
+        }
+
+        .results-stat-navy
+        .results-stat-icon {
+          color:
+            ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
+        }
+
+        .results-stat-gold
+        .results-stat-icon {
+          color:
+            ${COLORS.goldDark};
+
+          background:
+            ${COLORS.goldLight};
+        }
+
+        .results-stat-green
+        .results-stat-icon {
+          color:
+            ${COLORS.success};
+
+          background:
+            ${COLORS.successLight};
+        }
+
+        .results-stat-blue
+        .results-stat-icon {
+          color:
+            ${COLORS.blue};
+
+          background:
+            ${COLORS.blueLight};
+        }
+
+
+        /* ======================================================
+           MAIN TABLE CARD
+        ====================================================== */
+
+        .results-main-card {
+          margin-top: 18px;
+
+          border-radius: 14px !important;
+
+          border:
+            1px solid
+            ${COLORS.border} !important;
+
+          background:
+            ${COLORS.white};
+
+          box-shadow:
+            0 5px 20px
+            rgba(15, 23, 42, 0.03);
+        }
+
+        .results-main-card .ant-card-body {
+          padding: 22px !important;
+        }
+
+
+        /* ======================================================
+           TABLE HEADER
+        ====================================================== */
+
+        .results-table-header {
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 16px;
+
+          margin-bottom: 18px;
+        }
+
+        .results-table-title {
+          display: flex;
+
+          align-items: center;
+
+          gap: 10px;
+        }
+
+        .results-table-title-icon {
+          width: 34px;
+          height: 34px;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          border-radius: 8px;
+
+          color:
+            ${COLORS.navy};
+
+          background:
+            ${COLORS.navyLight};
+
+          font-size: 15px;
+        }
+
+        .results-table-title-main {
+          display: block;
+
+          color:
+            ${COLORS.text};
+
+          font-size: 15px;
+
+          font-weight: 800;
+        }
+
+        .results-table-title-sub {
+          display: block;
+
+          margin-top: 2px;
+
+          color:
+            ${COLORS.textMuted};
+
+          font-size: 11px;
+        }
+
+
+        /* ======================================================
+           FILTER
+        ====================================================== */
+
+        .results-filter-bar {
+          padding:
+            14px;
+
+          margin-bottom: 18px;
+
+          border-radius: 10px;
+
+          background:
+            ${COLORS.background};
+
+          border:
+            1px solid
+            ${COLORS.border};
+        }
+
+        .results-search .ant-input-affix-wrapper {
+          min-height: 40px;
+
+          border-radius: 8px;
+
+          border-color:
+            ${COLORS.border};
+
+          box-shadow: none;
+        }
+
+        .results-search
+        .ant-input-affix-wrapper-focused {
+          border-color:
+            ${COLORS.gold};
+
+          box-shadow:
+            0 0 0 2px
+            rgba(217,164,65,0.08);
+        }
+
+        .results-filter-select
+        .ant-select-selector {
+          min-height: 40px !important;
+
+          border-radius: 8px !important;
+
+          border-color:
+            ${COLORS.border} !important;
+
+          box-shadow: none !important;
+        }
+
+
+        /* ======================================================
+           TABLE
+        ====================================================== */
+
+        .results-main-table .ant-table {
+          border:
+            1px solid
+            ${COLORS.border};
+
+          border-radius: 10px;
+
+          overflow: hidden;
+        }
+
+        .results-main-table
+        .ant-table-thead
+        > tr
+        > th {
+          background:
+            ${COLORS.navyLight} !important;
+
+          color:
+            ${COLORS.navy} !important;
+
+          border-bottom:
+            1px solid
+            ${COLORS.border} !important;
+
+          font-size: 11px;
+
+          font-weight: 800;
+
+          text-transform:
+            uppercase;
+
+          letter-spacing:
+            0.2px;
+        }
+
+        .results-main-table
+        .ant-table-tbody
+        > tr
+        > td {
+          border-bottom:
+            1px solid
+            ${COLORS.border};
+
+          padding:
+            13px 12px;
+
+          font-size: 12px;
+        }
+
+        .results-main-table
+        .ant-table-tbody
+        > tr:hover
+        > td {
+          background:
+            #FBFCFD !important;
+        }
+
+
+        /* ======================================================
+           PAGINATION
+        ====================================================== */
+
+        .results-pagination {
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 16px;
+
+          margin-top: 18px;
+
+          padding-top: 17px;
+
+          border-top:
+            1px solid
+            ${COLORS.border};
+        }
+
+        .results-pagination-info {
+          color:
+            ${COLORS.textSecondary};
+
+          font-size: 12px;
+        }
+
+        .results-pagination-info b {
+          color:
+            ${COLORS.navy};
+        }
+
+        .results-pagination
+        .ant-pagination-item-active {
+          border-color:
+            ${COLORS.navy};
+
+          background:
+            ${COLORS.navy};
+        }
+
+        .results-pagination
+        .ant-pagination-item-active
+        a {
+          color:
+            ${COLORS.white};
+        }
+
+
+        /* ======================================================
+           EMPTY
+        ====================================================== */
+
+        .results-empty {
+          padding:
+            45px 20px;
+        }
+
+
+        /* ======================================================
+           DETAIL MODAL
+        ====================================================== */
+
+        .results-detail-profile {
+          padding: 16px;
+
+          margin-bottom: 18px;
+
+          border-radius: 10px;
+
+          background:
+            ${COLORS.navyLight};
+
+          border:
+            1px solid
+            ${COLORS.border};
+        }
+
+        .results-detail-avatar {
+          background:
+            ${COLORS.navy};
+
+          color:
+            ${COLORS.white};
+
+          font-weight: 800;
+        }
+
+        .results-detail-name {
+          margin: 0 !important;
+
+          color:
+            ${COLORS.text} !important;
+
+          font-size: 17px !important;
+
+          font-weight: 800 !important;
+        }
+
+        .results-detail-meta {
+          margin-top: 3px;
+
+          color:
+            ${COLORS.textSecondary};
+
+          font-size: 11px;
+        }
+
+        .results-detail-average {
+          min-width: 90px;
+
+          padding:
+            9px 12px;
+
+          text-align: center;
+
+          border-radius: 8px;
+
+          background:
+            ${COLORS.white};
+
+          border:
+            1px solid
+            ${COLORS.border};
+        }
+
+        .results-detail-average-label {
+          display: block;
+
+          color:
+            ${COLORS.textMuted};
+
+          font-size: 9px;
+
+          margin-bottom: 2px;
+        }
+
+        .results-detail-average-value {
+          color:
+            ${COLORS.navy};
+
+          font-size: 19px;
+
+          font-weight: 800;
+        }
+
+
+        /* ======================================================
+           MOBILE
+        ====================================================== */
+
+        @media (max-width: 768px) {
+
+          .results-page {
+            padding-bottom: 25px;
+          }
+
+          .results-header {
+            min-height: auto;
+
+            padding: 20px;
+
+            flex-direction: column;
+
+            align-items:
+              flex-start;
+          }
+
+          .results-header-content {
+            align-items:
+              flex-start;
+          }
+
+          .results-header-title {
+            font-size: 21px !important;
+          }
+
+          .results-header-description {
+            font-size: 11px;
+          }
+
+          .results-header-actions {
+            width: 100%;
+          }
+
+          .results-refresh-btn,
+          .results-create-btn {
+            flex: 1;
+          }
+
+          .results-class-inner {
+            flex-direction:
+              column;
+
+            align-items:
+              stretch;
+          }
+
+          .results-class-select {
+            width: 100%;
+          }
+
+          .results-table-header {
+            flex-direction:
+              column;
+
+            align-items:
+              flex-start;
+          }
+
+          .results-filter-bar {
+            padding: 11px;
+          }
+
+          .results-pagination {
+            flex-direction:
+              column;
+
+            align-items:
+              flex-start;
+          }
+
+          .results-pagination
+          .ant-pagination {
+            width: 100%;
+
+            overflow-x: auto;
+          }
+
+        }
+
+      `}</style>
+
       {/* ======================================================
           HEADER
       ====================================================== */}
 
-      <PageHeroHeader
-        icon={<TrophyOutlined />}
-        title="Bảng Điểm Học Viên"
-        description="Quản lý kết quả học tập, nhập điểm thi và theo dõi tiến trình học viên trong lớp"
-        onRefresh={handleRefresh}
-        refreshLoading={
-          loading || studentsLoading || statsLoading || teacherClassesLoading
-        }
-        primaryButtonText="Nhập điểm mới"
-        primaryButtonIcon={<PlusOutlined />}
-        onPrimaryClick={handleCreate}
-      />
+      <div className="results-header">
+        <div className="results-header-content">
+          <div className="results-header-icon">
+            <TrophyOutlined />
+          </div>
+
+          <div>
+            <Title level={2} className="results-header-title">
+              Bảng điểm học viên
+            </Title>
+
+            <span className="results-header-description">
+              Quản lý kết quả học tập, nhập điểm và theo dõi tiến trình của học
+              viên.
+            </span>
+          </div>
+        </div>
+
+        <div className="results-header-actions">
+          <Button
+            className="results-refresh-btn"
+            icon={<ReloadOutlined />}
+            loading={
+              loading ||
+              studentsLoading ||
+              statsLoading ||
+              teacherClassesLoading
+            }
+            onClick={handleRefresh}
+          >
+            Làm mới
+          </Button>
+
+          <Button
+            className="results-create-btn"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+          >
+            Nhập điểm
+          </Button>
+        </div>
+      </div>
 
       {/* ======================================================
           CLASS SELECTOR
       ====================================================== */}
 
       <Card
+        className="results-class-card"
         bordered={false}
-        style={{
-          marginTop: 20,
-          borderRadius: 20,
-
-          background: "linear-gradient(135deg, #FFF0F5 0%, #F6EEFF 100%)",
-
-          border: `1px solid ${COLORS.primaryBorder}`,
-
-          boxShadow: "0 6px 20px rgba(244,114,154,0.06)",
-        }}
         bodyStyle={{
-          padding: "20px 24px",
+          padding: 20,
         }}
       >
-        <Row align="middle" justify="space-between" gutter={[16, 16]}>
-          <Col xs={24} md={14}>
-            <Space size={12} align="center">
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
+        <div className="results-class-inner">
+          <div className="results-class-info">
+            <div className="results-class-icon">
+              <TeamOutlined />
+            </div>
 
-                  background: COLORS.white,
+            <div>
+              <span className="results-class-label">Lớp học đang quản lý</span>
 
-                  color: COLORS.primary,
+              <span className="results-class-note">
+                Chọn lớp để xem và quản lý bảng điểm
+              </span>
+            </div>
+          </div>
 
-                  display: "flex",
-
-                  alignItems: "center",
-
-                  justifyContent: "center",
-
-                  fontSize: 20,
-
-                  boxShadow: "0 4px 10px rgba(0,0,0,0.04)",
-                }}
-              >
-                <TeamOutlined />
-              </div>
-
-              <div>
-                <Text
-                  strong
-                  style={{
-                    fontSize: 15,
-                    color: COLORS.text,
-
-                    display: "block",
-                  }}
-                >
-                  Lớp giáo lý đang quản lý
-                </Text>
-
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: COLORS.textSecondary,
-                  }}
-                >
-                  Vui lòng chọn lớp để tải bảng điểm
-                </Text>
-              </div>
-            </Space>
-          </Col>
-
-          <Col
-            xs={24}
-            md={10}
-            style={{
-              textAlign: "right",
+          <Select
+            className="results-class-select"
+            size="large"
+            placeholder="Chọn lớp học"
+            value={classId ? String(classId) : undefined}
+            onChange={(value) => {
+              setClassId(value);
             }}
-          >
-            <Select
-              size="large"
-              placeholder="-- Chọn lớp học --"
-              value={classId ? String(classId) : undefined}
-              onChange={(value) => {
-                setClassId(value);
-              }}
-              loading={teacherClassesLoading}
-              style={{
-                width: "100%",
-                maxWidth: 320,
-              }}
-              options={classList.map((item) => ({
-                value: String(item.id),
+            loading={teacherClassesLoading}
+            options={classList.map((item) => ({
+              value: String(item.id),
 
-                label: `🏫 ${item.name}`,
-              }))}
-            />
-          </Col>
-        </Row>
+              label: item.name,
+            }))}
+          />
+        </div>
       </Card>
 
       {/* ======================================================
@@ -1554,219 +2497,308 @@ const ResultsPage = () => {
       ====================================================== */}
 
       {classId && (
-        <Row
-          gutter={[16, 16]}
-          style={{
-            marginTop: 20,
-          }}
-        >
-          {/* TOTAL STUDENTS */}
-
+        <Row className="results-stat-row" gutter={[14, 14]}>
           <Col xs={12} sm={6}>
-            <StatCard
-              title="Tổng học viên"
-              value={computedStats.totalStudents}
-              icon={<TeamOutlined />}
-              color={COLORS.primary}
-              bg={COLORS.primaryLight}
-            />
+            <Card
+              className="
+                results-stat-card
+                results-stat-navy
+              "
+              bordered={false}
+              loading={statsLoading}
+              bodyStyle={{
+                padding: 17,
+              }}
+            >
+              <div className="results-stat-content">
+                <div>
+                  <span className="results-stat-label">Tổng học viên</span>
+
+                  <span className="results-stat-value">
+                    {computedStats.totalStudents}
+                  </span>
+                </div>
+
+                <div className="results-stat-icon">
+                  <TeamOutlined />
+                </div>
+              </div>
+            </Card>
           </Col>
 
-          {/* TOTAL RESULTS */}
-
           <Col xs={12} sm={6}>
-            <StatCard
-              title="Tổng bài điểm"
-              value={computedStats.totalResults}
-              icon={<BookOutlined />}
-              color={COLORS.lavender}
-              bg={COLORS.lavenderLight}
-            />
+            <Card
+              className="
+                results-stat-card
+                results-stat-gold
+              "
+              bordered={false}
+              loading={statsLoading}
+              bodyStyle={{
+                padding: 17,
+              }}
+            >
+              <div className="results-stat-content">
+                <div>
+                  <span className="results-stat-label">Tổng bài điểm</span>
+
+                  <span className="results-stat-value">
+                    {computedStats.totalResults}
+                  </span>
+                </div>
+
+                <div className="results-stat-icon">
+                  <BookOutlined />
+                </div>
+              </div>
+            </Card>
           </Col>
 
-          {/* AVERAGE */}
-
           <Col xs={12} sm={6}>
-            <StatCard
-              title="ĐTB Lớp"
-              value={Number(computedStats.averageScore || 0).toFixed(1)}
-              suffix="/ 10"
-              icon={<RiseOutlined />}
-              color={COLORS.green}
-              bg={COLORS.greenLight}
-            />
+            <Card
+              className="
+                results-stat-card
+                results-stat-green
+              "
+              bordered={false}
+              loading={statsLoading}
+              bodyStyle={{
+                padding: 17,
+              }}
+            >
+              <div className="results-stat-content">
+                <div>
+                  <span className="results-stat-label">Điểm TB lớp</span>
+
+                  <span className="results-stat-value">
+                    {Number(computedStats.averageScore || 0).toFixed(1)}
+
+                    <span
+                      style={{
+                        marginLeft: 4,
+
+                        color: COLORS.textMuted,
+
+                        fontSize: 12,
+
+                        fontWeight: 600,
+                      }}
+                    >
+                      /10
+                    </span>
+                  </span>
+                </div>
+
+                <div className="results-stat-icon">
+                  <RiseOutlined />
+                </div>
+              </div>
+            </Card>
           </Col>
 
-          {/* PASS RATE */}
-
           <Col xs={12} sm={6}>
-            <StatCard
-              title="Tỷ lệ Đạt"
-              value={`${computedStats.passRate}%`}
-              icon={<CheckCircleOutlined />}
-              color={COLORS.orange}
-              bg={COLORS.orangeLight}
-            />
+            <Card
+              className="
+                results-stat-card
+                results-stat-blue
+              "
+              bordered={false}
+              loading={statsLoading}
+              bodyStyle={{
+                padding: 17,
+              }}
+            >
+              <div className="results-stat-content">
+                <div>
+                  <span className="results-stat-label">Tỷ lệ đạt</span>
+
+                  <span className="results-stat-value">
+                    {computedStats.passRate}%
+                  </span>
+                </div>
+
+                <div className="results-stat-icon">
+                  <CheckCircleOutlined />
+                </div>
+              </div>
+            </Card>
           </Col>
         </Row>
       )}
 
       {/* ======================================================
-          MAIN CARD
+          MAIN
       ====================================================== */}
 
-      <Card
-        bordered={false}
-        style={{
-          marginTop: 20,
-          borderRadius: 20,
-          background: COLORS.white,
-
-          border: `1px solid ${COLORS.primaryBorder}`,
-
-          boxShadow: "0 8px 30px rgba(0,0,0,0.03)",
-        }}
-        bodyStyle={{
-          padding: 24,
-        }}
-      >
-        {/* NO CLASS */}
-
+      <Card className="results-main-card" bordered={false}>
         {!classId ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" align="center" size={4}>
-                <Text
-                  strong
-                  style={{
-                    color: COLORS.text,
-                  }}
-                >
-                  Chưa chọn lớp học
-                </Text>
+          <div className="results-empty">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <Space direction="vertical" align="center" size={4}>
+                  <Text
+                    strong
+                    style={{
+                      color: COLORS.text,
+                    }}
+                  >
+                    Chưa chọn lớp học
+                  </Text>
 
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: COLORS.textMuted,
-                  }}
-                >
-                  Vui lòng chọn một lớp ở menu trên để xem bảng điểm
-                </Text>
-              </Space>
-            }
-            style={{
-              padding: "40px 0",
-            }}
-          />
+                  <Text
+                    style={{
+                      fontSize: 12,
+
+                      color: COLORS.textMuted,
+                    }}
+                  >
+                    Chọn một lớp học ở phía trên để xem bảng điểm.
+                  </Text>
+                </Space>
+              }
+            />
+          </div>
         ) : (
           <>
             {/* ==================================================
-                FILTER BAR
+                TABLE HEADER
             ================================================== */}
 
-            <Row
-              gutter={[16, 16]}
-              align="middle"
-              style={{
-                marginBottom: 20,
-              }}
-            >
-              <Col xs={24} md={12}>
-                <Input
-                  prefix={
-                    <SearchOutlined
-                      style={{
-                        color: COLORS.primary,
-                      }}
-                    />
-                  }
-                  placeholder="Tìm kiếm theo tên học viên, mã học viên..."
-                  value={searchText}
-                  onChange={(e) => {
-                    setSearchText(e.target.value);
+            <div className="results-table-header">
+              <div className="results-table-title">
+                <div className="results-table-title-icon">
+                  <BookOutlined />
+                </div>
 
-                    setCurrentPage(1);
-                  }}
-                  allowClear
-                  size="large"
-                  style={{
-                    borderRadius: 12,
-                  }}
-                />
-              </Col>
+                <div>
+                  <span className="results-table-title-main">
+                    Danh sách kết quả học tập
+                  </span>
 
-              <Col
-                xs={24}
-                md={12}
-                style={{
-                  textAlign: "right",
-                }}
-              >
-                <Space wrap align="center">
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color: COLORS.textSecondary,
-                    }}
-                  >
-                    <FilterOutlined /> Lọc điểm:
-                  </Text>
+                  <span className="results-table-title-sub">
+                    {selectedClass?.name || "Lớp đang chọn"}
+                    {" • "}
+                    {filteredResults.length} học viên
+                  </span>
+                </div>
+              </div>
+            </div>
 
-                  <Select
-                    value={scoreFilter}
-                    onChange={(value) => {
-                      setScoreFilter(value);
+            {/* ==================================================
+                FILTER
+            ================================================== */}
+
+            <div className="results-filter-bar">
+              <Row gutter={[12, 12]} align="middle">
+                <Col xs={24} md={14}>
+                  <Input
+                    className="results-search"
+                    prefix={
+                      <SearchOutlined
+                        style={{
+                          color: COLORS.navy,
+                        }}
+                      />
+                    }
+                    placeholder="Tìm theo tên học viên, mã học viên..."
+                    value={searchText}
+                    onChange={(e) => {
+                      setSearchText(e.target.value);
 
                       setCurrentPage(1);
                     }}
-                    style={{
-                      width: 160,
-                    }}
+                    allowClear
                     size="large"
-                    options={[
-                      {
-                        value: "all",
-                        label: "Tất cả điểm",
-                      },
-
-                      {
-                        value: "good",
-                        label: "🟢 Tốt/Giỏi (≥8)",
-                      },
-
-                      {
-                        value: "pass",
-                        label: "🟠 Đạt (5-7.9)",
-                      },
-
-                      {
-                        value: "fail",
-                        label: "🔴 Chưa đạt (<5)",
-                      },
-                    ]}
                   />
-                </Space>
-              </Col>
-            </Row>
+                </Col>
+
+                <Col xs={24} md={10}>
+                  <Space
+                    style={{
+                      width: "100%",
+
+                      justifyContent: "flex-end",
+                    }}
+                    wrap
+                  >
+                    <Space size={6}>
+                      <FilterOutlined
+                        style={{
+                          color: COLORS.goldDark,
+                        }}
+                      />
+
+                      <Text
+                        style={{
+                          color: COLORS.textSecondary,
+
+                          fontSize: 12,
+
+                          fontWeight: 600,
+                        }}
+                      >
+                        Xếp loại
+                      </Text>
+                    </Space>
+
+                    <Select
+                      className="results-filter-select"
+                      value={scoreFilter}
+                      onChange={(value) => {
+                        setScoreFilter(value);
+
+                        setCurrentPage(1);
+                      }}
+                      size="large"
+                      style={{
+                        width: 170,
+                      }}
+                      options={[
+                        {
+                          value: "all",
+                          label: "Tất cả điểm",
+                        },
+
+                        {
+                          value: "good",
+                          label: "Giỏi / Tốt (≥ 8)",
+                        },
+
+                        {
+                          value: "pass",
+                          label: "Đạt (5 - 7.9)",
+                        },
+
+                        {
+                          value: "fail",
+                          label: "Chưa đạt (< 5)",
+                        },
+                      ]}
+                    />
+                  </Space>
+                </Col>
+              </Row>
+            </div>
 
             {/* ==================================================
                 TABLE
             ================================================== */}
 
             <Table
+              className="results-main-table"
               columns={columns}
               dataSource={paginatedResults}
               rowKey={(record) => record.id || record.student_id}
               loading={loading || studentsLoading}
               pagination={false}
               scroll={{
-                x: 850,
+                x: 900,
               }}
               locale={{
                 emptyText: (
                   <Empty
+                    className="results-empty"
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                     description="Chưa có dữ liệu điểm cho lớp này"
                   />
@@ -1779,30 +2811,11 @@ const ResultsPage = () => {
             ================================================== */}
 
             {filteredResults.length > 0 && (
-              <div
-                style={{
-                  marginTop: 20,
-
-                  display: "flex",
-
-                  justifyContent: "space-between",
-
-                  alignItems: "center",
-
-                  flexWrap: "wrap",
-
-                  gap: 12,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: COLORS.textSecondary,
-                  }}
-                >
+              <div className="results-pagination">
+                <span className="results-pagination-info">
                   Hiển thị <b>{paginatedResults.length}</b> /{" "}
                   <b>{filteredResults.length}</b> học viên
-                </Text>
+                </span>
 
                 <Pagination
                   current={currentPage}
@@ -1815,6 +2828,7 @@ const ResultsPage = () => {
                   }}
                   showSizeChanger
                   pageSizeOptions={["10", "20", "50"]}
+                  size="small"
                 />
               </div>
             )}
@@ -1823,7 +2837,7 @@ const ResultsPage = () => {
       </Card>
 
       {/* ======================================================
-          STUDENT DETAIL MODAL
+          DETAIL MODAL
       ====================================================== */}
 
       <AppDetailModal
@@ -1834,10 +2848,10 @@ const ResultsPage = () => {
         showEdit={false}
         title={
           selectedStudent
-            ? `Bảng Điểm Cá Nhân - ${
+            ? `Bảng điểm cá nhân - ${
                 selectedStudent.name || selectedStudent.full_name || ""
               }`
-            : "Bảng Điểm Học Viên"
+            : "Bảng điểm học viên"
         }
         width={800}
       >
@@ -1850,36 +2864,15 @@ const ResultsPage = () => {
           />
         ) : (
           <div>
-            {/* STUDENT INFO */}
+            {/* ==================================================
+                PROFILE
+            ================================================== */}
 
-            <Card
-              bordered={false}
-              style={{
-                borderRadius: 16,
-
-                background: COLORS.primaryLight,
-
-                marginBottom: 20,
-
-                border: `1px solid ${COLORS.primaryBorder}`,
-              }}
-              bodyStyle={{
-                padding: 16,
-              }}
-            >
+            <div className="results-detail-profile">
               <Row align="middle" justify="space-between" gutter={16}>
                 <Col>
                   <Space size={12}>
-                    <Avatar
-                      size={48}
-                      style={{
-                        backgroundColor: COLORS.white,
-
-                        color: COLORS.primary,
-
-                        fontWeight: 700,
-                      }}
-                    >
+                    <Avatar size={48} className="results-detail-avatar">
                       {(
                         selectedStudent?.name ||
                         selectedStudent?.full_name ||
@@ -1890,65 +2883,38 @@ const ResultsPage = () => {
                     </Avatar>
 
                     <div>
-                      <Title
-                        level={5}
-                        style={{
-                          margin: 0,
-                          color: COLORS.text,
-                        }}
-                      >
+                      <Title level={5} className="results-detail-name">
                         {selectedStudent?.name || selectedStudent?.full_name}
                       </Title>
 
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: COLORS.textSecondary,
-                        }}
-                      >
-                        Mã HV: #{selectedStudent?.id} • Lớp:{" "}
-                        {selectedClass?.name}
-                      </Text>
+                      <div className="results-detail-meta">
+                        Mã HV: #{selectedStudent?.id}
+                        {" • "}
+                        Lớp: {selectedClass?.name}
+                      </div>
                     </div>
                   </Space>
                 </Col>
 
                 <Col>
                   {studentStats && (
-                    <Space size={12}>
-                      <div
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            color: COLORS.textMuted,
+                    <div className="results-detail-average">
+                      <span className="results-detail-average-label">
+                        ĐTB tích lũy
+                      </span>
 
-                            display: "block",
-                          }}
-                        >
-                          ĐTB Tích lũy
-                        </Text>
-
-                        <Text
-                          strong
-                          style={{
-                            fontSize: 18,
-                            color: COLORS.primaryDark,
-                          }}
-                        >
-                          {Number(studentStats.average_score || 0).toFixed(1)}
-                        </Text>
-                      </div>
-                    </Space>
+                      <span className="results-detail-average-value">
+                        {Number(studentStats.average_score || 0).toFixed(1)}
+                      </span>
+                    </div>
                   )}
                 </Col>
               </Row>
-            </Card>
+            </div>
 
-            {/* DETAIL RESULTS */}
+            {/* ==================================================
+                DETAIL TABLE
+            ================================================== */}
 
             <Table
               columns={detailColumns}
@@ -1968,7 +2934,7 @@ const ResultsPage = () => {
       </AppDetailModal>
 
       {/* ======================================================
-          CREATE / EDIT MODAL
+          CREATE / EDIT
       ====================================================== */}
 
       <AppFormModal

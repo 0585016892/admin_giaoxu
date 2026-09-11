@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -36,6 +36,12 @@ import { useNavigate } from "react-router-dom";
 
 import logoWeb from "../../assets/images/logoweb.png";
 import registerHero from "../../assets/images/register-background.jpg";
+
+// ============================================================
+// LOADING LOGO
+// ============================================================
+
+import LoadingLogo from "../../components/LoadingLogo";
 
 const { Title } = Typography;
 
@@ -141,8 +147,39 @@ const FaithEduRegister = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
   const [error, setError] = useState("");
   const [accepted, setAccepted] = useState(false);
+
+  // ==========================================================
+  // LOADING PROGRESS
+  // ==========================================================
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingProgress(0);
+      return;
+    }
+
+    setLoadingProgress(10);
+
+    const interval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 90) {
+          return prev;
+        }
+
+        const increment = prev < 40 ? 8 : prev < 70 ? 5 : 2;
+
+        return Math.min(prev + increment, 90);
+      });
+    }, 250);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [loading]);
 
   // ==========================================================
   // MODAL
@@ -163,6 +200,11 @@ const FaithEduRegister = () => {
   const closeModal = () => {
     setModalType(null);
   };
+
+  // ==========================================================
+  // GENERATE USERNAME
+  // ==========================================================
+
   const generateUsername = (email) => {
     if (!email) return "";
 
@@ -175,12 +217,14 @@ const FaithEduRegister = () => {
 
     return `${base}${Math.floor(1000 + Math.random() * 9000)}`;
   };
+
   // ==========================================================
   // SUBMIT
   // ==========================================================
 
   const handleSubmit = async (values) => {
     setError("");
+    setLoadingProgress(10);
     setLoading(true);
 
     try {
@@ -200,6 +244,8 @@ const FaithEduRegister = () => {
       };
 
       const response = await axios.post("/auth/register", payload);
+
+      setLoadingProgress(95);
 
       const data = response.data;
 
@@ -231,6 +277,8 @@ const FaithEduRegister = () => {
 
       localStorage.setItem("church", JSON.stringify(data.church));
 
+      setLoadingProgress(100);
+
       message.success("Đăng ký FaithEdu thành công!");
 
       navigate("/", {
@@ -238,6 +286,8 @@ const FaithEduRegister = () => {
       });
     } catch (err) {
       console.error("REGISTER ERROR:", err);
+
+      setLoadingProgress(100);
 
       const apiMessage =
         err?.response?.data?.message ||
@@ -248,7 +298,9 @@ const FaithEduRegister = () => {
 
       message.error(apiMessage);
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 300);
     }
   };
 
@@ -260,8 +312,10 @@ const FaithEduRegister = () => {
     <div className="legal-content">
       <div className="legal-intro">
         <FileTextOutlined />
+
         <div>
           <strong>Điều khoản sử dụng FaithEdu</strong>
+
           <span>Vui lòng đọc kỹ các điều khoản trước khi tạo tài khoản.</span>
         </div>
       </div>
@@ -326,6 +380,7 @@ const FaithEduRegister = () => {
 
       <div className="legal-footer-note">
         <HeartFilled />
+
         <span>
           Cùng nhau xây dựng một môi trường giáo dục đức tin an toàn, tích cực
           và yêu thương.
@@ -338,8 +393,10 @@ const FaithEduRegister = () => {
     <div className="legal-content">
       <div className="legal-intro privacy-intro">
         <SafetyCertificateFilled />
+
         <div>
           <strong>Chính sách bảo mật FaithEdu</strong>
+
           <span>FaithEdu tôn trọng và bảo vệ thông tin của người sử dụng.</span>
         </div>
       </div>
@@ -393,6 +450,7 @@ const FaithEduRegister = () => {
 
       <div className="legal-footer-note privacy-note">
         <SafetyCertificateFilled />
+
         <span>
           FaithEdu cam kết hướng tới một môi trường số an toàn và đáng tin cậy
           cho cộng đoàn giáo lý.
@@ -2094,6 +2152,12 @@ const FaithEduRegister = () => {
       ====================================================== */}
 
       <div className="register-page">
+        {/* ====================================================
+            LOADING
+        ==================================================== */}
+
+        {loading && <LoadingLogo progress={loadingProgress} />}
+
         {/* ======================================================
             DECORATIONS
         ====================================================== */}
@@ -2198,14 +2262,6 @@ const FaithEduRegister = () => {
             ================================================== */}
 
             <motion.section className="register-visual" variants={fadeLeft}>
-              {/*
-                TODO: IMAGE
-                ẢNH CHÚA GIÊSU + CÁC BẠN TRẺ
-
-                Hiện đang dùng:
-                register-background.jpg
-              */}
-
               <img
                 src={registerHero}
                 alt="FaithEdu - Cùng nhau lớn lên trong Đức Tin"
@@ -2279,7 +2335,9 @@ const FaithEduRegister = () => {
                 </p>
               </div>
 
-              {/* ERROR */}
+              {/* ==================================================
+                  ERROR
+              ================================================== */}
 
               {error && (
                 <Alert
@@ -2290,7 +2348,9 @@ const FaithEduRegister = () => {
                 />
               )}
 
-              {/* FORM */}
+              {/* ==================================================
+                  FORM
+              ================================================== */}
 
               <Form
                 form={form}

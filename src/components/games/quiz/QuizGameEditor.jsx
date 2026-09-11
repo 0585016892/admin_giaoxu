@@ -34,14 +34,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Sparkles,
   CheckCircle2,
   XCircle,
   UploadCloud,
   ImageIcon,
   X,
-  Sliders,
+  SlidersHorizontal,
   Eye,
+  Trophy,
+  FileQuestion,
+  Check,
 } from "lucide-react";
 
 import {
@@ -54,15 +56,45 @@ const { Text, Title } = Typography;
 const { TextArea } = Input;
 
 /* =========================================================
-   DEFAULT CHIBI PASTEL THEME
+   COLORS
+========================================================= */
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  gold: "#D9A441",
+
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+
+  border: "#E2E8F0",
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
+
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
+
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+};
+
+/* =========================================================
+   DEFAULT THEME
 ========================================================= */
 
 const DEFAULT_THEME = {
-  primary: "#9333EA", // Pastel Purple
-  secondary: "#F472B6", // Pastel Pink
-  font: "Baloo 2",
-  borderRadius: 24,
-  backgroundColor: "#FAF5FF", // Lavender Mist
+  primary: COLORS.navy,
+  secondary: COLORS.gold,
+  font: "Be Vietnam Pro",
+  borderRadius: 12,
+  backgroundColor: "#F7F9FC",
 };
 
 /* =========================================================
@@ -91,13 +123,32 @@ const DEFAULT_SETTINGS = {
 
 const createEmptyQuestion = () => ({
   id: `question_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+
   question: "",
+
   answers: [
-    { id: "A", text: "", correct: true },
-    { id: "B", text: "", correct: false },
-    { id: "C", text: "", correct: false },
-    { id: "D", text: "", correct: false },
+    {
+      id: "A",
+      text: "",
+      correct: true,
+    },
+    {
+      id: "B",
+      text: "",
+      correct: false,
+    },
+    {
+      id: "C",
+      text: "",
+      correct: false,
+    },
+    {
+      id: "D",
+      text: "",
+      correct: false,
+    },
   ],
+
   explanation: "",
   points: 10,
 });
@@ -108,15 +159,21 @@ const createEmptyQuestion = () => ({
 
 const normalizeQuestion = (q) => ({
   id: q?.id || `question_${Date.now()}`,
+
   question: q?.question || "",
+
   answers: Array.isArray(q?.answers)
     ? q.answers.map((a, idx) => ({
         id: a?.id || String.fromCharCode(65 + idx),
+
         text: a?.text || "",
+
         correct: Boolean(a?.correct),
       }))
     : createEmptyQuestion().answers,
+
   explanation: q?.explanation || "",
+
   points: Number(q?.points ?? 10),
 });
 
@@ -126,8 +183,15 @@ const normalizeQuestion = (q) => ({
 
 const getColorValue = (value, fallback) => {
   if (!value) return fallback;
-  if (typeof value === "string") return value;
-  if (typeof value?.toHexString === "function") return value.toHexString();
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value?.toHexString === "function") {
+    return value.toHexString();
+  }
+
   return fallback;
 };
 
@@ -143,35 +207,47 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
   ======================================================= */
 
   const [questions, setQuestions] = useState([]);
+
   const [editingQuestion, setEditingQuestion] = useState(null);
+
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
+
   const [previewIndex, setPreviewIndex] = useState(0);
 
   /* =======================================================
-     BACKGROUND FILE
+     BACKGROUND
   ======================================================= */
 
   const [backgroundFile, setBackgroundFile] = useState(null);
+
   const [backgroundPreview, setBackgroundPreview] = useState(null);
+
   const [oldBackground, setOldBackground] = useState(null);
 
   /* =======================================================
-     FORM VALUES FOR LIVE PREVIEW
+     LIVE FORM VALUES
   ======================================================= */
 
   const [formValues, setFormValues] = useState({
     name: "Tên trò chơi",
+
     backgroundColor: DEFAULT_THEME.backgroundColor,
+
     primary: DEFAULT_THEME.primary,
+
     secondary: DEFAULT_THEME.secondary,
+
     font: DEFAULT_THEME.font,
+
     borderRadius: DEFAULT_THEME.borderRadius,
+
     ...DEFAULT_SETTINGS,
   });
 
   /* =======================================================
-     INITIALIZE GAME
+     INITIALIZE
   ======================================================= */
 
   useEffect(() => {
@@ -180,33 +256,52 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
     if (game) {
       initialValues = {
         name: game.name || "",
+
         backgroundColor:
           game.background?.color || DEFAULT_THEME.backgroundColor,
+
         primary: game.theme?.primary || DEFAULT_THEME.primary,
+
         secondary: game.theme?.secondary || DEFAULT_THEME.secondary,
+
         font: game.theme?.font || DEFAULT_THEME.font,
+
         borderRadius: game.theme?.borderRadius ?? DEFAULT_THEME.borderRadius,
+
         timeLimit: game.settings?.timeLimit ?? DEFAULT_SETTINGS.timeLimit,
+
         shuffleQuestions:
           game.settings?.shuffleQuestions ?? DEFAULT_SETTINGS.shuffleQuestions,
+
         shuffleAnswers:
           game.settings?.shuffleAnswers ?? DEFAULT_SETTINGS.shuffleAnswers,
+
         showScore: game.settings?.showScore ?? DEFAULT_SETTINGS.showScore,
+
         showTimer: game.settings?.showTimer ?? DEFAULT_SETTINGS.showTimer,
+
         showProgress:
           game.settings?.showProgress ?? DEFAULT_SETTINGS.showProgress,
+
         allowHint: game.settings?.allowHint ?? DEFAULT_SETTINGS.allowHint,
+
         allowSkip: game.settings?.allowSkip ?? DEFAULT_SETTINGS.allowSkip,
+
         showExplanation:
           game.settings?.showExplanation ?? DEFAULT_SETTINGS.showExplanation,
+
         instantFeedback:
           game.settings?.instantFeedback ?? DEFAULT_SETTINGS.instantFeedback,
+
         enableSound: game.settings?.enableSound ?? DEFAULT_SETTINGS.enableSound,
       };
 
       const existingBackground = getGameBackground(game);
+
       setOldBackground(existingBackground);
+
       setBackgroundPreview(existingBackground);
+
       setBackgroundFile(null);
 
       setQuestions(
@@ -217,11 +312,17 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
     } else {
       initialValues = {
         name: "",
+
         backgroundColor: DEFAULT_THEME.backgroundColor,
+
         primary: DEFAULT_THEME.primary,
+
         secondary: DEFAULT_THEME.secondary,
+
         font: DEFAULT_THEME.font,
+
         borderRadius: DEFAULT_THEME.borderRadius,
+
         ...DEFAULT_SETTINGS,
       };
 
@@ -232,7 +333,9 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
     }
 
     form.setFieldsValue(initialValues);
+
     setFormValues(initialValues);
+
     setPreviewIndex(0);
   }, [game, form]);
 
@@ -243,38 +346,49 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
   const handleValuesChange = (_, allValues) => {
     setFormValues((prev) => ({
       ...prev,
+
       ...allValues,
+
       backgroundColor: getColorValue(
         allValues.backgroundColor,
         prev.backgroundColor,
       ),
+
       primary: getColorValue(allValues.primary, prev.primary),
+
       secondary: getColorValue(allValues.secondary, prev.secondary),
     }));
   };
 
   /* =======================================================
-     BACKGROUND HANDLERS
+     BACKGROUND CHANGE
   ======================================================= */
 
   const handleBackgroundChange = (info) => {
     const file = info.file?.originFileObj || info.file;
+
     if (!file) return;
 
     if (!file.type?.startsWith("image/")) {
-      message.error("Vui lòng chọn file hình ảnh xinh xắn nha! 🖼️");
+      message.error("Vui lòng chọn file hình ảnh.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      message.error("Ảnh nền nhẹ hơn 5MB để load mượt hơn nè! 🌸");
+      message.error("Dung lượng ảnh không được vượt quá 5MB.");
       return;
     }
 
     setBackgroundFile(file);
+
     const previewUrl = URL.createObjectURL(file);
+
     setBackgroundPreview(previewUrl);
   };
+
+  /* =======================================================
+     REMOVE BACKGROUND
+  ======================================================= */
 
   const handleRemoveBackground = () => {
     setBackgroundFile(null);
@@ -288,71 +402,89 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
 
   const handleAddQuestion = () => {
     setEditingQuestion(createEmptyQuestion());
+
     setQuestionModalOpen(true);
   };
 
   const handleEditQuestion = (q) => {
     setEditingQuestion(JSON.parse(JSON.stringify(q)));
+
     setQuestionModalOpen(true);
   };
 
   const handleDeleteQuestion = (id) => {
     setQuestions((prev) => {
       const updated = prev.filter((q) => q.id !== id);
+
       if (previewIndex >= updated.length && updated.length > 0) {
         setPreviewIndex(updated.length - 1);
       }
+
       if (updated.length === 0) {
         setPreviewIndex(0);
       }
+
       return updated;
     });
 
-    message.success("Đã xóa câu hỏi rồi nha ✨");
+    message.success("Đã xóa câu hỏi.");
   };
+
+  /* =======================================================
+     SAVE QUESTION
+  ======================================================= */
 
   const handleSaveQuestion = () => {
     if (!editingQuestion) return;
 
     if (!editingQuestion.question.trim()) {
-      message.warning("Bé ơi, nhập nội dung câu hỏi nữa nha 📝");
+      message.warning("Vui lòng nhập nội dung câu hỏi.");
       return;
     }
 
     const validAnswers = editingQuestion.answers.filter((a) => a.text.trim());
 
     if (validAnswers.length < 2) {
-      message.warning("Cần ít nhất 2 đáp án để trò chơi thêm vui nhé!");
+      message.warning("Cần ít nhất 2 đáp án.");
       return;
     }
 
     if (!validAnswers.some((a) => a.correct)) {
-      message.warning("Đừng quên chọn ít nhất 1 đáp án đúng nha ✨");
+      message.warning("Vui lòng chọn ít nhất 1 đáp án đúng.");
       return;
     }
 
     const newQuestion = {
       ...editingQuestion,
+
       answers: validAnswers.map((answer, index) => ({
         ...answer,
+
         id: answer.id || String.fromCharCode(65 + index),
+
         correct: Boolean(answer.correct),
       })),
     };
 
     setQuestions((prev) => {
       const idx = prev.findIndex((item) => item.id === newQuestion.id);
+
       if (idx >= 0) {
         const updated = [...prev];
+
         updated[idx] = newQuestion;
+
         return updated;
       }
+
       return [...prev, newQuestion];
     });
 
     setQuestionModalOpen(false);
+
     setEditingQuestion(null);
-    message.success("Lưu câu hỏi thành công nè 🌸");
+
+    message.success("Lưu câu hỏi thành công.");
   };
 
   /* =======================================================
@@ -364,7 +496,8 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
       const values = await form.validateFields();
 
       if (questions.length === 0) {
-        message.warning("Thêm ít nhất 1 câu hỏi để bắt đầu trò chơi nha! 🧩");
+        message.warning("Thêm ít nhất 1 câu hỏi để tạo trò chơi.");
+
         return;
       }
 
@@ -372,7 +505,9 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
         values.backgroundColor,
         DEFAULT_THEME.backgroundColor,
       );
+
       const primary = getColorValue(values.primary, DEFAULT_THEME.primary);
+
       const secondary = getColorValue(
         values.secondary,
         DEFAULT_THEME.secondary,
@@ -380,58 +515,89 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
 
       const settings = {
         timeLimit: Number(values.timeLimit ?? DEFAULT_SETTINGS.timeLimit),
+
         shuffleQuestions: Boolean(values.shuffleQuestions),
+
         shuffleAnswers: Boolean(values.shuffleAnswers),
+
         showScore: Boolean(values.showScore),
+
         showTimer: Boolean(values.showTimer),
+
         showProgress: Boolean(values.showProgress),
+
         allowHint: Boolean(values.allowHint),
+
         allowSkip: Boolean(values.allowSkip),
+
         showExplanation: Boolean(values.showExplanation),
+
         instantFeedback: Boolean(values.instantFeedback),
+
         enableSound: Boolean(values.enableSound),
       };
 
-      const backgroundConfig = { color: backgroundColor };
+      const backgroundConfig = {
+        color: backgroundColor,
+      };
 
       const media = {
         backgroundMusic: game?.media?.backgroundMusic || null,
+
         correctSound: game?.media?.correctSound || null,
+
         wrongSound: game?.media?.wrongSound || null,
       };
 
       const payload = {
         name: values.name,
+
         description: game?.description || "",
+
         type: "quiz",
+
         backgroundConfig,
+
         theme: {
           primary,
           secondary,
+
           font: values.font || DEFAULT_THEME.font,
+
           borderRadius: Number(
             values.borderRadius ?? DEFAULT_THEME.borderRadius,
           ),
         },
+
         settings,
+
         media,
+
         questions: questions.map((q) => ({
           id: q.id,
+
           question: q.question,
+
           answers: q.answers.map((answer) => ({
             id: answer.id,
+
             text: answer.text,
+
             correct: Boolean(answer.correct),
           })),
+
           explanation: q.explanation || "",
+
           points: Number(q.points ?? 10),
         })),
+
         background: backgroundFile || null,
       };
 
       setSubmitting(true);
 
       let result;
+
       if (game?.id) {
         result = await updateGame(game.id, payload);
       } else {
@@ -441,16 +607,20 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
       if (result?.success) {
         message.success(
           game?.id
-            ? "Cập nhật trò chơi thành công! ✨"
-            : "Tạo trò chơi mới siêu xịn rồi! 🎉",
+            ? "Cập nhật trò chơi thành công."
+            : "Tạo trò chơi thành công.",
         );
-        if (onSuccess) onSuccess(result.data);
+
+        if (onSuccess) {
+          onSuccess(result.data);
+        }
       } else {
-        message.error(result?.message || "Úi, có lỗi xảy ra rồi");
+        message.error(result?.message || "Có lỗi xảy ra.");
       }
     } catch (err) {
       console.error("SAVE GAME ERROR:", err);
-      message.error(err?.message || "Bé kiểm tra lại các thông tin nhé!");
+
+      message.error(err?.message || "Vui lòng kiểm tra lại thông tin.");
     } finally {
       setSubmitting(false);
     }
@@ -459,7 +629,17 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
   const currentPreviewQuestion = questions[previewIndex] || null;
 
   /* =======================================================
-     RENDER CHIBI PASTEL
+     SMALL LABEL
+  ======================================================= */
+
+  const labelStyle = {
+    fontWeight: 700,
+    color: COLORS.text,
+    fontSize: 13,
+  };
+
+  /* =======================================================
+     RENDER
   ======================================================= */
 
   return (
@@ -467,14 +647,16 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
       style={{
         position: "relative",
         paddingBottom: 24,
-        fontFamily: `'${formValues.font}', 'Quicksand', sans-serif`,
+
+        fontFamily: `'${formValues.font}', 'Be Vietnam Pro', sans-serif`,
       }}
     >
-      <Row gutter={[24, 24]}>
+      <Row gutter={[20, 20]}>
         {/* =================================================
-            LEFT EDITOR PANEL (CHIBI PASTEL)
+            LEFT PANEL
         ================================================= */}
-        <Col xs={24} lg={13}>
+
+        <Col xs={24} lg={14}>
           <Form
             form={form}
             layout="vertical"
@@ -482,64 +664,88 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
           >
             <Card
               style={{
-                borderRadius: 28,
-                border: "2.5px solid #F3E8FF",
-                boxShadow: "0 10px 28px rgba(147, 51, 234, 0.05)",
-                background: "#FFFFFF",
+                borderRadius: 16,
+                border: `1px solid ${COLORS.border}`,
+                background: COLORS.white,
+                boxShadow: "0 3px 12px rgba(23,59,94,0.04)",
               }}
-              styles={{ body: { padding: 22 } }}
+              styles={{
+                body: {
+                  padding: 22,
+                },
+              }}
             >
               <Tabs
                 defaultActiveKey="questions"
                 items={[
-                  /* 🌸 TAB 1: CÂU HỎI */
+                  /* =================================================
+                      QUESTIONS
+                  ================================================= */
+
                   {
                     key: "questions",
+
                     label: (
                       <span
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 6,
-                          fontWeight: 800,
-                          fontSize: 14,
+                          gap: 7,
+                          fontWeight: 700,
                         }}
                       >
-                        <HelpCircle size={18} color="#9333EA" />
+                        <HelpCircle size={17} />
                         Câu hỏi ({questions.length})
                       </span>
                     ),
+
                     children: (
-                      <div style={{ paddingTop: 14 }}>
+                      <div
+                        style={{
+                          paddingTop: 12,
+                        }}
+                      >
                         <div
                           style={{
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
+                            gap: 12,
                             marginBottom: 16,
                           }}
                         >
-                          <Text
-                            style={{
-                              fontSize: 13,
-                              color: "#827093",
-                              fontWeight: 600,
-                            }}
-                          >
-                            Danh sách câu hỏi thú vị 🧩
-                          </Text>
+                          <div>
+                            <Text
+                              style={{
+                                display: "block",
+                                color: COLORS.text,
+                                fontWeight: 700,
+                                fontSize: 14,
+                              }}
+                            >
+                              Danh sách câu hỏi
+                            </Text>
+
+                            <Text
+                              style={{
+                                color: COLORS.muted,
+                                fontSize: 12,
+                              }}
+                            >
+                              Quản lý nội dung và đáp án
+                            </Text>
+                          </div>
 
                           <Button
                             type="primary"
                             icon={<Plus size={16} />}
                             onClick={handleAddQuestion}
                             style={{
-                              background: formValues.primary,
-                              borderRadius: 18,
-                              fontWeight: 700,
                               height: 38,
-                              border: "none",
-                              boxShadow: `0 6px 14px ${formValues.primary}35`,
+                              borderRadius: 9,
+                              background: COLORS.navy,
+                              borderColor: COLORS.navy,
+                              fontWeight: 700,
                             }}
                           >
                             Thêm câu hỏi
@@ -549,11 +755,11 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                         {questions.length === 0 ? (
                           <div
                             style={{
-                              padding: "36px 16px",
+                              padding: "38px 16px",
                               textAlign: "center",
-                              background: "#FAF5FF",
-                              borderRadius: 24,
-                              border: "2px dashed #E9D5FF",
+                              background: COLORS.navyLight,
+                              borderRadius: 12,
+                              border: `1px dashed ${COLORS.border}`,
                             }}
                           >
                             <Empty
@@ -561,13 +767,12 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                               description={
                                 <span
                                   style={{
-                                    color: "#827093",
-                                    fontWeight: 600,
-                                    fontSize: 14,
+                                    color: COLORS.textSecondary,
+                                    fontWeight: 500,
+                                    fontSize: 13,
                                   }}
                                 >
-                                  Chưa có câu hỏi nào hết nè! Bấm nút trên để
-                                  thêm nha ✨
+                                  Chưa có câu hỏi. Hãy thêm câu hỏi đầu tiên.
                                 </span>
                               }
                             />
@@ -577,58 +782,78 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                             style={{
                               display: "flex",
                               flexDirection: "column",
-                              gap: 12,
+                              gap: 9,
                               maxHeight: 440,
                               overflowY: "auto",
-                              paddingRight: 6,
+                              paddingRight: 4,
                             }}
                           >
                             {questions.map((q, idx) => {
                               const isSelected = previewIndex === idx;
+
                               return (
                                 <div
                                   key={q.id}
                                   onClick={() => setPreviewIndex(idx)}
                                   style={{
-                                    padding: "14px 18px",
-                                    borderRadius: 20,
+                                    padding: "12px 14px",
+                                    borderRadius: 11,
+
                                     border: isSelected
-                                      ? `2.5px solid ${formValues.primary}`
-                                      : "2px solid #F3E8FF",
+                                      ? `1.5px solid ${COLORS.navy}`
+                                      : `1px solid ${COLORS.border}`,
+
                                     background: isSelected
-                                      ? "#FAF5FF"
-                                      : "#FFFFFF",
+                                      ? COLORS.navyLight
+                                      : COLORS.white,
+
                                     display: "flex",
+
                                     alignItems: "center",
+
                                     justifyContent: "space-between",
+
+                                    gap: 10,
+
                                     cursor: "pointer",
-                                    transition:
-                                      "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                                    transform: isSelected
-                                      ? "translateY(-2px)"
-                                      : "none",
+
+                                    transition: "all 0.18s ease",
+
                                     boxShadow: isSelected
-                                      ? `0 8px 18px ${formValues.primary}20`
-                                      : "0 4px 10px rgba(0,0,0,0.02)",
+                                      ? "0 3px 10px rgba(23,59,94,0.07)"
+                                      : "none",
                                   }}
                                 >
-                                  <Space style={{ flex: 1, minWidth: 0 }}>
+                                  <Space
+                                    style={{
+                                      flex: 1,
+                                      minWidth: 0,
+                                    }}
+                                  >
                                     <div
                                       style={{
                                         width: 30,
                                         height: 30,
-                                        borderRadius: "50%",
+                                        minWidth: 30,
+                                        borderRadius: 8,
+
                                         background: isSelected
-                                          ? formValues.primary
-                                          : "#F3E8FF",
+                                          ? COLORS.navy
+                                          : COLORS.navyLight,
+
                                         color: isSelected
-                                          ? "#FFFFFF"
-                                          : "#9333EA",
+                                          ? COLORS.white
+                                          : COLORS.navy,
+
                                         display: "flex",
+
                                         alignItems: "center",
+
                                         justifyContent: "center",
+
                                         fontWeight: 800,
-                                        fontSize: 13,
+
+                                        fontSize: 12,
                                       }}
                                     >
                                       {idx + 1}
@@ -636,44 +861,44 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
 
                                     <Text
                                       strong
-                                      style={{
-                                        fontSize: 14,
-                                        color: "#3B2F4C",
-                                        fontWeight: 700,
+                                      ellipsis={{
+                                        tooltip: q.question,
                                       }}
-                                      ellipsis={{ tooltip: q.question }}
+                                      style={{
+                                        fontSize: 13,
+                                        color: COLORS.text,
+                                        fontWeight: 650,
+                                      }}
                                     >
                                       {q.question || "Chưa nhập nội dung..."}
                                     </Text>
                                   </Space>
 
-                                  <Space size={6}>
+                                  <Space size={5}>
                                     <Button
                                       type="text"
                                       size="small"
-                                      icon={<Edit3 size={16} color="#9333EA" />}
-                                      style={{
-                                        background: "#F3E8FF",
-                                        borderRadius: 12,
-                                        width: 32,
-                                        height: 32,
-                                      }}
+                                      icon={<Edit3 size={15} />}
                                       onClick={(e) => {
                                         e.stopPropagation();
+
                                         handleEditQuestion(q);
+                                      }}
+                                      style={{
+                                        color: COLORS.navy,
+                                        background: COLORS.navyLight,
+                                        borderRadius: 7,
+                                        width: 32,
+                                        height: 32,
                                       }}
                                     />
 
                                     <Popconfirm
-                                      title="Xóa câu hỏi này hả bé?"
-                                      okText="Xóa luôn"
-                                      cancelText="Giữ lại"
+                                      title="Xóa câu hỏi này?"
+                                      okText="Xóa"
+                                      cancelText="Hủy"
                                       okButtonProps={{
                                         danger: true,
-                                        style: { borderRadius: 10 },
-                                      }}
-                                      cancelButtonProps={{
-                                        style: { borderRadius: 10 },
                                       }}
                                       onConfirm={() =>
                                         handleDeleteQuestion(q.id)
@@ -683,14 +908,14 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                                         type="text"
                                         danger
                                         size="small"
-                                        icon={<Trash2 size={16} />}
+                                        icon={<Trash2 size={15} />}
+                                        onClick={(e) => e.stopPropagation()}
                                         style={{
-                                          background: "#FFE4E6",
-                                          borderRadius: 12,
+                                          background: COLORS.dangerBg,
+                                          borderRadius: 7,
                                           width: 32,
                                           height: 32,
                                         }}
-                                        onClick={(e) => e.stopPropagation()}
                                       />
                                     </Popconfirm>
                                   </Space>
@@ -703,47 +928,52 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                     ),
                   },
 
-                  /* 🌸 TAB 2: THÔNG TIN TRÒ CHƠI */
+                  /* =================================================
+                      INFO
+                  ================================================= */
+
                   {
                     key: "info",
+
                     label: (
                       <span
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 6,
-                          fontWeight: 800,
-                          fontSize: 14,
+                          gap: 7,
+                          fontWeight: 700,
                         }}
                       >
-                        <Settings size={18} color="#0284C7" />
+                        <Settings size={17} />
                         Thông tin
                       </span>
                     ),
+
                     children: (
-                      <div style={{ paddingTop: 14 }}>
+                      <div
+                        style={{
+                          paddingTop: 12,
+                        }}
+                      >
                         <Form.Item
                           name="name"
-                          label={
-                            <Text style={{ fontWeight: 800, color: "#3B2F4C" }}>
-                              Tên trò chơi ✨
-                            </Text>
-                          }
+                          label={<span style={labelStyle}>Tên trò chơi</span>}
                           rules={[
                             {
                               required: true,
-                              message: "Đừng quên đặt tên cho trò chơi nha!",
+                              message: "Vui lòng nhập tên trò chơi.",
                             },
                           ]}
                         >
                           <Input
-                            placeholder="Ví dụ: Đố vui khám phá đại dương! 🐬"
+                            placeholder="Nhập tên trò chơi..."
+                            prefix={
+                              <FileQuestion size={16} color={COLORS.muted} />
+                            }
                             style={{
-                              borderRadius: 16,
-                              height: 44,
-                              fontSize: 14,
-                              fontWeight: 600,
-                              border: "2px solid #E9D5FF",
+                              borderRadius: 9,
+                              height: 42,
+                              fontSize: 13,
                             }}
                           />
                         </Form.Item>
@@ -751,44 +981,46 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                     ),
                   },
 
-                  /* 🌸 TAB 3: GIAO DIỆN PASTEL */
+                  /* =================================================
+                      THEME
+                  ================================================= */
+
                   {
                     key: "theme",
+
                     label: (
                       <span
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 6,
-                          fontWeight: 800,
-                          fontSize: 14,
+                          gap: 7,
+                          fontWeight: 700,
                         }}
                       >
-                        <Palette size={18} color="#EC4899" />
+                        <Palette size={17} />
                         Giao diện
                       </span>
                     ),
+
                     children: (
-                      <div style={{ paddingTop: 14 }}>
-                        <Row gutter={[16, 16]}>
+                      <div
+                        style={{
+                          paddingTop: 12,
+                        }}
+                      >
+                        <Row gutter={[16, 4]}>
                           <Col span={12}>
                             <Form.Item
                               name="backgroundColor"
-                              label={
-                                <Text
-                                  style={{ fontWeight: 800, color: "#3B2F4C" }}
-                                >
-                                  Màu nền pastel
-                                </Text>
-                              }
+                              label={<span style={labelStyle}>Màu nền</span>}
                             >
                               <ColorPicker
                                 showText
                                 format="hex"
                                 style={{
                                   width: "100%",
-                                  borderRadius: 14,
                                   height: 40,
+                                  borderRadius: 9,
                                 }}
                               />
                             </Form.Item>
@@ -798,11 +1030,7 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                             <Form.Item
                               name="primary"
                               label={
-                                <Text
-                                  style={{ fontWeight: 800, color: "#3B2F4C" }}
-                                >
-                                  Màu chủ đạo
-                                </Text>
+                                <span style={labelStyle}>Màu chủ đạo</span>
                               }
                             >
                               <ColorPicker
@@ -810,27 +1038,28 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                                 format="hex"
                                 style={{
                                   width: "100%",
-                                  borderRadius: 14,
                                   height: 40,
+                                  borderRadius: 9,
                                 }}
                               />
                             </Form.Item>
                           </Col>
                         </Row>
 
-                        {/* UPLOAD ẢNH NỀN */}
+                        {/* BACKGROUND IMAGE */}
+
                         <Form.Item
                           label={
-                            <Text style={{ fontWeight: 800, color: "#3B2F4C" }}>
+                            <span style={labelStyle}>
                               <ImageIcon
-                                size={16}
+                                size={15}
                                 style={{
                                   marginRight: 6,
                                   verticalAlign: "middle",
                                 }}
                               />
                               Hình nền trò chơi
-                            </Text>
+                            </span>
                           }
                         >
                           <Upload
@@ -843,27 +1072,27 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                             <Button
                               icon={<UploadCloud size={16} />}
                               style={{
-                                borderRadius: 16,
-                                height: 40,
-                                fontWeight: 700,
-                                border: "2px solid #E9D5FF",
-                                background: "#FAF5FF",
-                                color: "#9333EA",
+                                height: 39,
+                                borderRadius: 9,
+                                fontWeight: 650,
+                                borderColor: COLORS.border,
+                                color: COLORS.navy,
+                                background: COLORS.navyLight,
                               }}
                             >
-                              Tải hình xinh lên
+                              Tải hình nền
                             </Button>
                           </Upload>
 
                           <Text
                             style={{
                               display: "block",
-                              fontSize: 12,
                               marginTop: 6,
-                              color: "#827093",
+                              fontSize: 11.5,
+                              color: COLORS.muted,
                             }}
                           >
-                            Định dạng JPG, PNG, WEBP · Tối đa 5MB
+                            JPG, PNG, WEBP · tối đa 5MB
                           </Text>
 
                           {backgroundPreview && (
@@ -871,18 +1100,19 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                               style={{
                                 marginTop: 12,
                                 position: "relative",
-                                borderRadius: 20,
+                                borderRadius: 12,
                                 overflow: "hidden",
-                                border: "2px solid #E9D5FF",
-                                background: "#FAF5FF",
+                                border: `1px solid ${COLORS.border}`,
                               }}
                             >
                               <Image
                                 src={backgroundPreview}
                                 preview
                                 width="100%"
-                                height={150}
-                                style={{ objectFit: "cover" }}
+                                height={145}
+                                style={{
+                                  objectFit: "cover",
+                                }}
                               />
 
                               <Button
@@ -896,44 +1126,45 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                                   position: "absolute",
                                   right: 10,
                                   top: 10,
-                                  borderRadius: "50%",
                                 }}
                               />
                             </div>
                           )}
 
                           {!backgroundPreview && oldBackground && (
-                            <div style={{ marginTop: 8 }}>
-                              <Text style={{ color: "#827093", fontSize: 13 }}>
-                                Chưa chọn hình nền
-                              </Text>
-                            </div>
+                            <Text
+                              style={{
+                                display: "block",
+                                marginTop: 8,
+                                color: COLORS.muted,
+                                fontSize: 12,
+                              }}
+                            >
+                              Chưa chọn hình nền mới.
+                            </Text>
                           )}
                         </Form.Item>
 
                         <Form.Item
                           name="font"
-                          label={
-                            <Text style={{ fontWeight: 800, color: "#3B2F4C" }}>
-                              Kiểu chữ cute
-                            </Text>
-                          }
+                          label={<span style={labelStyle}>Kiểu chữ</span>}
                         >
                           <Select
-                            style={{ height: 42, borderRadius: 14 }}
+                            style={{
+                              height: 40,
+                            }}
                             options={[
                               {
                                 value: "Baloo 2",
-                                label: "Baloo 2 (Thơ mộng, đáng yêu) 🌸",
+                                label: "Baloo 2",
                               },
                               {
                                 value: "Be Vietnam Pro",
-                                label:
-                                  "Be Vietnam Pro (Hiện đại, tròn trịa) ✨",
+                                label: "Be Vietnam Pro",
                               },
                               {
                                 value: "Nunito",
-                                label: "Nunito (Thân thiện, mềm mại) 🍬",
+                                label: "Nunito",
                               },
                             ]}
                           />
@@ -942,43 +1173,49 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                     ),
                   },
 
-                  /* 🌸 TAB 4: CÀI ĐẶT NÂNG CAO */
+                  /* =================================================
+                      SETTINGS
+                  ================================================= */
+
                   {
                     key: "settings",
+
                     label: (
                       <span
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 6,
-                          fontWeight: 800,
-                          fontSize: 14,
+                          gap: 7,
+                          fontWeight: 700,
                         }}
                       >
-                        <Sliders size={18} color="#D97706" />
+                        <SlidersHorizontal size={17} />
                         Tùy chọn
                       </span>
                     ),
+
                     children: (
-                      <div style={{ paddingTop: 14 }}>
-                        <Row gutter={[16, 16]}>
+                      <div
+                        style={{
+                          paddingTop: 12,
+                        }}
+                      >
+                        <Row gutter={[16, 12]}>
                           <Col span={12}>
                             <Form.Item
                               name="timeLimit"
                               label={
-                                <Text
-                                  style={{ fontWeight: 800, color: "#3B2F4C" }}
-                                >
-                                  Thời gian mỗi câu (giây)
-                                </Text>
+                                <span style={labelStyle}>
+                                  Thời gian mỗi câu
+                                </span>
                               }
                             >
                               <InputNumber
                                 min={5}
                                 max={300}
+                                addonAfter="giây"
                                 style={{
                                   width: "100%",
-                                  borderRadius: 14,
                                   height: 40,
                                 }}
                               />
@@ -986,38 +1223,48 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                           </Col>
 
                           <Col span={12}>
-                            <div style={{ padding: "8px 0" }}>
+                            <div
+                              style={{
+                                paddingTop: 4,
+                              }}
+                            >
                               <Form.Item
                                 name="showTimer"
                                 valuePropName="checked"
-                                style={{ marginBottom: 8 }}
+                                style={{
+                                  marginBottom: 12,
+                                }}
                               >
                                 <Switch size="small" />
+
                                 <Text
                                   style={{
                                     marginLeft: 8,
-                                    fontWeight: 700,
-                                    color: "#3B2F4C",
+                                    color: COLORS.text,
+                                    fontWeight: 600,
                                   }}
                                 >
-                                  Hiện đồng hồ ⏱️
+                                  Hiện đồng hồ
                                 </Text>
                               </Form.Item>
 
                               <Form.Item
                                 name="showScore"
                                 valuePropName="checked"
-                                style={{ marginBottom: 0 }}
+                                style={{
+                                  marginBottom: 0,
+                                }}
                               >
                                 <Switch size="small" />
+
                                 <Text
                                   style={{
                                     marginLeft: 8,
-                                    fontWeight: 700,
-                                    color: "#3B2F4C",
+                                    color: COLORS.text,
+                                    fontWeight: 600,
                                   }}
                                 >
-                                  Hiện điểm số ⭐
+                                  Hiện điểm số
                                 </Text>
                               </Form.Item>
                             </div>
@@ -1026,63 +1273,72 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
 
                         <div
                           style={{
-                            background: "#FAF5FF",
-                            padding: 16,
-                            borderRadius: 20,
-                            border: "1.5px solid #E9D5FF",
+                            background: COLORS.navyLight,
+                            padding: 15,
+                            borderRadius: 11,
+                            border: `1px solid ${COLORS.border}`,
                             display: "flex",
                             flexDirection: "column",
-                            gap: 10,
+                            gap: 11,
                           }}
                         >
                           <Form.Item
                             name="shuffleQuestions"
                             valuePropName="checked"
-                            style={{ marginBottom: 0 }}
+                            style={{
+                              marginBottom: 0,
+                            }}
                           >
                             <Switch size="small" />
+
                             <Text
                               style={{
                                 marginLeft: 8,
-                                fontWeight: 700,
-                                color: "#3B2F4C",
+                                color: COLORS.text,
+                                fontWeight: 600,
                               }}
                             >
-                              Trộn ngẫu nhiên câu hỏi 🔀
+                              Trộn câu hỏi
                             </Text>
                           </Form.Item>
 
                           <Form.Item
                             name="shuffleAnswers"
                             valuePropName="checked"
-                            style={{ marginBottom: 0 }}
+                            style={{
+                              marginBottom: 0,
+                            }}
                           >
                             <Switch size="small" />
+
                             <Text
                               style={{
                                 marginLeft: 8,
-                                fontWeight: 700,
-                                color: "#3B2F4C",
+                                color: COLORS.text,
+                                fontWeight: 600,
                               }}
                             >
-                              Trộn ngẫu nhiên đáp án 🎲
+                              Trộn đáp án
                             </Text>
                           </Form.Item>
 
                           <Form.Item
                             name="enableSound"
                             valuePropName="checked"
-                            style={{ marginBottom: 0 }}
+                            style={{
+                              marginBottom: 0,
+                            }}
                           >
                             <Switch size="small" />
+
                             <Text
                               style={{
                                 marginLeft: 8,
-                                fontWeight: 700,
-                                color: "#3B2F4C",
+                                color: COLORS.text,
+                                fontWeight: 600,
                               }}
                             >
-                              Bật âm thanh vui nhộn 🎵
+                              Bật âm thanh
                             </Text>
                           </Form.Item>
                         </div>
@@ -1092,12 +1348,15 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                 ]}
               />
 
-              {/* SAVE ACTION BUTTON */}
+              {/* =================================================
+                  SAVE
+              ================================================= */}
+
               <div
                 style={{
-                  marginTop: 24,
+                  marginTop: 22,
                   paddingTop: 16,
-                  borderTop: "2px dashed #F3E8FF",
+                  borderTop: `1px solid ${COLORS.border}`,
                 }}
               >
                 <Button
@@ -1108,16 +1367,16 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                   onClick={handleSubmit}
                   block
                   style={{
-                    height: 48,
-                    borderRadius: 22,
-                    background: `linear-gradient(135deg, ${formValues.primary} 0%, #A855F7 100%)`,
-                    border: "none",
-                    fontWeight: 800,
-                    fontSize: 15,
-                    boxShadow: `0 8px 20px ${formValues.primary}40`,
+                    height: 46,
+                    borderRadius: 9,
+                    background: COLORS.navy,
+                    borderColor: COLORS.navy,
+                    fontWeight: 750,
+                    fontSize: 14,
+                    boxShadow: "0 4px 12px rgba(23,59,94,0.15)",
                   }}
                 >
-                  {game ? "Cập nhật trò chơi ✨" : "Hoàn tất & Tạo trò chơi 🎉"}
+                  {game ? "Cập nhật trò chơi" : "Hoàn tất & Tạo trò chơi"}
                 </Button>
               </div>
             </Card>
@@ -1125,187 +1384,220 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
         </Col>
 
         {/* =================================================
-            RIGHT LIVE PREVIEW (CHIBI PASTEL MOCKUP)
+            RIGHT PREVIEW
         ================================================= */}
-        <Col xs={24} lg={11}>
+
+        <Col xs={24} lg={10}>
           <div
             style={{
               position: "sticky",
-              top: 24,
-              background: formValues.backgroundColor,
+              top: 20,
+
+              backgroundColor: formValues.backgroundColor,
+
               backgroundImage: backgroundPreview
                 ? `url(${backgroundPreview})`
                 : "none",
+
               backgroundSize: "cover",
               backgroundPosition: "center",
-              borderRadius: 32,
-              padding: 24,
-              border: `3px solid ${formValues.primary}30`,
-              boxShadow: "0 14px 36px rgba(147, 51, 234, 0.08)",
+
+              borderRadius: 16,
+
+              padding: 20,
+
+              border: `1px solid ${COLORS.border}`,
+
+              boxShadow: "0 5px 18px rgba(23,59,94,0.06)",
+
               minHeight: 520,
+
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
-              transition: "all 0.3s ease",
             }}
           >
-            {/* HEADER PREVIEW */}
+            {/* PREVIEW HEADER */}
+
             <div>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 16,
+                  marginBottom: 18,
                 }}
               >
                 <Tag
+                  icon={<Eye size={13} />}
                   style={{
-                    background: "#FFFFFF",
-                    color: formValues.primary,
-                    border: `1.5px solid ${formValues.primary}40`,
-                    borderRadius: 16,
-                    padding: "4px 12px",
-                    fontWeight: 800,
-                    fontSize: 12,
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.03)",
+                    margin: 0,
+                    background: COLORS.white,
+                    color: COLORS.navy,
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 7,
+                    padding: "3px 9px",
+                    fontWeight: 700,
                   }}
                 >
-                  <Eye
-                    size={14}
-                    style={{ marginRight: 4, verticalAlign: "middle" }}
-                  />
-                  Xem trước giao diện
+                  Xem trước
                 </Tag>
 
                 {formValues.showTimer && (
                   <div
                     style={{
-                      background: "#FFFFFF",
-                      padding: "4px 12px",
-                      borderRadius: 16,
-                      fontWeight: 800,
-                      color: "#EA580C",
-                      border: "1.5px solid #FFEDD5",
+                      background: COLORS.white,
+                      padding: "5px 10px",
+                      borderRadius: 7,
+                      fontWeight: 700,
+                      color: COLORS.navy,
+                      border: `1px solid ${COLORS.border}`,
                       display: "flex",
                       alignItems: "center",
-                      gap: 4,
-                      fontSize: 13,
+                      gap: 5,
+                      fontSize: 12,
                     }}
                   >
-                    <Clock size={14} /> {formValues.timeLimit}s
+                    <Clock size={13} />
+                    {formValues.timeLimit}s
                   </div>
                 )}
               </div>
 
-              {/* GAME TITLE */}
+              {/* TITLE */}
+
               <Title
                 level={4}
                 style={{
                   textAlign: "center",
-                  color: "#3B2F4C",
+                  color: COLORS.navy,
                   fontWeight: 800,
-                  marginBottom: 20,
-                  fontSize: 18,
+                  marginBottom: 18,
+                  fontSize: 19,
                 }}
               >
-                {formValues.name || "Tên trò chơi cute ✨"}
+                {formValues.name || "Tên trò chơi"}
               </Title>
 
-              {/* QUESTION PREVIEW BOX */}
+              {/* QUESTION */}
+
               {currentPreviewQuestion ? (
                 <div
                   style={{
-                    background: "rgba(255, 255, 255, 0.92)",
-                    backdropFilter: "blur(8px)",
-                    borderRadius: 24,
-                    padding: 20,
-                    border: "2px solid #FFFFFF",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
+                    background: "rgba(255,255,255,0.96)",
+                    borderRadius: 13,
+                    padding: 18,
+                    border: `1px solid ${COLORS.border}`,
+                    boxShadow: "0 4px 14px rgba(23,59,94,0.05)",
                   }}
                 >
+                  {/* QUESTION META */}
+
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginBottom: 12,
+                      marginBottom: 13,
                     }}
                   >
                     <Text
                       style={{
-                        fontWeight: 800,
-                        color: formValues.primary,
-                        fontSize: 13,
+                        fontWeight: 750,
+                        color: COLORS.navy,
+                        fontSize: 12,
                       }}
                     >
                       Câu {previewIndex + 1}/{questions.length}
                     </Text>
 
                     <Tag
-                      color="purple"
+                      icon={<Trophy size={12} />}
                       style={{
-                        borderRadius: 12,
+                        margin: 0,
+                        border: `1px solid #F3D9A3`,
+                        background: COLORS.goldLight,
+                        color: COLORS.warning,
+                        borderRadius: 6,
                         fontWeight: 700,
-                        border: "none",
                       }}
                     >
-                      +{currentPreviewQuestion.points || 10} điểm ⭐
+                      +{currentPreviewQuestion.points || 10} điểm
                     </Tag>
                   </div>
 
+                  {/* QUESTION TEXT */}
+
                   <Text
                     style={{
-                      fontSize: 16,
-                      fontWeight: 800,
-                      color: "#3B2F4C",
+                      fontSize: 15,
+                      fontWeight: 750,
+                      color: COLORS.text,
                       display: "block",
-                      marginBottom: 16,
-                      lineHeight: 1.4,
+                      marginBottom: 15,
+                      lineHeight: 1.5,
                     }}
                   >
                     {currentPreviewQuestion.question ||
-                      "Chưa có nội dung câu hỏi..."}
+                      "Chưa có nội dung câu hỏi"}
                   </Text>
 
-                  {/* ANSWERS LIST PREVIEW */}
+                  {/* ANSWERS */}
+
                   <div
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: 10,
+                      gap: 8,
                     }}
                   >
                     {currentPreviewQuestion.answers.map((ans, aIdx) => (
                       <div
                         key={aIdx}
                         style={{
-                          padding: "10px 14px",
-                          borderRadius: 16,
-                          background: ans.correct ? "#DCFCE7" : "#F8FAFC",
+                          padding: "10px 12px",
+
+                          borderRadius: 9,
+
+                          background: ans.correct
+                            ? COLORS.successBg
+                            : COLORS.background,
+
                           border: ans.correct
-                            ? "2px solid #86EFAC"
-                            : "1.5px solid #E2E8F0",
+                            ? `1px solid #B8DDC9`
+                            : `1px solid ${COLORS.border}`,
+
                           display: "flex",
+
                           alignItems: "center",
+
                           justifyContent: "space-between",
+
+                          gap: 8,
                         }}
                       >
                         <Text
                           style={{
-                            fontWeight: 700,
-                            color: ans.correct ? "#166534" : "#475569",
-                            fontSize: 13,
+                            fontWeight: 600,
+                            color: ans.correct
+                              ? COLORS.success
+                              : COLORS.textSecondary,
+                            fontSize: 12.5,
                           }}
                         >
-                          <b style={{ marginRight: 6 }}>
+                          <b
+                            style={{
+                              marginRight: 6,
+                            }}
+                          >
                             {ans.id || String.fromCharCode(65 + aIdx)}.
                           </b>
-                          {ans.text || "Chưa nhập đáp án..."}
+
+                          {ans.text || "Chưa nhập đáp án"}
                         </Text>
 
                         {ans.correct && (
-                          <CheckCircle2 size={16} color="#16A34A" />
+                          <CheckCircle2 size={16} color={COLORS.success} />
                         )}
                       </div>
                     ))}
@@ -1314,58 +1606,70 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
               ) : (
                 <div
                   style={{
-                    background: "rgba(255,255,255,0.8)",
-                    borderRadius: 24,
-                    padding: "40px 20px",
+                    background: "rgba(255,255,255,0.92)",
+                    borderRadius: 13,
+                    padding: "48px 20px",
                     textAlign: "center",
-                    border: "2px dashed #E9D5FF",
+                    border: `1px dashed ${COLORS.border}`,
                   }}
                 >
+                  <FileQuestion
+                    size={34}
+                    color={COLORS.muted}
+                    style={{
+                      marginBottom: 10,
+                    }}
+                  />
+
                   <Text
                     style={{
-                      fontWeight: 700,
-                      color: "#827093",
-                      fontSize: 14,
+                      display: "block",
+                      fontWeight: 600,
+                      color: COLORS.textSecondary,
+                      fontSize: 13,
                     }}
                   >
-                    Thêm câu hỏi để xem trước tại đây nha! 🌸
+                    Thêm câu hỏi để xem trước.
                   </Text>
                 </div>
               )}
             </div>
 
-            {/* PREVIEW FOOTER NAVIGATION */}
+            {/* PREVIEW NAV */}
+
             {questions.length > 0 && (
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginTop: 20,
+                  marginTop: 18,
                   paddingTop: 14,
-                  borderTop: "1.5px dashed rgba(147, 51, 234, 0.2)",
+                  borderTop: `1px solid ${COLORS.border}`,
                 }}
               >
                 <Button
                   shape="circle"
-                  icon={<ChevronLeft size={18} />}
+                  icon={<ChevronLeft size={17} />}
                   disabled={previewIndex === 0}
                   onClick={() => setPreviewIndex((prev) => prev - 1)}
-                  style={{ borderRadius: "50%" }}
                 />
 
                 <Text
-                  style={{ fontWeight: 800, color: "#3B2F4C", fontSize: 13 }}
+                  style={{
+                    fontWeight: 700,
+                    color: COLORS.navy,
+                    fontSize: 12,
+                  }}
                 >
                   {previewIndex + 1} / {questions.length}
                 </Text>
 
                 <Button
                   shape="circle"
-                  icon={<ChevronRight size={18} />}
+                  icon={<ChevronRight size={17} />}
                   disabled={previewIndex === questions.length - 1}
                   onClick={() => setPreviewIndex((prev) => prev + 1)}
-                  style={{ borderRadius: "50%" }}
                 />
               </div>
             )}
@@ -1374,64 +1678,125 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
       </Row>
 
       {/* =========================================================
-          MODAL SOẠN THẢO CÂU HỎI (CHIBI PASTEL MODAL)
+          QUESTION MODAL
       ========================================================= */}
+
       <Modal
         title={
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Sparkles size={20} color="#9333EA" />
-            <span style={{ fontWeight: 800, fontSize: 17, color: "#3B2F4C" }}>
-              Soạn thảo câu hỏi cute ✨
-            </span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 9,
+            }}
+          >
+            <div
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 8,
+                background: COLORS.goldLight,
+                color: COLORS.gold,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FileQuestion size={18} />
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontWeight: 750,
+                  color: COLORS.navy,
+                  fontSize: 16,
+                }}
+              >
+                {editingQuestion?.id?.startsWith("question_") &&
+                !questions.some((q) => q.id === editingQuestion.id)
+                  ? "Thêm câu hỏi"
+                  : "Chỉnh sửa câu hỏi"}
+              </div>
+
+              <div
+                style={{
+                  color: COLORS.muted,
+                  fontSize: 11,
+                  fontWeight: 500,
+                }}
+              >
+                Nhập nội dung và thiết lập đáp án
+              </div>
+            </div>
           </div>
         }
         open={questionModalOpen}
         onOk={handleSaveQuestion}
         onCancel={() => {
           setQuestionModalOpen(false);
+
           setEditingQuestion(null);
         }}
-        okText="Lưu câu hỏi ✨"
-        cancelText="Hủy bỏ"
-        width={620}
+        okText="Lưu câu hỏi"
+        cancelText="Hủy"
+        width={640}
         centered
         styles={{
           content: {
-            borderRadius: 32,
-            padding: 24,
-            border: "2.5px solid #F3E8FF",
+            borderRadius: 16,
+            padding: 22,
+          },
+
+          header: {
+            marginBottom: 10,
           },
         }}
         okButtonProps={{
           style: {
-            borderRadius: 16,
-            height: 40,
-            fontWeight: 800,
-            background: formValues.primary,
-            border: "none",
+            borderRadius: 8,
+            height: 38,
+            fontWeight: 700,
+            background: COLORS.navy,
+            borderColor: COLORS.navy,
           },
         }}
         cancelButtonProps={{
-          style: { borderRadius: 16, height: 40, fontWeight: 700 },
+          style: {
+            borderRadius: 8,
+            height: 38,
+            fontWeight: 600,
+          },
         }}
       >
         {editingQuestion && (
-          <div style={{ padding: "12px 0" }}>
-            {/* INPUT CÂU HỎI */}
-            <div style={{ marginBottom: 16 }}>
+          <div
+            style={{
+              padding: "8px 0 2px",
+            }}
+          >
+            {/* QUESTION INPUT */}
+
+            <div
+              style={{
+                marginBottom: 18,
+              }}
+            >
               <Text
                 style={{
-                  fontWeight: 800,
-                  color: "#3B2F4C",
+                  fontWeight: 700,
+                  color: COLORS.text,
                   display: "block",
-                  marginBottom: 6,
+                  marginBottom: 7,
+                  fontSize: 13,
                 }}
               >
-                Nội dung câu hỏi 📝
+                Nội dung câu hỏi
               </Text>
+
               <TextArea
                 rows={3}
-                placeholder="Nhập nội dung câu hỏi cho các bé..."
+                placeholder="Nhập nội dung câu hỏi..."
                 value={editingQuestion.question}
                 onChange={(e) =>
                   setEditingQuestion({
@@ -1440,32 +1805,53 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                   })
                 }
                 style={{
-                  borderRadius: 18,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  border: "2px solid #E9D5FF",
+                  borderRadius: 9,
+                  fontSize: 13,
+                  borderColor: COLORS.border,
                 }}
               />
             </div>
 
-            {/* DANH SÁCH ĐÁP ÁN */}
-            <div style={{ marginBottom: 16 }}>
-              <Text
+            {/* ANSWERS */}
+
+            <div
+              style={{
+                marginBottom: 18,
+              }}
+            >
+              <div
                 style={{
-                  fontWeight: 800,
-                  color: "#3B2F4C",
-                  display: "block",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   marginBottom: 8,
                 }}
               >
-                Danh sách đáp án (Đánh dấu tích 💚 cho đáp án đúng)
-              </Text>
+                <Text
+                  style={{
+                    fontWeight: 700,
+                    color: COLORS.text,
+                    fontSize: 13,
+                  }}
+                >
+                  Đáp án
+                </Text>
+
+                <Text
+                  style={{
+                    color: COLORS.muted,
+                    fontSize: 11,
+                  }}
+                >
+                  Chọn đáp án đúng
+                </Text>
+              </div>
 
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 {editingQuestion.answers.map((ans, idx) => (
@@ -1474,13 +1860,19 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 10,
-                      background: ans.correct ? "#F0FDF4" : "#FAF5FF",
-                      padding: "8px 12px",
-                      borderRadius: 18,
+                      gap: 9,
+
+                      background: ans.correct
+                        ? COLORS.successBg
+                        : COLORS.background,
+
+                      padding: "8px 10px",
+
+                      borderRadius: 9,
+
                       border: ans.correct
-                        ? "2px solid #86EFAC"
-                        : "1.5px solid #E9D5FF",
+                        ? `1px solid #B8DDC9`
+                        : `1px solid ${COLORS.border}`,
                     }}
                   >
                     <Button
@@ -1488,15 +1880,11 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                       type={ans.correct ? "primary" : "default"}
                       icon={
                         ans.correct ? (
-                          <CheckCircle2 size={18} />
+                          <Check size={16} />
                         ) : (
-                          <XCircle size={18} color="#A093AD" />
+                          <XCircle size={16} />
                         )
                       }
-                      style={{
-                        background: ans.correct ? "#16A34A" : "#FFFFFF",
-                        borderColor: ans.correct ? "#16A34A" : "#CBD5E1",
-                      }}
                       onClick={() => {
                         const updated = editingQuestion.answers.map(
                           (item, i) => ({
@@ -1504,50 +1892,96 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                             correct: i === idx,
                           }),
                         );
-                        setEditingQuestion({
-                          ...editingQuestion,
-                          answers: updated,
-                        });
-                      }}
-                    />
 
-                    <Input
-                      placeholder={`Đáp án ${String.fromCharCode(65 + idx)}`}
-                      value={ans.text}
-                      onChange={(e) => {
-                        const updated = [...editingQuestion.answers];
-                        updated[idx].text = e.target.value;
                         setEditingQuestion({
                           ...editingQuestion,
                           answers: updated,
                         });
                       }}
                       style={{
-                        borderRadius: 14,
-                        fontWeight: 600,
-                        border: "none",
-                        boxShadow: "none",
-                        background: "transparent",
+                        width: 32,
+                        height: 32,
+                        minWidth: 32,
+
+                        background: ans.correct ? COLORS.success : COLORS.white,
+
+                        borderColor: ans.correct
+                          ? COLORS.success
+                          : COLORS.border,
+
+                        color: ans.correct ? COLORS.white : COLORS.muted,
                       }}
                     />
+
+                    <div
+                      style={{
+                        width: 22,
+                        color: COLORS.textSecondary,
+                        fontWeight: 750,
+                        fontSize: 12,
+                      }}
+                    >
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+
+                    <Input
+                      placeholder={`Nhập đáp án ${String.fromCharCode(
+                        65 + idx,
+                      )}`}
+                      value={ans.text}
+                      onChange={(e) => {
+                        const updated = [...editingQuestion.answers];
+
+                        updated[idx].text = e.target.value;
+
+                        setEditingQuestion({
+                          ...editingQuestion,
+                          answers: updated,
+                        });
+                      }}
+                      style={{
+                        borderRadius: 7,
+                        fontWeight: 500,
+                        background: COLORS.white,
+                        borderColor: COLORS.border,
+                      }}
+                    />
+
+                    {ans.correct && (
+                      <Tag
+                        style={{
+                          margin: 0,
+                          background: COLORS.successBg,
+                          border: "none",
+                          color: COLORS.success,
+                          fontWeight: 700,
+                          fontSize: 10,
+                        }}
+                      >
+                        ĐÚNG
+                      </Tag>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* ĐIỂM SỐ & GIẢI THÍCH */}
-            <Row gutter={16}>
-              <Col span={12}>
+            {/* POINT + EXPLANATION */}
+
+            <Row gutter={14}>
+              <Col span={8}>
                 <Text
                   style={{
-                    fontWeight: 800,
-                    color: "#3B2F4C",
+                    fontWeight: 700,
+                    color: COLORS.text,
                     display: "block",
-                    marginBottom: 6,
+                    marginBottom: 7,
+                    fontSize: 13,
                   }}
                 >
-                  Điểm thưởng ⭐
+                  Điểm
                 </Text>
+
                 <InputNumber
                   min={1}
                   max={100}
@@ -1560,25 +1994,27 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                   }
                   style={{
                     width: "100%",
-                    borderRadius: 14,
                     height: 40,
+                    borderRadius: 8,
                   }}
                 />
               </Col>
 
-              <Col span={12}>
+              <Col span={16}>
                 <Text
                   style={{
-                    fontWeight: 800,
-                    color: "#3B2F4C",
+                    fontWeight: 700,
+                    color: COLORS.text,
                     display: "block",
-                    marginBottom: 6,
+                    marginBottom: 7,
+                    fontSize: 13,
                   }}
                 >
-                  Giải thích đáp án (Tùy chọn) 💡
+                  Giải thích đáp án
                 </Text>
+
                 <Input
-                  placeholder="Giải thích ngắn gọn cho bé hiểu..."
+                  placeholder="Nhập giải thích nếu cần..."
                   value={editingQuestion.explanation}
                   onChange={(e) =>
                     setEditingQuestion({
@@ -1587,9 +2023,9 @@ const QuizGameEditor = ({ teacherId, game, onSuccess }) => {
                     })
                   }
                   style={{
-                    borderRadius: 14,
+                    borderRadius: 8,
                     height: 40,
-                    border: "1.5px solid #E9D5FF",
+                    borderColor: COLORS.border,
                   }}
                 />
               </Col>

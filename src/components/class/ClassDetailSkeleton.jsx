@@ -4,27 +4,32 @@ import { Card, Skeleton, Row, Col, Space } from "antd";
 const ClassDetailSkeleton = () => {
   return (
     <div
-      style={{ padding: 20, backgroundColor: "#FFF5F7", minHeight: "100vh" }}
+      style={{
+        padding: 20,
+        backgroundColor: "#F7F9FC",
+        minHeight: "100vh",
+        fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
+      }}
     >
       {/* 1. HEADER CARD SKELETON */}
       <Card
         bordered={false}
         style={{
-          borderRadius: 26,
+          borderRadius: 20,
           marginBottom: 16,
           background: "#FFFFFF",
-          border: "2px solid #FFE4E6",
-          boxShadow: "0 10px 25px rgba(255, 182, 193, 0.18)",
+          border: "1.5px solid #D9E2EC",
+          boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
           overflow: "hidden",
         }}
         styles={{ body: { padding: 24 } }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {/* Avatar vuông bo tròn Chibi */}
+          {/* Avatar vuông bo tròn Navy */}
           <Skeleton.Button
             active
             shape="square"
-            style={{ width: 64, height: 64, borderRadius: 20 }}
+            style={{ width: 64, height: 64, borderRadius: 14 }}
           />
 
           <div style={{ flex: 1 }}>
@@ -34,7 +39,7 @@ const ClassDetailSkeleton = () => {
               style={{
                 width: "40%",
                 height: 24,
-                borderRadius: 12,
+                borderRadius: 8,
                 marginBottom: 8,
               }}
             />
@@ -42,12 +47,12 @@ const ClassDetailSkeleton = () => {
               <Skeleton.Button
                 active
                 size="small"
-                style={{ width: 80, height: 20, borderRadius: 10 }}
+                style={{ width: 80, height: 20, borderRadius: 8 }}
               />
               <Skeleton.Button
                 active
                 size="small"
-                style={{ width: 100, height: 20, borderRadius: 10 }}
+                style={{ width: 100, height: 20, borderRadius: 8 }}
               />
             </div>
           </div>
@@ -58,11 +63,11 @@ const ClassDetailSkeleton = () => {
       <Card
         bordered={false}
         style={{
-          borderRadius: 26,
+          borderRadius: 20,
           marginBottom: 16,
           background: "#FFFFFF",
-          border: "2px solid #FFE4E6",
-          boxShadow: "0 10px 25px rgba(255, 182, 193, 0.18)",
+          border: "1.5px solid #D9E2EC",
+          boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
         }}
         styles={{ body: { padding: 24 } }}
       >
@@ -70,7 +75,7 @@ const ClassDetailSkeleton = () => {
         <Skeleton.Input
           active
           size="small"
-          style={{ width: 140, height: 20, borderRadius: 10, marginBottom: 16 }}
+          style={{ width: 140, height: 20, borderRadius: 8, marginBottom: 16 }}
         />
 
         {/* Lưới 4 ô thông tin */}
@@ -80,9 +85,9 @@ const ClassDetailSkeleton = () => {
               <div
                 style={{
                   padding: "12px 14px",
-                  borderRadius: 18,
-                  background: "#FFF9FA",
-                  border: "1.5px dashed #FFE4E6",
+                  borderRadius: 14,
+                  background: "#F7F9FC",
+                  border: "1.5px solid #D9E2EC",
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
@@ -106,7 +111,7 @@ const ClassDetailSkeleton = () => {
                   />
                   <Skeleton.Input
                     active
-                    style={{ width: "80%", height: 16, borderRadius: 8 }}
+                    style={{ width: "80%", height: 16, borderRadius: 6 }}
                   />
                 </div>
               </div>
@@ -119,10 +124,10 @@ const ClassDetailSkeleton = () => {
       <Card
         bordered={false}
         style={{
-          borderRadius: 26,
+          borderRadius: 20,
           background: "#FFFFFF",
-          border: "2px solid #FFE4E6",
-          boxShadow: "0 10px 25px rgba(255, 182, 193, 0.18)",
+          border: "1.5px solid #D9E2EC",
+          boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
         }}
         styles={{ body: { padding: 24 } }}
       >
@@ -137,7 +142,7 @@ const ClassDetailSkeleton = () => {
           <Skeleton.Input
             active
             size="small"
-            style={{ width: 160, height: 20, borderRadius: 10 }}
+            style={{ width: 160, height: 20, borderRadius: 8 }}
           />
           <Skeleton.Button
             active
@@ -156,9 +161,9 @@ const ClassDetailSkeleton = () => {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "10px 14px",
-                borderRadius: 16,
-                background: "#FFF9FA",
-                border: "1px solid #FFE4E6",
+                borderRadius: 14,
+                background: "#F7F9FC",
+                border: "1.5px solid #D9E2EC",
               }}
             >
               <Space size={12}>
@@ -169,13 +174,13 @@ const ClassDetailSkeleton = () => {
                     style={{
                       width: 120,
                       height: 14,
-                      borderRadius: 7,
+                      borderRadius: 6,
                       marginBottom: 4,
                     }}
                   />
                   <Skeleton.Input
                     active
-                    style={{ width: 80, height: 10, borderRadius: 5 }}
+                    style={{ width: 80, height: 10, borderRadius: 6 }}
                   />
                 </div>
               </Space>
@@ -183,7 +188,7 @@ const ClassDetailSkeleton = () => {
               <Skeleton.Button
                 active
                 size="small"
-                style={{ width: 60, height: 22, borderRadius: 12 }}
+                style={{ width: 60, height: 22, borderRadius: 8 }}
               />
             </div>
           ))}
