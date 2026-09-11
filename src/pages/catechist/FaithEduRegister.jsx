@@ -202,23 +202,6 @@ const FaithEduRegister = () => {
   };
 
   // ==========================================================
-  // GENERATE USERNAME
-  // ==========================================================
-
-  const generateUsername = (email) => {
-    if (!email) return "";
-
-    const base = email
-      .split("@")[0]
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9]/g, "")
-      .toLowerCase();
-
-    return `${base}${Math.floor(1000 + Math.random() * 9000)}`;
-  };
-
-  // ==========================================================
   // SUBMIT
   // ==========================================================
 
@@ -232,7 +215,6 @@ const FaithEduRegister = () => {
         email: values.email?.trim(),
         password: values.password,
         full_name: values.full_name?.trim(),
-        username: generateUsername(values.email?.trim()),
         phone: values.phone?.trim() || null,
 
         church_name: values.church_name?.trim(),
@@ -2400,16 +2382,6 @@ const FaithEduRegister = () => {
                           <Input
                             prefix={<UserOutlined />}
                             placeholder="Nhập họ và tên của bạn"
-                          />
-                        </Form.Item>
-                      </Col>
-
-                      <Col span={24}>
-                        <Form.Item label="Username" name="username">
-                          <Input
-                            prefix={<UserOutlined />}
-                            disabled
-                            placeholder="Hệ thống sẽ tự động tạo tên đăng nhập dựa trên họ và tên của bạn"
                           />
                         </Form.Item>
                       </Col>

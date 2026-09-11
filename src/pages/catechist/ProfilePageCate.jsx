@@ -786,8 +786,7 @@ export default function ProfilePageCate() {
           }
 
           .custom-profile-container {
-            max-width: 1080px;
-            margin: 0 auto;
+            max-width: 100%;
           }
 
           .custom-header-banner {
