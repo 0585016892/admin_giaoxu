@@ -1,27 +1,23 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 
-/**
- * ============================================================
- * PROTECTED ROUTE
- * ============================================================
- *
- * Dùng để bảo vệ các khu vực cần đăng nhập.
- *
- * loginPath:
- * - "/"               → hệ thống Giáo lý
- * - "/giao-xu/login"  → hệ thống quản trị Giáo xứ
- */
+// ============================================================
+// PROTECTED ROUTE
+// ============================================================
 export default function ProtectedRoute({ loginPath = "/" }) {
-  const { user, loading } = useUser();
+  const { user, authReady } = useUser();
   const location = useLocation();
 
-  // Đang kiểm tra trạng thái đăng nhập
-  if (loading) {
+  // ==========================================================
+  // CHƯA RESTORE AUTH
+  // ==========================================================
+  if (!authReady) {
     return null;
   }
 
-  // Chưa đăng nhập
+  // ==========================================================
+  // KHÔNG CÓ USER
+  // ==========================================================
   if (!user) {
     return (
       <Navigate
@@ -37,35 +33,23 @@ export default function ProtectedRoute({ loginPath = "/" }) {
   return <Outlet />;
 }
 
-/**
- * ============================================================
- * ROLE GUARD
- * ============================================================
- *
- * Kiểm tra user có đúng role được phép truy cập hay không.
- *
- * allowedRoles:
- * [
- *   "admin",
- *   "priest",
- *   "catechist",
- *   ...
- * ]
- *
- * loginPath:
- * - "/"               → login Giáo lý
- * - "/giao-xu/login"  → login Giáo xứ
- */
+// ============================================================
+// ROLE GUARD
+// ============================================================
 export function RoleGuard({ allowedRoles = [], loginPath = "/" }) {
-  const { user, loading } = useUser();
+  const { user, authReady } = useUser();
   const location = useLocation();
 
-  // Đang loading user
-  if (loading) {
+  // ==========================================================
+  // CHƯA RESTORE AUTH
+  // ==========================================================
+  if (!authReady) {
     return null;
   }
 
-  // Chưa đăng nhập
+  // ==========================================================
+  // CHƯA LOGIN
+  // ==========================================================
   if (!user) {
     return (
       <Navigate
@@ -79,14 +63,9 @@ export function RoleGuard({ allowedRoles = [], loginPath = "/" }) {
   }
 
   // ==========================================================
-  // KHÔNG CÓ QUYỀN
+  // KHÔNG ĐÚNG ROLE
   // ==========================================================
-
   if (!allowedRoles.includes(user.role)) {
-    // --------------------------------------------------------
-    // GIÁO LÝ VIÊN / GIÁO VIÊN
-    // --------------------------------------------------------
-
     return <Navigate to="/catechist" replace />;
   }
 
