@@ -29,8 +29,10 @@ import NotificationsCatePage from "../pages/catechist/NotificationsCatePage";
 import ErrorPage from "../pages/catechist/ErrorPage";
 import FaithEduRegister from "../pages/catechist/FaithEduRegister";
 import Statistics from "../pages/catechist/Statistics";
+import CertificatePage from "../pages/catechist/CertificatePage";
 
 import LandingPage from "../pages/LandingPage/LandingPage";
+import VerifyCertificate from "../components/VerifyCertificate";
 
 // ============================================================
 // ROLES
@@ -52,6 +54,8 @@ export default function AppRoutes() {
       <Route path="/register" element={<FaithEduRegister />} />
 
       <Route path="/intro" element={<LandingPage />} />
+      <Route path="/xac-thuc" element={<VerifyCertificate />} />
+
       {/* ------------------------------------------------------
           Xác thực chứng chỉ - Public
           ------------------------------------------------------ */}
@@ -126,6 +130,10 @@ export default function AppRoutes() {
             <Route
               path="/catechist/my-notifications"
               element={<NotificationsCatePage />}
+            />
+            <Route
+              path="/catechist/certificate"
+              element={<CertificatePage />}
             />
             <Route path="/catechist/statistics" element={<Statistics />} />
             <Route

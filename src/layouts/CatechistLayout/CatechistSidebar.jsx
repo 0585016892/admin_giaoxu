@@ -17,6 +17,7 @@ import {
   Gamepad2,
   BarChart3,
   ClipboardCheck,
+  BadgeCheck,
   Trophy,
   PanelLeftClose,
   PanelLeftOpen,
@@ -92,6 +93,7 @@ const MENU_PATHS = {
   games: "/catechist/games",
   results: "/catechist/results",
   leaderboard: "/catechist/leaderboard",
+  certificate: "/catechist/certificate",
 
   sendNotifications: "/catechist/notifications",
   notifications: "/catechist/my-notifications",
@@ -216,6 +218,13 @@ export default function CatechistSidebar({
         key: MENU_PATHS.catechists,
         label: "Quản lý giáo lý viên",
         icon: <Sparkles size={18} strokeWidth={2.2} />,
+      });
+    }
+    if (permission.canViewCatechists) {
+      items.push({
+        key: MENU_PATHS.certificate,
+        label: "Cấp bằng & chứng chỉ",
+        icon: <BadgeCheck size={18} strokeWidth={2.2} />,
       });
     }
 

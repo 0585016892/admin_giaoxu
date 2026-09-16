@@ -1,7 +1,8 @@
 {
-  "name": "admin-prayer",
-  "version": "0.1.0",
+  "name": "faith-edu",
+  "version": "1.0.0",
   "private": true,
+  "main": "electron/main.js",
   "dependencies": {
     "@chakra-ui/react": "^3.35.0",
     "@ckeditor/ckeditor5-build-classic": "^41.4.2",
@@ -38,11 +39,56 @@
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5"
   },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0",
+    "react-app-rewired": "^2.2.1",
+    "wait-on": "^8.0.0"
+  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "dist:mac": "npm run build && electron-builder --mac dmg --arm64",
+    "dist:win": "npm run build && electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "site.giaolyso.faithedu",
+    "productName": "FaithEdu",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education",
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "dmg": {
+      "title": "FaithEdu"
+    }
   },
   "eslintConfig": {
     "extends": [

@@ -235,6 +235,8 @@ export default function CatechistDashboard() {
     const loadLicense = async () => {
       try {
         const data = await getMyLicense();
+        console.log(data);
+
         if (data?.success) setLicense(data);
       } catch (err) {
         console.error("Lỗi khi tải license:", err);

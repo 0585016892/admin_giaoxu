@@ -171,6 +171,8 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
       title = "Thiết lập hệ thống";
     } else if (path === "/catechist/statistics") {
       title = "Báo cáo hệ thống";
+    } else if (path === "/catechist/certificate") {
+      title = "In chứng chỉ & văn bằng";
     } else if (path === "/login") {
       title = "Đăng nhập";
     } else if (path === "/catechist") {
