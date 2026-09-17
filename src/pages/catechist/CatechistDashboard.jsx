@@ -41,6 +41,10 @@ import dash4 from "../../assets/images/dash4.png";
 // Thay đường dẫn này bằng ảnh minh họa Chúa và các em thiếu nhi trong thư mục assets của bạn
 import jesusChildrenImg from "../../assets/images/jesus-children.png";
 
+import FeedbackModal from "../../components/FeedbackModal";
+import { checkFeedback } from "../../api/contactMessageApi";
+import { useUser } from "../../context/UserContext";
+
 const { Title, Text } = Typography;
 
 // =====================================================
@@ -223,6 +227,9 @@ const DashboardSkeleton = () => (
 // =====================================================
 
 export default function CatechistDashboard() {
+  const { user } = useUser();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+
   const [license, setLicense] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [dashboard, setDashboard] = useState(null);
@@ -235,11 +242,10 @@ export default function CatechistDashboard() {
     const loadLicense = async () => {
       try {
         const data = await getMyLicense();
-        console.log(data);
 
         if (data?.success) setLicense(data);
       } catch (err) {
-        console.error("Lỗi khi tải license:", err);
+        message.error("Lỗi khi tải license:", err);
       }
     };
     loadLicense();
@@ -266,11 +272,10 @@ export default function CatechistDashboard() {
   const fetchDailyVerse = async () => {
     try {
       const response = await dailyVerseApi.getRandom();
-      console.log(response);
 
       setDailyVerse(response.data.data);
     } catch (err) {
-      console.error("Lỗi khi tải Lời Chúa:", err);
+      message.error("Lỗi khi tải Lời Chúa:", err);
     }
   };
 
@@ -278,6 +283,24 @@ export default function CatechistDashboard() {
     fetchDashboard();
     fetchDailyVerse();
   }, []);
+
+  useEffect(() => {
+    const checkUserFeedback = async () => {
+      try {
+        if (!user?.email) return;
+
+        const res = await checkFeedback(user.email);
+
+        if (res?.success && !res.hasFeedback) {
+          setFeedbackOpen(true);
+        }
+      } catch (error) {
+        message.error("CHECK USER FEEDBACK ERROR:", error);
+      }
+    };
+
+    checkUserFeedback();
+  }, [user?.email]);
 
   const metrics = dashboard?.top_metrics || {};
   const totalStudents = Number(metrics?.total_students?.value ?? 420);
@@ -776,6 +799,10 @@ export default function CatechistDashboard() {
           </Col>
         </Row>
       </Flex>
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
     </ConfigProvider>
   );
 }

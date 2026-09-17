@@ -316,8 +316,6 @@ const SendNotificationPage = () => {
         related_id: null,
       };
 
-      console.log("Notification payload:", payload);
-
       /* ========================================================
          API
       ======================================================== */
@@ -381,8 +379,6 @@ const SendNotificationPage = () => {
 
       setActiveTab("1");
     } catch (error) {
-      console.error("Send notification error:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.message ||

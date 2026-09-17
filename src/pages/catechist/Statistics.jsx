@@ -497,8 +497,6 @@ const Statistics = () => {
         studentAttendanceRes?.data || studentAttendanceRes || null,
       );
     } catch (err) {
-      console.error("Load statistics error:", err);
-
       setError(err?.message || "Không thể tải dữ liệu thống kê.");
     } finally {
       setLoading(false);

@@ -33,6 +33,7 @@ import CertificatePage from "../pages/catechist/CertificatePage";
 
 import LandingPage from "../pages/LandingPage/LandingPage";
 import VerifyCertificate from "../components/VerifyCertificate";
+import QuestionPage from "../pages/catechist/QuestionPage";
 
 // ============================================================
 // ROLES
@@ -140,6 +141,7 @@ export default function AppRoutes() {
               path="/catechist/settings"
               element={<ParishSettingsPage />}
             />
+            <Route path="/catechist/questions" element={<QuestionPage />} />
           </Route>
         </Route>
       </Route>

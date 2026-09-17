@@ -90,6 +90,7 @@ const MENU_PATHS = {
 
   attendance: "/attendance",
 
+  questions: "/catechist/questions",
   games: "/catechist/games",
   results: "/catechist/results",
   leaderboard: "/catechist/leaderboard",
@@ -262,6 +263,11 @@ export default function CatechistSidebar({
         {
           key: MENU_PATHS.results,
           label: "Kết quả học tập",
+          icon: <BarChart3 size={16} strokeWidth={2.2} />,
+        },
+        {
+          key: MENU_PATHS.questions,
+          label: "Ngân hàng câu hỏi",
           icon: <BarChart3 size={16} strokeWidth={2.2} />,
         },
         {

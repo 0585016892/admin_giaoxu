@@ -425,7 +425,7 @@ const NotificationsCatePage = () => {
         read: Number(data.read || data.read_count || 0),
       });
     } catch (error) {
-      console.error("Lỗi tải thống kê:", error);
+      message.error("Lỗi tải thống kê:", error);
     }
   }, []);
 
@@ -478,8 +478,6 @@ const NotificationsCatePage = () => {
         setSelectedNotification(null);
       }
     } catch (error) {
-      console.error("Lỗi tải thông báo:", error);
-
       message.error(
         error?.response?.data?.message || "Không thể tải danh sách thông báo",
       );
@@ -546,8 +544,6 @@ const NotificationsCatePage = () => {
         read: prev.read + 1,
       }));
     } catch (error) {
-      console.error(error);
-
       message.error(
         error?.response?.data?.message || "Không thể đánh dấu đã đọc",
       );
@@ -610,8 +606,6 @@ const NotificationsCatePage = () => {
 
       message.success("Đã đánh dấu tất cả là đã đọc");
     } catch (error) {
-      console.error(error);
-
       message.error(error?.response?.data?.message || "Thao tác thất bại");
     } finally {
       setActionLoading(false);
@@ -668,8 +662,6 @@ const NotificationsCatePage = () => {
 
           message.success("Đã xóa thông báo");
         } catch (error) {
-          console.error(error);
-
           message.error(
             error?.response?.data?.message || "Không thể xóa thông báo",
           );
@@ -716,8 +708,6 @@ const NotificationsCatePage = () => {
 
           message.success("Đã xóa toàn bộ thông báo");
         } catch (error) {
-          console.error(error);
-
           message.error(
             error?.response?.data?.message || "Lỗi khi xóa thông báo",
           );

@@ -299,8 +299,6 @@ const ParishSettingsPage = () => {
 
       const data = rawData?.church ?? rawData;
 
-      console.log("🏛️ Fetched church data:", data);
-
       if (!data) {
         message.error("Không nhận được dữ liệu giáo xứ!");
 
@@ -344,8 +342,6 @@ const ParishSettingsPage = () => {
       setImageUrl(data.image || "");
       setSelectedFile(null);
     } catch (error) {
-      console.error("❌ Fetch parish info error:", error);
-
       message.error(
         error?.response?.data?.message || "Lỗi khi tải thông tin giáo xứ!",
       );
@@ -407,8 +403,6 @@ const ParishSettingsPage = () => {
 
       await fetchParishInfo();
     } catch (error) {
-      console.error("❌ Save church error:", error);
-
       message.error(
         error?.response?.data?.message ||
           "Có lỗi xảy ra khi lưu thông tin giáo xứ!",

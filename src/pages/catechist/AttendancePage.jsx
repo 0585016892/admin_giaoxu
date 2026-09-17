@@ -385,8 +385,6 @@ const AttendancePage = () => {
         setSelectedClassId(list[0].id);
       }
     } catch (error) {
-      console.error("Load classes error:", error);
-
       message.error("Không thể tải danh sách lớp");
     } finally {
       setLoadingClasses(false);
@@ -439,8 +437,6 @@ const AttendancePage = () => {
 
       setStatistics(getStatisticsFromResponse(response));
     } catch (error) {
-      console.error("Load attendance error:", error);
-
       if (requestId === requestIdRef.current) {
         message.error("Không thể tải danh sách điểm danh");
       }
@@ -561,8 +557,6 @@ const AttendancePage = () => {
 
         await loadAttendance();
       } catch (error) {
-        console.error("Save attendance error:", error);
-
         const statusCode = error?.response?.status;
 
         const body = error?.response?.data;
@@ -629,8 +623,6 @@ const AttendancePage = () => {
 
       await loadAttendance();
     } catch (error) {
-      console.error("Finish attendance error:", error);
-
       message.error(
         error?.response?.data?.message || "Không thể kết thúc điểm danh",
       );
@@ -706,8 +698,6 @@ const AttendancePage = () => {
 
       setHistoryData(list);
     } catch (error) {
-      console.error("History error:", error);
-
       message.error("Không thể tải lịch sử điểm danh");
 
       setHistoryData([]);

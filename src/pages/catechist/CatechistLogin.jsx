@@ -72,19 +72,21 @@ export default function Login() {
       setLoadingProgress((prev) => {
         if (prev >= 88) return 88;
 
-        // Chia nhỏ từng phân khúc để thanh loading trôi mượt như nước
         let increment = 1;
-        if (prev < 20)
-          increment = 1.5; // Đầu chạy nhanh một chút cho phấn khích
-        else if (prev < 50)
-          increment = 0.8; // Đoạn giữa chạy đều đặn
-        else if (prev < 75)
-          increment = 0.4; // Đoạn gần cuối bắt đầu chậm dần
-        else increment = 0.2; // Gần mốc 88% bò rất chậm tạo cảm giác đang xử lý dữ liệu nặng
+
+        if (prev < 20) {
+          increment = 1.5;
+        } else if (prev < 50) {
+          increment = 0.8;
+        } else if (prev < 75) {
+          increment = 0.4;
+        } else {
+          increment = 0.2;
+        }
 
         return Math.min(prev + increment, 88);
       });
-    }, 30); // Giảm interval xuống 30ms để các bước nhảy nhỏ liên tục không bị giật
+    }, 30);
 
     try {
       const res = await api.post("/auth/login", {
@@ -96,16 +98,21 @@ export default function Login() {
         clearInterval(progressTimer);
         setLoadingProgress(0);
         setLoading(false);
+
         message.error(
           "Đăng nhập thất bại: Hệ thống phản hồi thiếu token xác thực.",
         );
+
         return;
       }
 
+      // Nhớ tài khoản
       if (values.remember) {
         localStorage.setItem(
           "remember_me",
-          JSON.stringify({ email: values.email }),
+          JSON.stringify({
+            email: values.email,
+          }),
         );
       } else {
         localStorage.removeItem("remember_me");
@@ -117,30 +124,54 @@ export default function Login() {
         clearInterval(progressTimer);
         setLoadingProgress(0);
         setLoading(false);
+
         message.error("Không thể khởi tạo phiên làm việc.");
+
         return;
       }
 
       clearInterval(progressTimer);
       setLoadingProgress(100);
+
       message.success("Chào mừng Huynh Trưởng trở lại!");
 
       setTimeout(() => {
-        navigate("/catechist", { replace: true });
+        navigate("/catechist", {
+          replace: true,
+        });
       }, 700);
     } catch (error) {
       clearInterval(progressTimer);
       setLoadingProgress(0);
       setLoading(false);
 
+      const status = error?.response?.status;
+
+      // ==========================================
+      // TÀI KHOẢN BỊ KHÓA
+      // ==========================================
+
+      if (status === 403) {
+        message.error(
+          error?.response?.data?.message ||
+            "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+        );
+
+        return;
+      }
+
+      // ==========================================
+      // SAI EMAIL / PASSWORD
+      // ==========================================
+
       const msg =
         error?.response?.data?.message ||
         error?.message ||
         "Thông tin tài khoản hoặc mật khẩu không chính xác.";
+
       message.error(msg);
     }
   };
-
   return (
     <ConfigProvider
       theme={{

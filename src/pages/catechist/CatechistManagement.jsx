@@ -24,6 +24,7 @@ import {
   Badge,
   ConfigProvider,
   Image,
+  Modal,
 } from "antd";
 
 import {
@@ -44,6 +45,9 @@ import {
   BookOutlined,
   CrownOutlined,
   MailOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 
 // Common components
@@ -56,7 +60,7 @@ import StatCard from "../../components/common/StatCard";
 // API
 import catechistApi from "../../api/catechistApi";
 import classApi from "../../api/classApi";
-
+import { resetAdminPassword, toggleAdmin } from "../../api/adminApi";
 import dayjs from "dayjs";
 
 import avataImg from "../../assets/images/imgGLV.png";
@@ -138,7 +142,10 @@ export default function CatechistManagement() {
 
   const [form] = Form.useForm();
   const [assignForm] = Form.useForm();
+  const [resetForm] = Form.useForm();
 
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetUser, setResetUser] = useState(null);
   /* =======================================================
      FORMAT DATA
   ======================================================= */
@@ -273,7 +280,6 @@ export default function CatechistManagement() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-  console.log(catechists);
 
   /* =======================================================
      FILTER
@@ -534,6 +540,92 @@ export default function CatechistManagement() {
     }
   };
 
+  // ======================================================
+  // RESET PASSWORD
+  // ======================================================
+
+  const openResetPassword = (record) => {
+    setResetUser(record);
+
+    setResetModalOpen(true);
+
+    resetForm.resetFields();
+  };
+
+  const closeResetPassword = () => {
+    setResetModalOpen(false);
+
+    setResetUser(null);
+
+    resetForm.resetFields();
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      const values = await resetForm.validateFields();
+
+      setLoading(true);
+
+      await resetAdminPassword(resetUser.id, values.newPassword);
+
+      message.success(`Đã cấp lại mật khẩu mới cho ${resetUser.full_name}`);
+
+      closeResetPassword();
+    } catch (error) {
+      if (error?.errorFields) {
+        return;
+      }
+
+      message.error(error?.response?.data?.message || "Đổi mật khẩu thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleAdmin = (record) => {
+    const isActive = Boolean(record.status);
+
+    Modal.confirm({
+      title: isActive === true ? "Khóa tài khoản?" : "Mở khóa tài khoản?",
+
+      content:
+        isActive === true
+          ? `Tài khoản "${
+              record.name || record.full_name || "này"
+            }" sẽ không thể đăng nhập sau khi bị khóa.`
+          : `Bạn có chắc muốn mở khóa tài khoản "${
+              record.name || record.full_name || "này"
+            }"?`,
+
+      okText: isActive === true ? "Khóa tài khoản" : "Mở khóa",
+      cancelText: "Hủy",
+
+      okButtonProps: {
+        danger: isActive,
+      },
+
+      centered: true,
+
+      onOk: async () => {
+        try {
+          await toggleAdmin(record.id);
+
+          message.success(
+            isActive === "active"
+              ? "Đã khóa tài khoản"
+              : "Đã mở khóa tài khoản",
+          );
+
+          fetchData();
+        } catch (error) {
+          message.error(
+            error?.response?.data?.message ||
+              "Không thể thay đổi trạng thái tài khoản",
+          );
+        }
+      },
+    });
+  };
   /* =======================================================
      STATUS
   ======================================================= */
@@ -693,11 +785,8 @@ export default function CatechistManagement() {
               items: [
                 {
                   key: "assign",
-
                   label: "Phân công lớp giảng dạy",
-
                   icon: <SwapOutlined />,
-
                   onClick: () => handleOpenAssignModal(record),
                 },
 
@@ -706,10 +795,34 @@ export default function CatechistManagement() {
                 },
 
                 {
+                  key: "reset-password",
+                  label: "Cấp lại mật khẩu",
+                  icon: <KeyOutlined />,
+                  onClick: () => openResetPassword(record),
+                },
+
+                {
+                  key: "toggle-active",
+                  label:
+                    record.status === "active"
+                      ? "Khóa tài khoản"
+                      : "Mở khóa tài khoản",
+                  icon:
+                    record.status === "active" ? (
+                      <LockOutlined />
+                    ) : (
+                      <UnlockOutlined />
+                    ),
+                  onClick: () => handleToggleAdmin(record),
+                },
+
+                {
+                  type: "divider",
+                },
+
+                {
                   key: "delete",
-
                   danger: true,
-
                   label: (
                     <Popconfirm
                       title="Xóa Giáo lý viên?"
@@ -724,7 +837,6 @@ export default function CatechistManagement() {
                       Xóa thông tin
                     </Popconfirm>
                   ),
-
                   icon: <DeleteOutlined />,
                 },
               ],
@@ -2149,6 +2261,64 @@ export default function CatechistManagement() {
             </Form.Item>
           </Form>
         </AppFormModal>
+
+        <Modal
+          open={resetModalOpen}
+          onCancel={closeResetPassword}
+          onOk={handleResetPassword}
+          confirmLoading={loading}
+          title="Đặt Lại Mật Khẩu Truy Cập"
+          centered
+        >
+          <Form
+            form={resetForm}
+            layout="vertical"
+            style={{
+              paddingTop: 12,
+            }}
+          >
+            <Form.Item
+              label="Mật khẩu mới *"
+              name="newPassword"
+              rules={[
+                {
+                  required: true,
+                  message: "Bắt buộc nhập mật khẩu",
+                },
+                {
+                  min: 6,
+                  message: "Tối thiểu 6 ký tự",
+                },
+              ]}
+            >
+              <Input.Password />
+            </Form.Item>
+
+            <Form.Item
+              label="Xác nhận mật khẩu *"
+              name="confirmPassword"
+              dependencies={["newPassword"]}
+              rules={[
+                {
+                  required: true,
+                  message: "Bắt buộc xác nhận",
+                },
+
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue("newPassword") === value) {
+                      return Promise.resolve();
+                    }
+
+                    return Promise.reject(new Error("Mật khẩu chưa khớp"));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password />
+            </Form.Item>
+          </Form>
+        </Modal>
 
         {/* =================================================
             CSS

@@ -1,32 +1,37 @@
-import axiosClient from "./axios";
+import axios from "./axios";
 
-// ======================
-// LESSON
-// ======================
+// =========================================================
+// LESSON API
+// =========================================================
 
-export const getLessons = (params) => axiosClient.get("/lessons", { params });
+// Lấy danh sách bài học của giáo xứ hiện tại
+export const getLessons = (params = {}) => {
+  return axios.get("/lessons", {
+    params,
+  });
+};
 
-export const getLessonById = (id) => axiosClient.get(`/lessons/${id}`);
+// Lấy chi tiết bài học
+export const getLessonById = (id) => {
+  return axios.get(`/lessons/${id}`);
+};
 
-export const createLesson = (data) => axiosClient.post("/lessons", data);
+// Thêm bài học
+export const createLesson = (data) => {
+  return axios.post("/lessons", data);
+};
 
-export const updateLesson = (id, data) =>
-  axiosClient.put(`/lessons/${id}`, data);
+// Cập nhật bài học
+export const updateLesson = (id, data) => {
+  return axios.put(`/lessons/${id}`, data);
+};
 
-export const deleteLesson = (id) => axiosClient.delete(`/lessons/${id}`);
+// Xóa bài học
+export const deleteLesson = (id) => {
+  return axios.delete(`/lessons/${id}`);
+};
 
-// ======================
-// QUESTION
-// ======================
-
-export const getQuestions = (params) =>
-  axiosClient.get("/questions", { params });
-
-export const getQuestionById = (id) => axiosClient.get(`/questions/${id}`);
-
-export const createQuestion = (data) => axiosClient.post("/questions", data);
-
-export const updateQuestion = (id, data) =>
-  axiosClient.put(`/questions/${id}`, data);
-
-export const deleteQuestion = (id) => axiosClient.delete(`/questions/${id}`);
+// Lấy danh sách loại giáo lý
+export const getLessonTypes = () => {
+  return axios.get("/lessons/types");
+};

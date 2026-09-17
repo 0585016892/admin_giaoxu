@@ -352,8 +352,6 @@ const ResultsPage = () => {
 
       return list;
     } catch (error) {
-      console.error("LOAD TEACHER CLASSES ERROR:", error);
-
       setTeacherClasses([]);
 
       message.error(
@@ -399,8 +397,6 @@ const ResultsPage = () => {
 
       setResults(data);
     } catch (error) {
-      console.error("LOAD RESULTS BY CLASS ERROR:", error);
-
       setResults([]);
 
       message.error(
@@ -442,8 +438,6 @@ const ResultsPage = () => {
 
       setStudents(list);
     } catch (error) {
-      console.error("LOAD STUDENTS ERROR:", error);
-
       setStudents([]);
 
       message.error(
@@ -478,8 +472,6 @@ const ResultsPage = () => {
 
       setStatistics(resData?.data || null);
     } catch (error) {
-      console.error("LOAD CLASS STATISTICS ERROR:", error);
-
       setStatistics(null);
     } finally {
       setStatsLoading(false);
@@ -724,8 +716,6 @@ const ResultsPage = () => {
           setStudentStats(null);
         }
       } catch (error) {
-        console.error("FETCH STUDENT DETAIL ERROR:", error);
-
         setStudentResults([]);
 
         setStudentStats(null);
@@ -908,8 +898,6 @@ const ResultsPage = () => {
       }
     } catch (error) {
       if (!error?.errorFields) {
-        console.error("SAVE RESULT ERROR:", error);
-
         message.error(
           error?.response?.data?.message || "Có lỗi xảy ra khi lưu điểm",
         );
@@ -947,8 +935,6 @@ const ResultsPage = () => {
         await fetchStudentDetailsData(selectedStudent.id);
       }
     } catch (error) {
-      console.error("DELETE RESULT ERROR:", error);
-
       message.error(error?.response?.data?.message || "Không thể xóa điểm");
     } finally {
       setDeletingId(null);

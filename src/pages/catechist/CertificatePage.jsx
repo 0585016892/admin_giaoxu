@@ -294,8 +294,6 @@ const CertificatePage = () => {
       try {
         const data = await getMyLicense();
 
-        console.log("DATA CERTIFICATE:", data);
-
         if (data?.success && data?.church) {
           setChurchData({
             name: data.church.name || "",
@@ -304,7 +302,7 @@ const CertificatePage = () => {
           });
         }
       } catch (error) {
-        console.error("Lỗi khi tải thông tin giáo xứ:", error);
+        message.error("Lỗi khi tải thông tin giáo xứ:", error);
       }
     };
 
@@ -463,8 +461,6 @@ const CertificatePage = () => {
         key: "pdf",
       });
     } catch (error) {
-      console.error(error);
-
       message.error({
         content: "Có lỗi khi xuất PDF!",
         key: "pdf",
@@ -524,8 +520,6 @@ const CertificatePage = () => {
 
         setBatchModalOpen(true);
       } catch (error) {
-        console.error(error);
-
         message.error("Không thể đọc file Excel.");
       }
     };
@@ -725,8 +719,6 @@ const CertificatePage = () => {
 
       message.success("Đã xuất toàn bộ chứng chỉ!");
     } catch (error) {
-      console.error(error);
-
       message.error("Có lỗi khi tạo file ZIP.");
     } finally {
       setBatchExporting(false);
