@@ -136,11 +136,38 @@ const displayValue = (value) => {
 const formatDate = (value) => {
   if (!value) return EMPTY_VALUE;
 
-  const date = dayjs(value);
+  const date = dayjs.isDayjs(value) ? value : dayjs(value);
 
   return date.isValid() ? date.format("DD/MM/YYYY") : EMPTY_VALUE;
 };
 
+const formatDateForApi = (value) => {
+  if (!value) return null;
+
+  const date = dayjs.isDayjs(value) ? value : dayjs(value);
+
+  return date.isValid() ? date.format("YYYY-MM-DD") : null;
+};
+
+const getApiOrigin = () => {
+  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:12003/api";
+
+  return baseURL.replace(/\/api\/?$/, "");
+};
+
+const getAvatarUrl = (avatar) => {
+  if (!avatar) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(avatar)) {
+    return avatar;
+  }
+
+  const origin = getApiOrigin();
+
+  return `${origin}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
+};
 /* =====================================================
    COMPONENT
 ===================================================== */
@@ -443,7 +470,7 @@ export default function StudentManagement() {
 
       status: student.status || "active",
 
-      avatar: student.avatar || null,
+      avatar: getAvatarUrl(student.avatar),
 
       created_at: student.created_at || null,
 
@@ -773,8 +800,14 @@ export default function StudentManagement() {
       form.setFieldsValue({
         code: value(student.code),
 
-        name: student.name,
-        gender: student.gender,
+        name: student.name || "",
+
+        gender:
+          student.gender === "male"
+            ? "Nam"
+            : student.gender === "female"
+              ? "Nữ"
+              : student.gender || "Khác",
 
         date_of_birth: student.date_of_birth
           ? dayjs(student.date_of_birth)
@@ -845,6 +878,8 @@ export default function StudentManagement() {
         status: student.status || "active",
 
         note: value(student.note),
+
+        avatar: student.avatar || null,
       });
 
       setIsFormModalOpen(true);
@@ -858,13 +893,11 @@ export default function StudentManagement() {
 
   const buildStudentPayload = (values) => {
     return {
-      name: values.name?.trim(),
+      name: values.name?.trim() || "",
 
       gender: values.gender || "Khác",
 
-      date_of_birth: values.date_of_birth
-        ? values.date_of_birth.format("YYYY-MM-DD")
-        : null,
+      date_of_birth: formatDateForApi(values.date_of_birth),
 
       birth_place: values.birth_place?.trim() || null,
 
@@ -894,9 +927,7 @@ export default function StudentManagement() {
 
       baptism_name: values.baptism_name?.trim() || null,
 
-      baptism_date: values.baptism_date
-        ? values.baptism_date.format("YYYY-MM-DD")
-        : null,
+      baptism_date: formatDateForApi(values.baptism_date),
 
       baptism_place: values.baptism_place?.trim() || null,
 
@@ -906,15 +937,11 @@ export default function StudentManagement() {
 
       saint_name: values.saint_name?.trim() || null,
 
-      first_communion_date: values.first_communion_date
-        ? values.first_communion_date.format("YYYY-MM-DD")
-        : null,
+      first_communion_date: formatDateForApi(values.first_communion_date),
 
       first_communion_place: values.first_communion_place?.trim() || null,
 
-      confirmation_date: values.confirmation_date
-        ? values.confirmation_date.format("YYYY-MM-DD")
-        : null,
+      confirmation_date: formatDateForApi(values.confirmation_date),
 
       confirmation_place: values.confirmation_place?.trim() || null,
 
@@ -924,9 +951,7 @@ export default function StudentManagement() {
 
       catechism_status: values.catechism_status || "new",
 
-      enrollment_date: values.enrollment_date
-        ? values.enrollment_date.format("YYYY-MM-DD")
-        : null,
+      enrollment_date: formatDateForApi(values.enrollment_date),
 
       note: values.note?.trim() || null,
 
@@ -935,7 +960,46 @@ export default function StudentManagement() {
       class_id: values.class_id || null,
     };
   };
+  const buildStudentFormData = useCallback((values) => {
+    const payload = buildStudentPayload(values);
 
+    const formData = new FormData();
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined) {
+        return;
+      }
+
+      if (value === null) {
+        formData.append(key, "");
+        return;
+      }
+
+      formData.append(key, String(value));
+    });
+
+    /*
+     * ==========================================
+     * AVATAR MỚI
+     * ==========================================
+     */
+
+    if (values.avatarFile instanceof File) {
+      formData.append("avatar", values.avatarFile, values.avatarFile.name);
+    }
+
+    /*
+     * ==========================================
+     * XÓA AVATAR
+     * ==========================================
+     */
+
+    if (values.avatarRemoved === true) {
+      formData.append("avatar", "");
+    }
+
+    return formData;
+  }, []);
   /* ===================================================
      SAVE
   =================================================== */
@@ -946,19 +1010,20 @@ export default function StudentManagement() {
     try {
       setSaving(true);
 
-      const payload = buildStudentPayload(values);
+      const formData = buildStudentFormData(values);
 
       if (!editingStudent) {
-        await studentApi.create(payload);
+        await studentApi.create(formData);
 
         message.success("Thêm học sinh thành công!");
       } else {
-        await studentApi.update(editingStudent.id, payload);
+        await studentApi.update(editingStudent.id, formData);
 
         message.success("Cập nhật học sinh thành công!");
       }
 
       setIsFormModalOpen(false);
+
       setEditingStudent(null);
 
       form.resetFields();
@@ -969,6 +1034,7 @@ export default function StudentManagement() {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
+          error?.response?.data?.error ||
           error?.message ||
           "Không thể lưu học sinh!",
       );
@@ -976,7 +1042,6 @@ export default function StudentManagement() {
       setSaving(false);
     }
   };
-
   /* ===================================================
      DETAIL
   =================================================== */
@@ -1099,10 +1164,113 @@ export default function StudentManagement() {
 
         const newStatus = student.status === "active" ? "inactive" : "active";
 
-        await studentApi.update(student.id, {
+        const values = {
           name: student.name,
+
+          gender: student.gender,
+
+          date_of_birth: student.date_of_birth,
+
+          birth_place:
+            student.birth_place === EMPTY_VALUE ? "" : student.birth_place,
+
+          nationality:
+            student.nationality === EMPTY_VALUE
+              ? "Việt Nam"
+              : student.nationality,
+
+          phone: student.phone === EMPTY_VALUE ? "" : student.phone,
+
+          email: student.email === EMPTY_VALUE ? "" : student.email,
+
+          address: student.address === EMPTY_VALUE ? "" : student.address,
+
+          parish: student.parish === EMPTY_VALUE ? "" : student.parish,
+
+          father_name:
+            student.father_name === EMPTY_VALUE ? "" : student.father_name,
+
+          father_phone:
+            student.father_phone === EMPTY_VALUE ? "" : student.father_phone,
+
+          mother_name:
+            student.mother_name === EMPTY_VALUE ? "" : student.mother_name,
+
+          mother_phone:
+            student.mother_phone === EMPTY_VALUE ? "" : student.mother_phone,
+
+          guardian_name:
+            student.guardian_name === EMPTY_VALUE ? "" : student.guardian_name,
+
+          guardian_phone:
+            student.guardian_phone === EMPTY_VALUE
+              ? ""
+              : student.guardian_phone,
+
+          guardian_relationship:
+            student.guardian_relationship === EMPTY_VALUE
+              ? ""
+              : student.guardian_relationship,
+
+          baptism_name:
+            student.baptism_name === EMPTY_VALUE ? "" : student.baptism_name,
+
+          baptism_date: student.baptism_date,
+
+          baptism_place:
+            student.baptism_place === EMPTY_VALUE ? "" : student.baptism_place,
+
+          baptism_parish:
+            student.baptism_parish === EMPTY_VALUE
+              ? ""
+              : student.baptism_parish,
+
+          baptism_certificate_no:
+            student.baptism_certificate_no === EMPTY_VALUE
+              ? ""
+              : student.baptism_certificate_no,
+
+          saint_name:
+            student.saint_name === EMPTY_VALUE ? "" : student.saint_name,
+
+          first_communion_date: student.first_communion_date,
+
+          first_communion_place:
+            student.first_communion_place === EMPTY_VALUE
+              ? ""
+              : student.first_communion_place,
+
+          confirmation_date: student.confirmation_date,
+
+          confirmation_place:
+            student.confirmation_place === EMPTY_VALUE
+              ? ""
+              : student.confirmation_place,
+
+          confirmation_saint_name:
+            student.confirmation_saint_name === EMPTY_VALUE
+              ? ""
+              : student.confirmation_saint_name,
+
+          catechism_level:
+            student.catechism_level === EMPTY_VALUE
+              ? ""
+              : student.catechism_level,
+
+          catechism_status: student.catechism_status || "new",
+
+          enrollment_date: student.enrollment_date,
+
+          note: student.note === EMPTY_VALUE ? "" : student.note,
+
           status: newStatus,
-        });
+
+          class_id: student.classId || null,
+        };
+
+        const formData = buildStudentFormData(values);
+
+        await studentApi.update(student.id, formData);
 
         message.success(
           newStatus === "active" ? "Đã mở khóa học sinh!" : "Đã khóa học sinh!",
@@ -1119,7 +1287,12 @@ export default function StudentManagement() {
         setSaving(false);
       }
     },
-    [fetchStudents, setActionLoadingState, clearActionLoadingState],
+    [
+      fetchStudents,
+      setActionLoadingState,
+      clearActionLoadingState,
+      buildStudentFormData,
+    ],
   );
 
   /* ===================================================
@@ -1359,7 +1532,12 @@ export default function StudentManagement() {
                   whiteSpace: "nowrap",
                 }}
               >
-                {record.code} • {record.gender === "male" ? "nam" : "nữ"}
+                {record.code} •{" "}
+                {record.gender === "Nam"
+                  ? "Nam"
+                  : record.gender === "Nữ"
+                    ? "Nữ"
+                    : "Khác"}
               </Text>
             </div>
           </div>
@@ -1654,7 +1832,7 @@ export default function StudentManagement() {
               </Descriptions.Item>
 
               <Descriptions.Item label="Giới tính">
-                {detailStudent.gender === "male" ? "Nam" : "Nữ"}
+                {detailStudent.gender || "Khác"}
               </Descriptions.Item>
 
               <Descriptions.Item label="Ngày sinh">
@@ -2761,8 +2939,9 @@ export default function StudentManagement() {
             form={form}
             classes={classes}
             saving={saving}
+            initialValues={editingStudent || {}}
             onFinish={handleSaveStudent}
-          />
+          />{" "}
         </AppFormModal>
 
         {/* =================================================
