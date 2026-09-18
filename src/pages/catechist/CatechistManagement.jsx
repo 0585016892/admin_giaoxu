@@ -30,7 +30,6 @@ import {
 import {
   UserOutlined,
   PlusOutlined,
-  SearchOutlined,
   FilterOutlined,
   EyeOutlined,
   EditOutlined,
@@ -56,6 +55,7 @@ import AppFormModal from "../../components/common/AppFormModal";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
+import AppSearchInput from "../../components/common/SearchInput";
 
 // API
 import catechistApi from "../../api/catechistApi";
@@ -1005,33 +1005,17 @@ export default function CatechistManagement() {
         ================================================= */}
 
         <Card bordered={false} className="catechist-filter-card">
-          <div className="filter-title">
-            <div className="filter-title-icon">
-              <FilterOutlined />
-            </div>
-
-            <div>
-              <Text className="filter-title-main">Bộ lọc tìm kiếm</Text>
-
-              <Text className="filter-title-sub">
-                Tìm kiếm và lọc danh sách Giáo lý viên
-              </Text>
-            </div>
-          </div>
-
           <Row gutter={[14, 14]}>
             <Col xs={24} md={10}>
               <div className="filter-field">
                 <Text className="filter-label">Tìm kiếm</Text>
-
-                <Input
-                  size="large"
-                  placeholder="Tên, tên Thánh, mã GLV, SĐT..."
-                  prefix={<SearchOutlined />}
+                <AppSearchInput
                   value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  allowClear
-                  className="catechist-input"
+                  onChange={(value) => {
+                    setSearchText(value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Tên, tên Thánh, mã GLV, SĐT..."
                 />
               </div>
             </Col>

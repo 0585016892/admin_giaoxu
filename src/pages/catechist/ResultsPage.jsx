@@ -6,7 +6,6 @@ import {
   Col,
   Empty,
   Form,
-  Input,
   Pagination,
   Popconfirm,
   Progress,
@@ -32,9 +31,7 @@ import {
   FilterOutlined,
   FormOutlined,
   PlusOutlined,
-  ReloadOutlined,
   RiseOutlined,
-  SearchOutlined,
   TeamOutlined,
   TrophyOutlined,
   UserOutlined,
@@ -58,7 +55,9 @@ import studentApi from "../../api/studentApi";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import AppFormModal from "../../components/common/AppFormModal";
 import ResultForm from "../../components/forms/ResultForm";
-
+import PageHeroHeader from "../../components/common/PageHeroHeader";
+import StatCard from "../../components/common/StatCard";
+import AppSearchInput from "../../components/common/SearchInput";
 const { Text, Title } = Typography;
 
 /* ============================================================
@@ -2391,48 +2390,22 @@ const ResultsPage = () => {
           HEADER
       ====================================================== */}
 
-      <div className="results-header">
-        <div className="results-header-content">
-          <div className="results-header-icon">
-            <TrophyOutlined />
-          </div>
-
-          <div>
-            <Title level={2} className="results-header-title">
-              Bảng điểm học viên
-            </Title>
-
-            <span className="results-header-description">
-              Quản lý kết quả học tập, nhập điểm và theo dõi tiến trình của học
-              viên.
-            </span>
-          </div>
-        </div>
-
-        <div className="results-header-actions">
-          <Button
-            className="results-refresh-btn"
-            icon={<ReloadOutlined />}
-            loading={
-              loading ||
-              studentsLoading ||
-              statsLoading ||
-              teacherClassesLoading
-            }
-            onClick={handleRefresh}
-          >
-            Làm mới
-          </Button>
-
-          <Button
-            className="results-create-btn"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            Nhập điểm
-          </Button>
-        </div>
-      </div>
+      <PageHeroHeader
+        icon={<TrophyOutlined />}
+        badgeText="QUẢN LÝ BẢNG ĐIỂM"
+        title="Bảng điểm học viên"
+        description="Quản lý kết quả học tập, nhập điểm và theo dõi tiến trình của học viên."
+        onRefresh={handleRefresh}
+        refreshLoading={
+          loading || studentsLoading || statsLoading || teacherClassesLoading
+        }
+        primaryButtonText="Nhập điểm"
+        primaryButtonIcon={<PlusOutlined />}
+        onPrimaryClick={handleCreate}
+        primaryDisabled={
+          loading || studentsLoading || statsLoading || teacherClassesLoading
+        }
+      />
 
       {/* ======================================================
           CLASS SELECTOR
@@ -2483,131 +2456,49 @@ const ResultsPage = () => {
       ====================================================== */}
 
       {classId && (
-        <Row className="results-stat-row" gutter={[14, 14]}>
+        <Row gutter={[14, 14]} className="results-stat-row">
           <Col xs={12} sm={6}>
-            <Card
-              className="
-                results-stat-card
-                results-stat-navy
-              "
-              bordered={false}
+            <StatCard
+              title="Tổng học viên"
+              value={computedStats.totalStudents}
               loading={statsLoading}
-              bodyStyle={{
-                padding: 17,
-              }}
-            >
-              <div className="results-stat-content">
-                <div>
-                  <span className="results-stat-label">Tổng học viên</span>
-
-                  <span className="results-stat-value">
-                    {computedStats.totalStudents}
-                  </span>
-                </div>
-
-                <div className="results-stat-icon">
-                  <TeamOutlined />
-                </div>
-              </div>
-            </Card>
+              icon={<TeamOutlined />}
+              iconColor="#173B5E"
+              description="Số học viên trong lớp"
+            />
           </Col>
 
           <Col xs={12} sm={6}>
-            <Card
-              className="
-                results-stat-card
-                results-stat-gold
-              "
-              bordered={false}
+            <StatCard
+              title="Tổng bài điểm"
+              value={computedStats.totalResults}
               loading={statsLoading}
-              bodyStyle={{
-                padding: 17,
-              }}
-            >
-              <div className="results-stat-content">
-                <div>
-                  <span className="results-stat-label">Tổng bài điểm</span>
-
-                  <span className="results-stat-value">
-                    {computedStats.totalResults}
-                  </span>
-                </div>
-
-                <div className="results-stat-icon">
-                  <BookOutlined />
-                </div>
-              </div>
-            </Card>
+              icon={<BookOutlined />}
+              iconColor="#D4AF37"
+              description="Tổng kết quả đã nhập"
+            />
           </Col>
 
           <Col xs={12} sm={6}>
-            <Card
-              className="
-                results-stat-card
-                results-stat-green
-              "
-              bordered={false}
+            <StatCard
+              title="Điểm TB lớp"
+              value={`${Number(computedStats.averageScore || 0).toFixed(1)}/10`}
               loading={statsLoading}
-              bodyStyle={{
-                padding: 17,
-              }}
-            >
-              <div className="results-stat-content">
-                <div>
-                  <span className="results-stat-label">Điểm TB lớp</span>
-
-                  <span className="results-stat-value">
-                    {Number(computedStats.averageScore || 0).toFixed(1)}
-
-                    <span
-                      style={{
-                        marginLeft: 4,
-
-                        color: COLORS.textMuted,
-
-                        fontSize: 12,
-
-                        fontWeight: 600,
-                      }}
-                    >
-                      /10
-                    </span>
-                  </span>
-                </div>
-
-                <div className="results-stat-icon">
-                  <RiseOutlined />
-                </div>
-              </div>
-            </Card>
+              icon={<RiseOutlined />}
+              iconColor="#52A675"
+              description="Điểm trung bình của lớp"
+            />
           </Col>
 
           <Col xs={12} sm={6}>
-            <Card
-              className="
-                results-stat-card
-                results-stat-blue
-              "
-              bordered={false}
+            <StatCard
+              title="Tỷ lệ đạt"
+              value={`${computedStats.passRate}%`}
               loading={statsLoading}
-              bodyStyle={{
-                padding: 17,
-              }}
-            >
-              <div className="results-stat-content">
-                <div>
-                  <span className="results-stat-label">Tỷ lệ đạt</span>
-
-                  <span className="results-stat-value">
-                    {computedStats.passRate}%
-                  </span>
-                </div>
-
-                <div className="results-stat-icon">
-                  <CheckCircleOutlined />
-                </div>
-              </div>
-            </Card>
+              icon={<CheckCircleOutlined />}
+              iconColor="#3B82F6"
+              description="Tỷ lệ học viên đạt"
+            />
           </Col>
         </Row>
       )}
@@ -2678,24 +2569,13 @@ const ResultsPage = () => {
             <div className="results-filter-bar">
               <Row gutter={[12, 12]} align="middle">
                 <Col xs={24} md={14}>
-                  <Input
-                    className="results-search"
-                    prefix={
-                      <SearchOutlined
-                        style={{
-                          color: COLORS.navy,
-                        }}
-                      />
-                    }
-                    placeholder="Tìm theo tên học viên, mã học viên..."
+                  <AppSearchInput
                     value={searchText}
-                    onChange={(e) => {
-                      setSearchText(e.target.value);
-
+                    onChange={(value) => {
+                      setSearchText(value);
                       setCurrentPage(1);
                     }}
-                    allowClear
-                    size="large"
+                    placeholder="Tìm theo tên học viên, mã học viên..."
                   />
                 </Col>
 

@@ -15,7 +15,6 @@ import {
   ConfigProvider,
   DatePicker,
   Empty,
-  Input,
   Modal,
   Pagination,
   Row,
@@ -51,6 +50,7 @@ import dayjs from "dayjs";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import QRCodeScanner from "./QRCodeScanner";
 import StatCard from "../../components/common/StatCard";
+import AppSearchInput from "../../components/common/SearchInput";
 
 import attendanceApi from "../../api/attendanceApi";
 import classApi from "../../api/classApi";
@@ -1108,14 +1108,12 @@ const AttendancePage = () => {
 
             <div className="filter-item search-filter">
               <Text className="filter-label">Tìm học sinh</Text>
-
-              <Input
+              <AppSearchInput
                 value={searchInput}
-                allowClear
-                prefix={<SearchOutlined />}
+                onChange={(value) => {
+                  setSearchInput(value);
+                }}
                 placeholder="Tên hoặc mã học viên..."
-                className="attendance-search"
-                onChange={(e) => setSearchInput(e.target.value)}
               />
             </div>
 

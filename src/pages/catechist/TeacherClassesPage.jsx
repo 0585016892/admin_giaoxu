@@ -4,7 +4,6 @@ import {
   Card,
   Col,
   Empty,
-  Input,
   Row,
   Select,
   Skeleton,
@@ -21,7 +20,6 @@ import {
   IdcardOutlined,
   PauseCircleOutlined,
   ReadOutlined,
-  SearchOutlined,
   StopOutlined,
   TeamOutlined,
   UserOutlined,
@@ -33,6 +31,7 @@ import { useUser } from "../../context/UserContext";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
 import ErrorPage from "./ErrorPage";
+import AppSearchInput from "../../components/common/SearchInput";
 
 const { Title, Text } = Typography;
 
@@ -583,17 +582,12 @@ const TeacherClassesPage = () => {
         style={{ marginTop: 20, marginBottom: 20 }}
       >
         <Col xs={24} sm={14} md={16}>
-          <Input
-            prefix={<SearchOutlined style={{ color: COLORS.primary }} />}
-            placeholder="Tìm kiếm theo tên lớp hoặc mã lớp..."
+          <AppSearchInput
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            allowClear
-            size="large"
-            style={{
-              borderRadius: 12,
-              border: `1.5px solid ${COLORS.primaryBorder}`,
+            onChange={(value) => {
+              setSearchText(value);
             }}
+            placeholder="Tìm kiếm theo tên lớp hoặc mã lớp..."
           />
         </Col>
         <Col xs={24} sm={10} md={8}>

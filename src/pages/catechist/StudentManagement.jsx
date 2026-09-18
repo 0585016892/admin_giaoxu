@@ -17,7 +17,6 @@ import {
   Dropdown,
   Empty,
   Form,
-  Input,
   Modal,
   Pagination,
   Popconfirm,
@@ -42,7 +41,6 @@ import {
   LockOutlined,
   MoreOutlined,
   PlusOutlined,
-  SearchOutlined,
   SwapOutlined,
   TeamOutlined,
   UnlockOutlined,
@@ -65,6 +63,7 @@ import StatCard from "../../components/common/StatCard";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import AppButton from "../../components/common/AppButton";
+import AppSearchInput from "../../components/common/SearchInput";
 
 import { QRCodeCanvas } from "qrcode.react";
 
@@ -2717,28 +2716,13 @@ export default function StudentManagement() {
 
           <Row className="student-filter-row" gutter={[12, 12]} align="middle">
             <Col xs={24} md={12} lg={9}>
-              <Input
-                className="student-filter-control"
-                allowClear
-                size="large"
-                prefix={
-                  <SearchOutlined
-                    style={{
-                      color: COLORS.navy,
-                    }}
-                  />
-                }
-                placeholder="Tìm tên, mã, số điện thoại, email..."
+              <AppSearchInput
                 value={searchText}
-                disabled={loading || bulkDeleting}
-                onChange={(e) => {
-                  setSearchText(e.target.value);
-
+                onChange={(value) => {
+                  setSearchText(value);
                   setCurrentPage(1);
                 }}
-                style={{
-                  borderRadius: 10,
-                }}
+                placeholder="Tìm tên, mã, số điện thoại, email..."
               />
             </Col>
 

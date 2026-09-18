@@ -11,7 +11,6 @@ import {
   Space,
   Modal,
   Form,
-  Input,
   message,
   Empty,
   Skeleton,
@@ -28,7 +27,6 @@ import {
   CalendarOutlined,
   BookOutlined,
   TeamOutlined,
-  SearchOutlined,
   CheckCircleOutlined,
   PauseCircleOutlined,
   StopOutlined,
@@ -41,6 +39,7 @@ import {
   StarFilled,
   SmileOutlined,
 } from "@ant-design/icons";
+import { useUser } from "../../context/UserContext";
 
 import usePermission from "../../hooks/usePermission";
 import AppFormModal from "../../components/common/AppFormModal";
@@ -50,10 +49,9 @@ import ClassCard from "../../components/class/ClassCard";
 import ClassDetailSkeleton from "../../components/class/ClassDetailSkeleton";
 import dayjs from "dayjs";
 import classApi from "../../api/classApi";
-import { useUser } from "../../context/UserContext";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import catechistApi from "../../api/catechistApi";
-
+import AppSearchInput from "../../components/common/SearchInput";
 const { Text } = Typography;
 
 /* =========================================================
@@ -1216,27 +1214,12 @@ const ClassManagement = () => {
       >
         <Row gutter={[12, 12]} align="middle">
           <Col xs={24} lg={15}>
-            <Input
-              size="large"
-              allowClear
+            <AppSearchInput
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              prefix={
-                <SearchOutlined
-                  style={{
-                    color: COLORS.navy,
-                  }}
-                />
-              }
-              placeholder="Tìm tên lớp, mã lớp, chương trình hoặc phòng học..."
-              style={{
-                height: 44,
-                borderRadius: 9,
-                background: COLORS.background,
-                border: `1px solid ${COLORS.border}`,
-                fontSize: 13,
-                fontWeight: 600,
+              onChange={(value) => {
+                setSearchText(value);
               }}
+              placeholder="Tìm tên lớp, mã lớp, chương trình hoặc phòng học..."
             />
           </Col>
 

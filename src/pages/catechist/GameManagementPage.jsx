@@ -7,7 +7,6 @@ import {
   Col,
   Dropdown,
   Empty,
-  Input,
   Modal,
   Pagination,
   Row,
@@ -32,7 +31,6 @@ import {
   Pencil,
   Play,
   Plus,
-  Search,
   Smile,
   Sparkles,
   Star,
@@ -48,6 +46,8 @@ import GameTypeSelector from "../../components/games/GameTypeSelector";
 import GameBuilder from "../../components/games/GameBuilder";
 import GamePlayer from "../../components/games/player/GamePlayer";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
+import AppSearchInput from "../../components/common/SearchInput";
+
 import { useUser } from "../../context/UserContext";
 
 import {
@@ -1340,30 +1340,13 @@ const GameManagementPage = ({ teacherId }) => {
               flex: 1,
             }}
           >
-            <Input
-              placeholder="Tìm trò chơi..."
-              prefix={
-                <Search
-                  size={18}
-                  style={{
-                    color: COLORS.muted,
-                  }}
-                />
-              }
+            <AppSearchInput
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              allowClear
-              style={{
-                width: "clamp(220px, 25vw, 280px)",
-
-                borderRadius: 12,
-
-                height: 42,
-
-                border: `1px solid ${COLORS.border}`,
-
-                background: COLORS.background,
+              onChange={(value) => {
+                setSearchText(value);
+                setCurrentPage(1);
               }}
+              placeholder="Tìm trò chơi..."
             />
 
             <Select

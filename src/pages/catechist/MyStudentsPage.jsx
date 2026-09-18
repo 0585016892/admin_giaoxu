@@ -5,7 +5,6 @@ import {
   Col,
   Avatar,
   Typography,
-  Input,
   Tag,
   Empty,
   Select,
@@ -18,7 +17,6 @@ import {
 
 import {
   TeamOutlined,
-  SearchOutlined,
   BookOutlined,
   ManOutlined,
   WomanOutlined,
@@ -29,6 +27,7 @@ import {
 import StatCard from "../../components/common/StatCard";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
+import AppSearchInput from "../../components/common/SearchInput";
 
 import studentApi from "../../api/studentApi";
 import ErrorPage from "./ErrorPage";
@@ -229,7 +228,7 @@ const MyStudentsPage = () => {
         <div className="student-table-cell">
           <Avatar
             size={40}
-            src={record.avatar}
+            src={`${process.env.REACT_APP_API_URL}${record.avatar}`}
             style={{
               background: getAvatarColor(index),
               color: "#FFFFFF",
@@ -388,14 +387,12 @@ const MyStudentsPage = () => {
       >
         <Row gutter={[12, 12]}>
           <Col xs={24} lg={15}>
-            <Input
-              size="large"
-              allowClear
+            <AppSearchInput
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              prefix={<SearchOutlined style={{ color: primaryNavy }} />}
+              onChange={(value) => {
+                setSearchText(value);
+              }}
               placeholder="Tìm tên học sinh, mã học sinh, số điện thoại, lớp..."
-              className="student-search-input"
             />
           </Col>
           <Col xs={24} lg={9}>

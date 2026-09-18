@@ -735,6 +735,7 @@ export default function CatechistDashboard() {
                 <Button
                   type="text"
                   icon={<RightOutlined style={{ color: "#FFF" }} />}
+                  onClick={() => fetchDailyVerse()}
                 />
               </Flex>
 
