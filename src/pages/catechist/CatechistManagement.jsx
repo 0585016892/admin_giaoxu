@@ -763,8 +763,6 @@ export default function CatechistManagement() {
         <Space size={6}>
           <Tooltip title="Xem chi tiết">
             <AppButton
-              className="chibi-action-btn chibi-btn-view"
-              shape="circle"
               icon={<EyeOutlined />}
               onClick={() => handleOpenDetail(record)}
             />
@@ -772,8 +770,6 @@ export default function CatechistManagement() {
 
           <Tooltip title="Chỉnh sửa">
             <AppButton
-              className="chibi-action-btn chibi-btn-edit"
-              shape="circle"
               icon={<EditOutlined />}
               onClick={() => handleOpenEditModal(record)}
             />
@@ -784,7 +780,6 @@ export default function CatechistManagement() {
             menu={{
               items: [
                 {
-                  key: "assign",
                   label: "Phân công lớp giảng dạy",
                   icon: <SwapOutlined />,
                   onClick: () => handleOpenAssignModal(record),

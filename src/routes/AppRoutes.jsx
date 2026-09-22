@@ -30,6 +30,9 @@ import ErrorPage from "../pages/catechist/ErrorPage";
 import FaithEduRegister from "../pages/catechist/FaithEduRegister";
 import Statistics from "../pages/catechist/Statistics";
 import CertificatePage from "../pages/catechist/CertificatePage";
+import LessonLibraryPage from "../pages/catechist/LessonLibraryPage";
+import ResourceViewerPage from "../pages/catechist/ResourceViewerPage";
+import QuestionPlayPage from "../pages/catechist/QuestionPlayPage";
 
 import LandingPage from "../pages/LandingPage/LandingPage";
 import VerifyCertificate from "../components/VerifyCertificate";
@@ -140,6 +143,18 @@ export default function AppRoutes() {
             <Route
               path="/catechist/settings"
               element={<ParishSettingsPage />}
+            />
+            <Route
+              path="/catechist/lesson-library"
+              element={<LessonLibraryPage />}
+            />
+            <Route
+              path="/catechist/resources/:id"
+              element={<ResourceViewerPage />}
+            />
+            <Route
+              path="/catechist/questions/play/:lessonId"
+              element={<QuestionPlayPage />}
             />
             <Route path="/catechist/questions" element={<QuestionPage />} />
           </Route>

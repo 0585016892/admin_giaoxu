@@ -4,7 +4,6 @@ import dayjs from "dayjs";
 
 import {
   Avatar,
-  Button,
   Col,
   DatePicker,
   Divider,
@@ -15,6 +14,7 @@ import {
   Tabs,
   message,
 } from "antd";
+import AppButton from "../common/AppButton";
 
 import {
   CameraOutlined,
@@ -447,28 +447,24 @@ const StudentForm = ({
                   onChange={handleAvatarChange}
                 />
 
-                <Button
+                <AppButton
+                  variant="secondary"
+                  size="small"
                   icon={<CameraOutlined />}
                   onClick={handleSelectAvatar}
-                  disabled={saving}
-                  style={{
-                    borderColor: "#1B365D",
-                    color: "#1B365D",
-                    fontWeight: 500,
-                  }}
                 >
                   {avatarPreview ? "Đổi ảnh" : "Chọn ảnh"}
-                </Button>
-
+                </AppButton>
                 {avatarPreview && (
-                  <Button
+                  <AppButton
                     danger
+                    size="small"
                     icon={<DeleteOutlined />}
                     onClick={handleRemoveAvatar}
                     disabled={saving}
                   >
                     Xóa ảnh
-                  </Button>
+                  </AppButton>
                 )}
               </div>
 

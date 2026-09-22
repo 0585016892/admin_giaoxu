@@ -31,3 +31,11 @@ export const generateExam = (params = {}) => {
 export const submitExam = (data) => {
   return axios.post("/questions/exam/submit", data);
 };
+
+export const getQuizByLesson = (lessonId) =>
+  axios.get(`/questions/play/${lessonId}`);
+
+export const submitQuiz = (lessonId, answers) =>
+  axios.post(`/questions/play/${lessonId}/submit`, {
+    answers,
+  });

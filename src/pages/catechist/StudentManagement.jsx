@@ -1599,38 +1599,29 @@ export default function StudentManagement() {
         render: (_, record) => (
           <Space size={2}>
             <Tooltip title="Xem QR">
-              <Button
-                type="text"
-                shape="circle"
+              <AppButton
+                variant="secondary"
+                size="small"
                 icon={<QrcodeOutlined />}
                 onClick={() => handleOpenQR(record)}
-                style={{
-                  color: COLORS.navy,
-                }}
               />
             </Tooltip>
 
             <Tooltip title="Xem">
-              <Button
-                type="text"
-                shape="circle"
+              <AppButton
+                variant="secondary"
+                size="small"
                 icon={<EyeOutlined />}
                 onClick={() => handleOpenDetail(record)}
-                style={{
-                  color: COLORS.navy,
-                }}
               />
             </Tooltip>
 
             <Tooltip title="Sửa">
-              <Button
-                type="text"
-                shape="circle"
+              <AppButton
+                variant="secondary"
+                size="small"
                 icon={<EditOutlined />}
                 onClick={() => handleOpenEditModal(record)}
-                style={{
-                  color: COLORS.navy,
-                }}
               />
             </Tooltip>
 
@@ -2534,7 +2525,7 @@ export default function StudentManagement() {
             }
 
             .student-qr-actions {
-              flex-direction: column;
+              display: flex;
             }
 
             .student-qr-actions

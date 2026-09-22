@@ -51,7 +51,7 @@ import PageHeroHeader from "../../components/common/PageHeroHeader";
 import QRCodeScanner from "./QRCodeScanner";
 import StatCard from "../../components/common/StatCard";
 import AppSearchInput from "../../components/common/SearchInput";
-
+import AppButton from "../../components/common/AppButton";
 import attendanceApi from "../../api/attendanceApi";
 import classApi from "../../api/classApi";
 
@@ -1487,7 +1487,7 @@ const AttendancePage = () => {
                 )}
               </div>
 
-              <Button
+              <AppButton
                 block
                 size="large"
                 type={isQrOpen ? "default" : "primary"}
@@ -1499,7 +1499,7 @@ const AttendancePage = () => {
                 onClick={handleToggleQR}
               >
                 {isQrOpen ? "Kết thúc điểm danh" : "Bật camera điểm danh"}
-              </Button>
+              </AppButton>
 
               <div className="qr-attendance-note">
                 <div className="qr-note-icon">

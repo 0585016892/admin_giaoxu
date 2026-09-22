@@ -1060,7 +1060,9 @@ const GameManagementPage = ({ teacherId }) => {
 
           return (
             <Space size={8}>
-              <Button
+              <AppButton
+                variant="secondary"
+                size="small"
                 type="primary"
                 icon={
                   access.allowed ? (
@@ -1071,47 +1073,21 @@ const GameManagementPage = ({ teacherId }) => {
                 }
                 disabled={!access.allowed}
                 onClick={() => handlePlayGame(record)}
-                style={{
-                  borderRadius: 10,
-
-                  background: access.allowed ? COLORS.navyLight : COLORS.grayBg,
-
-                  color: access.allowed ? COLORS.navy : COLORS.muted,
-
-                  border:
-                    "1px solid " +
-                    (access.allowed ? COLORS.border : COLORS.border),
-
-                  boxShadow: "none",
-
-                  fontWeight: 700,
-
-                  cursor: access.allowed ? "pointer" : "not-allowed",
-                }}
               >
                 {access.allowed ? "Vào chơi" : "Chỉ VIP"}
-              </Button>
+              </AppButton>
 
-              <Button
+              <AppButton
+                variant="secondary"
+                size="small"
                 icon={<Pencil size={14} />}
                 onClick={() => handleEdit(record)}
-                style={{
-                  borderRadius: 10,
-                  borderColor: COLORS.border,
-                  color: COLORS.navy,
-                }}
               />
-
-              <Button
+              <AppButton
                 danger
+                size="small"
                 icon={<Trash2 size={14} />}
                 onClick={() => handleDelete(record)}
-                style={{
-                  borderRadius: 10,
-                  background: COLORS.dangerBg,
-                  color: COLORS.danger,
-                  border: `1px solid ${COLORS.danger}`,
-                }}
               />
             </Space>
           );
@@ -1821,8 +1797,9 @@ const GameManagementPage = ({ teacherId }) => {
                         marginTop: "auto",
                       }}
                     >
-                      <Button
-                        type="primary"
+                      <AppButton
+                        variant="secondary"
+                        size="small"
                         icon={
                           access.allowed ? (
                             <Play size={14} fill="currentColor" />
@@ -1863,7 +1840,7 @@ const GameManagementPage = ({ teacherId }) => {
                         }}
                       >
                         {access.allowed ? "Vào chơi" : "Chỉ VIP"}
-                      </Button>
+                      </AppButton>
 
                       <Dropdown
                         trigger={["click"]}

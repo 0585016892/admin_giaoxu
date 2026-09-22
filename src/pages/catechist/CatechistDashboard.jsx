@@ -59,10 +59,10 @@ const IMAGE_ASSETS = {
 };
 
 const CHART_COLORS = {
-  Tổng: "#2563EB", // Màu xanh dương giống ảnh mẫu
-  Nam: "#2563EB",
+  Tổng: "#173B5E", // Màu xanh dương giống ảnh mẫu
+  Nam: "#244F78",
   Nữ: "#DB2777",
-  "Học sinh mới": "#9333EA",
+  "Học sinh mới": "#D9A441",
 };
 
 const chibiCardStyle = {
@@ -85,71 +85,97 @@ const StatCard = memo(({ title, value, subText, icon, tag, bgGradient }) => (
       ...chibiCardStyle,
       height: "100%",
       background: bgGradient || "#FFFFFF",
+      justifyContent: "center",
+      display: "flex",
+      alignItems: "center",
+      padding: 0,
     }}
-    bodyStyle={{ padding: 22 }}
   >
-    <Flex vertical gap={16}>
-      <Flex justify="space-between" align="flex-start">
-        <div
+    <Flex align="center" gap={18}>
+      {/* ICON */}
+      <div
+        style={{
+          width: 68,
+          height: 68,
+          minWidth: 68,
+          borderRadius: 20,
+          background: "linear-gradient(145deg, #F8FAFC 0%, #EEF3F8 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "inset 0 0 0 1px rgba(23,59,94,0.04)",
+        }}
+      >
+        <img
+          src={icon}
+          alt={title}
           style={{
-            width: 52,
-            height: 52,
-            borderRadius: 16,
-            background: "#F8FAFC",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <img
-            src={icon}
-            alt={title}
-            style={{ width: 36, height: 36, objectFit: "contain" }}
-          />
-        </div>
-        {tag}
-      </Flex>
-
-      <div>
-        <Text
-          style={{
+            width: 60,
+            height: 60,
+            objectFit: "contain",
             display: "block",
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#6B7280",
-            marginBottom: 4,
           }}
+        />
+      </div>
+
+      {/* CONTENT */}
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <Flex
+          justify="space-between"
+          align="center"
+          style={{ marginBottom: 4 }}
         >
-          {title}
-        </Text>
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: 500,
+              color: "#64748B",
+              lineHeight: 1.3,
+            }}
+          >
+            {title}
+          </Text>
+
+          {tag}
+        </Flex>
+
         <Title
           level={2}
           style={{
             margin: 0,
+            fontSize: 25,
             fontWeight: 800,
-            fontSize: 26,
-            color: "#1F2937",
-            lineHeight: 1.2,
+            lineHeight: 1.15,
+            color: "#173B5E",
+            letterSpacing: "-0.5px",
           }}
         >
           {value}
         </Title>
-        <Text
-          type="secondary"
-          style={{
-            fontSize: 12,
-            fontWeight: 500,
-            marginTop: 4,
-            display: "block",
-          }}
-        >
-          {subText}
-        </Text>
+
+        {subText && (
+          <Text
+            style={{
+              display: "block",
+              marginTop: 3,
+              fontSize: 11,
+              fontWeight: 500,
+              color: "#94A3B8",
+              lineHeight: 1.3,
+            }}
+          >
+            {subText}
+          </Text>
+        )}
       </div>
     </Flex>
   </Card>
 ));
-
 const ClassChartTooltip = memo(({ active, payload, label, mode }) => {
   if (!active || !payload || !payload.length) return null;
   const data = payload[0]?.payload;
@@ -393,7 +419,7 @@ export default function CatechistDashboard() {
         <Row gutter={[20, 20]}>
           <Col xs={24} sm={12} lg={6}>
             <StatCard
-              title="Tổng học sinh"
+              title="Tổng"
               value={totalStudents}
               subText="học sinh đang quản lý"
               icon={IMAGE_ASSETS.students}
@@ -415,7 +441,7 @@ export default function CatechistDashboard() {
 
           <Col xs={24} sm={12} lg={6}>
             <StatCard
-              title="Lớp phụ trách"
+              title="Lớp"
               value={totalClasses}
               subText={`${activeClasses} lớp đang hoạt động`}
               icon={IMAGE_ASSETS.classes}
@@ -437,9 +463,9 @@ export default function CatechistDashboard() {
 
           <Col xs={24} sm={12} lg={6}>
             <StatCard
-              title="Giáo Xứ Của Bạn"
-              value={license?.church?.name ?? "Giáo Xứ Đông Chúa"}
-              subText={`Địa chỉ: ${license?.church?.address ?? "Giáo Phận Phát Diệm"}`}
+              title="Giáo Xứ "
+              value={license?.church?.name ?? "Đang cập nhật"}
+              subText={`Địa chỉ: ${license?.church?.address ?? "Đang cập nhật"}`}
               icon={IMAGE_ASSETS.lessons}
               tag={
                 <Tag
@@ -459,7 +485,7 @@ export default function CatechistDashboard() {
 
           <Col xs={24} sm={12} lg={6}>
             <StatCard
-              title="Gói FaithEdu"
+              title="FaithEdu"
               value="Vĩnh viễn"
               subText="Đã kích hoạt FaithEdu"
               icon={IMAGE_ASSETS.achievements}
@@ -473,7 +499,7 @@ export default function CatechistDashboard() {
                     fontWeight: 700,
                   }}
                 >
-                  Đang hoạt động
+                  Gói FaithEdu
                 </Tag>
               }
             />
@@ -706,7 +732,15 @@ export default function CatechistDashboard() {
                 ...chibiCardStyle,
                 height: "100%",
                 position: "relative",
-                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.75)), url(${jesusChildrenImg})`,
+                backgroundImage: `
+  linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.02) 0%,
+    rgba(0, 0, 0, 0.10) 42%,
+    rgba(16, 46, 73, 0.48) 100%
+  ),
+  url(${jesusChildrenImg})
+`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 color: "#FFFFFF",
@@ -724,7 +758,7 @@ export default function CatechistDashboard() {
                   style={{
                     background: "rgba(255, 255, 255, 0.2)",
                     border: "none",
-                    color: "#FFF",
+                    color: "#080000",
                     borderRadius: 8,
                     fontWeight: 600,
                     backdropFilter: "blur(4px)",
@@ -734,7 +768,7 @@ export default function CatechistDashboard() {
                 </Tag>
                 <Button
                   type="text"
-                  icon={<RightOutlined style={{ color: "#FFF" }} />}
+                  icon={<RightOutlined style={{ color: "#070000" }} />}
                   onClick={() => fetchDailyVerse()}
                 />
               </Flex>

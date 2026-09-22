@@ -144,7 +144,6 @@ const PageHeroHeader = ({
                 onClick={onPrimaryClick}
                 disabled={primaryDisabled || bulkDeleting}
                 loading={primaryLoading}
-                className="hero-btn-primary"
               >
                 {primaryButtonText}
               </AppButton>

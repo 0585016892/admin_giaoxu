@@ -190,13 +190,13 @@ const ResultForm = ({
       </Form.Item>
 
       {/* NOTE */}
-      <Form.Item name="note" label={<Text strong>Ghi chú / nhận xét</Text>}>
+      <Form.Item name="note" label={<Text strong>Kỳ Kiểm Tra</Text>}>
         <Input.TextArea
           disabled={submitting}
           rows={4}
           maxLength={500}
           showCount
-          placeholder="Nhập nhận xét về kết quả học tập..."
+          placeholder="Nhập kì kiểm tra đợt này"
           style={{
             borderRadius: 9,
           }}

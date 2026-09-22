@@ -1,0 +1,639 @@
+/* =========================================================
+   FAITHEDU RESOURCE VIEWER
+========================================================= */
+
+:root {
+  --rvp-navy: #173b5e;
+  --rvp-navy-dark: #102d47;
+  --rvp-gold: #d9a441;
+
+  --rvp-text: #1e293b;
+  --rvp-text-soft: #64748b;
+
+  --rvp-border: #e2e8f0;
+  --rvp-border-light: #edf1f5;
+
+  --rvp-bg: #f5f7f9;
+  --rvp-white: #ffffff;
+
+  --rvp-radius: 14px;
+
+  --rvp-shadow: 0 8px 30px rgba(15, 23, 42, 0.07);
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.rvp-page {
+  position: relative;
+
+  width: 100%;
+  height: 100vh;
+
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: var(--rvp-bg);
+
+  color: var(--rvp-text);
+}
+
+/* =========================================================
+   BROWSER FULLSCREEN
+========================================================= */
+
+.rvp-page:fullscreen {
+  width: 100vw;
+  height: 100vh;
+
+  background: var(--rvp-bg);
+}
+
+.rvp-page-fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.rvp-header {
+  position: relative;
+  z-index: 20;
+
+  width: 100%;
+
+  min-height: 76px;
+
+  padding: 12px 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  flex-shrink: 0;
+
+  background: var(--rvp-white);
+
+  border-bottom: 1px solid var(--rvp-border);
+
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+/* =========================================================
+   HEADER LEFT
+========================================================= */
+
+.rvp-header-left {
+  min-width: 0;
+
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+
+  gap: 15px;
+}
+
+.rvp-back-button {
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.rvp-title-wrapper {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+}
+
+.rvp-file-icon {
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #fff8e9;
+
+  color: var(--rvp-gold);
+
+  font-size: 19px;
+}
+
+.rvp-title-content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.rvp-title {
+  max-width: 620px;
+
+  margin: 0 !important;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  color: var(--rvp-navy) !important;
+
+  font-size: 17px !important;
+  font-weight: 700 !important;
+
+  line-height: 1.35 !important;
+}
+
+.rvp-meta {
+  display: flex;
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 7px;
+}
+
+.rvp-type-tag {
+  margin: 0 !important;
+
+  padding: 1px 9px !important;
+
+  border-radius: 999px !important;
+
+  border: 1px solid rgba(217, 164, 65, 0.28) !important;
+
+  background: #fff9ec !important;
+
+  color: #9a6a12 !important;
+
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.rvp-meta-text {
+  color: var(--rvp-text-soft) !important;
+
+  font-size: 12px !important;
+}
+
+/* =========================================================
+   HEADER ACTIONS
+========================================================= */
+
+.rvp-header-actions {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+}
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.rvp-content {
+  flex: 1;
+
+  min-height: 0;
+
+  width: 100%;
+
+  padding: 14px;
+
+  overflow: hidden;
+
+  display: flex;
+}
+
+.rvp-viewer-container {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  min-height: 0;
+
+  overflow: hidden;
+
+  border: 1px solid var(--rvp-border);
+
+  border-radius: var(--rvp-radius);
+
+  background: var(--rvp-white);
+
+  box-shadow: var(--rvp-shadow);
+}
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.rvp-empty {
+  width: 100%;
+  height: 100%;
+
+  min-height: 300px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--rvp-white);
+}
+
+.rvp-empty-page {
+  width: 100%;
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 20px;
+
+  background: var(--rvp-bg);
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.rvp-loading-page {
+  width: 100%;
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 16px;
+
+  background: var(--rvp-bg);
+}
+
+.rvp-loading-text {
+  color: var(--rvp-text-soft);
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.rvp-page .ant-btn {
+  border-radius: 9px;
+
+  font-weight: 600;
+
+  box-shadow: none;
+}
+
+.rvp-page .ant-btn-default {
+  border-color: var(--rvp-border);
+
+  color: var(--rvp-text);
+
+  background: var(--rvp-white);
+}
+
+.rvp-page .ant-btn-default:hover,
+.rvp-page .ant-btn-default:focus {
+  border-color: var(--rvp-navy) !important;
+
+  color: var(--rvp-navy) !important;
+}
+
+.rvp-page .ant-btn-primary {
+  background: var(--rvp-navy);
+
+  border-color: var(--rvp-navy);
+}
+
+/* =========================================================
+   VIEWER ELEMENTS
+========================================================= */
+
+.rvp-viewer-container iframe {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+}
+
+.rvp-viewer-container img {
+  max-width: 100%;
+}
+
+.rvp-viewer-container video {
+  max-width: 100%;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+  .rvp-header {
+    min-height: 68px;
+
+    padding: 10px 14px;
+
+    gap: 12px;
+  }
+
+  .rvp-header-left {
+    gap: 10px;
+  }
+
+  .rvp-file-icon {
+    width: 38px;
+    height: 38px;
+
+    font-size: 17px;
+  }
+
+  .rvp-title {
+    max-width: 45vw;
+
+    font-size: 15px !important;
+  }
+
+  .rvp-header-actions {
+    gap: 5px;
+  }
+
+  .rvp-action-text {
+    display: none;
+  }
+
+  .rvp-content {
+    padding: 9px;
+  }
+
+  .rvp-viewer-container {
+    border-radius: 11px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .rvp-header {
+    min-height: 62px;
+
+    padding: 8px 10px;
+  }
+
+  .rvp-back-button {
+    width: 38px;
+    min-width: 38px;
+
+    padding: 0;
+  }
+
+  .rvp-back-text {
+    display: none;
+  }
+
+  .rvp-header-left {
+    gap: 8px;
+  }
+
+  .rvp-title-wrapper {
+    flex: 1;
+
+    min-width: 0;
+
+    gap: 8px;
+  }
+
+  .rvp-file-icon {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 9px;
+
+    font-size: 15px;
+  }
+
+  .rvp-title {
+    max-width: 100%;
+
+    font-size: 14px !important;
+  }
+
+  .rvp-meta-text {
+    display: none;
+  }
+
+  .rvp-type-tag {
+    padding: 0 7px !important;
+
+    font-size: 10px !important;
+  }
+
+  .rvp-header-actions {
+    gap: 4px;
+  }
+
+  .rvp-header-actions .ant-btn {
+    width: 38px;
+    min-width: 38px;
+
+    height: 38px;
+
+    padding: 0;
+  }
+
+  .rvp-fullscreen-button {
+    width: 38px !important;
+    min-width: 38px !important;
+  }
+
+  .rvp-content {
+    padding: 5px;
+  }
+
+  .rvp-viewer-container {
+    border-radius: 9px;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+  .rvp-header {
+    min-height: 58px;
+
+    padding: 7px 8px;
+  }
+
+  .rvp-header-left {
+    gap: 6px;
+  }
+
+  .rvp-file-icon {
+    width: 30px;
+    height: 30px;
+
+    border-radius: 8px;
+
+    font-size: 13px;
+  }
+
+  .rvp-title {
+    font-size: 13px !important;
+  }
+
+  .rvp-type-tag {
+    font-size: 9px !important;
+  }
+
+  .rvp-header-actions .ant-btn {
+    width: 34px;
+    min-width: 34px;
+
+    height: 34px;
+  }
+
+  .rvp-content {
+    padding: 3px;
+  }
+
+  .rvp-viewer-container {
+    border-radius: 7px;
+  }
+}
+
+/* =========================================================
+   LANDSCAPE MOBILE
+========================================================= */
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .rvp-header {
+    min-height: 54px;
+
+    padding: 6px 10px;
+  }
+
+  .rvp-file-icon {
+    display: none;
+  }
+
+  .rvp-title {
+    font-size: 13px !important;
+  }
+
+  .rvp-content {
+    padding: 4px;
+  }
+}
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+.rvp-page:fullscreen .rvp-header {
+  min-height: 64px;
+}
+
+.rvp-page:fullscreen .rvp-content {
+  padding: 8px;
+}
+
+/* =========================================================
+   REDUCE MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .rvp-page *,
+  .rvp-page *::before,
+  .rvp-page *::after {
+    animation: none !important;
+
+    transition: none !important;
+  }
+}
+/* =========================================================
+   OFFICE VIEWER
+========================================================= */
+
+.office-viewer {
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+
+  overflow: hidden;
+
+  background: #f5f7f9;
+}
+
+.office-viewer-frame {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  min-width: 100%;
+  min-height: 100%;
+
+  flex: 1 1 auto;
+
+  border: 0;
+
+  margin: 0;
+  padding: 0;
+
+  background: #fff;
+}
+
+.office-viewer-empty {
+  width: 100%;
+  height: 100%;
+
+  min-height: 300px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fff;
+}

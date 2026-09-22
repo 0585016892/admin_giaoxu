@@ -1,0 +1,1208 @@
+* {
+  box-sizing: border-box;
+}
+
+.lesson-library-page {
+  min-height: 100%;
+  padding: 22px;
+  background: #fff;
+  color: #172033;
+}
+
+/* ============================================================
+   TOP BAR
+============================================================ */
+
+.ll-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.ll-search-box {
+  width: 280px;
+}
+
+.ll-search-box .ant-input-affix-wrapper {
+  height: 31px;
+  padding: 0 14px;
+  border-radius: 13px;
+  border: 1px solid #dce4ec;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+}
+
+.ll-search-box .ant-input-affix-wrapper:hover,
+.ll-search-box .ant-input-affix-wrapper:focus-within {
+  border-color: #9bcbd7;
+  box-shadow: 0 4px 14px rgba(23, 59, 94, 0.08);
+}
+
+.ll-search-box .ant-input {
+  font-size: 14px;
+}
+
+.ll-sort-select {
+  width: 190px;
+}
+
+.ll-type-filter {
+  width: 220px;
+}
+
+.ll-sort-select .ant-select-selector,
+.ll-type-filter .ant-select-selector {
+  height: 46px !important;
+  display: flex;
+  align-items: center;
+  padding: 0 13px !important;
+  border-radius: 13px !important;
+  border: 1px solid #dce4ec !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+}
+
+/* ============================================================
+   VIEW
+============================================================ */
+
+.ll-view-toggle {
+  display: flex;
+  align-items: center;
+  height: 31px;
+  padding: 5px;
+  gap: 2px;
+  border-radius: 6px;
+  background: #f4f7f9;
+  border: 1px solid #e8edf1;
+}
+
+.ll-view-button {
+  width: 30px;
+  height: 29px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.ll-view-button:hover {
+  color: #173b5e;
+  background: #fff;
+}
+
+.ll-view-button.active {
+  background: #fff;
+  color: #173b5e;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.09);
+}
+
+/* ============================================================
+   BUTTON
+============================================================ */
+
+.ll-create-button.ant-btn {
+  height: 46px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 13px !important;
+  background: #173b5e !important;
+  color: #fff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(23, 59, 94, 0.16);
+}
+
+.ll-create-button.ant-btn:hover {
+  background: #214b72 !important;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   TITLE
+============================================================ */
+
+.ll-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.ll-page-heading h1 {
+  margin: 0;
+  color: #172033;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.ll-page-heading p {
+  margin: 5px 0 0;
+  color: #8a94a6;
+  font-size: 13px;
+}
+
+/* ============================================================
+   GRID
+============================================================ */
+
+.ll-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 25px 22px;
+}
+
+.ll-file-card {
+  min-width: 0;
+  cursor: pointer;
+  transition: transform 0.18s ease;
+}
+
+.ll-file-card:hover {
+  transform: translateY(-2px);
+}
+
+.ll-file-preview {
+  position: relative;
+  height: 175px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #e9eaed;
+}
+
+.ll-file-card:hover .ll-file-preview {
+  box-shadow: 0 9px 24px rgba(15, 23, 42, 0.1);
+}
+
+/* ============================================================
+   FOLDER
+============================================================ */
+
+.ll-folder-graphic {
+  position: relative;
+  width: 98px;
+  height: 86px;
+}
+
+.ll-folder-back {
+  position: absolute;
+  left: 8px;
+  top: 2px;
+  width: 72px;
+  height: 27px;
+  border-radius: 8px 8px 0 0;
+  background: #159fe0;
+}
+
+.ll-folder-front {
+  position: absolute;
+  left: 0;
+  top: 22px;
+  width: 98px;
+  height: 63px;
+  border-radius: 7px 7px 10px 10px;
+  background: linear-gradient(180deg, #32c0f0 0%, #21afe7 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.ll-folder-front::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: -7px;
+  height: 10px;
+  border-radius: 4px;
+  background: #159fe0;
+}
+
+.ll-folder-front span {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 0;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+/* ============================================================
+   FILE INFO
+============================================================ */
+
+.ll-file-info {
+  padding: 10px 2px 0;
+}
+
+.ll-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ll-small-folder {
+  flex: 0 0 auto;
+  color: #1eaee8;
+  font-size: 24px;
+}
+
+.ll-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ll-more-button.ant-btn {
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border: 1px solid #e0e6ed !important;
+  border-radius: 10px !important;
+  color: #475569 !important;
+  background: #fff !important;
+}
+
+.ll-file-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 40px;
+  margin-top: 0;
+  color: #697386;
+  font-size: 11px;
+}
+
+/* ============================================================
+   MENU
+============================================================ */
+
+.ll-more-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.ll-action-menu {
+  position: absolute;
+  z-index: 1000;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 190px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow:
+    0 12px 30px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.ll-action-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 38px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ll-action-menu button:hover {
+  background: #f4f7fa;
+  color: #173b5e;
+}
+
+.ll-action-menu button.danger {
+  color: #dc2626;
+}
+
+.ll-action-menu button.danger:hover {
+  background: #fef2f2;
+}
+
+.ll-action-divider {
+  height: 1px;
+  margin: 5px 4px;
+  background: #eef1f4;
+}
+
+/* ============================================================
+   LIST
+============================================================ */
+
+.ll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ll-list-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 13px 16px;
+  border: 1px solid #e7ebf0;
+  border-radius: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.ll-list-item:hover {
+  border-color: #b9dce6;
+  background: #fbfdfe;
+}
+
+.ll-list-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  background: #e8f8fc;
+  color: #19aee2;
+  font-size: 23px;
+}
+
+.ll-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ll-list-title {
+  overflow: hidden;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ll-list-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  color: #737b88;
+  font-size: 12px;
+}
+
+.ll-list-type {
+  width: 210px;
+  color: #7b8491;
+  font-size: 12px;
+}
+
+/* ============================================================
+   DETAIL
+============================================================ */
+
+.ll-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 8px 0 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.ll-detail-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ll-detail-info {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.ll-detail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: #e8f8fc;
+  color: #19aee2;
+  font-size: 24px;
+}
+
+.ll-detail-type {
+  margin-bottom: 2px;
+  color: #8a94a6;
+  font-size: 11px;
+}
+
+.ll-detail-info h2 {
+  max-width: 700px;
+  margin: 0;
+  overflow: hidden;
+  color: #172033;
+  font-size: 21px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   RESOURCE CARD
+============================================================ */
+
+.ll-resources-card {
+  border: 1px solid #e8ecf0 !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
+.ll-resources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eef1f4;
+}
+
+.ll-resources-header h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 17px;
+}
+
+.ll-resources-header span {
+  display: block;
+  margin-top: 3px;
+  color: #8a94a6;
+  font-size: 12px;
+}
+
+/* ============================================================
+   RESOURCE
+============================================================ */
+
+.ll-resource-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ll-resource {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 3px;
+  border-bottom: 1px solid #f0f2f4;
+}
+
+.ll-resource:last-child {
+  border-bottom: 0;
+}
+
+.ll-resource-disabled {
+  opacity: 0.5;
+}
+
+.ll-resource-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  background: #f5f7f9;
+}
+
+.ll-resource-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ll-resource-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #172033;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ll-resource-title > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ll-resource-description {
+  margin-top: 4px;
+  overflow: hidden;
+  color: #7d8795;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ll-resource-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 7px;
+  color: #9aa3af;
+  font-size: 11px;
+}
+
+.ll-resource-meta .ant-tag {
+  margin: 0;
+  border-radius: 6px;
+}
+
+.ll-resource-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.ll-resource-actions .ant-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: #64748b;
+}
+
+.ll-resource-actions .ant-btn:hover {
+  background: #f4f7fa;
+  color: #173b5e;
+}
+
+/* ============================================================
+   EMPTY / LOADING
+============================================================ */
+
+.ll-empty {
+  padding: 80px 20px;
+}
+
+.ll-resource-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.ll-resource-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 70px 20px;
+  text-align: center;
+}
+
+.ll-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 65px;
+  height: 65px;
+  border-radius: 17px;
+  background: #f5f7f9;
+  color: #c5ccd5;
+  font-size: 35px;
+}
+
+.ll-resource-empty h3 {
+  margin: 14px 0 5px;
+  color: #334155;
+  font-size: 16px;
+}
+
+.ll-resource-empty p {
+  max-width: 500px;
+  margin: 0 0 18px;
+  color: #7d8795;
+  font-size: 13px;
+}
+
+/* ============================================================
+   UPLOAD
+============================================================ */
+
+.ll-upload-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #173b5e;
+  font-weight: 700;
+}
+
+.ll-form-label {
+  margin: 16px 0 7px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ll-upload-note {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: #f5f7f9;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media (max-width: 1400px) {
+  .ll-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1150px) {
+  .ll-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ll-topbar {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ll-search-box {
+    flex: 1;
+    min-width: 240px;
+  }
+}
+
+@media (max-width: 850px) {
+  .lesson-library-page {
+    padding: 16px;
+  }
+
+  .ll-topbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .ll-search-box {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .ll-sort-select,
+  .ll-type-filter {
+    width: 100%;
+  }
+
+  .ll-view-toggle {
+    width: 100%;
+  }
+
+  .ll-view-button {
+    flex: 1;
+  }
+
+  .ll-create-button.ant-btn {
+    width: 100%;
+  }
+
+  .ll-detail-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ll-detail-header > .ant-btn {
+    width: 100%;
+  }
+
+  .ll-list-type {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .lesson-library-page {
+    padding: 12px;
+  }
+
+  .ll-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px 12px;
+  }
+
+  .ll-file-preview {
+    height: 135px;
+  }
+
+  .ll-folder-graphic {
+    transform: scale(0.78);
+  }
+
+  .ll-file-name {
+    font-size: 13px;
+  }
+
+  .ll-detail-left {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ll-detail-info h2 {
+    max-width: calc(100vw - 90px);
+    font-size: 17px;
+  }
+
+  .ll-resource {
+    gap: 10px;
+    padding: 13px 0;
+  }
+
+  .ll-resource-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .ll-resource-title {
+    font-size: 12px;
+  }
+
+  .ll-resource-description {
+    font-size: 10px;
+  }
+
+  .ll-resource-actions .ant-btn {
+    width: 31px;
+    height: 31px;
+    padding: 0;
+  }
+
+  .ll-resources-card .ant-card-body {
+    padding: 13px !important;
+  }
+
+  .ll-resources-header .ant-btn {
+    width: 37px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .ll-resources-header .ant-btn .anticon {
+    margin: 0;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  .ll-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ll-file-preview {
+    height: 170px;
+  }
+
+  .ll-folder-graphic {
+    transform: scale(0.9);
+  }
+
+  .ll-resource {
+    align-items: flex-start;
+  }
+
+  .ll-resource-actions {
+    align-self: center;
+  }
+}
+
+@media (max-width: 350px) {
+  .lesson-library-page {
+    padding: 9px;
+  }
+
+  .ll-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .ll-search-box {
+    grid-column: auto;
+  }
+
+  .ll-resource-actions .ant-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+.ll-pagination {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 28px;
+  padding: 20px 0 8px;
+  border-top: 1px solid #eef1f5;
+}
+
+.ll-pagination .ant-pagination {
+  margin: 0;
+}
+
+.ll-pagination .ant-pagination-item {
+  border-radius: 8px;
+}
+
+.ll-pagination .ant-pagination-item-active {
+  border-color: #173b5e;
+}
+
+.ll-pagination .ant-pagination-item-active a {
+  color: #173b5e;
+  font-weight: 600;
+}
+
+.ll-pagination .ant-pagination-prev .ant-pagination-item-link,
+.ll-pagination .ant-pagination-next .ant-pagination-item-link {
+  border-radius: 8px;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .ll-pagination {
+    margin-top: 20px;
+    padding-top: 16px;
+    overflow-x: auto;
+    justify-content: center;
+  }
+
+  .ll-pagination .ant-pagination-total-text {
+    display: none;
+  }
+}
+/* =========================================================
+   KNOWLEDGE QUESTIONS
+========================================================= */
+
+.ll-knowledge-section {
+  margin-top: 20px;
+
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
+}
+
+.ll-knowledge-header {
+  min-height: 76px;
+
+  padding: 16px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-bottom: 1px solid #edf1f5;
+
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+}
+
+.ll-knowledge-title-wrapper {
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+}
+
+.ll-knowledge-icon {
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #f8edd5;
+
+  color: #d9a441;
+
+  font-size: 19px;
+}
+
+.ll-knowledge-title-wrapper h3 {
+  margin: 0;
+
+  color: #173b5e;
+
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ll-knowledge-title-wrapper p {
+  margin: 3px 0 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.ll-knowledge-count {
+  display: flex;
+  align-items: baseline;
+
+  gap: 5px;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.ll-knowledge-count strong {
+  color: #173b5e;
+
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.ll-knowledge-body {
+  padding: 18px 20px;
+}
+
+/* =========================================================
+   QUESTION EMPTY
+========================================================= */
+
+.ll-question-empty {
+  min-height: 100px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 14px;
+
+  border: 1px dashed #dbe2ea;
+
+  border-radius: 12px;
+
+  background: #fafbfc;
+}
+
+.ll-question-empty-icon {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: #f1f5f9;
+
+  color: #94a3b8;
+
+  font-size: 17px;
+}
+
+.ll-question-empty strong {
+  display: block;
+
+  color: #334155;
+
+  font-size: 14px;
+}
+
+.ll-question-empty p {
+  margin: 4px 0 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+/* =========================================================
+   QUESTION READY
+========================================================= */
+
+.ll-question-ready {
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 14px 16px;
+
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+.ll-question-info {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+}
+
+.ll-question-info > svg {
+  flex-shrink: 0;
+
+  color: #16a34a;
+
+  font-size: 21px;
+}
+
+.ll-question-info div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.ll-question-info strong {
+  color: #173b5e;
+
+  font-size: 14px;
+}
+
+.ll-question-info span {
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+/* =========================================================
+   QUESTION LOADING
+========================================================= */
+
+.ll-question-loading {
+  min-height: 90px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .ll-knowledge-header {
+    padding: 14px;
+
+    min-height: 68px;
+  }
+
+  .ll-knowledge-body {
+    padding: 14px;
+  }
+
+  .ll-knowledge-icon {
+    width: 38px;
+    height: 38px;
+
+    font-size: 17px;
+  }
+
+  .ll-knowledge-title-wrapper h3 {
+    font-size: 14px;
+  }
+
+  .ll-knowledge-count strong {
+    font-size: 17px;
+  }
+
+  .ll-question-ready {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 14px;
+  }
+
+  .ll-question-ready .ant-btn,
+  .ll-question-ready .app-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .ll-knowledge-header {
+    padding: 12px;
+  }
+
+  .ll-knowledge-body {
+    padding: 10px;
+  }
+
+  .ll-question-empty {
+    padding: 12px;
+  }
+
+  .ll-question-info span {
+    line-height: 1.5;
+  }
+}

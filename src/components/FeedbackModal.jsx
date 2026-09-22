@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Form, Input, Select, Rate, message, Divider } from "antd";
-import { SendOutlined, HeartFilled } from "@ant-design/icons";
+import {
+  SendOutlined,
+  HeartFilled,
+  MessageOutlined,
+  CloseOutlined,
+  CheckCircleFilled,
+} from "@ant-design/icons";
 
 import { sendFeedback } from "../api/contactMessageApi";
 import { useUser } from "../context/UserContext";
 import LoadingLogo from "../components/LoadingLogo";
+import AppButton from "../components/common/AppButton";
 
 const { TextArea } = Input;
+
+const COLORS = {
+  navy: "#173B5E",
+  navyDark: "#102E4A",
+  gold: "#D9A441",
+  text: "#1E293B",
+  muted: "#64748B",
+  border: "#E7ECF2",
+  soft: "#F8FAFC",
+};
 
 const FeedbackModal = ({ open, onClose }) => {
   const [form] = Form.useForm();
@@ -17,20 +34,14 @@ const FeedbackModal = ({ open, onClose }) => {
 
   const { user } = useUser();
 
-  /*
-   * ==========================================
-   * USER
-   * ==========================================
-   */
-
   const userName = user?.full_name || user?.name || user?.fullName || "";
 
   const userEmail = user?.email || "";
 
   /*
-   * ==========================================
-   * KHI MỞ MODAL
-   * ==========================================
+   * =========================================================
+   * OPEN MODAL
+   * =========================================================
    */
 
   useEffect(() => {
@@ -47,9 +58,9 @@ const FeedbackModal = ({ open, onClose }) => {
   }, [open, userEmail, form]);
 
   /*
-   * ==========================================
+   * =========================================================
    * SUBMIT
-   * ==========================================
+   * =========================================================
    */
 
   const handleSubmit = async (values) => {
@@ -59,14 +70,9 @@ const FeedbackModal = ({ open, onClose }) => {
       setLoading(true);
       setLoadingProgress(0);
 
-      /*
-       * Progress giả lập trong lúc chờ API
-       */
       progressTimer = setInterval(() => {
         setLoadingProgress((prev) => {
-          if (prev >= 90) {
-            return 90;
-          }
+          if (prev >= 90) return 90;
 
           let increment = 1;
 
@@ -84,9 +90,6 @@ const FeedbackModal = ({ open, onClose }) => {
         });
       }, 40);
 
-      /*
-       * Gửi feedback
-       */
       await sendFeedback({
         name: userName,
         email: values.email,
@@ -95,16 +98,10 @@ const FeedbackModal = ({ open, onClose }) => {
         rating: values.rating,
       });
 
-      /*
-       * API thành công
-       */
       clearInterval(progressTimer);
 
       setLoadingProgress(100);
 
-      /*
-       * Cho LoadingLogo chạy tới 100%
-       */
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       message.success("Cảm ơn bạn! Góp ý đã được gửi thành công.");
@@ -132,9 +129,9 @@ const FeedbackModal = ({ open, onClose }) => {
   };
 
   /*
-   * ==========================================
+   * =========================================================
    * CLOSE
-   * ==========================================
+   * =========================================================
    */
 
   const handleClose = () => {
@@ -149,9 +146,9 @@ const FeedbackModal = ({ open, onClose }) => {
   };
 
   /*
-   * ==========================================
+   * =========================================================
    * AVATAR
-   * ==========================================
+   * =========================================================
    */
 
   const avatarLetter = userName?.trim()?.charAt(0)?.toUpperCase() || "U";
@@ -162,7 +159,7 @@ const FeedbackModal = ({ open, onClose }) => {
       onCancel={handleClose}
       footer={null}
       centered
-      width={620}
+      width={640}
       destroyOnClose
       closable={false}
       maskClosable={!loading}
@@ -171,21 +168,52 @@ const FeedbackModal = ({ open, onClose }) => {
           padding: 0,
         },
         mask: {
-          backdropFilter: "blur(5px)",
+          backdropFilter: "blur(6px)",
+          background: "rgba(15, 23, 42, 0.48)",
         },
       }}
     >
       <div className="faith-feedback-modal">
-        {/* ==========================================
-            HEADER
-        ========================================== */}
+        {/* =====================================================
+            TOP HEADER
+        ===================================================== */}
 
-        {/* ==========================================
+        <div className="faith-feedback-top">
+          <div className="faith-feedback-top-left">
+            <div className="faith-feedback-top-icon">
+              <MessageOutlined />
+            </div>
+
+            <div>
+              <div className="faith-feedback-eyebrow">FAITHEDU</div>
+
+              <div className="faith-feedback-title">Chia sẻ cùng chúng con</div>
+
+              <div className="faith-feedback-subtitle">
+                Mỗi góp ý của bạn giúp FaithEdu hoàn thiện hơn.
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="faith-feedback-close"
+            onClick={handleClose}
+            disabled={loading}
+            aria-label="Đóng"
+          >
+            <CloseOutlined />
+          </button>
+        </div>
+
+        {/* =====================================================
             CONTENT
-        ========================================== */}
+        ===================================================== */}
 
         <div className="faith-feedback-content">
-          {/* USER */}
+          {/* ===================================================
+              USER
+          =================================================== */}
 
           <div className="faith-feedback-user">
             <div className="faith-feedback-user-avatar">{avatarLetter}</div>
@@ -193,32 +221,39 @@ const FeedbackModal = ({ open, onClose }) => {
             <div className="faith-feedback-user-info">
               <strong>{userName || "Người dùng FaithEdu"}</strong>
 
-              <span>Họ tên được lấy từ tài khoản FaithEdu</span>
+              <span>Góp ý được gửi từ tài khoản FaithEdu của bạn</span>
             </div>
 
-            <div className="faith-feedback-user-check">Tài khoản</div>
+            <div className="faith-feedback-user-check">
+              <CheckCircleFilled />
+              Đã đăng nhập
+            </div>
           </div>
 
-          {/* WELCOME */}
+          {/* ===================================================
+              WELCOME
+          =================================================== */}
 
           <div className="faith-feedback-welcome">
-            <div className="welcome-heart">
+            <div className="faith-feedback-welcome-icon">
               <HeartFilled />
             </div>
 
-            <div className="faith-feedback-welcome-text">
-              <strong>Cảm ơn bạn đã sử dụng FaithEdu</strong>
+            <div className="faith-feedback-welcome-content">
+              <div className="faith-feedback-welcome-title">
+                Cảm ơn bạn đã đồng hành cùng FaithEdu
+              </div>
 
-              <span>
-                Hãy chia sẻ điều bạn thích, điều chưa thuận tiện hoặc tính năng
-                bạn mong muốn.
-              </span>
+              <div className="faith-feedback-welcome-text">
+                Chúng con xin Quý Cha, Quý Anh Chị Giáo lý viên dành khoảng 2
+                phút để chia sẻ cảm nhận về hệ thống.
+              </div>
             </div>
           </div>
 
-          {/* ==========================================
+          {/* ===================================================
               FORM
-          ========================================== */}
+          =================================================== */}
 
           <Form
             form={form}
@@ -312,18 +347,16 @@ const FeedbackModal = ({ open, onClose }) => {
               name="rating"
               initialValue={5}
               style={{
-                marginBottom: 20,
+                marginBottom: 18,
               }}
             >
               <div className="faith-rating-box">
                 <div className="faith-rating-left">
-                  <span className="faith-rating-title">
-                    Trải nghiệm của bạn
-                  </span>
+                  <div className="faith-rating-title">Đánh giá trải nghiệm</div>
 
-                  <span className="faith-rating-description">
+                  <div className="faith-rating-description">
                     Bạn cảm thấy FaithEdu như thế nào?
-                  </span>
+                  </div>
                 </div>
 
                 <div className="faith-rating-right">
@@ -331,7 +364,6 @@ const FeedbackModal = ({ open, onClose }) => {
                     value={rating}
                     onChange={(value) => {
                       setRating(value);
-
                       form.setFieldValue("rating", value);
                     }}
                   />
@@ -368,44 +400,54 @@ const FeedbackModal = ({ open, onClose }) => {
 
             <Divider
               style={{
-                margin: "4px 0 18px",
+                margin: "2px 0 18px",
+                borderColor: "#EEF2F6",
               }}
             />
 
-            {/* FOOTER */}
+            {/* =================================================
+                FOOTER
+            ================================================= */}
 
             <div className="faith-feedback-footer">
               <div className="faith-feedback-note">
-                Ý kiến của bạn sẽ được đội ngũ FaithEdu tiếp nhận và xem xét.
+                Ý kiến của bạn sẽ được đội ngũ FaithEdu tiếp nhận và xem xét để
+                cải thiện hệ thống.
               </div>
 
               <div className="faith-feedback-actions">
-                <button
-                  type="button"
-                  className="faith-btn-cancel"
+                <AppButton
+                  variant="secondary"
                   onClick={handleClose}
                   disabled={loading}
                 >
                   Để sau
-                </button>
+                </AppButton>
 
                 <button
                   type="submit"
-                  className="faith-btn-submit"
                   disabled={loading}
+                  style={{
+                    height: 42,
+                    padding: "0 18px",
+                    border: 0,
+                    borderRadius: 10,
+                    background: "#173B5E",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
                 >
-                  <SendOutlined />
-
-                  <span>{loading ? "Đang gửi..." : "Gửi góp ý"}</span>
+                  <SendOutlined style={{ marginRight: 8 }} />
+                  {loading ? "Đang gửi..." : "Gửi góp ý"}
                 </button>
               </div>
             </div>
           </Form>
         </div>
 
-        {/* ==========================================
-            LOADING OVERLAY
-        ========================================== */}
+        {/* =====================================================
+            LOADING
+        ===================================================== */}
 
         {loading && (
           <div className="faith-feedback-loading">
@@ -427,122 +469,130 @@ const FeedbackModal = ({ open, onClose }) => {
       </div>
 
       <style>{`
-        /* ==========================================
+        /* =====================================================
            MODAL
-        ========================================== */
+        ===================================================== */
 
         .faith-feedback-modal {
           position: relative;
           overflow: hidden;
-          border-radius: 18px;
+
           background: #ffffff;
+
+          border-radius: 18px;
+
+          font-family: inherit;
         }
 
-        /* ==========================================
-           HEADER
-        ========================================== */
+        /* =====================================================
+           TOP
+        ===================================================== */
 
-        .faith-feedback-header {
+        .faith-feedback-top {
           position: relative;
-          padding: 28px 30px 26px;
+
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          padding: 22px 24px;
 
           background:
             radial-gradient(
-              circle at 90% 10%,
-              rgba(212, 175, 55, 0.18),
-              transparent 30%
+              circle at 92% 0%,
+              rgba(217, 164, 65, 0.18),
+              transparent 28%
             ),
             linear-gradient(
               135deg,
-              #142d4c 0%,
-              #1b365d 55%,
-              #244b78 100%
+              #102e4a 0%,
+              #173b5e 55%,
+              #244d76 100%
             );
 
           color: #ffffff;
         }
 
-        .faith-feedback-header-content {
+        .faith-feedback-top-left {
           display: flex;
           align-items: center;
-          gap: 17px;
+
+          gap: 14px;
+
+          min-width: 0;
+
           padding-right: 35px;
         }
 
-        .faith-feedback-icon {
-          flex: 0 0 52px;
+        .faith-feedback-top-icon {
+          flex: 0 0 48px;
 
-          width: 52px;
-          height: 52px;
-
-          border-radius: 15px;
+          width: 48px;
+          height: 48px;
 
           display: flex;
           align-items: center;
           justify-content: center;
 
-          background: rgba(255, 255, 255, 0.13);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 14px;
 
-          color: #d4af37;
+          background: rgba(255, 255, 255, 0.11);
 
-          font-size: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.16);
 
-          box-shadow:
-            0 8px 20px rgba(0, 0, 0, 0.12);
+          color: ${COLORS.gold};
+
+          font-size: 21px;
         }
 
         .faith-feedback-eyebrow {
-          margin-bottom: 5px;
+          margin-bottom: 3px;
 
-          color: #d4af37;
+          color: ${COLORS.gold};
 
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 800;
-          letter-spacing: 1.5px;
+
+          letter-spacing: 1.8px;
         }
 
-        .faith-feedback-header h2 {
-          margin: 0 0 5px;
-
+        .faith-feedback-title {
           color: #ffffff;
 
-          font-size: 24px;
-          line-height: 1.25;
+          font-size: 19px;
           font-weight: 750;
-          letter-spacing: -0.3px;
+
+          line-height: 1.25;
         }
 
-        .faith-feedback-header p {
-          margin: 0;
+        .faith-feedback-subtitle {
+          margin-top: 4px;
 
-          max-width: 450px;
+          color: rgba(255, 255, 255, 0.68);
 
-          color: rgba(255, 255, 255, 0.78);
-
-          font-size: 13px;
-          line-height: 1.6;
+          font-size: 11px;
+          line-height: 1.45;
         }
 
         .faith-feedback-close {
           position: absolute;
 
-          top: 17px;
+          top: 18px;
           right: 18px;
 
-          width: 34px;
-          height: 34px;
-
-          border: 0;
-          border-radius: 9px;
+          width: 32px;
+          height: 32px;
 
           display: flex;
           align-items: center;
           justify-content: center;
 
+          border: 0;
+          border-radius: 9px;
+
           background: rgba(255, 255, 255, 0.09);
 
-          color: rgba(255, 255, 255, 0.8);
+          color: rgba(255, 255, 255, 0.72);
 
           cursor: pointer;
 
@@ -550,59 +600,66 @@ const FeedbackModal = ({ open, onClose }) => {
         }
 
         .faith-feedback-close:hover {
-          background: rgba(255, 255, 255, 0.18);
+          background: rgba(255, 255, 255, 0.17);
           color: #ffffff;
         }
 
         .faith-feedback-close:disabled {
+          opacity: 0.45;
           cursor: not-allowed;
-          opacity: 0.5;
         }
 
-        /* ==========================================
+        /* =====================================================
            CONTENT
-        ========================================== */
+        ===================================================== */
 
         .faith-feedback-content {
-          padding: 25px 30px 27px;
+          padding: 22px 25px 24px;
         }
 
-        /* ==========================================
+        /* =====================================================
            USER
-        ========================================== */
+        ===================================================== */
 
         .faith-feedback-user {
           display: flex;
           align-items: center;
-          gap: 12px;
 
-          padding: 12px 14px;
-          margin-bottom: 17px;
+          gap: 11px;
 
-          border: 1px solid #edf1f5;
+          padding: 10px 12px;
+
+          margin-bottom: 14px;
+
+          border: 1px solid ${COLORS.border};
           border-radius: 12px;
 
           background: #ffffff;
         }
 
         .faith-feedback-user-avatar {
-          width: 42px;
-          height: 42px;
+          flex: 0 0 40px;
 
-          flex: 0 0 42px;
-
-          border-radius: 50%;
+          width: 40px;
+          height: 40px;
 
           display: flex;
           align-items: center;
           justify-content: center;
 
-          background: #1b365d;
+          border-radius: 50%;
+
+          background:
+            linear-gradient(
+              145deg,
+              ${COLORS.navy},
+              #28567f
+            );
 
           color: #ffffff;
 
-          font-size: 15px;
-          font-weight: 700;
+          font-size: 14px;
+          font-weight: 750;
         }
 
         .faith-feedback-user-info {
@@ -616,20 +673,35 @@ const FeedbackModal = ({ open, onClose }) => {
         }
 
         .faith-feedback-user-info strong {
-          color: #1e293b;
+          overflow: hidden;
 
-          font-size: 13px;
+          color: ${COLORS.text};
+
+          font-size: 12px;
           font-weight: 700;
+
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .faith-feedback-user-info span {
+          overflow: hidden;
+
           color: #94a3b8;
 
-          font-size: 11px;
+          font-size: 10px;
+
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .faith-feedback-user-check {
-          padding: 5px 9px;
+          display: flex;
+          align-items: center;
+
+          gap: 4px;
+
+          padding: 5px 8px;
 
           border-radius: 7px;
 
@@ -637,129 +709,138 @@ const FeedbackModal = ({ open, onClose }) => {
 
           color: #15803d;
 
-          font-size: 10px;
-          font-weight: 650;
+          font-size: 9px;
+          font-weight: 700;
 
           white-space: nowrap;
         }
 
-        /* ==========================================
+        /* =====================================================
            WELCOME
-        ========================================== */
+        ===================================================== */
 
         .faith-feedback-welcome {
           display: flex;
           align-items: center;
-          gap: 13px;
 
-          padding: 13px 15px;
-          margin-bottom: 22px;
+          gap: 12px;
 
+          padding: 13px 14px;
+
+          margin-bottom: 19px;
+
+          border: 1px solid #f0e6c6;
           border-radius: 12px;
 
-          background: #f8fafc;
-          border: 1px solid #edf1f5;
+          background:
+            linear-gradient(
+              135deg,
+              #fffdf7,
+              #fff9eb
+            );
         }
 
-        .welcome-heart {
+        .faith-feedback-welcome-icon {
           flex: 0 0 38px;
 
           width: 38px;
           height: 38px;
 
-          border-radius: 11px;
-
           display: flex;
           align-items: center;
           justify-content: center;
 
-          background: #fff8df;
+          border-radius: 11px;
 
-          color: #d4af37;
+          background: #fff3c9;
+
+          color: ${COLORS.gold};
 
           font-size: 16px;
         }
 
-        .faith-feedback-welcome-text {
+        .faith-feedback-welcome-content {
           min-width: 0;
         }
 
-        .faith-feedback-welcome strong {
-          display: block;
-
+        .faith-feedback-welcome-title {
           margin-bottom: 2px;
 
-          color: #1e293b;
-
-          font-size: 13px;
-          font-weight: 700;
-        }
-
-        .faith-feedback-welcome span {
-          display: block;
-
-          color: #64748b;
+          color: ${COLORS.text};
 
           font-size: 12px;
+          font-weight: 750;
+        }
+
+        .faith-feedback-welcome-text {
+          color: #64748b;
+
+          font-size: 11px;
           line-height: 1.5;
         }
 
-        /* ==========================================
+        /* =====================================================
            FORM
-        ========================================== */
+        ===================================================== */
 
         .faith-feedback-grid {
           display: grid;
 
           grid-template-columns: 1fr 1fr;
 
-          gap: 16px;
-        }
-
-        .faith-feedback-content .ant-form-item {
-          margin-bottom: 17px;
+          gap: 14px;
         }
 
         .faith-feedback-content
-          .ant-form-item
+          .ant-form-item {
+          margin-bottom: 15px;
+        }
+
+        .faith-feedback-content
           .ant-form-item-label {
-          padding-bottom: 6px;
+          padding-bottom: 5px;
         }
 
         .faith-feedback-content
-          .ant-form-item
           .ant-form-item-label
           > label {
+          height: auto;
+
           color: #334155;
 
-          font-size: 12px;
-          font-weight: 650;
+          font-size: 11px;
+          font-weight: 700;
         }
 
         .faith-input {
-          height: 44px;
+          height: 42px !important;
 
-          border-color: #e2e8f0 !important;
-          border-radius: 10px !important;
+          padding: 0 12px !important;
+
+          border-color: #e1e7ee !important;
+
+          border-radius: 9px !important;
 
           box-shadow: none !important;
 
-          font-size: 13px;
+          color: ${COLORS.text};
+
+          font-size: 12px;
 
           transition: all 0.2s ease !important;
         }
 
         .faith-input:hover {
-          border-color: #b8c6d8 !important;
+          border-color: #bdc9d7 !important;
         }
 
         .faith-input:focus,
         .faith-input.ant-input-focused {
-          border-color: #1b365d !important;
+          border-color: ${COLORS.navy} !important;
 
           box-shadow:
             0 0 0 3px
-            rgba(27, 54, 93, 0.07) !important;
+            rgba(23, 59, 94, 0.07) !important;
         }
 
         .faith-input:disabled {
@@ -771,229 +852,189 @@ const FeedbackModal = ({ open, onClose }) => {
         }
 
         .faith-input::placeholder {
-          color: #a0aec0;
+          color: #a4afbd;
+        }
+
+        /* =====================================================
+           SELECT
+        ===================================================== */
+
+        .faith-select {
+          width: 100%;
         }
 
         .faith-select .ant-select-selector {
-          height: 44px !important;
+          height: 42px !important;
 
           display: flex;
           align-items: center;
 
-          border-color: #e2e8f0 !important;
-          border-radius: 10px !important;
+          padding: 0 11px !important;
+
+          border-color: #e1e7ee !important;
+
+          border-radius: 9px !important;
 
           box-shadow: none !important;
+
+          font-size: 12px;
+        }
+
+        .faith-select:hover
+          .ant-select-selector {
+          border-color: #bdc9d7 !important;
         }
 
         .faith-select.ant-select-focused
           .ant-select-selector {
-          border-color: #1b365d !important;
+          border-color: ${COLORS.navy} !important;
 
           box-shadow:
             0 0 0 3px
-            rgba(27, 54, 93, 0.07) !important;
+            rgba(23, 59, 94, 0.07) !important;
         }
 
-        .faith-textarea {
-          padding: 11px 13px;
+        /* =====================================================
+           TEXTAREA
+        ===================================================== */
 
-          border-color: #e2e8f0 !important;
-          border-radius: 10px !important;
+        .faith-textarea {
+          padding: 10px 12px !important;
+
+          border-color: #e1e7ee !important;
+
+          border-radius: 9px !important;
 
           box-shadow: none !important;
 
-          font-size: 13px;
+          color: ${COLORS.text};
+
+          font-size: 12px;
+
+          line-height: 1.55;
 
           resize: vertical;
         }
 
+        .faith-textarea:hover {
+          border-color: #bdc9d7 !important;
+        }
+
         .faith-textarea:focus,
         .faith-textarea.ant-input-focused {
-          border-color: #1b365d !important;
+          border-color: ${COLORS.navy} !important;
 
           box-shadow:
             0 0 0 3px
-            rgba(27, 54, 93, 0.07) !important;
+            rgba(23, 59, 94, 0.07) !important;
         }
 
-        /* ==========================================
+        /* =====================================================
            RATING
-        ========================================== */
+        ===================================================== */
 
         .faith-rating-box {
           display: flex;
-
           align-items: center;
           justify-content: space-between;
 
           gap: 15px;
 
-          padding: 15px 17px;
+          padding: 13px 15px;
 
-          border-radius: 12px;
+          border: 1px solid #f0e6c6;
+
+          border-radius: 11px;
 
           background:
             linear-gradient(
               135deg,
-              #fffdf6,
-              #fff9e8
+              #fffdf7,
+              #fff9eb
             );
-
-          border: 1px solid #f2e8c4;
         }
 
         .faith-rating-left {
           display: flex;
           flex-direction: column;
 
-          gap: 3px;
+          gap: 2px;
         }
 
         .faith-rating-title {
           color: #334155;
 
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 700;
         }
 
         .faith-rating-description {
           color: #94a3b8;
 
-          font-size: 11px;
+          font-size: 10px;
         }
 
         .faith-rating-right {
           display: flex;
-
           align-items: center;
 
-          gap: 9px;
+          gap: 8px;
 
           white-space: nowrap;
         }
 
-        .faith-rating-right .ant-rate {
-          font-size: 20px;
+        .faith-rating-right
+          .ant-rate {
+          font-size: 19px;
         }
 
         .faith-rating-right
           .ant-rate-star {
-          margin-inline-end: 3px;
+          margin-inline-end: 2px;
         }
 
         .faith-rating-number {
-          min-width: 31px;
+          min-width: 27px;
 
-          color: #b58d16;
+          color: #b18418;
 
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 750;
         }
 
-        /* ==========================================
+        /* =====================================================
            FOOTER
-        ========================================== */
+        ===================================================== */
 
         .faith-feedback-footer {
           display: flex;
-
           align-items: center;
           justify-content: space-between;
 
-          gap: 20px;
+          gap: 18px;
         }
 
         .faith-feedback-note {
-          max-width: 250px;
+          max-width: 280px;
 
           color: #94a3b8;
 
-          font-size: 11px;
+          font-size: 10px;
           line-height: 1.5;
         }
 
         .faith-feedback-actions {
           display: flex;
-
           align-items: center;
-
-          gap: 9px;
-        }
-
-        .faith-btn-cancel,
-        .faith-btn-submit {
-          height: 42px;
-
-          padding: 0 18px;
-
-          border-radius: 10px;
-
-          font-family: inherit;
-
-          font-size: 12px;
-          font-weight: 650;
-
-          cursor: pointer;
-
-          transition: all 0.2s ease;
-        }
-
-        .faith-btn-cancel {
-          border: 1px solid #e2e8f0;
-
-          background: #ffffff;
-
-          color: #64748b;
-        }
-
-        .faith-btn-cancel:hover {
-          border-color: #cbd5e1;
-
-          color: #334155;
-
-          background: #f8fafc;
-        }
-
-        .faith-btn-submit {
-          min-width: 135px;
-
-          display: flex;
-
-          align-items: center;
-          justify-content: center;
 
           gap: 8px;
 
-          border: 0;
-
-          background: #1b365d;
-
-          color: #ffffff;
-
-          box-shadow:
-            0 5px 14px
-            rgba(27, 54, 93, 0.18);
+          flex-shrink: 0;
         }
 
-        .faith-btn-submit:hover {
-          background: #244875;
-
-          transform: translateY(-1px);
-        }
-
-        .faith-btn-submit:disabled,
-        .faith-btn-cancel:disabled {
-          opacity: 0.55;
-
-          cursor: not-allowed;
-
-          transform: none;
-        }
-
-        /* ==========================================
-           LOADING OVERLAY
-        ========================================== */
+        /* =====================================================
+           LOADING
+        ===================================================== */
 
         .faith-feedback-loading {
           position: absolute;
@@ -1003,82 +1044,90 @@ const FeedbackModal = ({ open, onClose }) => {
           z-index: 100;
 
           display: flex;
-
           align-items: center;
           justify-content: center;
 
-          background: rgba(255, 255, 255, 0.90);
-
-          backdrop-filter: blur(5px);
-
-          -webkit-backdrop-filter: blur(5px);
-
           border-radius: 18px;
+
+          background: rgba(255, 255, 255, 0.91);
+
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
         }
 
         .faith-feedback-loading-box {
+          min-width: 225px;
+
           display: flex;
-
           flex-direction: column;
-
           align-items: center;
           justify-content: center;
 
-          min-width: 230px;
-
-          padding: 28px 38px;
-
-          border-radius: 16px;
-
-          background: rgba(255, 255, 255, 0.97);
+          padding: 27px 35px;
 
           border: 1px solid #edf1f5;
 
+          border-radius: 15px;
+
+          background: rgba(255, 255, 255, 0.98);
+
           box-shadow:
-            0 15px 45px
+            0 18px 50px
             rgba(15, 23, 42, 0.12);
         }
 
         .faith-feedback-loading-text {
-          margin-top: 12px;
+          margin-top: 11px;
 
-          color: #1b365d;
+          color: ${COLORS.navy};
 
-          font-size: 14px;
-          font-weight: 700;
+          font-size: 13px;
+          font-weight: 750;
         }
 
         .faith-feedback-loading-sub {
-          margin-top: 4px;
+          margin-top: 3px;
 
           color: #94a3b8;
 
-          font-size: 11px;
+          font-size: 10px;
         }
 
-        /* ==========================================
+        /* =====================================================
            MOBILE
-        ========================================== */
+        ===================================================== */
 
         @media (max-width: 600px) {
-          .faith-feedback-header {
-            padding: 23px 20px;
+          .faith-feedback-top {
+            padding: 19px 18px;
           }
 
-          .faith-feedback-header h2 {
-            font-size: 21px;
+          .faith-feedback-top-icon {
+            flex-basis: 42px;
+
+            width: 42px;
+            height: 42px;
+
+            border-radius: 12px;
+
+            font-size: 18px;
           }
 
-          .faith-feedback-header p {
-            font-size: 12px;
+          .faith-feedback-title {
+            font-size: 17px;
+          }
+
+          .faith-feedback-subtitle {
+            font-size: 10px;
           }
 
           .faith-feedback-content {
-            padding: 20px;
+            padding: 18px;
           }
 
           .faith-feedback-grid {
             grid-template-columns: 1fr;
+
             gap: 0;
           }
 
@@ -1088,6 +1137,8 @@ const FeedbackModal = ({ open, onClose }) => {
 
           .faith-feedback-welcome {
             align-items: flex-start;
+
+            padding: 12px;
           }
 
           .faith-rating-box {
@@ -1116,15 +1167,41 @@ const FeedbackModal = ({ open, onClose }) => {
             width: 100%;
           }
 
-          .faith-btn-cancel,
-          .faith-btn-submit {
+          .faith-feedback-actions > * {
             flex: 1;
           }
 
           .faith-feedback-loading-box {
             min-width: 190px;
 
-            padding: 25px 30px;
+            padding: 24px 28px;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .faith-feedback-content {
+            padding: 15px;
+          }
+
+          .faith-feedback-top-left {
+            gap: 10px;
+          }
+
+          .faith-feedback-top-icon {
+            display: none;
+          }
+
+          .faith-feedback-title {
+            font-size: 16px;
+          }
+
+          .faith-feedback-welcome-text {
+            font-size: 10px;
+          }
+
+          .faith-rating-right
+            .ant-rate {
+            font-size: 17px;
           }
         }
       `}</style>

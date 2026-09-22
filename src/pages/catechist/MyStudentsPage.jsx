@@ -10,7 +10,6 @@ import {
   Select,
   message,
   Table,
-  Button,
   Descriptions,
   Divider,
 } from "antd";
@@ -28,7 +27,7 @@ import StatCard from "../../components/common/StatCard";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import AppSearchInput from "../../components/common/SearchInput";
-
+import AppButton from "../../components/common/AppButton";
 import studentApi from "../../api/studentApi";
 import ErrorPage from "./ErrorPage";
 
@@ -318,16 +317,14 @@ const MyStudentsPage = () => {
       width: 110,
       fixed: "right",
       render: (_, record) => (
-        <Button
-          type="primary"
-          ghost
+        <AppButton
+          variant="secondary"
           size="small"
           icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record)}
-          className="detail-action-btn"
         >
           Chi tiết
-        </Button>
+        </AppButton>
       ),
     },
   ];
