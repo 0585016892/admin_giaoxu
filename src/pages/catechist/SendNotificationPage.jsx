@@ -1963,6 +1963,7 @@ const SendNotificationPage = () => {
             <AppButton
               icon={<ReloadOutlined />}
               onClick={handleReset}
+              size="small"
               disabled={loading}
             >
               Làm mới
@@ -1970,17 +1971,18 @@ const SendNotificationPage = () => {
 
             <div className="notification-actions-right">
               {activeTab === "1" ? (
-                <AppButton onClick={() => setActiveTab("2")}>
+                <AppButton size="small" onClick={() => setActiveTab("2")}>
                   <EyeOutlined /> Xem trước
                 </AppButton>
               ) : (
-                <AppButton onClick={() => setActiveTab("1")}>
+                <AppButton size="small" onClick={() => setActiveTab("1")}>
                   <EditOutlined /> Chỉnh sửa
                 </AppButton>
               )}
 
               <AppButton
                 type="primary"
+                size="small"
                 icon={<SendOutlined />}
                 loading={loading}
                 onClick={() => form.submit()}

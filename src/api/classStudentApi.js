@@ -19,8 +19,20 @@ const classStudentApi = {
   remove: (classId, studentId) =>
     axiosClient.delete(`/class-students/${classId}/${studentId}`),
 
+  // =========================================================
+  // CHUYỂN 1 HỌC SINH SANG LỚP KHÁC
+  // =========================================================
   changeClass: (classId, studentId, newClassId) =>
     axiosClient.put(`/class-students/${classId}/${studentId}/change-class`, {
+      newClassId,
+    }),
+
+  // =========================================================
+  // CHUYỂN NHIỀU HỌC SINH SANG 1 LỚP KHÁC
+  // =========================================================
+  changeClasses: (classId, studentIds, newClassId) =>
+    axiosClient.put(`/class-students/classes/${classId}/change-students`, {
+      studentIds,
       newClassId,
     }),
 };

@@ -780,6 +780,7 @@ const NotificationsCatePage = () => {
               icon={<ReloadOutlined />}
               onClick={handleRefresh}
               disabled={loading}
+              size="small"
             >
               Làm mới
             </AppButton>
@@ -790,6 +791,7 @@ const NotificationsCatePage = () => {
               disabled={stats.unread === 0 || actionLoading}
               loading={actionLoading}
               onClick={handleMarkAllRead}
+              size="small"
             >
               Đọc tất cả
               {stats.unread > 0 && ` (${stats.unread})`}
@@ -799,6 +801,7 @@ const NotificationsCatePage = () => {
               <AppButton
                 danger
                 icon={<DeleteOutlined />}
+                size="small"
                 onClick={handleDeleteAll}
                 disabled={actionLoading}
               >
@@ -1103,6 +1106,7 @@ const NotificationsCatePage = () => {
                       type="text"
                       danger
                       icon={<DeleteOutlined />}
+                      size="small"
                       loading={actionLoading}
                       onClick={() => handleDelete(selectedNotification)}
                       className="detail-delete-button"

@@ -1438,6 +1438,7 @@ const GameManagementPage = ({ teacherId }) => {
             </div>
 
             <AppButton
+              size="small"
               type="primary"
               icon={<Plus size={20} />}
               onClick={openCreate}

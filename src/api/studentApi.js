@@ -1,28 +1,49 @@
 import axiosClient from "./axios";
 
 const studentApi = {
-  // Lấy danh sách học sinh
-  // Có thể truyền:
-  // studentApi.getAll()
-  // studentApi.getAll({ class_id: 33 })
+  // =========================================================
+  // LẤY DANH SÁCH HỌC SINH
+  // =========================================================
   getAll: (params = {}) =>
     axiosClient.get("/students", {
       params,
     }),
 
-  getStudentClass: (id) => axiosClient.get(`/students/student-class`),
+  // =========================================================
+  // LẤY LỚP CỦA HỌC SINH
+  // =========================================================
+  getStudentClass: (id) => axiosClient.get(`/students/classes/${id}/students`),
 
+  // =========================================================
+  // CHI TIẾT HỌC SINH
+  // =========================================================
   getById: (id) => axiosClient.get(`/students/${id}`),
 
+  // =========================================================
+  // THÊM HỌC SINH
+  // =========================================================
   create: (data) => axiosClient.post("/students", data),
 
+  // =========================================================
+  // CẬP NHẬT HỌC SINH
+  // =========================================================
   update: (id, data) => axiosClient.put(`/students/${id}`, data),
 
+  // =========================================================
+  // XÓA HỌC SINH
+  // =========================================================
   delete: (id) => axiosClient.delete(`/students/${id}`),
-  // Import học sinh từ Excel
+
+  // =========================================================
+  // IMPORT HỌC SINH TỪ EXCEL
+  // =========================================================
   importExcel: (file) => {
     const formData = new FormData();
-    formData.append("file", file);
+
+    // Ant Design UploadFile -> lấy file thật
+    const actualFile = file?.originFileObj || file;
+
+    formData.append("file", actualFile);
 
     return axiosClient.post("/students/import-excel", formData, {
       headers: {

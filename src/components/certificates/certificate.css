@@ -1,0 +1,1115 @@
+/* ============================================================
+   CERTIFICATE SHEET
+============================================================ */
+
+.certificate-sheet {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--cert-background);
+  color: var(--cert-text);
+  font-family: var(--cert-font);
+}
+
+.certificate-sheet--shadow {
+  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.18);
+}
+
+.certificate-sheet__inner {
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   ORNAMENT
+============================================================ */
+
+.certificate-ornament {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.certificate-ornament::before,
+.certificate-ornament::after {
+  content: "";
+  position: absolute;
+  border-color: var(--cert-secondary);
+  border-style: solid;
+}
+
+.certificate-ornament::before {
+  width: 42px;
+  height: 42px;
+}
+
+.certificate-ornament::after {
+  width: 22px;
+  height: 22px;
+}
+
+.certificate-ornament--top-left {
+  left: 10px;
+  top: 10px;
+}
+
+.certificate-ornament--top-left::before {
+  left: 0;
+  top: 0;
+  border-width: 3px 0 0 3px;
+}
+
+.certificate-ornament--top-left::after {
+  left: 10px;
+  top: 10px;
+  border-width: 1px 0 0 1px;
+}
+
+.certificate-ornament--top-right {
+  right: 10px;
+  top: 10px;
+}
+
+.certificate-ornament--top-right::before {
+  right: 0;
+  top: 0;
+  border-width: 3px 3px 0 0;
+}
+
+.certificate-ornament--top-right::after {
+  right: 10px;
+  top: 10px;
+  border-width: 1px 1px 0 0;
+}
+
+.certificate-ornament--bottom-left {
+  left: 10px;
+  bottom: 10px;
+}
+
+.certificate-ornament--bottom-left::before {
+  left: 0;
+  bottom: 0;
+  border-width: 0 0 3px 3px;
+}
+
+.certificate-ornament--bottom-left::after {
+  left: 10px;
+  bottom: 10px;
+  border-width: 0 0 1px 1px;
+}
+
+.certificate-ornament--bottom-right {
+  right: 10px;
+  bottom: 10px;
+}
+
+.certificate-ornament--bottom-right::before {
+  right: 0;
+  bottom: 0;
+  border-width: 0 3px 3px 0;
+}
+
+.certificate-ornament--bottom-right::after {
+  right: 10px;
+  bottom: 10px;
+  border-width: 0 1px 1px 0;
+}
+
+/* ============================================================
+   WATERMARK
+============================================================ */
+
+.certificate-watermark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 240px;
+  line-height: 1;
+  color: var(--cert-primary);
+  opacity: 0.025;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   TEMPLATE
+============================================================ */
+
+.certificate-template {
+  height: 100%;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  position: relative;
+  z-index: 2;
+
+  color: var(--cert-text);
+  font-family: var(--cert-font);
+}
+
+/* ============================================================
+   HEADER
+============================================================ */
+
+.certificate-header {
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.certificate-church {
+  font-size: calc(var(--cert-body-size) * 0.95);
+
+  font-weight: 700;
+
+  color: var(--cert-primary);
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.04em;
+}
+
+.certificate-address {
+  margin-top: 2px;
+  font-size: calc(var(--cert-body-size) * 0.7);
+
+  opacity: 0.75;
+}
+
+.certificate-cross {
+  margin-top: 4px;
+
+  font-family: var(--cert-heading-font);
+
+  font-size: 22px;
+
+  color: var(--cert-secondary);
+}
+
+.certificate-subtitle {
+  margin-top: 2px;
+
+  font-size: var(--cert-subtitle-size);
+
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+}
+
+.certificate-title {
+  margin: 3px 0 0;
+
+  font-family: var(--cert-heading-font);
+
+  font-size: var(--cert-title-size);
+
+  line-height: 1.15;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   TITLE LINE
+============================================================ */
+
+.certificate-title-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  margin: 7px auto 0;
+
+  width: 150px;
+}
+
+.certificate-title-line span {
+  height: 1px;
+  flex: 1;
+  background: var(--cert-secondary);
+}
+
+.certificate-title-line i {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  background: var(--cert-secondary);
+}
+
+/* ============================================================
+   CONTENT
+============================================================ */
+
+.certificate-content {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 10px 0;
+}
+
+.certificate-intro {
+  font-size: var(--cert-body-size);
+  line-height: var(--cert-line-height);
+
+  margin-bottom: 3px;
+}
+
+.certificate-name {
+  font-family: var(--cert-heading-font);
+
+  font-size: var(--cert-name-size);
+
+  font-weight: var(--cert-name-weight);
+
+  line-height: 1.15;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.025em;
+
+  color: var(--cert-primary);
+
+  margin: 3px 0 8px;
+}
+
+.certificate-line {
+  font-size: var(--cert-body-size);
+
+  line-height: var(--cert-line-height);
+
+  margin: 1px 0;
+}
+
+.certificate-line strong {
+  font-weight: 700;
+}
+
+.certificate-rank {
+  margin-top: 10px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 5px 15px;
+
+  border: 1px solid var(--cert-secondary);
+
+  border-radius: 999px;
+
+  font-size: var(--cert-body-size);
+}
+
+.certificate-rank strong {
+  color: var(--cert-primary);
+}
+
+.certificate-achievement {
+  margin-top: 12px;
+
+  max-width: 80%;
+
+  font-size: var(--cert-body-size);
+
+  line-height: var(--cert-line-height);
+}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+
+.certificate-footer {
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  min-height: 80px;
+
+  font-size: calc(var(--cert-body-size) * 0.8);
+}
+
+.certificate-issued {
+  min-width: 150px;
+
+  line-height: 1.8;
+}
+
+.certificate-footer-spacer {
+  flex: 1;
+}
+
+.certificate-qr {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: flex-end;
+
+  gap: 3px;
+}
+
+.certificate-qr svg {
+  display: block;
+}
+
+.certificate-qr small {
+  font-size: 8px;
+  opacity: 0.65;
+}
+
+.certificate-qr-empty {
+  width: 72px;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px dashed #cbd5e1;
+
+  font-size: 11px;
+}
+
+.certificate-signature {
+  min-width: 190px;
+
+  text-align: center;
+}
+
+.certificate-signature-title {
+  font-size: calc(var(--cert-body-size) * 0.8);
+
+  font-weight: 700;
+
+  color: var(--cert-primary);
+
+  text-transform: uppercase;
+}
+
+.certificate-signature-space {
+  height: 48px;
+}
+
+.certificate-signature-name {
+  font-weight: 700;
+
+  font-size: var(--cert-body-size);
+}
+
+/* ============================================================
+   MARRIAGE
+============================================================ */
+
+.marriage-content {
+  gap: 4px;
+}
+
+.marriage-couple {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 45px;
+
+  margin: 8px 0;
+}
+
+.marriage-couple > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.marriage-couple span {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.marriage-couple strong {
+  font-family: var(--cert-heading-font);
+  font-size: 20px;
+  color: var(--cert-primary);
+}
+
+/* ============================================================
+   RESPONSIVE PREVIEW
+============================================================ */
+
+@media (max-width: 900px) {
+  .certificate-sheet {
+    transform-origin: top center;
+  }
+}
+
+@media print {
+  .certificate-sheet {
+    box-shadow: none !important;
+  }
+}
+/* ============================================================
+   MARRIAGE CERTIFICATE
+   ============================================================ */
+
+.certificate-template--marriage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  background-color: #fffdf8;
+
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  color: var(--cert-text);
+
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ============================================================
+   SHADOW
+   ============================================================ */
+
+.certificate-template--shadow {
+  box-shadow:
+    0 18px 50px rgba(23, 59, 94, 0.14),
+    0 3px 10px rgba(23, 59, 94, 0.08);
+}
+
+/* ============================================================
+   BACKGROUND
+   ============================================================ */
+
+.certificate-template--marriage .certificate-background-overlay {
+  position: absolute;
+  inset: 0;
+
+  z-index: 0;
+
+  background: transparent !important;
+
+  opacity: 1;
+
+  pointer-events: none;
+}
+
+/* ============================================================
+   INNER FRAME
+   ============================================================ */
+
+.marriage-inner-frame {
+  position: absolute;
+
+  inset: 9px;
+
+  z-index: 1;
+
+  border: 1.5px solid var(--cert-secondary);
+
+  pointer-events: none;
+
+  opacity: 0.95;
+}
+
+.marriage-inner-frame--thin {
+  inset: 14px;
+
+  border-width: 0.7px;
+
+  opacity: 0.65;
+}
+
+/* ============================================================
+   WATERMARK
+   ============================================================ */
+
+.marriage-watermark {
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  z-index: 1;
+
+  transform: translate(-50%, -50%);
+
+  font-size: 210px;
+
+  line-height: 1;
+
+  opacity: 0.025;
+
+  pointer-events: none;
+}
+
+/* ============================================================
+   CORNER ORNAMENT
+   ============================================================ */
+
+.marriage-corner {
+  position: absolute;
+
+  z-index: 3;
+
+  font-family: "Cormorant Garamond", serif;
+
+  font-size: 42px;
+
+  line-height: 1;
+
+  opacity: 0.85;
+
+  pointer-events: none;
+}
+
+.marriage-corner--top-left {
+  top: 16px;
+  left: 23px;
+
+  transform: rotate(-20deg);
+}
+
+.marriage-corner--top-right {
+  top: 16px;
+  right: 23px;
+
+  transform: scaleX(-1) rotate(-20deg);
+}
+
+.marriage-corner--bottom-left {
+  bottom: 16px;
+  left: 23px;
+
+  transform: rotate(200deg);
+}
+
+.marriage-corner--bottom-right {
+  right: 23px;
+  bottom: 16px;
+
+  transform: scaleX(-1) rotate(200deg);
+}
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+
+.marriage-certificate-main {
+  position: relative;
+
+  z-index: 5;
+
+  width: var(--cert-content-width);
+
+  min-height: 100%;
+
+  margin: 0 auto;
+
+  display: flex;
+
+  flex-direction: column;
+
+  box-sizing: border-box;
+  padding-top: 20px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.marriage-certificate-header {
+  text-align: center;
+
+  padding-top: 2px;
+}
+
+/* GIÁO HỘI */
+
+.marriage-church-title {
+  font-size: calc(var(--cert-body-size) + 1px);
+
+  font-weight: 700;
+
+  letter-spacing: 1.6px;
+
+  line-height: 1.3;
+
+  text-transform: uppercase;
+}
+
+.marriage-church-line {
+  margin-top: 2px;
+
+  font-size: calc(var(--cert-body-size) - 1px);
+
+  font-weight: 600;
+
+  letter-spacing: 0.7px;
+
+  line-height: 1.4;
+
+  text-transform: uppercase;
+}
+
+.marriage-church-line--parish {
+  margin-top: 3px;
+}
+
+.marriage-separator {
+  display: inline-block;
+
+  margin: 0 7px;
+
+  color: var(--cert-secondary);
+
+  font-weight: 700;
+}
+
+/* ============================================================
+   CROSS
+   ============================================================ */
+
+.marriage-cross {
+  margin: 8px 0 3px;
+
+  font-size: 42px;
+
+  line-height: 1;
+
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ============================================================
+   TITLE
+   ============================================================ */
+
+.marriage-certificate-title {
+  margin: 0;
+
+  font-size: calc(var(--cert-title-size) * 0.7);
+
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+
+  line-height: 1;
+
+  text-transform: uppercase;
+}
+
+.marriage-certificate-subtitle {
+  margin-top: 16px;
+
+  font-size: calc(var(--cert-title-size) * 0.4);
+
+  font-weight: 600;
+
+  letter-spacing: 3px;
+
+  line-height: 1.2;
+
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   TITLE DIVIDER
+   ============================================================ */
+
+.marriage-title-divider {
+  width: 52%;
+
+  margin: 8px auto 0;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+.marriage-title-divider span {
+  flex: 1;
+
+  height: 1px;
+
+  background: linear-gradient(90deg, transparent, var(--divider-color));
+}
+
+.marriage-title-divider span:last-child {
+  background: linear-gradient(90deg, var(--divider-color), transparent);
+}
+
+.marriage-title-divider i {
+  color: var(--divider-color);
+
+  font-size: 10px;
+
+  font-style: normal;
+}
+
+/* ============================================================
+   BODY
+   ============================================================ */
+
+.marriage-certificate-body {
+  margin-top: 14px;
+
+  text-align: center;
+}
+
+/* ============================================================
+   STUDENT
+   ============================================================ */
+
+.marriage-student-label {
+  margin-bottom: 2px;
+
+  font-size: calc(var(--cert-body-size) - 1px);
+
+  font-style: italic;
+
+  opacity: 0.72;
+}
+
+.marriage-student-name {
+  font-size: var(--cert-name-size);
+
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  line-height: 1.15;
+
+  text-transform: uppercase;
+}
+
+.marriage-name-divider {
+  width: 145px;
+
+  height: 2px;
+
+  margin: 6px auto 12px;
+
+  border-radius: 999px;
+
+  opacity: 0.7;
+}
+
+/* ============================================================
+   INFORMATION
+   ============================================================ */
+
+.marriage-info-box {
+  display: grid;
+
+  grid-template-columns: 1fr auto 1fr;
+
+  align-items: stretch;
+
+  gap: 20px;
+
+  padding: 10px 18px;
+
+  border-top: 1px solid
+    color-mix(in srgb, var(--cert-secondary) 40%, transparent);
+
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--cert-secondary) 40%, transparent);
+
+  background: linear-gradient(
+    90deg,
+    rgba(217, 164, 65, 0.035),
+    rgba(255, 255, 255, 0.25),
+    rgba(217, 164, 65, 0.035)
+  );
+}
+
+.marriage-info-column {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  text-align: left;
+}
+
+.marriage-info-divider {
+  width: 1px;
+
+  background: linear-gradient(
+    transparent,
+    rgba(217, 164, 65, 0.55),
+    transparent
+  );
+}
+
+.marriage-info-row {
+  display: grid;
+
+  grid-template-columns: 82px 1fr;
+
+  gap: 7px;
+
+  font-size: calc(var(--cert-body-size) - 2px);
+
+  line-height: 1.35;
+}
+
+.marriage-info-row span {
+  color: var(--cert-secondary);
+
+  font-size: 0.88em;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.marriage-info-row strong {
+  min-width: 0;
+
+  font-weight: 600;
+
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   COURSE
+   ============================================================ */
+
+.marriage-course {
+  margin-top: 21px;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 5px;
+
+  font-size: calc(var(--cert-body-size) - 0.8px);
+
+  line-height: 1.4;
+}
+
+.marriage-course span {
+  opacity: 0.8;
+}
+
+.marriage-course strong {
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.marriage-course em {
+  font-style: normal;
+
+  font-weight: 700;
+}
+
+/* ============================================================
+   ISSUED
+   ============================================================ */
+
+.marriage-issued {
+  margin-top: 6px;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  gap: 8px;
+
+  font-size: calc(var(--cert-body-size) - 2px);
+
+  line-height: 1.3;
+}
+
+.marriage-issued-dot {
+  color: var(--cert-secondary);
+
+  font-weight: 700;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.marriage-certificate-footer {
+  margin-top: 150px;
+
+  padding-top: 12px;
+
+  padding-bottom: 3px;
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  align-items: end;
+
+  gap: 30px;
+}
+
+.marriage-footer-left {
+  display: flex;
+
+  justify-content: flex-start;
+}
+
+.marriage-footer-right {
+  display: flex;
+
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   QR
+   ============================================================ */
+
+.marriage-qr-wrapper {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 4px;
+}
+
+.marriage-qr {
+  padding: 5px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background: #fff;
+
+  border: 1px solid var(--cert-secondary);
+
+  border-radius: 4px;
+
+  box-shadow: 0 2px 8px rgba(23, 59, 94, 0.08);
+}
+
+.marriage-qr-label {
+  font-size: 8px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+
+  opacity: 0.7;
+}
+
+/* ============================================================
+   SIGNATURE
+   ============================================================ */
+
+.marriage-signature {
+  min-width: 190px;
+
+  text-align: center;
+}
+
+.marriage-signature-place {
+  font-size: calc(var(--cert-body-size) - 2px);
+
+  font-style: italic;
+
+  opacity: 0.85;
+}
+
+.marriage-signature-space {
+  height: 70px;
+}
+
+.marriage-signature-name {
+  font-size: calc(var(--cert-body-size) + 2px);
+
+  font-weight: 700;
+
+  line-height: 1.2;
+}
+
+/* ============================================================
+   PRINT / EXPORT
+   ============================================================ */
+
+@media print {
+  .certificate-template--marriage {
+    box-shadow: none !important;
+  }
+
+  .certificate-background-overlay {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .marriage-inner-frame,
+  .marriage-corner,
+  .marriage-watermark {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE PREVIEW
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .marriage-info-box {
+    gap: 12px;
+
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .marriage-info-row {
+    grid-template-columns: 70px 1fr;
+
+    font-size: calc(var(--cert-body-size) - 3px);
+  }
+
+  .marriage-certificate-subtitle {
+    letter-spacing: 2px;
+  }
+}

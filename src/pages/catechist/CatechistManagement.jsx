@@ -764,12 +764,14 @@ export default function CatechistManagement() {
           <Tooltip title="Xem chi tiết">
             <AppButton
               icon={<EyeOutlined />}
+              size="small"
               onClick={() => handleOpenDetail(record)}
             />
           </Tooltip>
 
           <Tooltip title="Chỉnh sửa">
             <AppButton
+              size="small"
               icon={<EditOutlined />}
               onClick={() => handleOpenEditModal(record)}
             />
@@ -839,7 +841,7 @@ export default function CatechistManagement() {
           >
             <AppButton
               className="chibi-action-btn chibi-btn-more"
-              shape="circle"
+              size="small"
               icon={<MoreOutlined />}
             />
           </Dropdown>

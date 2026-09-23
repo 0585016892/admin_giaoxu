@@ -951,15 +951,12 @@ const ParishSettingsPage = () => {
                             </Col>
 
                             <Col xs={24}>
-                              <Form.Item
-                                label="Địa Chỉ Chi Tiết"
-                                name="address"
-                              >
+                              <Form.Item label="Giáo phận" name="address">
                                 <Input
                                   prefix={
                                     <EnvironmentOutlined className="input-icon" />
                                   }
-                                  placeholder="Số nhà, đường/thôn"
+                                  placeholder="Vui lòng nhập -Thái Bình- "
                                   className="form-input"
                                 />
                               </Form.Item>

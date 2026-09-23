@@ -34,6 +34,7 @@ import {
   FileWordOutlined,
   FolderOpenOutlined,
   InboxOutlined,
+  LinkOutlined,
   MenuOutlined,
   MoreOutlined,
   ReloadOutlined,
@@ -54,6 +55,7 @@ import {
 } from "../../api/lessonApi";
 
 import "../../assets/css/LessonLibraryPage.css";
+
 import AppFormModal from "../../components/common/AppFormModal";
 import AppButton from "../../components/common/AppButton";
 
@@ -66,6 +68,8 @@ const RESOURCE_VIEWER_BASE_PATH = "/catechist/resources";
 const DEFAULT_PAGE_SIZE = 12;
 
 const PAGE_SIZE_OPTIONS = ["12", "24", "48"];
+
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 const TYPE_LABELS = {
   khai_tam: "Giáo lý Khai tâm",
@@ -125,6 +129,20 @@ const VIDEO_TYPES = ["mp4", "webm", "mov", "m4v"];
 const AUDIO_TYPES = ["mp3", "wav", "ogg", "m4a", "aac"];
 
 /* =========================================================
+   DEFAULT UPLOAD DATA
+========================================================= */
+
+const getDefaultUploadData = (sortOrder = 0) => ({
+  title: "",
+  description: "",
+  resource_category: "teacher_material",
+  sort_order: sortOrder,
+  visibility: "public",
+  is_downloadable: true,
+  external_url: "",
+});
+
+/* =========================================================
    HELPERS
 ========================================================= */
 
@@ -177,6 +195,10 @@ const getFileExtension = (resource) => {
     return "";
   }
 
+  if (resource.resource_type === "link") {
+    return "link";
+  }
+
   if (resource.file_type) {
     return String(resource.file_type).replace(".", "").toLowerCase();
   }
@@ -221,12 +243,44 @@ const formatFileSize = (bytes) => {
   return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 };
 
+const isHttpUrl = (value) => {
+  const url = String(value || "").trim();
+
+  if (!url) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const normalizeUrl = (value) => {
+  return String(value || "").trim();
+};
+
 const getResourceIcon = (resource, size = 28) => {
   const extension = getFileExtension(resource);
 
   const style = {
     fontSize: size,
   };
+
+  /* LINK */
+  if (resource?.resource_type === "link") {
+    return (
+      <LinkOutlined
+        style={{
+          ...style,
+          color: "#2563EB",
+        }}
+      />
+    );
+  }
 
   if (extension === "pdf") {
     return (
@@ -320,10 +374,15 @@ const getResourceUrl = (resource) => {
     return "";
   }
 
-  const url =
-    resource.resource_type === "link"
-      ? resource.external_url
-      : resource.file_url || resource.external_url;
+  let url = "";
+
+  if (resource.resource_type === "link") {
+    url = resource.external_url;
+  } else {
+    url = resource.file_url || resource.external_url || "";
+  }
+
+  url = normalizeUrl(url);
 
   if (!url) {
     return "";
@@ -338,7 +397,27 @@ const getResourceUrl = (resource) => {
     process.env.REACT_APP_API_ORIGIN ||
     "https://api.amsacviet.online";
 
-  return `${base.replace(/\/$/, "")}/${String(url).replace(/^\//, "")}`;
+  return `${String(base).replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
+};
+
+const isResourceActive = (resource) => {
+  if (!resource) {
+    return false;
+  }
+
+  if (resource.is_active === undefined || resource.is_active === null) {
+    return true;
+  }
+
+  if (
+    resource.is_active === false ||
+    resource.is_active === 0 ||
+    resource.is_active === "0"
+  ) {
+    return false;
+  }
+
+  return true;
 };
 
 /* =========================================================
@@ -378,24 +457,28 @@ const LessonLibraryPage = () => {
 
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
+  /* =======================================================
+     UPLOAD
+  ======================================================= */
+
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const [uploading, setUploading] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
 
+  const [uploadData, setUploadData] = useState(getDefaultUploadData());
+
   const [menuLessonId, setMenuLessonId] = useState(null);
 
-  const [uploadData, setUploadData] = useState({
-    title: "",
-    description: "",
-    resource_category: "teacher_material",
-    sort_order: 0,
-    visibility: "public",
-    is_downloadable: true,
-  });
+  /* =======================================================
+     QUESTIONS
+  ======================================================= */
+
   const [questions, setQuestions] = useState([]);
+
   const [questionLoading, setQuestionLoading] = useState(false);
+
   /* =======================================================
      LOAD LESSONS
   ======================================================= */
@@ -492,19 +575,27 @@ const LessonLibraryPage = () => {
 
   useEffect(() => {
     loadLessons();
+  }, [loadLessons]);
+
+  useEffect(() => {
     loadLessonTypes();
-  }, [loadLessons, loadLessonTypes]);
+  }, [loadLessonTypes]);
+
+  /* =======================================================
+     LOAD RESOURCE WHEN SELECTED LESSON CHANGES
+  ======================================================= */
 
   useEffect(() => {
     if (selectedLesson?.id) {
       loadResources(selectedLesson.id);
     } else {
       setResources([]);
+      setQuestions([]);
     }
   }, [selectedLesson?.id, loadResources]);
 
   /* =======================================================
-     RESET PAGE WHEN FILTER CHANGES
+     RESET PAGE
   ======================================================= */
 
   useEffect(() => {
@@ -548,7 +639,7 @@ const LessonLibraryPage = () => {
   }, [lessonTypes, lessons]);
 
   /* =======================================================
-     FILTER + SORT LESSONS
+     FILTER + SORT
   ======================================================= */
 
   const filteredLessons = useMemo(() => {
@@ -560,7 +651,9 @@ const LessonLibraryPage = () => {
       );
     }
 
-    const keyword = searchText.trim().toLowerCase();
+    const keyword = String(searchText || "")
+      .trim()
+      .toLowerCase();
 
     if (keyword) {
       result = result.filter((lesson) => {
@@ -626,18 +719,19 @@ const LessonLibraryPage = () => {
   const openLesson = (lesson) => {
     setSelectedLesson(lesson);
     setResources([]);
+    setQuestions([]);
     setMenuLessonId(null);
   };
 
   const backToLibrary = () => {
     setSelectedLesson(null);
     setResources([]);
+    setQuestions([]);
     setMenuLessonId(null);
   };
 
   /* =======================================================
      RESOURCE VIEWER
-     MỞ PAGE, KHÔNG MODAL
   ======================================================= */
 
   const openResourceViewer = (resource) => {
@@ -657,7 +751,7 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
-     UPLOAD MODAL
+     OPEN UPLOAD MODAL
   ======================================================= */
 
   const openUploadModal = () => {
@@ -668,31 +762,85 @@ const LessonLibraryPage = () => {
 
     setSelectedFile(null);
 
-    setUploadData({
-      title: "",
-      description: "",
-      resource_category: "teacher_material",
-      sort_order: resources.length,
-      visibility: "public",
-      is_downloadable: true,
-    });
+    setUploadData(getDefaultUploadData(resources.length));
 
     setUploadOpen(true);
   };
 
-  const handleBeforeUpload = (file) => {
-    const maxSize = 100 * 1024 * 1024;
+  /* =======================================================
+     CLOSE UPLOAD MODAL
+  ======================================================= */
 
-    if (file.size > maxSize) {
+  const closeUploadModal = () => {
+    if (uploading) {
+      return;
+    }
+
+    setUploadOpen(false);
+
+    setSelectedFile(null);
+
+    setUploadData(getDefaultUploadData());
+  };
+
+  /* =======================================================
+     CHANGE EXTERNAL URL
+  ======================================================= */
+
+  const handleExternalUrlChange = (event) => {
+    const value = event?.target?.value || "";
+
+    setUploadData((prev) => ({
+      ...prev,
+      external_url: value,
+    }));
+
+    /*
+     * Nếu người dùng nhập link
+     * thì tự động bỏ file
+     */
+    if (String(value).trim() && selectedFile) {
+      setSelectedFile(null);
+    }
+  };
+
+  /* =======================================================
+     BEFORE UPLOAD
+  ======================================================= */
+
+  const handleBeforeUpload = (file) => {
+    const externalUrl = normalizeUrl(uploadData?.external_url);
+
+    /*
+     * Đang dùng link
+     */
+    if (externalUrl) {
+      messageApi.info(
+        "Bạn đang sử dụng đường link. Hãy xóa đường link nếu muốn tải file.",
+      );
+
+      return Upload.LIST_IGNORE;
+    }
+
+    /*
+     * Kiểm tra dung lượng
+     */
+    if (Number(file?.size || 0) > MAX_FILE_SIZE) {
       messageApi.error("File không được vượt quá 100MB");
 
       return Upload.LIST_IGNORE;
     }
 
+    /*
+     * Lưu file
+     */
     setSelectedFile(file);
 
-    if (!uploadData.title) {
-      const fileName = file.name.replace(/\.[^/.]+$/, "");
+    /*
+     * Tự động lấy tên file
+     */
+    if (!String(uploadData?.title || "").trim()) {
+      const fileName = String(file?.name || "").replace(/\.[^/.]+$/, "");
 
       setUploadData((prev) => ({
         ...prev,
@@ -703,53 +851,137 @@ const LessonLibraryPage = () => {
     return false;
   };
 
+  /* =======================================================
+     UPLOAD
+  ======================================================= */
+
   const handleUpload = async () => {
     if (!selectedLesson) {
       return;
     }
 
-    if (!selectedFile) {
-      messageApi.warning("Vui lòng chọn file");
-      return;
-    }
+    /*
+     * Luôn ép về string để tránh
+     * undefined.trim()
+     */
+    const title = String(uploadData?.title || "").trim();
 
-    if (!uploadData.title.trim()) {
+    const description = String(uploadData?.description || "").trim();
+
+    const externalUrl = normalizeUrl(uploadData?.external_url);
+
+    /* =====================================================
+       TITLE
+    ===================================================== */
+
+    if (!title) {
       messageApi.warning("Vui lòng nhập tên tài liệu");
       return;
     }
 
+    /* =====================================================
+       FILE OR LINK
+    ===================================================== */
+
+    if (!selectedFile && !externalUrl) {
+      messageApi.warning("Vui lòng chọn file hoặc nhập đường link");
+      return;
+    }
+
+    /* =====================================================
+       BOTH
+    ===================================================== */
+
+    if (selectedFile && externalUrl) {
+      messageApi.warning("Vui lòng chỉ chọn file hoặc nhập đường link");
+      return;
+    }
+
+    /* =====================================================
+       VALIDATE URL
+    ===================================================== */
+
+    if (externalUrl && !isHttpUrl(externalUrl)) {
+      messageApi.error(
+        "Đường link không hợp lệ. Vui lòng sử dụng http:// hoặc https://",
+      );
+      return;
+    }
+
+    /* =====================================================
+       FORM DATA
+    ===================================================== */
+
     const formData = new FormData();
 
-    formData.append("title", uploadData.title.trim());
+    formData.append("title", title);
 
-    formData.append("description", uploadData.description || "");
+    formData.append("description", description);
 
-    formData.append("resource_category", uploadData.resource_category);
+    formData.append(
+      "resource_category",
+      uploadData?.resource_category || "teacher_material",
+    );
 
-    formData.append("sort_order", String(uploadData.sort_order || 0));
+    formData.append("sort_order", String(Number(uploadData?.sort_order || 0)));
 
-    formData.append("visibility", uploadData.visibility);
+    formData.append("visibility", uploadData?.visibility || "public");
 
-    formData.append("is_downloadable", uploadData.is_downloadable ? "1" : "0");
+    /*
+     * Link thì không cho download
+     */
+    formData.append(
+      "is_downloadable",
+      externalUrl ? "0" : uploadData?.is_downloadable ? "1" : "0",
+    );
 
-    formData.append("file", selectedFile);
+    /* =====================================================
+       LINK
+    ===================================================== */
+
+    if (externalUrl) {
+      formData.append("resource_type", "link");
+
+      formData.append("external_url", externalUrl);
+    }
+
+    /* =====================================================
+       FILE
+    ===================================================== */
+
+    if (selectedFile) {
+      formData.append("resource_type", "file");
+
+      formData.append("file", selectedFile);
+    }
+
+    /* =====================================================
+       REQUEST
+    ===================================================== */
 
     try {
       setUploading(true);
 
       await uploadLessonResource(selectedLesson.id, formData);
 
-      messageApi.success("Tải tài liệu thành công");
+      messageApi.success(
+        externalUrl
+          ? "Đã thêm đường link thành công"
+          : "Tải tài liệu thành công",
+      );
 
       setUploadOpen(false);
+
       setSelectedFile(null);
+
+      setUploadData(getDefaultUploadData());
 
       await loadResources(selectedLesson.id);
     } catch (error) {
       console.error("Upload resource error:", error);
 
       messageApi.error(
-        error?.response?.data?.message || "Không thể tải tài liệu lên",
+        error?.response?.data?.message || "Không thể thêm tài liệu",
       );
     } finally {
       setUploading(false);
@@ -777,14 +1009,18 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
-     TOGGLE STATUS
-  ======================================================= */
-
-  /* =======================================================
      DOWNLOAD
   ======================================================= */
 
   const downloadResource = (resource) => {
+    /*
+     * Link không phải file download
+     */
+    if (resource?.resource_type === "link") {
+      openResourceViewer(resource);
+      return;
+    }
+
     const url = getResourceUrl(resource);
 
     if (!url) {
@@ -796,7 +1032,119 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
-     LESSON LIST
+     PAGINATION UI
+  ======================================================= */
+
+  const renderPagination = () => {
+    if (filteredLessons.length <= pageSize) {
+      return null;
+    }
+
+    return (
+      <div className="ll-pagination">
+        <Pagination
+          current={currentPage}
+          pageSize={pageSize}
+          total={filteredLessons.length}
+          showSizeChanger
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
+          showTotal={(total, range) =>
+            `${range[0]}-${range[1]} / ${total} bài học`
+          }
+          onChange={(page, size) => {
+            if (size !== pageSize) {
+              setPageSize(size);
+              setCurrentPage(1);
+              return;
+            }
+
+            setCurrentPage(page);
+          }}
+        />
+      </div>
+    );
+  };
+
+  /* =======================================================
+     LESSON ACTION MENU
+  ======================================================= */
+
+  const renderLessonMenu = (lesson) => {
+    if (menuLessonId !== lesson.id) {
+      return null;
+    }
+
+    return (
+      <div
+        className="ll-action-menu"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setMenuLessonId(null);
+            openLesson(lesson);
+          }}
+        >
+          <EyeOutlined />
+          <span>Xem chi tiết</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMenuLessonId(null);
+            openLesson(lesson);
+          }}
+        >
+          <FolderOpenOutlined />
+          <span>Mở bài học</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMenuLessonId(null);
+
+            messageApi.info("Chức năng chỉnh sửa sẽ được bổ sung.");
+          }}
+        >
+          <BookOutlined />
+          <span>Chỉnh sửa</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMenuLessonId(null);
+
+            messageApi.info("Chức năng sao chép sẽ được bổ sung.");
+          }}
+        >
+          <BookOutlined />
+          <span>Sao chép</span>
+        </button>
+
+        <div className="ll-action-divider" />
+
+        <button
+          type="button"
+          className="danger"
+          onClick={() => {
+            setMenuLessonId(null);
+
+            messageApi.info("Chức năng xóa sẽ được bổ sung.");
+          }}
+        >
+          <DeleteOutlined />
+          <span>Xóa</span>
+        </button>
+      </div>
+    );
+  };
+
+  /* =======================================================
+     LESSON GRID
   ======================================================= */
 
   const renderLessonGrid = () => {
@@ -811,9 +1159,9 @@ const LessonLibraryPage = () => {
       );
     }
 
-    /* =========================
+    /* =====================================================
        LIST
-    ========================= */
+    ===================================================== */
 
     if (viewMode === "list") {
       return (
@@ -859,77 +1207,7 @@ const LessonLibraryPage = () => {
                     }}
                   />
 
-                  {menuLessonId === lesson.id && (
-                    <div
-                      className="ll-action-menu"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuLessonId(null);
-                          openLesson(lesson);
-                        }}
-                      >
-                        <EyeOutlined />
-                        <span>Xem chi tiết</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuLessonId(null);
-                          openLesson(lesson);
-                        }}
-                      >
-                        <FolderOpenOutlined />
-                        <span>Mở bài học</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuLessonId(null);
-
-                          messageApi.info(
-                            "Chức năng chỉnh sửa sẽ được bổ sung.",
-                          );
-                        }}
-                      >
-                        <BookOutlined />
-                        <span>Chỉnh sửa</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuLessonId(null);
-
-                          messageApi.info(
-                            "Chức năng sao chép sẽ được bổ sung.",
-                          );
-                        }}
-                      >
-                        <BookOutlined />
-                        <span>Sao chép</span>
-                      </button>
-
-                      <div className="ll-action-divider" />
-
-                      <button
-                        type="button"
-                        className="danger"
-                        onClick={() => {
-                          setMenuLessonId(null);
-
-                          messageApi.info("Chức năng xóa sẽ được bổ sung.");
-                        }}
-                      >
-                        <DeleteOutlined />
-                        <span>Xóa</span>
-                      </button>
-                    </div>
-                  )}
+                  {renderLessonMenu(lesson)}
                 </div>
               </div>
             ))}
@@ -940,9 +1218,9 @@ const LessonLibraryPage = () => {
       );
     }
 
-    /* =========================
+    /* =====================================================
        GRID
-    ========================= */
+    ===================================================== */
 
     return (
       <>
@@ -987,77 +1265,7 @@ const LessonLibraryPage = () => {
                       }}
                     />
 
-                    {menuLessonId === lesson.id && (
-                      <div
-                        className="ll-action-menu"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuLessonId(null);
-                            openLesson(lesson);
-                          }}
-                        >
-                          <EyeOutlined />
-                          <span>Xem chi tiết</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuLessonId(null);
-                            openLesson(lesson);
-                          }}
-                        >
-                          <FolderOpenOutlined />
-                          <span>Mở bài học</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuLessonId(null);
-
-                            messageApi.info(
-                              "Chức năng chỉnh sửa sẽ được bổ sung.",
-                            );
-                          }}
-                        >
-                          <BookOutlined />
-                          <span>Chỉnh sửa</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuLessonId(null);
-
-                            messageApi.info(
-                              "Chức năng sao chép sẽ được bổ sung.",
-                            );
-                          }}
-                        >
-                          <BookOutlined />
-                          <span>Sao chép</span>
-                        </button>
-
-                        <div className="ll-action-divider" />
-
-                        <button
-                          type="button"
-                          className="danger"
-                          onClick={() => {
-                            setMenuLessonId(null);
-
-                            messageApi.info("Chức năng xóa sẽ được bổ sung.");
-                          }}
-                        >
-                          <DeleteOutlined />
-                          <span>Xóa</span>
-                        </button>
-                      </div>
-                    )}
+                    {renderLessonMenu(lesson)}
                   </div>
                 </div>
 
@@ -1073,40 +1281,6 @@ const LessonLibraryPage = () => {
 
         {renderPagination()}
       </>
-    );
-  };
-
-  /* =======================================================
-     PAGINATION UI
-  ======================================================= */
-
-  const renderPagination = () => {
-    if (filteredLessons.length <= pageSize) {
-      return null;
-    }
-
-    return (
-      <div className="ll-pagination">
-        <Pagination
-          current={currentPage}
-          pageSize={pageSize}
-          total={filteredLessons.length}
-          showSizeChanger
-          pageSizeOptions={PAGE_SIZE_OPTIONS}
-          showTotal={(total, range) =>
-            `${range[0]}-${range[1]} / ${total} bài học`
-          }
-          onChange={(page, size) => {
-            if (size !== pageSize) {
-              setPageSize(size);
-              setCurrentPage(1);
-              return;
-            }
-
-            setCurrentPage(page);
-          }}
-        />
-      </div>
     );
   };
 
@@ -1133,15 +1307,17 @@ const LessonLibraryPage = () => {
           <h3>Chưa có tài liệu</h3>
 
           <p>
-            Thêm giáo án, PowerPoint, PDF, Word, hình ảnh hoặc video cho bài học
-            này.
+            Thêm giáo án, PowerPoint, PDF, Word, hình ảnh, video hoặc đường link
+            cho bài học này.
           </p>
 
           <AppButton
-            shape="circle"
+            size="small"
             icon={<UploadOutlined />}
             onClick={openUploadModal}
-          />
+          >
+            Thêm tài liệu
+          </AppButton>
         </div>
       );
     }
@@ -1155,10 +1331,9 @@ const LessonLibraryPage = () => {
             resource.id && (resourceUrl || resource.resource_type === "link"),
           );
 
-          const isActive =
-            resource.is_active === undefined
-              ? true
-              : Boolean(resource.is_active);
+          const isActive = isResourceActive(resource);
+
+          const isLink = resource.resource_type === "link";
 
           return (
             <div
@@ -1168,13 +1343,11 @@ const LessonLibraryPage = () => {
               }`}
             >
               {/* ICON */}
-
               <div className="ll-resource-icon">
                 {getResourceIcon(resource, 30)}
               </div>
 
               {/* MAIN */}
-
               <div className="ll-resource-main">
                 <div className="ll-resource-title">
                   <span>
@@ -1182,12 +1355,14 @@ const LessonLibraryPage = () => {
                   </span>
 
                   {!isActive && <Tag>Đã tắt</Tag>}
+
+                  {isLink && <Tag color="blue">Liên kết</Tag>}
                 </div>
 
                 <div className="ll-resource-description">
                   {resource.description ||
                     resource.file_name ||
-                    "Tài liệu bài học"}
+                    (isLink ? resource.external_url : "Tài liệu bài học")}
                 </div>
 
                 <div className="ll-resource-meta">
@@ -1197,31 +1372,30 @@ const LessonLibraryPage = () => {
                       "Tài liệu"}
                   </Tag>
 
-                  {resource.file_type && (
+                  {resource.file_type && !isLink && (
                     <span>{String(resource.file_type).toUpperCase()}</span>
                   )}
 
-                  {resource.file_size && (
+                  {resource.file_size && !isLink && (
                     <span>{formatFileSize(resource.file_size)}</span>
                   )}
                 </div>
               </div>
 
               {/* ACTIONS */}
-
               <div className="ll-resource-actions">
                 {canView && (
                   <>
-                    <Tooltip title="Xem tài liệu">
+                    <Tooltip title={isLink ? "Xem liên kết" : "Xem tài liệu"}>
                       <AppButton
                         variant="secondary"
                         size="small"
-                        icon={<EyeOutlined />}
+                        icon={isLink ? <LinkOutlined /> : <EyeOutlined />}
                         onClick={() => openResourceViewer(resource)}
                       />
                     </Tooltip>
 
-                    {resourceUrl && (
+                    {!isLink && resourceUrl && (
                       <Tooltip title="Tải xuống">
                         <AppButton
                           variant="secondary"
@@ -1236,7 +1410,11 @@ const LessonLibraryPage = () => {
 
                 <Popconfirm
                   title="Xóa tài liệu?"
-                  description="File sẽ bị xóa khỏi hệ thống."
+                  description={
+                    isLink
+                      ? "Đường link sẽ bị xóa khỏi bài học."
+                      : "File sẽ bị xóa khỏi hệ thống."
+                  }
                   okText="Xóa"
                   cancelText="Hủy"
                   okButtonProps={{
@@ -1320,7 +1498,7 @@ const LessonLibraryPage = () => {
                 suffixIcon={<BookOutlined />}
               />
 
-              {/* VIEW MODE */}
+              {/* VIEW */}
 
               <div className="ll-view-toggle">
                 <button
@@ -1348,13 +1526,16 @@ const LessonLibraryPage = () => {
 
               <AppButton
                 icon={<UploadOutlined />}
+                size="small"
                 onClick={() =>
                   messageApi.info("Vui lòng mở một bài học để thêm tài liệu.")
                 }
-              />
+              >
+                Thêm tài liệu
+              </AppButton>
             </div>
 
-            {/* PAGE HEADING */}
+            {/* HEADING */}
 
             <div className="ll-page-heading">
               <div>
@@ -1367,7 +1548,7 @@ const LessonLibraryPage = () => {
         )}
 
         {/* =================================================
-            LESSON DETAIL HEADER
+            DETAIL HEADER
         ================================================= */}
 
         {selectedLesson && (
@@ -1381,6 +1562,7 @@ const LessonLibraryPage = () => {
               >
                 Quay lại
               </AppButton>
+
               <div className="ll-detail-info">
                 <div className="ll-detail-icon">
                   <FolderOpenOutlined />
@@ -1408,7 +1590,7 @@ const LessonLibraryPage = () => {
         )}
 
         {/* =================================================
-            LESSON GRID
+            LESSON LIST
         ================================================= */}
 
         {!selectedLesson && (
@@ -1448,7 +1630,10 @@ const LessonLibraryPage = () => {
 
             {renderResources()}
 
-            {/* CÂU HỎI KIẾN THỨC */}
+            {/* =================================================
+                QUESTIONS
+            ================================================= */}
+
             <div className="ll-knowledge-section">
               <div className="ll-knowledge-header">
                 <div className="ll-knowledge-title-wrapper">
@@ -1458,12 +1643,14 @@ const LessonLibraryPage = () => {
 
                   <div>
                     <h3>Câu hỏi kiến thức</h3>
+
                     <p>Kiểm tra kiến thức của bài học</p>
                   </div>
                 </div>
 
                 <div className="ll-knowledge-count">
                   <strong>{questions.length}</strong>
+
                   <span>câu hỏi</span>
                 </div>
               </div>
@@ -1472,6 +1659,7 @@ const LessonLibraryPage = () => {
                 {questionLoading ? (
                   <div className="ll-question-loading">
                     <Spin size="small" />
+
                     <span>Đang tải câu hỏi...</span>
                   </div>
                 ) : questions.length === 0 ? (
@@ -1482,6 +1670,7 @@ const LessonLibraryPage = () => {
 
                     <div>
                       <strong>Chưa có câu hỏi</strong>
+
                       <p>Bài học này hiện chưa có câu hỏi kiến thức.</p>
                     </div>
                   </div>
@@ -1507,7 +1696,6 @@ const LessonLibraryPage = () => {
                         )
                       }
                     >
-                      {" "}
                       Làm câu hỏi
                     </AppButton>
                   </div>
@@ -1523,24 +1711,25 @@ const LessonLibraryPage = () => {
 
         <AppFormModal
           title="Thêm tài liệu bài học"
-          subtitle="Thêm giáo trình, quản lý tài liệu bài học"
-          onCancel={() => {
-            if (!uploading) {
-              setUploadOpen(false);
-            }
-          }}
+          subtitle="Thêm giáo trình, tài liệu hoặc đường link cho bài học"
+          onCancel={closeUploadModal}
           onOk={handleUpload}
           confirmLoading={uploading}
-          okText="Tải lên"
+          okText="Thêm tài liệu"
           cancelText="Hủy"
-          width={550}
+          width={600}
           className="catechist-modal"
           open={uploadOpen}
         >
-          <div>
-            {/* TITLE */}
+          <div className="ll-upload-form">
+            {/* =================================================
+                TITLE
+            ================================================= */}
 
-            <div className="ll-form-label">Tên tài liệu</div>
+            <div className="ll-form-label">
+              Tên tài liệu
+              <span className="ll-required">*</span>
+            </div>
 
             <Input
               size="large"
@@ -1554,7 +1743,9 @@ const LessonLibraryPage = () => {
               }
             />
 
-            {/* DESCRIPTION */}
+            {/* =================================================
+                DESCRIPTION
+            ================================================= */}
 
             <div className="ll-form-label">Mô tả</div>
 
@@ -1570,7 +1761,32 @@ const LessonLibraryPage = () => {
               }
             />
 
-            {/* CATEGORY + ORDER */}
+            {/* =================================================
+                EXTERNAL URL
+            ================================================= */}
+
+            <div className="ll-form-label">
+              Đường link tài liệu / video
+              <span className="ll-form-label-optional">Không bắt buộc</span>
+            </div>
+
+            <Input
+              size="large"
+              placeholder="https://youtube.com/watch?v=... hoặc đường link tài liệu"
+              value={uploadData.external_url || ""}
+              onChange={handleExternalUrlChange}
+              prefix={<LinkOutlined />}
+              allowClear
+            />
+
+            <div className="ll-form-help">
+              Có thể nhập link YouTube, Google Drive hoặc website bên ngoài.
+              Không cần chọn file nếu sử dụng đường link.
+            </div>
+
+            {/* =================================================
+                CATEGORY + ORDER
+            ================================================= */}
 
             <Row gutter={14}>
               <Col xs={24} sm={16}>
@@ -1603,20 +1819,28 @@ const LessonLibraryPage = () => {
                   onChange={(event) =>
                     setUploadData((prev) => ({
                       ...prev,
-                      sort_order: Number(event.target.value),
+                      sort_order: Number(event.target.value || 0),
                     }))
                   }
                 />
               </Col>
             </Row>
 
-            {/* FILE */}
+            {/* =================================================
+                FILE
+            ================================================= */}
 
-            <div className="ll-form-label">File tài liệu</div>
+            <div className="ll-form-label">
+              File tài liệu
+              <span className="ll-form-label-optional">
+                Không bắt buộc nếu đã có đường link
+              </span>
+            </div>
 
             <Upload.Dragger
               multiple={false}
               maxCount={1}
+              disabled={Boolean(normalizeUrl(uploadData.external_url))}
               accept={[
                 ".ppt",
                 ".pptx",
@@ -1631,13 +1855,16 @@ const LessonLibraryPage = () => {
                 ".gif",
                 ".webp",
                 ".svg",
+                ".bmp",
                 ".mp4",
                 ".webm",
                 ".mov",
+                ".m4v",
                 ".mp3",
                 ".wav",
                 ".ogg",
                 ".m4a",
+                ".aac",
                 ".zip",
               ].join(",")}
               fileList={
@@ -1670,12 +1897,21 @@ const LessonLibraryPage = () => {
               </p>
 
               <p className="ant-upload-hint">Dung lượng tối đa: 100MB</p>
+
+              {normalizeUrl(uploadData.external_url) && (
+                <div className="ll-upload-disabled-note">
+                  Đang sử dụng đường link — không cần tải file.
+                </div>
+              )}
             </Upload.Dragger>
 
-            {/* NOTE */}
+            {/* =================================================
+                NOTE
+            ================================================= */}
 
             <div className="ll-upload-note">
-              <strong>Bài học:</strong> {selectedLesson?.title}
+              <strong>Bài học:</strong>{" "}
+              {selectedLesson?.title || "Chưa chọn bài học"}
             </div>
           </div>
         </AppFormModal>

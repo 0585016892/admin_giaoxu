@@ -1202,6 +1202,7 @@ const LessonQuestionPage = () => {
 
                       <Space>
                         <AppButton
+                          size="small"
                           variant="secondary"
                           icon={<ReloadOutlined />}
                           onClick={() =>
@@ -1217,6 +1218,7 @@ const LessonQuestionPage = () => {
 
                         <AppButton
                           variant="gold"
+                          size="small"
                           icon={<PlusOutlined />}
                           onClick={openCreateLesson}
                         >
@@ -1332,6 +1334,7 @@ const LessonQuestionPage = () => {
                       <Space>
                         <AppButton
                           variant="secondary"
+                          size="small"
                           icon={<ReloadOutlined />}
                           onClick={() =>
                             loadQuestions(
@@ -1346,6 +1349,7 @@ const LessonQuestionPage = () => {
                         </AppButton>
 
                         <AppButton
+                          size="small"
                           variant="gold"
                           icon={<PlusOutlined />}
                           onClick={openCreateQuestion}

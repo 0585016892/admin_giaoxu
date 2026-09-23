@@ -110,17 +110,21 @@ const EMPTY_VALUE = "-";
 const getResponseData = (response, keys = []) => {
   const data = response?.data;
 
-  if (data?.data !== undefined) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.data)) {
     return data.data;
   }
 
   for (const key of keys) {
-    if (data?.[key] !== undefined) {
+    if (Array.isArray(data?.[key])) {
       return data[key];
     }
   }
 
-  return data ?? [];
+  return [];
 };
 
 const displayValue = (value) => {
@@ -155,17 +159,29 @@ const getApiOrigin = () => {
 };
 
 const getAvatarUrl = (avatar) => {
-  if (!avatar) {
+  if (!avatar || avatar === EMPTY_VALUE) {
     return null;
   }
 
-  if (/^https?:\/\//i.test(avatar)) {
-    return avatar;
+  const value = String(avatar).trim();
+
+  if (!value) {
+    return null;
+  }
+
+  // URL đầy đủ
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  // Backend trả protocol-relative URL
+  if (value.startsWith("//")) {
+    return `https:${value}`;
   }
 
   const origin = getApiOrigin();
 
-  return `${origin}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
+  return `${origin}${value.startsWith("/") ? value : `/${value}`}`;
 };
 /* =====================================================
    COMPONENT
@@ -238,6 +254,17 @@ export default function StudentManagement() {
   const [changeClassStudent, setChangeClassStudent] = useState(null);
 
   const [importing, setImporting] = useState(false);
+
+  /* ===================================================
+   BULK CHANGE CLASS
+=================================================== */
+
+  const [isBulkChangeClassModalOpen, setIsBulkChangeClassModalOpen] =
+    useState(false);
+
+  const [bulkChangeClassForm] = Form.useForm();
+
+  const [bulkChangeClassLoading, setBulkChangeClassLoading] = useState(false);
 
   /* ===================================================
      QR
@@ -956,7 +983,12 @@ export default function StudentManagement() {
 
       status: values.status || "active",
 
-      class_id: values.class_id || null,
+      class_id:
+        values.class_id !== undefined &&
+        values.class_id !== null &&
+        values.class_id !== ""
+          ? Number(values.class_id)
+          : null,
     };
   };
   const buildStudentFormData = useCallback((values) => {
@@ -969,32 +1001,24 @@ export default function StudentManagement() {
         return;
       }
 
-      if (value === null) {
-        formData.append(key, "");
-        return;
-      }
-
-      formData.append(key, String(value));
+      formData.append(key, value === null ? "" : String(value));
     });
 
-    /*
-     * ==========================================
-     * AVATAR MỚI
-     * ==========================================
-     */
+    // Avatar mới
+    if (values.avatarFile) {
+      const file =
+        values.avatarFile instanceof File
+          ? values.avatarFile
+          : values.avatarFile?.originFileObj;
 
-    if (values.avatarFile instanceof File) {
-      formData.append("avatar", values.avatarFile, values.avatarFile.name);
+      if (file) {
+        formData.append("avatar", file, file.name);
+      }
     }
 
-    /*
-     * ==========================================
-     * XÓA AVATAR
-     * ==========================================
-     */
-
+    // Xóa avatar
     if (values.avatarRemoved === true) {
-      formData.append("avatar", "");
+      formData.append("avatar_removed", "true");
     }
 
     return formData;
@@ -1149,7 +1173,152 @@ export default function StudentManagement() {
       setSaving(false);
     }
   };
+  /* ===================================================
+   BULK CHANGE CLASS
+=================================================== */
 
+  const handleOpenBulkChangeClass = useCallback(() => {
+    if (!selectedRowKeys.length) {
+      message.warning("Vui lòng chọn ít nhất một học sinh!");
+      return;
+    }
+
+    const selectedStudents = students.filter((student) =>
+      selectedRowKeys.includes(student.id),
+    );
+
+    if (!selectedStudents.length) {
+      message.warning("Không tìm thấy học sinh đã chọn!");
+      return;
+    }
+
+    // Lấy các lớp hiện tại của học sinh
+    // const classIds = [
+    //   ...new Set(
+    //     selectedStudents
+    //       .map((student) => student.classId)
+    //       .filter((id) => id !== null && id !== undefined && id !== ""),
+    //   ),
+    // ];
+
+    // Không còn bắt buộc phải cùng lớp.
+    // Cho phép:
+    // - Học sinh chưa xếp lớp
+    // - Học sinh đang cùng một lớp
+    // - Học sinh đang ở nhiều lớp khác nhau
+    //
+    // Tất cả đều có thể chuyển sang một lớp mới.
+
+    bulkChangeClassForm.resetFields();
+
+    bulkChangeClassForm.setFieldsValue({
+      new_class_id: undefined,
+    });
+
+    setIsBulkChangeClassModalOpen(true);
+  }, [selectedRowKeys, students, bulkChangeClassForm]);
+
+  const handleBulkChangeClassSubmit = async (values) => {
+    if (!selectedRowKeys.length || bulkChangeClassLoading) {
+      return;
+    }
+
+    const newClassId = values.new_class_id;
+
+    if (!newClassId) {
+      message.warning("Vui lòng chọn lớp mới!");
+      return;
+    }
+
+    const selectedStudents = students.filter((student) =>
+      selectedRowKeys.includes(student.id),
+    );
+
+    if (!selectedStudents.length) {
+      message.warning("Không tìm thấy học sinh đã chọn!");
+      return;
+    }
+
+    const newClass = classes.find(
+      (item) => String(item.id) === String(newClassId),
+    );
+
+    if (!newClass) {
+      message.error("Không tìm thấy lớp mới.");
+      return;
+    }
+
+    // =====================================================
+    // KIỂM TRA HỌC SINH ĐÃ Ở LỚP MỚI CHƯA
+    // =====================================================
+
+    const alreadyInNewClass = selectedStudents.filter(
+      (student) =>
+        student.classId && String(student.classId) === String(newClassId),
+    );
+
+    if (alreadyInNewClass.length === selectedStudents.length) {
+      message.info("Tất cả học sinh được chọn đã ở lớp này.");
+      return;
+    }
+
+    // =====================================================
+    // CHUYỂN TẤT CẢ
+    // =====================================================
+
+    try {
+      setBulkChangeClassLoading(true);
+
+      const hide = message.loading(
+        `Đang chuyển ${selectedStudents.length} học sinh...`,
+        0,
+      );
+
+      try {
+        /*
+         * Gửi toàn bộ danh sách học sinh.
+         *
+         * Backend cần xử lý:
+         * - học sinh đang có lớp → chuyển lớp
+         * - học sinh chưa có lớp → thêm vào lớp
+         */
+        await classStudentApi.changeClasses(null, selectedRowKeys, newClassId);
+      } finally {
+        hide();
+      }
+
+      message.success(
+        `Đã chuyển ${selectedStudents.length} học sinh sang ${newClass.name}!`,
+      );
+
+      // =====================================================
+      // RESET
+      // =====================================================
+
+      setIsBulkChangeClassModalOpen(false);
+
+      bulkChangeClassForm.resetFields();
+
+      setSelectedRowKeys([]);
+
+      // =====================================================
+      // LOAD LẠI
+      // =====================================================
+
+      await fetchStudents({
+        silent: true,
+      });
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Không thể chuyển lớp!",
+      );
+    } finally {
+      setBulkChangeClassLoading(false);
+    }
+  };
   /* ===================================================
      TOGGLE STATUS
   =================================================== */
@@ -1685,13 +1854,10 @@ export default function StudentManagement() {
                 ],
               }}
             >
-              <Button
-                type="text"
-                shape="circle"
+              <AppButton
+                className="chibi-action-btn chibi-btn-more"
+                size="small"
                 icon={<MoreOutlined />}
-                style={{
-                  color: COLORS.navy,
-                }}
               />
             </Dropdown>
           </Space>
@@ -2596,14 +2762,15 @@ export default function StudentManagement() {
           primaryLoading={saving && !editingStudent}
           primaryDisabled={loading || saving || importing}
           extra={
-            <Button
+            <AppButton
+              size="small"
               icon={<DownloadOutlined />}
               onClick={handleDownloadExcelTemplate}
               disabled={loading || saving || importing || bulkDeleting}
               className="hero-btn-template"
             >
               Tải Excel mẫu
-            </Button>
+            </AppButton>
           }
         />
 
@@ -2777,7 +2944,60 @@ export default function StudentManagement() {
               margin: "0 0 18px",
             }}
           />
+          {selectedRowKeys.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+                marginBottom: 18,
+                padding: "12px 16px",
+                borderRadius: 12,
+                background: COLORS.navyLight,
+                border: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <Text
+                strong
+                style={{
+                  color: COLORS.navy,
+                }}
+              >
+                Đã chọn {selectedRowKeys.length} học sinh
+              </Text>
 
+              <Space wrap>
+                <AppButton
+                  icon={<SwapOutlined />}
+                  loading={bulkChangeClassLoading}
+                  disabled={loading || saving || bulkDeleting}
+                  onClick={handleOpenBulkChangeClass}
+                  style={{
+                    borderRadius: 10,
+                    borderColor: COLORS.navy,
+                    color: COLORS.navy,
+                    fontWeight: 700,
+                  }}
+                >
+                  Chuyển lớp
+                </AppButton>
+
+                <AppButton
+                  disabled={
+                    loading || saving || bulkDeleting || bulkChangeClassLoading
+                  }
+                  onClick={() => setSelectedRowKeys([])}
+                  style={{
+                    borderRadius: 10,
+                  }}
+                >
+                  Bỏ chọn
+                </AppButton>
+              </Space>
+            </div>
+          )}
           {/* =================================================
               TABLE
           ================================================= */}
@@ -2809,7 +3029,9 @@ export default function StudentManagement() {
               rowSelection={{
                 selectedRowKeys,
 
-                onChange: setSelectedRowKeys,
+                onChange: (keys) => {
+                  setSelectedRowKeys(keys);
+                },
 
                 getCheckboxProps: (record) => ({
                   disabled:
@@ -2817,7 +3039,8 @@ export default function StudentManagement() {
                     actionLoading.toggle === record.id ||
                     actionLoading.changeClass === record.id ||
                     saving ||
-                    bulkDeleting,
+                    bulkDeleting ||
+                    bulkChangeClassLoading,
                 }),
               }}
             />
@@ -3066,7 +3289,237 @@ export default function StudentManagement() {
             </Form.Item>
           </Form>
         </Modal>
+        {/* =================================================
+    BULK CHANGE CLASS
+================================================= */}
 
+        <Modal
+          className="student-responsive-modal"
+          title={
+            <Space>
+              <SwapOutlined
+                style={{
+                  color: COLORS.navy,
+                  fontSize: 20,
+                }}
+              />
+
+              <span>Chuyển nhiều học sinh</span>
+            </Space>
+          }
+          open={isBulkChangeClassModalOpen}
+          maskClosable={!bulkChangeClassLoading}
+          closable={!bulkChangeClassLoading}
+          keyboard={!bulkChangeClassLoading}
+          onCancel={() => {
+            if (bulkChangeClassLoading) return;
+
+            setIsBulkChangeClassModalOpen(false);
+
+            bulkChangeClassForm.resetFields();
+          }}
+          onOk={() => bulkChangeClassForm.submit()}
+          confirmLoading={bulkChangeClassLoading}
+          okText="Chuyển lớp"
+          cancelText="Hủy"
+          okButtonProps={{
+            disabled: bulkChangeClassLoading,
+          }}
+          cancelButtonProps={{
+            disabled: bulkChangeClassLoading,
+          }}
+          width={550}
+        >
+          <Form
+            form={bulkChangeClassForm}
+            layout="vertical"
+            onFinish={handleBulkChangeClassSubmit}
+            style={{
+              marginTop: 20,
+            }}
+          >
+            {/* =================================================
+        SUMMARY
+    ================================================= */}
+
+            <Card
+              size="small"
+              style={{
+                background: COLORS.navyLight,
+                borderRadius: 12,
+                border: `1px solid ${COLORS.border}`,
+                marginBottom: 20,
+              }}
+            >
+              <Space
+                direction="vertical"
+                size={4}
+                style={{
+                  width: "100%",
+                }}
+              >
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: 13,
+                  }}
+                >
+                  Số học sinh được chọn
+                </Text>
+
+                <Text
+                  strong
+                  style={{
+                    color: COLORS.navy,
+                    fontSize: 24,
+                  }}
+                >
+                  {selectedRowKeys.length} học sinh
+                </Text>
+
+                <Text
+                  type="secondary"
+                  style={{
+                    marginTop: 4,
+                  }}
+                >
+                  Các học sinh được chọn sẽ được chuyển sang cùng một lớp mới.
+                </Text>
+              </Space>
+            </Card>
+
+            {/* =================================================
+        STUDENTS
+    ================================================= */}
+
+            <Card
+              size="small"
+              style={{
+                marginBottom: 20,
+                borderRadius: 12,
+                border: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  marginBottom: 10,
+                  color: COLORS.navy,
+                }}
+              >
+                Học sinh được chọn
+              </Text>
+
+              <div
+                style={{
+                  maxHeight: 180,
+                  overflowY: "auto",
+                  paddingRight: 4,
+                }}
+              >
+                {students
+                  .filter((student) => selectedRowKeys.includes(student.id))
+                  .map((student) => (
+                    <div
+                      key={student.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "8px 0",
+                        borderBottom: `1px solid ${COLORS.border}`,
+                      }}
+                    >
+                      <Avatar
+                        size={32}
+                        src={student.avatar}
+                        icon={<UserOutlined />}
+                        style={{
+                          background: COLORS.navyLight,
+                          color: COLORS.navy,
+                          flexShrink: 0,
+                        }}
+                      />
+
+                      <div
+                        style={{
+                          minWidth: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <Text
+                          strong
+                          style={{
+                            display: "block",
+                            color: COLORS.navy,
+                          }}
+                          ellipsis
+                        >
+                          {student.name}
+                        </Text>
+
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: 12,
+                          }}
+                        >
+                          {student.code}
+                        </Text>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </Card>
+
+            {/* =================================================
+        NEW CLASS
+    ================================================= */}
+
+            <Form.Item
+              name="new_class_id"
+              label="Chuyển sang lớp"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng chọn lớp mới!",
+                },
+              ]}
+            >
+              <Select
+                size="large"
+                showSearch
+                optionFilterProp="label"
+                placeholder="Chọn lớp mới"
+                loading={loading}
+                disabled={bulkChangeClassLoading || loading}
+                options={classes
+                  .filter((item) => {
+                    const selectedStudents = students.filter((student) =>
+                      selectedRowKeys.includes(student.id),
+                    );
+
+                    const oldClassIds = [
+                      ...new Set(
+                        selectedStudents
+                          .map((student) => student.classId)
+                          .filter(Boolean),
+                      ),
+                    ];
+
+                    return !oldClassIds.some(
+                      (oldId) => String(oldId) === String(item.id),
+                    );
+                  })
+                  .map((item) => ({
+                    value: String(item.id),
+                    label: item.name,
+                  }))}
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
         {/* =================================================
             QR MODAL
         ================================================= */}
@@ -3186,8 +3639,8 @@ export default function StudentManagement() {
 
               <div className="student-qr-actions">
                 <AppButton
-                  type="primary"
                   icon={<DownloadOutlined />}
+                  size="small"
                   onClick={handleDownloadQR}
                   style={{
                     borderRadius: 10,
@@ -3203,8 +3656,7 @@ export default function StudentManagement() {
                 </AppButton>
 
                 <AppButton
-                  type="primary"
-                  size="large"
+                  size="small"
                   onClick={() => {
                     setIsQRModalOpen(false);
 
@@ -3212,9 +3664,12 @@ export default function StudentManagement() {
                   }}
                   style={{
                     borderRadius: 10,
-                    minWidth: 100,
+                    height: 40,
+                    padding: "0 16px",
+                    fontWeight: 800,
                     background: COLORS.navy,
                     borderColor: COLORS.navy,
+                    boxShadow: "0 8px 18px rgba(23, 59, 94, 0.18)",
                   }}
                 >
                   Đóng
