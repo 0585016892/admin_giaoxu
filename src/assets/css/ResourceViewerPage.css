@@ -637,3 +637,20 @@
 
   background: #fff;
 }
+
+.rvp-toolbox-button {
+  border-color: #d9a441 !important;
+  color: #173b5e !important;
+}
+
+.rvp-toolbox-button:hover {
+  border-color: #c59432 !important;
+  color: #c59432 !important;
+  background: rgba(217, 164, 65, 0.05) !important;
+}
+
+@media (max-width: 768px) {
+  .rvp-toolbox-button .rvp-action-text {
+    display: none;
+  }
+}

@@ -14,6 +14,7 @@ import {
   FileOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate, useParams } from "react-router-dom";
@@ -29,15 +30,17 @@ import AudioViewer from "../../components/lesson-resource/AudioViewer";
 import OfficeViewer from "../../components/lesson-resource/OfficeViewer";
 import LinkViewer from "../../components/lesson-resource/LinkViewer";
 import UnsupportedViewer from "../../components/lesson-resource/UnsupportedViewer";
-
+import CatechistToolsDrawer from "../../components/CatechistTools/CatechistToolsDrawer";
 import {
   getResourceKind,
   getResourceUrl,
   getResourceTypeLabel,
   formatFileSize,
 } from "../../utils/resourceUtils";
+import studentApi from "../../api/studentApi";
 
 import "../../assets/css/ResourceViewerPage.css";
+import ErrorPage from "./ErrorPage";
 
 const { Title, Text } = Typography;
 
@@ -50,8 +53,35 @@ const ResourceViewerPage = () => {
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
+  const [toolboxOpen, setToolboxOpen] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
+  const [error, setError] = useState(null);
+  const [students, setStudents] = useState([]);
+
+  const fetchStudents = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const response = await studentApi.getStudentsByTeacher();
+      const data = response?.data;
+
+      if (Array.isArray(data)) {
+        setStudents(data);
+      } else if (Array.isArray(data?.data)) {
+        setStudents(data.data);
+      } else {
+        setStudents([]);
+      }
+    } catch (error) {
+      setError("Bạn chưa được phân vào lớp học nào!");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
 
   /* =========================================================
      LOAD RESOURCE
@@ -336,6 +366,18 @@ const ResourceViewerPage = () => {
   /* =========================================================
      MAIN
   ========================================================= */
+  if (error) {
+    return (
+      <ErrorPage
+        title="Không thể tải danh sách học sinh"
+        message={error}
+        onRetry={() => {
+          setError(null);
+          fetchStudents();
+        }}
+      />
+    );
+  }
 
   return (
     <div
@@ -396,6 +438,16 @@ const ResourceViewerPage = () => {
             </Tooltip>
           )}
 
+          <Tooltip title="Kho công cụ GLV">
+            <AppButton
+              className="rvp-toolbox-button"
+              icon={<ToolOutlined />}
+              onClick={() => setToolboxOpen(true)}
+            >
+              <span className="rvp-action-text">Kho công cụ GLV</span>
+            </AppButton>
+          </Tooltip>
+
           <Tooltip
             title={isFullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
           >
@@ -421,6 +473,11 @@ const ResourceViewerPage = () => {
       {/* =====================================================
           VIEWER
       ===================================================== */}
+      <CatechistToolsDrawer
+        open={toolboxOpen}
+        onClose={() => setToolboxOpen(false)}
+        students={students}
+      />
 
       <main className="rvp-content">
         <div className="rvp-viewer-container">{renderViewer()}</div>

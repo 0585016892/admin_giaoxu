@@ -1,0 +1,811 @@
+/* =========================================================
+   CATECHIST TOOLS
+========================================================= */
+
+.catechist-tools-drawer .ant-drawer-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.catechist-tools-drawer .ant-drawer-body {
+  padding: 20px;
+  background: #f7f9fc;
+}
+
+.catechist-tools-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.catechist-tools-header-icon {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: rgba(217, 164, 65, 0.12);
+  color: #d9a441;
+
+  font-size: 20px;
+}
+
+.catechist-tools-header-content {
+  min-width: 0;
+}
+
+.catechist-tools-header-title {
+  color: #173b5e;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.catechist-tools-header-subtitle {
+  margin-top: 2px;
+
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* =========================================================
+   INTRO
+========================================================= */
+
+.catechist-tools-intro {
+  margin-bottom: 16px;
+}
+
+.catechist-tools-intro-title {
+  color: #173b5e;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.catechist-tools-intro-text {
+  margin-top: 4px;
+
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   TOOL GRID
+========================================================= */
+
+.catechist-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* =========================================================
+   TOOL CARD
+========================================================= */
+
+.catechist-tool-card {
+  position: relative;
+
+  width: 100%;
+  min-height: 145px;
+
+  padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  cursor: pointer;
+  text-align: left;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.catechist-tool-card:hover {
+  border-color: #d9a441;
+
+  box-shadow: 0 10px 28px rgba(23, 59, 94, 0.09);
+
+  transform: translateY(-2px);
+}
+
+.catechist-tool-card:active {
+  transform: translateY(0);
+}
+
+.catechist-tool-card-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #f7f9fc;
+  color: #173b5e;
+
+  font-size: 20px;
+}
+
+.catechist-tool-card-content {
+  margin-top: 14px;
+  padding-right: 20px;
+}
+
+.catechist-tool-card-title {
+  color: #173b5e;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.catechist-tool-card-description {
+  margin-top: 5px;
+
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.catechist-tool-card-arrow {
+  position: absolute;
+
+  right: 14px;
+  bottom: 14px;
+
+  color: #94a3b8;
+  font-size: 16px;
+
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.catechist-tool-card:hover .catechist-tool-card-arrow {
+  color: #d9a441;
+  transform: translateX(3px);
+}
+
+/* =========================================================
+   DETAIL
+========================================================= */
+
+.catechist-tool-back {
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.catechist-tool-back:hover {
+  color: #173b5e;
+}
+
+.catechist-tool-detail-heading {
+  margin-top: 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.catechist-tool-detail-icon {
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background: rgba(217, 164, 65, 0.12);
+  color: #d9a441;
+
+  font-size: 20px;
+}
+
+.catechist-tool-detail-title {
+  color: #173b5e;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.catechist-tool-detail-description {
+  margin-top: 3px;
+
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.catechist-tool-detail-body {
+  margin-top: 22px;
+}
+
+/* =========================================================
+   COMMON TOOL
+========================================================= */
+
+.tool-panel {
+  width: 100%;
+}
+
+.tool-panel-section {
+  margin-bottom: 20px;
+}
+
+.tool-section-label {
+  margin-bottom: 8px;
+
+  color: #475569;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tool-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tool-actions-center {
+  justify-content: center;
+}
+
+.tool-meta {
+  margin-top: 18px;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+  line-height: 1.5;
+
+  text-align: center;
+}
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+.timer-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timer-display-card {
+  margin: 24px 0;
+
+  padding: 24px 20px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  background: #fff;
+
+  text-align: center;
+}
+
+.timer-display {
+  margin-bottom: 18px;
+
+  color: #173b5e;
+
+  font-size: 54px;
+  font-weight: 800;
+  line-height: 1;
+
+  letter-spacing: 2px;
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   RANDOM STUDENT
+========================================================= */
+
+.random-student-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 14px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+
+  background: #fff;
+}
+
+.tool-info-icon {
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #f7f9fc;
+  color: #173b5e;
+
+  font-size: 18px;
+}
+
+.tool-info-title {
+  color: #173b5e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tool-info-description {
+  margin-top: 3px;
+
+  color: #64748b;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.random-student-result {
+  min-height: 230px;
+  margin: 18px 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+
+  background:
+    radial-gradient(circle at top, rgba(217, 164, 65, 0.12), transparent 60%),
+    #fff;
+
+  text-align: center;
+}
+
+.random-student-result.is-rolling {
+  animation: toolPulse 0.4s ease-in-out infinite alternate;
+}
+
+.random-student-avatar {
+  width: 68px;
+  height: 68px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 12px;
+
+  border-radius: 50%;
+
+  background: #173b5e;
+  color: #fff;
+
+  font-size: 28px;
+}
+
+.random-student-name {
+  color: #173b5e;
+
+  font-size: 22px;
+  font-weight: 800;
+
+  margin-bottom: 8px;
+}
+
+.random-student-placeholder-icon {
+  color: #d9a441;
+
+  font-size: 42px;
+}
+
+.random-student-placeholder {
+  margin-top: 12px;
+
+  color: #94a3b8;
+
+  font-size: 14px;
+}
+
+/* =========================================================
+   GROUP
+========================================================= */
+
+.group-settings {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin-bottom: 18px;
+}
+
+.group-count-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+.group-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  margin-bottom: 14px;
+}
+
+.generated-group {
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+
+  background: #fff;
+}
+
+.generated-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 14px;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  background: #f8fafc;
+}
+
+.generated-group-title {
+  color: #173b5e;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.generated-group-members {
+  padding: 8px 14px;
+}
+
+.generated-group-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 8px 0;
+
+  color: #334155;
+
+  font-size: 12px;
+
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.generated-group-member:last-child {
+  border-bottom: 0;
+}
+
+.generated-group-member small {
+  color: #94a3b8;
+}
+
+/* =========================================================
+   NUMBER PICKER
+========================================================= */
+
+.number-picker-settings {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+}
+
+.number-picker-separator {
+  padding-bottom: 7px;
+
+  color: #94a3b8;
+  font-size: 20px;
+}
+
+.number-result {
+  min-height: 180px;
+
+  margin: 22px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 20px;
+
+  background: #fff;
+
+  border: 1px solid #e2e8f0;
+
+  color: #173b5e;
+
+  font-size: 72px;
+  font-weight: 800;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.number-result.is-rolling {
+  animation: toolNumberShake 0.1s linear infinite;
+}
+
+/* =========================================================
+   DICE
+========================================================= */
+
+.dice-tool {
+  text-align: center;
+}
+
+.dice-display {
+  width: 170px;
+  height: 170px;
+
+  margin: 10px auto 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 30px;
+
+  background: #fff;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow: 0 12px 30px rgba(23, 59, 94, 0.08);
+
+  color: #173b5e;
+
+  font-size: 90px;
+
+  line-height: 1;
+}
+
+.dice-display.is-rolling {
+  animation: diceRoll 0.25s ease-in-out infinite alternate;
+}
+
+.dice-number {
+  margin-bottom: 22px;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   COIN
+========================================================= */
+
+.coin-tool {
+  text-align: center;
+}
+
+.coin-display {
+  width: 160px;
+  height: 160px;
+
+  margin: 12px auto 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  border: 8px solid #d9a441;
+
+  background: #173b5e;
+
+  color: #fff;
+
+  font-size: 48px;
+  font-weight: 800;
+
+  box-shadow: 0 14px 35px rgba(23, 59, 94, 0.18);
+
+  backface-visibility: hidden;
+}
+
+.coin-display.is-flipping {
+  animation: coinFlip 0.18s linear infinite;
+}
+
+.coin-result {
+  margin-bottom: 22px;
+
+  color: #173b5e;
+
+  font-size: 16px;
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+@keyframes toolPulse {
+  from {
+    transform: scale(0.98);
+  }
+
+  to {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes toolNumberShake {
+  0% {
+    transform: translateX(-2px);
+  }
+
+  50% {
+    transform: translateX(2px);
+  }
+
+  100% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes diceRoll {
+  from {
+    transform: rotate(-8deg) scale(0.96);
+  }
+
+  to {
+    transform: rotate(8deg) scale(1.04);
+  }
+}
+
+@keyframes coinFlip {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .catechist-tools-drawer {
+    max-width: 100vw;
+  }
+
+  .catechist-tools-drawer .ant-drawer-body {
+    padding: 16px;
+  }
+
+  .catechist-tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catechist-tool-card {
+    min-height: 125px;
+  }
+
+  .timer-inputs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timer-inputs > div,
+  .timer-inputs .ant-input-number {
+    width: 100%;
+  }
+
+  .timer-display {
+    font-size: 44px;
+  }
+
+  .group-settings {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .group-settings .ant-btn {
+    width: 100%;
+  }
+
+  .number-picker-settings {
+    align-items: center;
+  }
+
+  .number-picker-settings .ant-input-number {
+    width: 100%;
+  }
+
+  .number-picker-settings > div {
+    flex: 1;
+  }
+
+  .number-picker-separator {
+    flex: 0 0 auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .catechist-tools-header-title {
+    font-size: 15px;
+  }
+
+  .catechist-tools-header-subtitle {
+    font-size: 11px;
+  }
+
+  .random-student-name {
+    font-size: 19px;
+  }
+
+  .number-result {
+    min-height: 150px;
+    font-size: 58px;
+  }
+
+  .dice-display {
+    width: 140px;
+    height: 140px;
+    font-size: 72px;
+  }
+
+  .coin-display {
+    width: 135px;
+    height: 135px;
+  }
+}

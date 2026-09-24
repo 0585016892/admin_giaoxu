@@ -13,6 +13,7 @@ const studentApi = {
   // LẤY LỚP CỦA HỌC SINH
   // =========================================================
   getStudentClass: (id) => axiosClient.get(`/students/classes/${id}/students`),
+  getStudentsByTeacher: () => axiosClient.get(`/students/student-class`),
 
   // =========================================================
   // CHI TIẾT HỌC SINH
