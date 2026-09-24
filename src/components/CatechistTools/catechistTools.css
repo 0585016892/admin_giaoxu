@@ -809,3 +809,146 @@
     height: 135px;
   }
 }
+/* =========================================================
+   CLASS SELECTOR
+========================================================= */
+
+.catechist-tools-class-selector {
+  margin-bottom: 20px;
+  padding: 14px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+
+  background: #ffffff;
+}
+
+.catechist-tools-class-selector-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  margin-bottom: 8px;
+
+  color: #173b5e;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.catechist-tools-class-selector-label .anticon {
+  color: #d9a441;
+}
+
+.catechist-tools-class-select {
+  width: 100%;
+}
+
+.catechist-tools-class-select .ant-select-selector {
+  min-height: 42px !important;
+
+  border-radius: 11px !important;
+
+  display: flex;
+  align-items: center;
+}
+
+.catechist-tools-selected-class {
+  margin-top: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding-top: 10px;
+
+  border-top: 1px dashed #e2e8f0;
+}
+
+.catechist-tools-selected-class-info {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catechist-tools-selected-class-name {
+  overflow: hidden;
+
+  color: #173b5e;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catechist-tools-selected-class-count {
+  flex: 0 0 auto;
+
+  color: #64748b;
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   REQUIRE CLASS
+========================================================= */
+
+.catechist-tool-require-class {
+  padding: 35px 20px;
+
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  text-align: center;
+}
+
+.catechist-tool-require-class-icon {
+  width: 52px;
+  height: 52px;
+
+  margin: 0 auto 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 15px;
+
+  background: rgba(217, 164, 65, 0.12);
+
+  color: #d9a441;
+
+  font-size: 23px;
+}
+
+.catechist-tool-require-class-title {
+  color: #173b5e;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.catechist-tool-require-class-text {
+  max-width: 300px;
+
+  margin: 6px auto 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  .catechist-tools-selected-class {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

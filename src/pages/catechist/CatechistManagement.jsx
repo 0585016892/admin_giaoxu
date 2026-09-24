@@ -765,6 +765,7 @@ export default function CatechistManagement() {
             <AppButton
               icon={<EyeOutlined />}
               size="small"
+              variant="secondary"
               onClick={() => handleOpenDetail(record)}
             />
           </Tooltip>
@@ -773,6 +774,7 @@ export default function CatechistManagement() {
             <AppButton
               size="small"
               icon={<EditOutlined />}
+              variant="secondary"
               onClick={() => handleOpenEditModal(record)}
             />
           </Tooltip>

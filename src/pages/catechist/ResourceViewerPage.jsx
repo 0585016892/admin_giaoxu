@@ -63,6 +63,7 @@ const ResourceViewerPage = () => {
       setLoading(true);
 
       const response = await studentApi.getStudentsByTeacher();
+
       const data = response?.data;
 
       if (Array.isArray(data)) {

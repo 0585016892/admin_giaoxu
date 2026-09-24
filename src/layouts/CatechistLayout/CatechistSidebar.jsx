@@ -268,11 +268,11 @@ export default function CatechistSidebar({
           label: "Trò chơi tương tác",
           icon: <Gamepad2 size={16} strokeWidth={2.2} />,
         },
-        {
-          key: MENU_PATHS.results,
-          label: "Kết quả học tập",
-          icon: <ClipboardCheck size={16} strokeWidth={2.2} />,
-        },
+        // {
+        //   key: MENU_PATHS.results,
+        //   label: "Kết quả học tập",
+        //   icon: <ClipboardCheck size={16} strokeWidth={2.2} />,
+        // },
         {
           key: MENU_PATHS.questions,
           label: "Ngân hàng câu hỏi",

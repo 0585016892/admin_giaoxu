@@ -451,7 +451,7 @@ const LessonLibraryPage = () => {
 
   const [sortType, setSortType] = useState("name");
 
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
 
   const [currentPage, setCurrentPage] = useState(1);
 
