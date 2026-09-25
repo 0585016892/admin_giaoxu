@@ -2,7 +2,12 @@ import React, { useMemo } from "react";
 
 import { Card, Empty, Tag } from "antd";
 
-import { CheckCircleOutlined, FileTextOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  CalculatorOutlined,
+  InfoCircleOutlined,
+  PercentageOutlined,
+} from "@ant-design/icons";
 
 import {
   buildFormula,
@@ -53,86 +58,168 @@ const GradingRulePreview = ({ rule, items = [] }) => {
 
   const calculationLabel = getCalculationLabel(calculationType);
 
+  const isPassFail = calculationType === "pass_fail";
+
   return (
     <Card className="grading-rule-preview-card" bordered={false}>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
       <div className="grading-rule-preview-header">
         <div className="grading-rule-preview-header-main">
           <div className="grading-rule-preview-icon">
-            <FileTextOutlined />
+            <CalculatorOutlined />
           </div>
 
-          <div>
-            <div className="grading-rule-section-title">Xem trước quy tắc</div>
+          <div className="grading-rule-preview-heading">
+            <div className="grading-rule-preview-title">
+              Xem trước quy tắc tính điểm
+            </div>
 
-            <div className="grading-rule-section-description">
-              Kiểm tra cách công thức sẽ được áp dụng trước khi lưu.
+            <div className="grading-rule-preview-description">
+              Kiểm tra cách hệ thống tính điểm trước khi áp dụng cho toàn bộ
+              giáo xứ.
             </div>
           </div>
         </div>
+
+        <Tag
+          icon={<CheckCircleOutlined />}
+          color="success"
+          className="grading-rule-preview-status"
+        >
+          Quy tắc hợp lệ
+        </Tag>
       </div>
 
+      {/* =====================================================
+          META
+      ===================================================== */}
       <div className="grading-rule-preview-meta">
         <div className="grading-rule-preview-meta-item">
-          <span>Phương pháp</span>
+          <div className="grading-rule-preview-meta-icon">
+            <CalculatorOutlined />
+          </div>
 
-          <strong>{calculationLabel}</strong>
+          <div>
+            <span>Phương pháp tính</span>
+
+            <strong>{calculationLabel}</strong>
+          </div>
         </div>
 
         <div className="grading-rule-preview-meta-item">
-          <span>Điểm đạt</span>
+          <div className="grading-rule-preview-meta-icon">
+            <CheckCircleOutlined />
+          </div>
 
-          <strong>{formatScore(passScore, 1)}</strong>
+          <div>
+            <span>Điểm đạt</span>
+
+            <strong>{formatScore(passScore, 1)}</strong>
+          </div>
         </div>
 
         <div className="grading-rule-preview-meta-item">
-          <span>Làm tròn</span>
+          <div className="grading-rule-preview-meta-icon">
+            <PercentageOutlined />
+          </div>
 
-          <strong>{roundingDigits} chữ số</strong>
+          <div>
+            <span>Làm tròn</span>
+
+            <strong>{roundingDigits} chữ số</strong>
+          </div>
         </div>
 
         {calculationType === "sum_multiplier" && (
           <div className="grading-rule-preview-meta-item">
-            <span>Hệ số</span>
+            <div className="grading-rule-preview-meta-icon">
+              <PercentageOutlined />
+            </div>
 
-            <strong>× {formatWeight(multiplier)}</strong>
+            <div>
+              <span>Hệ số tổng</span>
+
+              <strong>× {formatWeight(multiplier)}</strong>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="grading-rule-formula-box">
-        <div className="grading-rule-formula-label">CÔNG THỨC</div>
+      {/* =====================================================
+          FORMULA
+      ===================================================== */}
+      <div className="grading-rule-preview-formula">
+        <div className="grading-rule-preview-formula-header">
+          <div>
+            <div className="grading-rule-preview-formula-eyebrow">
+              CÔNG THỨC TÍNH
+            </div>
 
-        <div className="grading-rule-formula">{formula}</div>
+            <div className="grading-rule-preview-formula-title">
+              Hệ thống sẽ áp dụng công thức này
+            </div>
+          </div>
 
-        <div className="grading-rule-formula-description">
+          <InfoCircleOutlined />
+        </div>
+
+        <div className="grading-rule-preview-formula-content">{formula}</div>
+
+        <div className="grading-rule-preview-formula-note">
           Công thức được áp dụng thống nhất cho các kết quả thuộc giáo xứ.
         </div>
       </div>
 
+      {/* =====================================================
+          RESULT SUMMARY
+      ===================================================== */}
       <div className="grading-rule-preview-result">
-        <div className="grading-rule-preview-result-icon">
-          <CheckCircleOutlined />
+        <div className="grading-rule-preview-result-left">
+          <div className="grading-rule-preview-result-icon">
+            <CheckCircleOutlined />
+          </div>
+
+          <div>
+            <div className="grading-rule-preview-result-label">
+              {isPassFail ? "Điều kiện kết quả" : "Điểm tối đa dự kiến"}
+            </div>
+
+            <div className="grading-rule-preview-result-description">
+              {isPassFail
+                ? "Kết quả được xác định theo điểm đạt"
+                : "Sau khi áp dụng toàn bộ hệ số"}
+            </div>
+          </div>
         </div>
 
-        <div>
-          <div className="grading-rule-preview-result-label">
-            Kết quả tối đa dự kiến
-          </div>
-
-          <div className="grading-rule-preview-result-score">
-            {calculationType === "pass_fail" ? "Đạt" : maxScore}
-          </div>
+        <div className="grading-rule-preview-result-score">
+          {isPassFail ? "Đạt / Chưa đạt" : maxScore}
         </div>
       </div>
 
+      {/* =====================================================
+          ITEMS
+      ===================================================== */}
       <div className="grading-rule-preview-items">
-        <div className="grading-rule-preview-subtitle">Các thành phần</div>
+        <div className="grading-rule-preview-items-header">
+          <div>
+            <div className="grading-rule-preview-subtitle">Thành phần điểm</div>
+
+            <div className="grading-rule-preview-items-count">
+              {items.length} thành phần được cấu hình
+            </div>
+          </div>
+        </div>
 
         {items.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Chưa có thành phần điểm"
-          />
+          <div className="grading-rule-preview-empty">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="Chưa có thành phần điểm"
+            />
+          </div>
         ) : (
           <div className="grading-rule-preview-item-list">
             {items.map((item, index) => (
@@ -140,10 +227,12 @@ const GradingRulePreview = ({ rule, items = [] }) => {
                 className="grading-rule-preview-item"
                 key={item.id || item.code || index}
               >
+                {/* STT */}
                 <div className="grading-rule-preview-item-index">
-                  {index + 1}
+                  {String(index + 1).padStart(2, "0")}
                 </div>
 
+                {/* NAME */}
                 <div className="grading-rule-preview-item-content">
                   <div className="grading-rule-preview-item-name">
                     {item.name}
@@ -154,18 +243,32 @@ const GradingRulePreview = ({ rule, items = [] }) => {
                   </div>
                 </div>
 
-                <div className="grading-rule-preview-item-weight">
-                  <Tag>Trọng số {formatWeight(item.weight)}</Tag>
+                {/* WEIGHT */}
+                <div className="grading-rule-preview-item-column">
+                  <span>Trọng số</span>
+
+                  <strong className="grading-rule-preview-weight">
+                    × {formatWeight(item.weight)}
+                  </strong>
                 </div>
 
-                <div className="grading-rule-preview-item-max">
-                  Max {formatScore(item.max_score, 1)}
+                {/* MAX */}
+                <div className="grading-rule-preview-item-column">
+                  <span>Điểm tối đa</span>
+
+                  <strong>{formatScore(item.max_score, 1)}</strong>
                 </div>
 
-                {Number(item.allow_multiple) === 1 && (
-                  <div className="grading-rule-preview-item-aggregation">
+                {/* MULTIPLE */}
+                {Number(item.allow_multiple) === 1 ? (
+                  <Tag
+                    color="blue"
+                    className="grading-rule-preview-aggregation"
+                  >
                     {getAggregationLabel(item.aggregation_method)}
-                  </div>
+                  </Tag>
+                ) : (
+                  <Tag className="grading-rule-preview-single">Một lần</Tag>
                 )}
               </div>
             ))}

@@ -1,17 +1,14 @@
 import React, { useMemo } from "react";
 
-import {
-  Avatar,
-  Button,
-  Progress,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-} from "antd";
+import { Avatar, Progress, Space, Table, Tag, Tooltip, Typography } from "antd";
 
-import { EyeOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  EyeOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+
+import AppButton from "../../../../components/common/AppButton";
 
 import { formatScore } from "../../../../utils/resultsUtils";
 
@@ -21,12 +18,20 @@ const ResultsTable = ({
   data = [],
   rule,
   loading = false,
-  currentPage,
-  pageSize,
+  currentPage = 1,
+  pageSize = 10,
   onView,
 }) => {
+  const roundingDigits = Number(rule?.rounding_digits ?? 1);
+
+  const passScore = Number(rule?.pass_score ?? 5);
+
   const columns = useMemo(() => {
-    const columns = [
+    const resultColumns = [
+      // =====================================================
+      // STT
+      // =====================================================
+
       {
         title: "STT",
         width: 60,
@@ -36,6 +41,10 @@ const ResultsTable = ({
         render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
       },
 
+      // =====================================================
+      // HỌC VIÊN
+      // =====================================================
+
       {
         title: "Học viên",
         key: "student",
@@ -43,33 +52,19 @@ const ResultsTable = ({
         fixed: "left",
 
         render: (_, record) => (
-          <Space size={10}>
+          <Space size={10} className="results-student-cell">
             <Avatar
               size={40}
               icon={<UserOutlined />}
-              style={{
-                background: "#EEF3F7",
-                color: "#173B5E",
-              }}
+              className="results-student-avatar"
             />
 
-            <div>
-              <Text
-                strong
-                style={{
-                  display: "block",
-                  color: "#1E293B",
-                }}
-              >
-                {record.student_name}
+            <div className="results-student-info">
+              <Text strong className="results-student-name">
+                {record.student_name || "Chưa cập nhật"}
               </Text>
 
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: "#94A3B8",
-                }}
-              >
+              <Text className="results-student-code">
                 {record.student_code || `HS #${record.student_id}`}
               </Text>
             </div>
@@ -78,13 +73,17 @@ const ResultsTable = ({
       },
     ];
 
+    // =====================================================
+    // CÁC THÀNH PHẦN ĐIỂM
+    // =====================================================
+
     (rule?.items || []).forEach((ruleItem) => {
-      columns.push({
+      resultColumns.push({
         title: (
           <div className="results-score-column-title">
             <span>{ruleItem.name}</span>
 
-            <small>Hệ số {Number(ruleItem.weight).toFixed(1)}</small>
+            <small>× {Number(ruleItem.weight ?? 1).toFixed(1)}</small>
           </div>
         ),
 
@@ -95,24 +94,36 @@ const ResultsTable = ({
         align: "center",
 
         render: (_, record) => {
-          const item = record.itemScores?.find(
+          const item = (record.itemScores || []).find(
             (value) => Number(value.ruleItemId) === Number(ruleItem.id),
           );
 
-          if (!item || item.score === null) {
+          if (!item || item.score === null || item.score === undefined) {
             return <span className="results-score-empty">—</span>;
           }
 
+          const score = Number(item.score);
+
+          const weight = Number(ruleItem.weight ?? 1);
+
           return (
             <Tooltip
-              title={`Điểm ${formatScore(item.score, 1)} × hệ số ${
-                ruleItem.weight
-              }`}
+              title={
+                <div>
+                  <div>
+                    Điểm: <strong>{formatScore(score, 1)}</strong>
+                  </div>
+
+                  <div>
+                    Hệ số: <strong>× {weight.toFixed(1)}</strong>
+                  </div>
+                </div>
+              }
             >
               <div className="results-item-score">
-                <strong>{formatScore(item.score, 1)}</strong>
+                <strong>{formatScore(score, 1)}</strong>
 
-                <span>× {ruleItem.weight}</span>
+                <span>× {weight.toFixed(1)}</span>
               </div>
             </Tooltip>
           );
@@ -120,126 +131,125 @@ const ResultsTable = ({
       });
     });
 
-    columns.push(
-      {
-        title: "Điểm tổng kết",
-        key: "final-score",
-        width: 145,
-        align: "center",
+    // =====================================================
+    // ĐIỂM TỔNG KẾT
+    // =====================================================
 
-        sorter: (a, b) => Number(a.score || 0) - Number(b.score || 0),
+    resultColumns.push({
+      title: "Điểm tổng kết",
+      key: "final-score",
+      width: 150,
+      align: "center",
 
-        render: (_, record) => {
-          if (record.score === null) {
-            return (
-              <Tag bordered={false} className="results-pending-tag">
-                Chưa đủ điểm
-              </Tag>
-            );
-          }
+      sorter: (a, b) => Number(a.score ?? -1) - Number(b.score ?? -1),
 
-          const score = Number(record.score);
-
-          const pass = Number(rule?.pass_score || 5);
-
-          if (score < pass) {
-            return (
-              <div className="results-final-score fail">
-                <strong>
-                  {formatScore(score, rule?.rounding_digits ?? 1)}
-                </strong>
-
-                <span>Chưa đạt</span>
-              </div>
-            );
-          }
-
-          if (score >= 8) {
-            return (
-              <div className="results-final-score good">
-                <strong>
-                  {formatScore(score, rule?.rounding_digits ?? 1)}
-                </strong>
-
-                <span>Giỏi</span>
-              </div>
-            );
-          }
-
+      render: (_, record) => {
+        if (record.score === null || record.score === undefined) {
           return (
-            <div className="results-final-score pass">
-              <strong>{formatScore(score, rule?.rounding_digits ?? 1)}</strong>
-
-              <span>Đạt</span>
-            </div>
+            <Tag bordered={false} className="results-pending-tag">
+              Chưa đủ điểm
+            </Tag>
           );
-        },
+        }
+
+        const score = Number(record.score);
+
+        const passed = score >= passScore;
+
+        return (
+          <div className={`results-final-score ${passed ? "pass" : "fail"}`}>
+            <strong>{formatScore(score, roundingDigits)}</strong>
+
+            <span>
+              {passed ? (
+                <>
+                  <CheckCircleOutlined />
+                  Đạt
+                </>
+              ) : (
+                "Chưa đạt"
+              )}
+            </span>
+          </div>
+        );
       },
+    });
 
-      {
-        title: "Tiến độ",
-        key: "progress",
-        width: 125,
-        align: "center",
+    // =====================================================
+    // TIẾN ĐỘ
+    // =====================================================
 
-        render: (_, record) => {
-          const total = Number(record.totalItems || 0);
+    resultColumns.push({
+      title: "Tiến độ",
+      key: "progress",
+      width: 125,
+      align: "center",
 
-          const completed = Number(record.completedItems || 0);
+      render: (_, record) => {
+        const total = Number(record.totalItems ?? 0);
 
-          const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const completed = Number(record.completedItems ?? 0);
 
-          return (
-            <div className="results-progress">
+        const percent =
+          total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+
+        return (
+          <div className="results-progress">
+            <div className="results-progress-bar">
               <Progress
                 percent={percent}
                 size="small"
                 showInfo={false}
                 strokeColor="#173B5E"
+                trailColor="#E9EEF3"
               />
-
-              <span>
-                {completed}/{total}
-              </span>
             </div>
-          );
-        },
+
+            <span>
+              {completed}/{total}
+            </span>
+          </div>
+        );
       },
+    });
 
-      {
-        title: "",
-        key: "action",
-        width: 65,
-        fixed: "right",
-        align: "center",
+    // =====================================================
+    // ACTION
+    // =====================================================
 
-        render: (_, record) => (
-          <Tooltip title="Xem chi tiết">
-            <Button
-              type="text"
-              shape="circle"
-              icon={<EyeOutlined />}
-              onClick={() => onView(record)}
-              className="results-view-button"
-            />
-          </Tooltip>
-        ),
-      },
-    );
+    resultColumns.push({
+      title: "",
+      key: "action",
+      width: 65,
+      fixed: "right",
+      align: "center",
 
-    return columns;
-  }, [rule, currentPage, pageSize, onView]);
+      render: (_, record) => (
+        <Tooltip title="Xem chi tiết">
+          <AppButton
+            icon={<EyeOutlined />}
+            size="small"
+            variant="secondary"
+            onClick={() => onView?.(record)}
+          />
+        </Tooltip>
+      ),
+    });
+
+    return resultColumns;
+  }, [rule, currentPage, pageSize, onView, passScore, roundingDigits]);
 
   return (
     <Table
       className="results-table"
-      rowKey="student_id"
+      rowKey={(record) => record.student_id}
       columns={columns}
       dataSource={data}
       loading={loading}
       pagination={false}
+      size="middle"
       scroll={{
-        x: 1000 + (rule?.items?.length || 0) * 130,
+        x: 60 + 260 + (rule?.items?.length || 0) * 130 + 150 + 125 + 65,
       }}
       locale={{
         emptyText: "Chưa có học viên phù hợp",

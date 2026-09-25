@@ -1,11 +1,8 @@
 import React from "react";
-import { Button, Space, Tooltip } from "antd";
 
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  TrophyOutlined,
-} from "@ant-design/icons";
+import { PlusOutlined, TrophyOutlined } from "@ant-design/icons";
+
+import PageHeroHeader from "../../../../components/common/PageHeroHeader";
 
 const ResultsHeader = ({
   onRefresh,
@@ -14,44 +11,27 @@ const ResultsHeader = ({
   createDisabled = false,
 }) => {
   return (
-    <div className="results-header">
-      <div className="results-header-left">
-        <div className="results-header-icon">
-          <TrophyOutlined />
-        </div>
+    <PageHeroHeader
+      icon={<TrophyOutlined />}
+      badgeText="QUẢN LÝ KẾT QUẢ"
+      title="Bảng điểm học viên"
+      description="Quản lý kết quả học tập và tính điểm theo quy tắc của giáo xứ."
+      // =====================================================
+      // REFRESH
+      // =====================================================
 
-        <div>
-          <div className="results-header-badge">QUẢN LÝ KẾT QUẢ</div>
+      onRefresh={onRefresh}
+      refreshLoading={refreshLoading}
+      refreshTooltip="Làm mới dữ liệu"
+      // =====================================================
+      // PRIMARY ACTION
+      // =====================================================
 
-          <h1 className="results-header-title">Bảng điểm học viên</h1>
-
-          <p className="results-header-description">
-            Quản lý kết quả học tập và tính điểm theo quy tắc của giáo xứ.
-          </p>
-        </div>
-      </div>
-
-      <Space className="results-header-actions" size={8}>
-        <Tooltip title="Làm mới dữ liệu">
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={onRefresh}
-            loading={refreshLoading}
-          >
-            Làm mới
-          </Button>
-        </Tooltip>
-
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={onCreate}
-          disabled={createDisabled}
-        >
-          Nhập điểm
-        </Button>
-      </Space>
-    </div>
+      primaryButtonText="Nhập điểm"
+      primaryButtonIcon={<PlusOutlined />}
+      onPrimaryClick={onCreate}
+      primaryDisabled={createDisabled}
+    />
   );
 };
 

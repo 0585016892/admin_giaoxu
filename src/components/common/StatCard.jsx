@@ -93,7 +93,7 @@ const StatCard = ({
                 <span
                   style={{
                     color: "#173B5E",
-                    fontSize: 30,
+                    fontSize: 22,
                     lineHeight: 1,
                     fontWeight: 800,
                     letterSpacing: "-0.5px",

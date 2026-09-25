@@ -526,6 +526,41 @@ export const getResultStatus = (score, rule) => {
     label: "Đạt",
   };
 };
+export const getStatusColor = (status) => {
+  switch (status) {
+    case "passed":
+    case "pass":
+    case "Đạt":
+      return "success";
+
+    case "failed":
+    case "fail":
+    case "Chưa đạt":
+      return "error";
+
+    case "incomplete":
+    case "Chưa đủ điểm":
+      return "warning";
+
+    default:
+      return "default";
+  }
+};
+export const getStatusLabel = (status) => {
+  switch (status) {
+    case "passed":
+      return "Đạt";
+
+    case "failed":
+      return "Chưa đạt";
+
+    case "incomplete":
+      return "Chưa đủ điểm";
+
+    default:
+      return "Chưa đủ điểm";
+  }
+};
 
 /* ============================================================
    SUMMARY
@@ -744,6 +779,8 @@ const resultsUtils = {
   calculateStudentScore,
 
   getResultStatus,
+  getStatusColor,
+  getStatusLabel,
 
   buildStudentSummary,
   buildClassSummaries,

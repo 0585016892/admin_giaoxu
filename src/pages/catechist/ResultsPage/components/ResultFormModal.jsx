@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 
 import {
-  Alert,
   Col,
   DatePicker,
   Form,
@@ -13,9 +12,19 @@ import {
   Tag,
 } from "antd";
 
-import { CalculatorOutlined } from "@ant-design/icons";
+import {
+  CalculatorOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 
 import dayjs from "dayjs";
+
+import {
+  getAggregationLabel,
+  getCalculationLabel,
+} from "../../../../utils/gradingRuleUtils";
 
 const ResultFormModal = ({
   open,
@@ -30,7 +39,7 @@ const ResultFormModal = ({
 
   const selectedItemId = Form.useWatch("grading_rule_item_id", form);
 
-  const selectedItem = rule?.items?.find(
+  const selectedItem = (rule?.items || []).find(
     (item) => Number(item.id) === Number(selectedItemId),
   );
 
@@ -46,7 +55,7 @@ const ResultFormModal = ({
         grading_rule_item_id: Number(editingResult.grading_rule_item_id),
 
         score:
-          editingResult.score !== null
+          editingResult.score !== null && editingResult.score !== undefined
             ? Number(editingResult.score)
             : undefined,
 
@@ -58,14 +67,16 @@ const ResultFormModal = ({
 
         note: editingResult.note || "",
       });
-    } else {
-      form.resetFields();
 
-      form.setFieldsValue({
-        exam_type: "paper",
-        exam_date: dayjs(),
-      });
+      return;
     }
+
+    form.resetFields();
+
+    form.setFieldsValue({
+      exam_type: "paper",
+      exam_date: dayjs(),
+    });
   }, [open, editingResult, form]);
 
   const handleFinish = async (values) => {
@@ -90,42 +101,76 @@ const ResultFormModal = ({
     await onSubmit(payload);
   };
 
+  const maxScore = Number(selectedItem?.max_score ?? 10);
+
+  const weight = Number(selectedItem?.weight ?? 1);
+
+  const calculationLabel = getCalculationLabel(rule?.calculation_type);
+
+  const aggregationLabel = getAggregationLabel(
+    selectedItem?.aggregation_method,
+  );
+
   return (
     <Modal
       open={open}
       onCancel={onClose}
-      title={editingResult ? "Chỉnh sửa điểm" : "Nhập điểm học viên"}
-      okText="Lưu điểm"
+      title={
+        <div className="result-modal-title">
+          <div className="result-modal-title-icon">
+            {editingResult ? <FileTextOutlined /> : <CalculatorOutlined />}
+          </div>
+
+          <div>
+            <div className="result-modal-title-main">
+              {editingResult ? "Chỉnh sửa điểm" : "Nhập điểm học viên"}
+            </div>
+
+            <div className="result-modal-title-sub">
+              {editingResult
+                ? "Cập nhật kết quả đã nhập"
+                : "Thêm kết quả theo quy tắc của giáo xứ"}
+            </div>
+          </div>
+        </div>
+      }
+      okText={editingResult ? "Lưu thay đổi" : "Lưu điểm"}
       cancelText="Hủy"
       onOk={() => form.submit()}
       confirmLoading={submitting}
       destroyOnClose
-      width={600}
+      width={620}
+      centered
+      className="result-form-modal"
     >
-      {rule && (
-        <Alert
-          type="info"
-          showIcon
-          icon={<CalculatorOutlined />}
-          className="result-form-rule-alert"
-          message={
-            <div>
-              <strong>
-                {rule.calculation_type === "weighted_average"
-                  ? "Tính điểm theo hệ số"
-                  : "Quy tắc tính điểm"}
-              </strong>
+      {/* =====================================================
+          GRADING RULE
+      ===================================================== */}
 
-              <div className="result-form-rule-tags">
-                {rule.items.map((item) => (
-                  <Tag key={item.id}>
-                    {item.name} × {item.weight}
-                  </Tag>
-                ))}
-              </div>
+      {rule && (
+        <div className="result-form-rule-card">
+          <div className="result-form-rule-header">
+            <div className="result-form-rule-icon">
+              <CalculatorOutlined />
             </div>
-          }
-        />
+
+            <div>
+              <div className="result-form-rule-title">Quy tắc tính điểm</div>
+
+              <div className="result-form-rule-method">{calculationLabel}</div>
+            </div>
+          </div>
+
+          <div className="result-form-rule-items">
+            {(rule.items || []).map((item) => (
+              <Tag key={item.id} className="result-form-rule-tag">
+                <span>{item.name}</span>
+
+                <strong>× {Number(item.weight ?? 1).toFixed(1)}</strong>
+              </Tag>
+            ))}
+          </div>
+        </div>
       )}
 
       <Form
@@ -134,6 +179,10 @@ const ResultFormModal = ({
         onFinish={handleFinish}
         className="result-form"
       >
+        {/* ===================================================
+            STUDENT
+        =================================================== */}
+
         <Form.Item
           label="Học viên"
           name="student_id"
@@ -149,15 +198,20 @@ const ResultFormModal = ({
             disabled={Boolean(editingResult)}
             optionFilterProp="label"
             placeholder="Chọn học viên"
+            prefix={<UserOutlined />}
             options={students.map((student) => ({
               value: Number(student.id),
 
-              label: `${student.name || student.full_name}${
+              label: `${student.name || student.full_name || "Chưa có tên"}${
                 student.code ? ` · ${student.code}` : ""
               }`,
             }))}
           />
         </Form.Item>
+
+        {/* ===================================================
+            RULE ITEM
+        =================================================== */}
 
         <Form.Item
           label="Đầu điểm"
@@ -168,11 +222,6 @@ const ResultFormModal = ({
               message: "Vui lòng chọn đầu điểm",
             },
           ]}
-          extra={
-            selectedItem
-              ? `Tối đa ${selectedItem.max_score} điểm · Hệ số ${selectedItem.weight} · ${selectedItem.aggregation_method}`
-              : undefined
-          }
         >
           <Select
             disabled={Boolean(editingResult)}
@@ -180,12 +229,53 @@ const ResultFormModal = ({
             options={(rule?.items || []).map((item) => ({
               value: Number(item.id),
 
-              label: `${item.name} · Hệ số ${item.weight} · tối đa ${item.max_score}`,
+              label: `${item.name} · × ${Number(item.weight ?? 1).toFixed(
+                1,
+              )} · tối đa ${Number(item.max_score ?? 10).toFixed(1)}`,
             }))}
           />
         </Form.Item>
 
-        <Row gutter={12}>
+        {/* ===================================================
+            SELECTED ITEM INFO
+        =================================================== */}
+
+        {selectedItem && (
+          <div className="result-form-selected-item">
+            <div className="result-form-selected-item-main">
+              <div className="result-form-selected-item-name">
+                {selectedItem.name}
+              </div>
+
+              <div className="result-form-selected-item-meta">
+                <span>
+                  Điểm tối đa <strong>{maxScore.toFixed(1)}</strong>
+                </span>
+
+                <span className="result-form-dot">•</span>
+
+                <span>
+                  Hệ số{" "}
+                  <strong className="result-form-weight">
+                    × {weight.toFixed(1)}
+                  </strong>
+                </span>
+              </div>
+            </div>
+
+            {Number(selectedItem.allow_multiple) === 1 && (
+              <Tag color="blue" icon={<CheckCircleOutlined />}>
+                {aggregationLabel}
+              </Tag>
+            )}
+          </div>
+        )}
+
+        {/* ===================================================
+            SCORE + EXAM TYPE
+        =================================================== */}
+
+        <Row gutter={14}>
           <Col xs={24} sm={12}>
             <Form.Item
               label="Điểm"
@@ -202,27 +292,26 @@ const ResultFormModal = ({
                       return;
                     }
 
-                    const max = Number(selectedItem?.max_score || 10);
+                    const score = Number(value);
 
-                    if (Number(value) < 0) {
+                    if (score < 0) {
                       throw new Error("Điểm không được nhỏ hơn 0");
                     }
 
-                    if (Number(value) > max) {
-                      throw new Error(`Điểm không được lớn hơn ${max}`);
+                    if (score > maxScore) {
+                      throw new Error(`Điểm không được lớn hơn ${maxScore}`);
                     }
                   },
                 },
               ]}
             >
               <InputNumber
-                style={{
-                  width: "100%",
-                }}
+                className="result-score-input"
                 min={0}
-                max={Number(selectedItem?.max_score || 10)}
+                max={maxScore}
                 step={0.1}
                 precision={2}
+                controls
                 placeholder="Nhập điểm"
               />
             </Form.Item>
@@ -235,6 +324,7 @@ const ResultFormModal = ({
               rules={[
                 {
                   required: true,
+                  message: "Vui lòng chọn hình thức",
                 },
               ]}
             >
@@ -254,6 +344,10 @@ const ResultFormModal = ({
           </Col>
         </Row>
 
+        {/* ===================================================
+            DATE
+        =================================================== */}
+
         <Form.Item label="Ngày thi / kiểm tra" name="exam_date">
           <DatePicker
             style={{
@@ -261,8 +355,13 @@ const ResultFormModal = ({
             }}
             format="DD/MM/YYYY"
             placeholder="Chọn ngày"
+            allowClear
           />
         </Form.Item>
+
+        {/* ===================================================
+            NOTE
+        =================================================== */}
 
         <Form.Item label="Ghi chú" name="note">
           <Input.TextArea

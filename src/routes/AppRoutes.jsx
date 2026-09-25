@@ -34,6 +34,7 @@ import LessonLibraryPage from "../pages/catechist/LessonLibraryPage";
 import ResourceViewerPage from "../pages/catechist/ResourceViewerPage";
 import GradingRulePage from "../pages/catechist/GradingRule/GradingRulePage";
 import QuestionPlayPage from "../pages/catechist/QuestionPlayPage";
+import LicensePage from "../pages/catechist/License/LicensePage";
 
 import LandingPage from "../pages/LandingPage/LandingPage";
 import VerifyCertificate from "../components/VerifyCertificate";
@@ -162,6 +163,7 @@ export default function AppRoutes() {
               path="/catechist/grading-rule"
               element={<GradingRulePage />}
             />
+            <Route path="/catechist/license" element={<LicensePage />} />
             <Route path="/catechist/questions" element={<QuestionPage />} />
           </Route>
         </Route>

@@ -1,15 +1,6 @@
 import React, { useMemo } from "react";
 
-import {
-  Button,
-  Card,
-  Empty,
-  Popconfirm,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-} from "antd";
+import { Card, Empty, Popconfirm, Space, Table, Tag, Tooltip } from "antd";
 
 import {
   DeleteOutlined,
@@ -17,6 +8,8 @@ import {
   HolderOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
+
+import AppButton from "../../../../components/common/AppButton";
 
 import {
   getAggregationLabel,
@@ -95,7 +88,7 @@ const GradingRuleItems = ({
       key: "weight",
       width: 110,
       align: "center",
-      render: (value) => <Tag>{formatWeight(value)}</Tag>,
+      render: (value) => <Tag color="gold">× {formatWeight(value)}</Tag>,
     },
 
     {
@@ -104,7 +97,7 @@ const GradingRuleItems = ({
       key: "max_score",
       width: 120,
       align: "center",
-      render: (value) => Number(value).toFixed(1),
+      render: (value) => Number(value ?? 0).toFixed(1),
     },
 
     {
@@ -128,14 +121,15 @@ const GradingRuleItems = ({
     {
       title: "",
       key: "actions",
-      width: 100,
+      width: 110,
       fixed: "right",
       render: (_, record) => (
         <Space size={4}>
           <Tooltip title="Chỉnh sửa">
-            <Button
-              type="text"
+            <AppButton
               icon={<EditOutlined />}
+              size="small"
+              variant="secondary"
               disabled={disabled}
               onClick={() => onEdit?.(record)}
             />
@@ -152,10 +146,10 @@ const GradingRuleItems = ({
             onConfirm={() => handleDelete(record)}
           >
             <Tooltip title="Xóa">
-              <Button
-                type="text"
-                danger
+              <AppButton
                 icon={<DeleteOutlined />}
+                size="small"
+                variant="danger"
                 disabled={disabled}
               />
             </Tooltip>
@@ -176,14 +170,15 @@ const GradingRuleItems = ({
           </div>
         </div>
 
-        <Button
+        <AppButton
           type="primary"
           icon={<PlusOutlined />}
           onClick={onAdd}
           disabled={disabled}
+          size="small"
         >
           Thêm thành phần
-        </Button>
+        </AppButton>
       </div>
 
       {normalizedItems.length === 0 ? (
@@ -193,14 +188,15 @@ const GradingRuleItems = ({
             description={<span>Chưa có thành phần điểm</span>}
           />
 
-          <Button
+          <AppButton
             type="primary"
             icon={<PlusOutlined />}
             onClick={onAdd}
+            size="small"
             disabled={disabled}
           >
             Thêm thành phần đầu tiên
-          </Button>
+          </AppButton>
         </div>
       ) : (
         <>
@@ -230,7 +226,7 @@ const GradingRuleItems = ({
 
             <div className="grading-rule-items-summary-item">
               <span>Tổng điểm tối đa</span>
-              <strong>{Number(totalMaxScore).toFixed(1)}</strong>
+              <strong>{Number(totalMaxScore ?? 0).toFixed(1)}</strong>
             </div>
           </div>
         </>

@@ -31,6 +31,7 @@ import {
   Layers,
   CircleHelp,
   LibraryBig,
+  // Package,
 } from "lucide-react";
 
 import imgSidebar from "../../assets/images/logosidebar.png";
@@ -103,6 +104,7 @@ const MENU_PATHS = {
   sendNotifications: "/catechist/notifications",
   notifications: "/catechist/my-notifications",
   statistics: "/catechist/statistics",
+  license: "/catechist/license",
 };
 
 /* =========================================================
@@ -150,9 +152,9 @@ export default function CatechistSidebar({
   const menuItems = useMemo(() => {
     const items = [];
 
-    /* -------------------------------------------------------
-        TỔNG QUAN
-      ------------------------------------------------------- */
+    /* =======================================================
+     1. TỔNG QUAN
+  ======================================================= */
 
     items.push({
       key: MENU_PATHS.dashboard,
@@ -160,9 +162,9 @@ export default function CatechistSidebar({
       icon: <Home size={18} strokeWidth={2.2} />,
     });
 
-    /* -------------------------------------------------------
-        QUẢN LÝ LỚP HỌC
-      ------------------------------------------------------- */
+    /* =======================================================
+     2. QUẢN LÝ ĐÀO TẠO
+  ======================================================= */
 
     const classChildren = [];
 
@@ -180,17 +182,6 @@ export default function CatechistSidebar({
       icon: <GraduationCap size={16} strokeWidth={2.2} />,
     });
 
-    items.push({
-      key: "group-classes",
-      label: "Quản lý lớp học",
-      icon: <GraduationCap size={18} strokeWidth={2.2} />,
-      children: classChildren,
-    });
-
-    /* -------------------------------------------------------
-        QUẢN LÝ HỌC SINH
-      ------------------------------------------------------- */
-
     const studentChildren = [];
 
     if (permission.canViewStudents) {
@@ -207,41 +198,121 @@ export default function CatechistSidebar({
       icon: <UserRound size={16} strokeWidth={2.2} />,
     });
 
+    const trainingChildren = [
+      {
+        key: "group-classes",
+        label: "Lớp học",
+        icon: <GraduationCap size={16} strokeWidth={2.2} />,
+        children: classChildren,
+      },
+      {
+        key: "group-students",
+        label: "Học sinh",
+        icon: <Users size={16} strokeWidth={2.2} />,
+        children: studentChildren,
+      },
+    ];
+
+    if (permission.canViewCatechists) {
+      trainingChildren.push({
+        key: MENU_PATHS.catechists,
+        label: "Giáo lý viên",
+        icon: <Sparkles size={16} strokeWidth={2.2} />,
+      });
+    }
+
     items.push({
-      key: "group-students",
-      label: "Quản lý học sinh",
-      icon: <Users size={18} strokeWidth={2.2} />,
-      children: studentChildren,
+      key: "group-training",
+      label: "Quản lý đào tạo",
+      icon: <GraduationCap size={18} strokeWidth={2.2} />,
+      children: trainingChildren,
     });
 
-    /* -------------------------------------------------------
-        GIÁO LÝ VIÊN
-      ------------------------------------------------------- */
-
-    if (permission.canViewCatechists) {
-      items.push({
-        key: MENU_PATHS.catechists,
-        label: "Quản lý giáo lý viên",
-        icon: <Sparkles size={18} strokeWidth={2.2} />,
-      });
-    }
-    if (permission.canViewCatechists) {
-      items.push({
-        key: MENU_PATHS.certificate,
-        label: "Cấp bằng & chứng chỉ",
-        icon: <BadgeCheck size={18} strokeWidth={2.2} />,
-      });
-    }
-
-    /* -------------------------------------------------------
-        ĐIỂM DANH
-      ------------------------------------------------------- */
+    /* =======================================================
+     3. ĐIỂM DANH
+  ======================================================= */
 
     items.push({
       key: MENU_PATHS.attendance,
       label: "Điểm danh",
       icon: <ClipboardCheck size={18} strokeWidth={2.2} />,
     });
+
+    /* =======================================================
+     4. KẾT QUẢ & ĐÁNH GIÁ
+  ======================================================= */
+
+    const resultChildren = [
+      {
+        key: MENU_PATHS.results,
+        label: "Kết quả học tập",
+        icon: <ClipboardCheck size={16} strokeWidth={2.2} />,
+      },
+      {
+        key: MENU_PATHS.leaderboard,
+        label: "Bảng thành tích",
+        icon: <Trophy size={16} strokeWidth={2.2} />,
+      },
+    ];
+
+    if (permission.canViewCatechists) {
+      resultChildren.push({
+        key: MENU_PATHS.gradingRule,
+        label: "Cấu hình hệ số điểm",
+        icon: <CircleHelp size={16} strokeWidth={2.2} />,
+      });
+    }
+
+    items.push({
+      key: "group-results",
+      label: "Kết quả & đánh giá",
+      icon: <Trophy size={18} strokeWidth={2.2} />,
+      children: resultChildren,
+    });
+
+    /* =======================================================
+     5. HỌC LIỆU & KIỂM TRA
+  ======================================================= */
+
+    items.push({
+      key: "group-learning",
+      label: "Học liệu & kiểm tra",
+      icon: <Layers size={18} strokeWidth={2.2} />,
+      children: [
+        {
+          key: MENU_PATHS.lessonLibrary,
+          label: "Thư viện giáo lý",
+          icon: <LibraryBig size={16} strokeWidth={2.2} />,
+        },
+        {
+          key: MENU_PATHS.questions,
+          label: "Ngân hàng câu hỏi",
+          icon: <CircleHelp size={16} strokeWidth={2.2} />,
+        },
+        {
+          key: MENU_PATHS.games,
+          label: "Trò chơi tương tác",
+          icon: <Gamepad2 size={16} strokeWidth={2.2} />,
+        },
+      ],
+    });
+
+    /* =======================================================
+     6. BẰNG & CHỨNG CHỈ
+  ======================================================= */
+
+    if (permission.canViewCatechists) {
+      items.push({
+        key: MENU_PATHS.certificate,
+        label: "Bằng & chứng chỉ",
+        icon: <BadgeCheck size={18} strokeWidth={2.2} />,
+      });
+    }
+
+    /* =======================================================
+     7. BÁO CÁO
+  ======================================================= */
+
     if (permission.canViewCatechists) {
       items.push({
         key: MENU_PATHS.statistics,
@@ -250,51 +321,9 @@ export default function CatechistSidebar({
       });
     }
 
-    /* -------------------------------------------------------
-        HỌC TẬP & TRÒ CHƠI
-      ------------------------------------------------------- */
-
-    items.push({
-      key: "group-learning",
-      label: "Học tập & trò chơi",
-      icon: <Layers size={18} strokeWidth={2.2} />,
-      children: [
-        {
-          key: "/catechist/lesson-library",
-          icon: <LibraryBig size={16} strokeWidth={2.2} />,
-          label: "Thư viện giáo lý",
-        },
-        {
-          key: MENU_PATHS.games,
-          label: "Trò chơi tương tác",
-          icon: <Gamepad2 size={16} strokeWidth={2.2} />,
-        },
-        // {
-        //   key: MENU_PATHS.results,
-        //   label: "Kết quả học tập",
-        //   icon: <ClipboardCheck size={16} strokeWidth={2.2} />,
-        // },
-        // {
-        //   key: MENU_PATHS.gradingRule,
-        //   label: "Cấu hình hệ số điểm",
-        //   icon: <CircleHelp size={16} strokeWidth={2.2} />,
-        // },
-        {
-          key: MENU_PATHS.questions,
-          label: "Ngân hàng câu hỏi",
-          icon: <CircleHelp size={16} strokeWidth={2.2} />,
-        },
-        {
-          key: MENU_PATHS.leaderboard,
-          label: "Bảng thành tích",
-          icon: <Trophy size={16} strokeWidth={2.2} />,
-        },
-      ],
-    });
-
-    /* -------------------------------------------------------
-        THÔNG BÁO
-      ------------------------------------------------------- */
+    /* =======================================================
+     8. THÔNG BÁO
+  ======================================================= */
 
     const notificationChildren = [];
 
@@ -318,6 +347,18 @@ export default function CatechistSidebar({
       icon: <Bell size={18} strokeWidth={2.2} />,
       children: notificationChildren,
     });
+
+    /* =======================================================
+     9. GÓI FAITHEDU
+  ======================================================= */
+
+    // if (permission.canViewCatechists) {
+    //   items.push({
+    //     key: MENU_PATHS.license,
+    //     label: "Gói FaithEdu",
+    //     icon: <Package size={18} strokeWidth={2.2} />,
+    //   });
+    // }
 
     return items;
   }, [permission]);
