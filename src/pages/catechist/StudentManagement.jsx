@@ -203,7 +203,7 @@ export default function StudentManagement() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [bulkDeleting] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [actionLoading, setActionLoading] = useState({
     delete: null,
@@ -1744,51 +1744,51 @@ export default function StudentManagement() {
      BULK DELETE
   =================================================== */
 
-  // const handleBulkDelete = async () => {
-  //   if (!selectedRowKeys.length || bulkDeleting) {
-  //     return;
-  //   }
+  const handleBulkDelete = async () => {
+    if (!selectedRowKeys.length || bulkDeleting) {
+      return;
+    }
 
-  //   const deleteCount = selectedRowKeys.length;
+    const deleteCount = selectedRowKeys.length;
 
-  //   try {
-  //     setBulkDeleting(true);
+    try {
+      setBulkDeleting(true);
 
-  //     const hide = message.loading(`Đang xóa ${deleteCount} học sinh...`, 0);
+      const hide = message.loading(`Đang xóa ${deleteCount} học sinh...`, 0);
 
-  //     try {
-  //       await Promise.all(selectedRowKeys.map((id) => studentApi.delete(id)));
-  //     } finally {
-  //       hide();
-  //     }
+      try {
+        await Promise.all(selectedRowKeys.map((id) => studentApi.delete(id)));
+      } finally {
+        hide();
+      }
 
-  //     message.success(`Đã xóa ${deleteCount} học sinh!`);
+      message.success(`Đã xóa ${deleteCount} học sinh!`);
 
-  //     setSelectedRowKeys([]);
+      setSelectedRowKeys([]);
 
-  //     const nextTotal = filteredStudents.length - deleteCount;
+      const nextTotal = filteredStudents.length - deleteCount;
 
-  //     const maxPage = Math.max(1, Math.ceil(nextTotal / pageSize));
+      const maxPage = Math.max(1, Math.ceil(nextTotal / pageSize));
 
-  //     if (currentPage > maxPage) {
-  //       setCurrentPage(maxPage);
-  //     }
+      if (currentPage > maxPage) {
+        setCurrentPage(maxPage);
+      }
 
-  //     await fetchStudents({
-  //       silent: true,
-  //     });
-  //   } catch (error) {
-  //     message.error(
-  //       error?.response?.data?.message || "Không thể xóa một số học sinh!",
-  //     );
+      await fetchStudents({
+        silent: true,
+      });
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message || "Không thể xóa một số học sinh!",
+      );
 
-  //     await fetchStudents({
-  //       silent: true,
-  //     });
-  //   } finally {
-  //     setBulkDeleting(false);
-  //   }
-  // };
+      await fetchStudents({
+        silent: true,
+      });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   /* ===================================================
      STATUS TAG
@@ -2972,8 +2972,8 @@ export default function StudentManagement() {
           title="Quản lý học sinh"
           description="Quản lý thông tin, lớp học và quá trình giáo lý của học sinh"
           selectedCount={selectedRowKeys.length}
-          // onBulkDelete={handleBulkDelete}
-          // bulkDeleting={bulkDeleting}
+          onBulkDelete={handleBulkDelete}
+          bulkDeleting={bulkDeleting}
           onRefresh={() =>
             fetchStudents({
               silent: true,
@@ -3204,7 +3204,6 @@ export default function StudentManagement() {
               <Space wrap>
                 {/* TẢI QR */}
                 <AppButton
-                  size="small"
                   icon={<QrcodeOutlined />}
                   loading={bulkQRDownloading}
                   disabled={
@@ -3223,7 +3222,6 @@ export default function StudentManagement() {
 
                 {/* CHUYỂN LỚP */}
                 <AppButton
-                  size="small"
                   icon={<SwapOutlined />}
                   loading={bulkChangeClassLoading}
                   disabled={

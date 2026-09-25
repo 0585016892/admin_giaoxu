@@ -1,576 +1,649 @@
+/* ============================================================
+   FAITHEDU LICENSE PAGE
+   ============================================================ */
+
 .license-page {
-  min-height: 100%;
-  padding-bottom: 40px;
-  background: #f7f9fc;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(26, 83, 160, 0.06), transparent 30%),
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(212, 164, 66, 0.07),
+      transparent 28%
+    ),
+    #f6f8fc;
+  padding-bottom: 50px;
 }
 
 .license-page-container {
-  width: 100%;
-  max-width: 1280px;
+  width: min(1320px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 0 24px;
 }
 
-/* =========================================================
+/* ============================================================
    LOADING
-========================================================= */
+   ============================================================ */
 
 .license-page-loading {
-  min-height: 520px;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f8fc;
+}
+
+.license-loading-card {
+  min-width: 280px;
+  padding: 36px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(15, 36, 70, 0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 12px;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
 }
 
-/* =========================================================
-   STATUS
-========================================================= */
-
-.license-status-alert {
-  margin-bottom: 20px;
-  border-radius: 12px;
-}
-
-/* =========================================================
-   TOP
-========================================================= */
-
-.license-top-grid {
-  margin-bottom: 20px;
-}
-
-.license-support-card,
-.license-package-card,
-.license-form-card,
-.license-payment-card,
-.license-history-card {
-  height: 100%;
-  border-radius: 18px;
-  box-shadow: 0 4px 20px rgba(23, 59, 94, 0.045);
-}
-
-/* =========================================================
-   SUPPORT
-========================================================= */
-
-.license-support-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.license-card-label {
+.license-loading-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #d9a441;
-  font-size: 10px;
+  justify-content: center;
+  background: linear-gradient(135deg, #0d3b78, #1b64b3);
+  color: #ffffff;
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.license-loading-card strong {
+  color: #16253d;
+  font-size: 16px;
+}
+
+.license-loading-card span {
+  color: #8a96a8;
+  font-size: 13px;
+}
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+.license-status-alert {
+  margin: 24px 0;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  box-shadow: 0 5px 20px rgba(15, 36, 70, 0.04);
+}
+
+.license-status-alert.pending {
+  border-color: #ffe3a1;
+}
+
+.license-status-alert.approved {
+  border-color: #b8e6cc;
+}
+
+.license-status-alert.rejected {
+  border-color: #ffc6c6;
+}
+
+/* ============================================================
+   PACKAGE HERO
+   ============================================================ */
+
+.license-package-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 330px;
+  margin: 24px 0;
+  padding: 44px 48px;
+  border-radius: 28px;
+  color: #ffffff;
+  background: linear-gradient(120deg, #092d5c 0%, #0e4c8f 52%, #1764a9 100%);
+  box-shadow: 0 20px 50px rgba(9, 45, 92, 0.18);
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.license-package-hero::after {
+  content: "";
+  position: absolute;
+  width: 430px;
+  height: 430px;
+  right: -150px;
+  top: -190px;
+  border-radius: 50%;
+  border: 70px solid rgba(255, 255, 255, 0.035);
+}
+
+.license-package-decoration {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.decoration-one {
+  width: 170px;
+  height: 170px;
+  right: 24%;
+  bottom: -100px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.decoration-two {
+  width: 90px;
+  height: 90px;
+  right: 45%;
+  top: 25px;
+  background: rgba(212, 164, 66, 0.08);
+}
+
+.license-package-left {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+}
+
+.license-package-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4d68d;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.8px;
 }
 
-.license-support-card h2 {
-  margin: 10px 0 6px;
-  color: #173b5e;
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.license-card-description {
+.license-package-left h1 {
   margin: 0;
-  color: #64748b;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -1px;
 }
 
-.license-qr-box {
+.license-package-left > p {
+  max-width: 650px;
+  margin: 16px 0 22px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.license-package-price-large {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.license-package-price-large strong {
+  color: #ffffff;
+  font-size: 36px;
+  line-height: 1;
+  font-weight: 850;
+}
+
+.license-package-price-large span {
+  color: #f0cf80;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.license-package-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+}
+
+.license-package-note svg {
+  color: #7ee1aa;
+}
+
+.license-package-right {
+  position: relative;
+  z-index: 2;
+  width: 310px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: center;
+}
+
+.license-package-icon-large {
+  grid-column: 1 / -1;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 5px;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 18px auto;
-  width: 190px;
-  height: 190px;
-  padding: 9px;
-  background: #fff;
-  border: 1px solid #e5eaf0;
-  border-radius: 14px;
+  color: #f3cf7b;
+  font-size: 34px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
 }
 
-.license-qr-box .ant-image {
-  display: block;
-  width: 100%;
-  height: 100%;
+.license-package-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.license-qr-box .ant-image-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.license-package-mini-card svg {
+  flex-shrink: 0;
+  color: #77dfa2;
 }
 
-.license-zalo-qr .ant-empty {
-  margin: 0;
-}
+/* ============================================================
+   CARD COMMON
+   ============================================================ */
 
-.license-zalo-button {
-  height: 44px;
-  color: #173b5e;
-  font-weight: 700;
-  border-color: #dce4eb;
-  border-radius: 10px;
-}
-
-.license-zalo-button:hover {
-  color: #173b5e !important;
-  border-color: #173b5e !important;
-}
-
-/* =========================================================
-   PACKAGE
-========================================================= */
-
-.license-package-card {
-  position: relative;
+.license-form-card,
+.license-payment-card,
+.license-support-banner,
+.license-zalo-card,
+.license-history-card {
+  border-radius: 22px !important;
+  box-shadow: 0 8px 35px rgba(15, 36, 70, 0.055);
   overflow: hidden;
-  min-height: 100%;
-  background: linear-gradient(135deg, #173b5e 0%, #204d74 100%);
-  border: 0 !important;
 }
 
-.license-package-card .ant-card-body {
-  height: 100%;
+.license-form-card .ant-card-body,
+.license-payment-card .ant-card-body,
+.license-support-banner .ant-card-body,
+.license-zalo-card .ant-card-body,
+.license-history-card .ant-card-body {
   padding: 28px;
 }
 
-.license-package-glow {
-  position: absolute;
-  top: -100px;
-  right: -80px;
-  width: 260px;
-  height: 260px;
-  background: rgba(217, 164, 65, 0.12);
-  border-radius: 50%;
-  filter: blur(3px);
+/* ============================================================
+   SECTION HEADER
+   ============================================================ */
+
+.license-card-top {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.license-package-content {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: start;
-  column-gap: 18px;
+.license-card-top.compact {
+  align-items: center;
 }
 
-.license-package-icon {
+.license-section-icon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  color: #d9a441;
-  font-size: 21px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 13px;
+  border-radius: 14px;
+  background: #eaf3ff;
+  color: #1762a9;
+  font-size: 20px;
 }
 
-.license-package-heading {
-  min-width: 0;
+.license-section-icon.gold {
+  color: #a87814;
+  background: #fff7df;
 }
 
-.license-eyebrow {
-  color: #d9a441;
+.license-section-label {
+  display: block;
+  margin-bottom: 3px;
+  color: #9ba6b7;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1px;
 }
 
-.license-package-heading h2 {
-  margin: 5px 0 4px;
-  color: #fff;
-  font-size: 21px;
-  font-weight: 800;
-}
-
-.license-package-heading p {
+.license-card-top h2 {
   margin: 0;
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 12px;
-}
-
-.license-package-price {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  padding-top: 4px;
-  white-space: nowrap;
-}
-
-.license-package-price strong {
-  color: #fff;
-  font-size: 31px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.license-package-price span {
-  margin-bottom: 2px;
-  color: #d9a441;
-  font-size: 14px;
+  color: #17243a;
+  font-size: 20px;
   font-weight: 800;
 }
 
-.license-package-divider {
-  grid-column: 1 / -1;
-  width: 100%;
-  height: 1px;
-  margin: 25px 0 17px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.license-feature-list {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 30px;
-}
-
-.license-feature-list div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.license-feature-list svg {
-  flex: 0 0 auto;
-  color: #d9a441;
-  font-size: 12px;
-}
-
-/* =========================================================
-   MAIN GRID
-========================================================= */
-
-.license-main-grid {
-  margin-bottom: 20px;
-}
-
-/* =========================================================
-   SECTION HEADING
-========================================================= */
-
-.license-section-heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.license-section-heading.compact {
-  gap: 10px;
-}
-
-.license-section-icon {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  color: #173b5e;
-  font-size: 17px;
-  background: #f1f6fa;
-  border: 1px solid #e2eaf0;
-  border-radius: 11px;
-}
-
-.license-section-icon.gold {
-  color: #b98216;
-  background: #fff9ed;
-  border-color: #f2dfb4;
-}
-
-.license-section-heading h2 {
-  margin: 0;
-  color: #173b5e;
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.license-section-heading p {
+.license-card-top p {
   margin: 3px 0 0;
-  color: #94a3b8;
-  font-size: 11px;
-  line-height: 1.4;
+  color: #8995a7;
+  font-size: 13px;
 }
 
 .license-form-card .ant-divider,
 .license-payment-card .ant-divider,
 .license-history-card .ant-divider {
-  margin: 18px 0 20px;
-  border-color: #edf1f4;
+  margin: 24px 0;
+  border-color: #edf0f5;
 }
 
-/* =========================================================
+/* ============================================================
+   CHURCH
+   ============================================================ */
+
+.license-church-info {
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f7f9fc;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.license-church-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #e9f2ff;
+  color: #1762a9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.license-church-info span {
+  display: block;
+  color: #9aa5b6;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.license-church-info strong {
+  display: block;
+  margin-top: 2px;
+  color: #27364d;
+  font-size: 14px;
+}
+
+/* ============================================================
    FORM
-========================================================= */
+   ============================================================ */
 
 .license-form-card .ant-form-item {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .license-form-card .ant-form-item-label {
-  padding-bottom: 6px;
+  padding-bottom: 7px;
 }
 
 .license-form-card .ant-form-item-label > label {
-  color: #334155;
-  font-size: 12px;
-  font-weight: 700;
+  color: #34445b;
+  font-size: 13px;
+  font-weight: 650;
 }
 
-.license-form-card .ant-input,
-.license-form-card .ant-input-affix-wrapper {
-  border-color: #dfe6ed;
-  border-radius: 9px;
-  box-shadow: none;
+.license-form-card .ant-input-affix-wrapper,
+.license-form-card .ant-input {
+  border-radius: 11px;
+  border-color: #dfe5ee;
 }
 
 .license-form-card .ant-input-affix-wrapper:hover,
-.license-form-card .ant-input-affix-wrapper:focus,
-.license-form-card .ant-input-affix-wrapper-focused,
+.license-form-card .ant-input-affix-wrapper:focus-within,
 .license-form-card .ant-input:hover {
-  border-color: #9bb0c2;
-  box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.05);
+  border-color: #4b86c5;
+  box-shadow: 0 0 0 3px rgba(42, 105, 169, 0.07);
 }
 
-/* =========================================================
-   TRANSFER CONTENT
-========================================================= */
+/* ============================================================
+   TRANSFER
+   ============================================================ */
 
-.license-transfer-content {
-  margin: 3px 0 18px;
-  padding: 13px;
-  background: #f8fafc;
-  border: 1px solid #e6ecf1;
-  border-radius: 11px;
+.license-transfer-box {
+  margin: 4px 0 22px;
+  padding: 17px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #f5f9ff, #f8fbff);
+  border: 1px solid #dceafb;
 }
 
-.license-transfer-label {
+.license-transfer-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.license-transfer-label > span {
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.license-transfer-label .ant-tag {
-  margin: 0;
+.license-transfer-header span {
+  display: block;
+  color: #7d8ba0;
   font-size: 9px;
-  border-radius: 5px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
 }
 
-.license-transfer-value {
+.license-transfer-header strong {
+  display: block;
+  margin-top: 4px;
+  color: #293950;
+  font-size: 13px;
+}
+
+.license-transfer-code {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px dashed #b9cde6;
 }
 
-.license-transfer-value > span {
+.license-transfer-code span {
   flex: 1;
-  min-width: 0;
-  color: #173b5e;
+  overflow: hidden;
+  color: #155b9d;
+  font-family: monospace;
   font-size: 12px;
-  font-weight: 800;
-  line-height: 1.5;
-  word-break: break-word;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.license-transfer-value .ant-btn {
-  flex: 0 0 auto;
-}
-
-.license-transfer-content small {
+.license-transfer-box small {
   display: block;
-  margin-top: 5px;
-  color: #94a3b8;
-  font-size: 10px;
-  line-height: 1.5;
+  margin-top: 8px;
+  color: #8d99aa;
+  font-size: 11px;
 }
 
-/* =========================================================
+/* ============================================================
    UPLOAD
-========================================================= */
+   ============================================================ */
 
 .license-upload-form-item {
-  margin-bottom: 14px !important;
+  margin-bottom: 16px !important;
 }
 
-.license-upload-form-item .ant-upload-wrapper .ant-upload-drag {
-  min-height: 170px;
-  padding: 24px 15px;
-  background: #fbfcfd;
-  border: 1px dashed #cfd9e2;
-  border-radius: 12px;
+.license-upload-form-item .ant-upload-drag {
+  min-height: 190px;
+  border-radius: 15px;
+  border: 1px dashed #c7d4e5;
+  background: #fafcff;
+  transition: all 0.2s ease;
 }
 
-.license-upload-form-item .ant-upload-wrapper .ant-upload-drag:hover {
-  border-color: #173b5e;
+.license-upload-form-item .ant-upload-drag:hover {
+  border-color: #3980c5;
+  background: #f5faff;
 }
 
 .license-upload-icon {
-  color: #173b5e;
-  font-size: 29px;
+  width: 54px;
+  height: 54px;
+  margin: 7px auto 12px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2873b8;
+  background: #eaf4ff;
+  font-size: 25px;
 }
 
 .license-upload-title {
-  margin-top: 9px;
-  color: #334155;
-  font-size: 13px;
-  font-weight: 800;
+  color: #28384f;
+  font-size: 14px;
+  font-weight: 750;
 }
 
 .license-upload-description {
-  margin-top: 3px;
-  color: #64748b;
-  font-size: 11px;
+  margin-top: 4px;
+  color: #8a97a9;
+  font-size: 12px;
 }
 
 .license-upload-hint {
-  margin-top: 6px;
-  color: #94a3b8;
+  margin-top: 8px;
+  color: #a6afbc;
   font-size: 10px;
 }
 
 .license-upload-preview {
-  display: grid;
-  grid-template-columns: 86px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 13px;
-  min-height: 95px;
-  padding: 10px;
-  background: #f8fafc;
-  border: 1px solid #e3e9ef;
-  border-radius: 11px;
+  border: 1px solid #e1e6ed;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #ffffff;
 }
 
 .license-upload-preview-image {
-  width: 86px;
-  height: 74px;
+  height: 190px;
+  background: #f2f4f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e4e9ee;
-  border-radius: 8px;
 }
 
-.license-upload-preview-image .ant-image,
-.license-upload-preview-image .ant-image-img {
+.license-upload-preview-image .ant-image {
   width: 100%;
   height: 100%;
 }
 
-.license-upload-preview-image .ant-image-img {
-  object-fit: cover;
+.license-upload-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.license-upload-preview-info {
+.license-upload-preview-content {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.license-upload-file {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #2873b8;
+}
+
+.license-upload-file svg {
+  font-size: 20px;
+}
+
+.license-upload-file div {
   min-width: 0;
 }
 
-.license-upload-file-name {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: #334155;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.license-upload-file-name svg {
-  flex: 0 0 auto;
-  color: #173b5e;
-}
-
-.license-upload-file-name span {
+.license-upload-file strong,
+.license-upload-file span {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.license-upload-preview-info > span {
-  display: block;
-  margin-top: 5px;
-  color: #94a3b8;
+.license-upload-file strong {
+  color: #33435a;
+  font-size: 12px;
+}
+
+.license-upload-file span {
+  margin-top: 2px;
+  color: #9aa5b4;
   font-size: 10px;
 }
 
-/* =========================================================
+/* ============================================================
    SUBMIT
-========================================================= */
+   ============================================================ */
 
 .license-submit-note {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
-  margin: 3px 0 13px;
-  color: #64748b;
-  font-size: 10px;
-  line-height: 1.55;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 12px 13px;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #78869a;
+  font-size: 11px;
+  line-height: 1.6;
 }
 
 .license-submit-note svg {
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: #2563eb;
+  margin-top: 2px;
+  color: #5484b5;
+  flex-shrink: 0;
 }
 
 .license-submit-button {
-  height: 46px;
-  color: #fff;
-  background: #173b5e;
-  border: 0;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 800;
-  box-shadow: 0 5px 15px rgba(23, 59, 94, 0.15);
+  height: 48px !important;
+  border-radius: 12px !important;
+  font-weight: 750 !important;
+  box-shadow: 0 9px 22px rgba(24, 91, 153, 0.18);
 }
 
-.license-submit-button:hover {
-  background: #204d74 !important;
-}
-
-/* =========================================================
+/* ============================================================
    PAYMENT
-========================================================= */
+   ============================================================ */
 
-.license-payment-card {
-  background: #fff;
+.license-payment-qr-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .license-payment-qr {
+  width: 230px;
+  height: 230px;
+  padding: 10px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e6e9ef;
+  box-shadow: 0 12px 35px rgba(15, 36, 70, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 210px;
-  height: 210px;
-  margin: 0 auto 18px;
-  padding: 9px;
-  background: #fff;
-  border: 1px solid #e4eaf0;
-  border-radius: 14px;
 }
 
 .license-payment-qr .ant-image,
@@ -579,185 +652,322 @@
   height: 100%;
 }
 
-.license-payment-qr .ant-image-img {
+.license-payment-qr img {
   object-fit: contain;
 }
 
 .license-payment-qr-empty {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
-  color: #94a3b8;
+  justify-content: center;
+  gap: 10px;
+  color: #a3adba;
+}
+
+.license-payment-qr-empty svg {
+  font-size: 42px;
+}
+
+.license-payment-qr-empty span {
   font-size: 11px;
   text-align: center;
 }
 
-.license-payment-qr-empty svg {
-  color: #d9a441;
-  font-size: 35px;
+.license-scan-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: #7d899a;
+  font-size: 11px;
 }
 
 .license-payment-amount {
+  margin: 24px 0 18px;
+  padding: 15px 17px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff9e9, #fffdf7);
+  border: 1px solid #f5e7bc;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 13px;
-  padding: 11px 13px;
-  background: #fff9ed;
-  border: 1px solid #f3e2bb;
-  border-radius: 9px;
 }
 
 .license-payment-amount span {
-  color: #856d3d;
-  font-size: 11px;
-  font-weight: 700;
+  color: #8e7a49;
+  font-size: 12px;
 }
 
 .license-payment-amount strong {
-  color: #a66d00;
-  font-size: 18px;
-  font-weight: 800;
+  color: #b17b14;
+  font-size: 21px;
+  font-weight: 850;
 }
 
 .license-bank-info {
-  padding: 4px 0;
+  padding: 5px 0;
 }
 
 .license-bank-row {
+  min-height: 43px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
-  padding: 9px 0;
-  border-bottom: 1px solid #f0f3f6;
+  border-bottom: 1px solid #edf0f4;
 }
 
 .license-bank-row:last-child {
   border-bottom: 0;
 }
 
-.license-bank-row > span {
+.license-bank-row span {
+  color: #8793a5;
+  font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #94a3b8;
-  font-size: 11px;
-  white-space: nowrap;
+  gap: 7px;
 }
 
-.license-bank-row > strong {
-  color: #334155;
+.license-bank-row strong {
+  color: #293950;
   font-size: 12px;
-  font-weight: 800;
   text-align: right;
 }
 
 .license-copy-value {
   display: flex;
   align-items: center;
-  gap: 2px;
-}
-
-.license-copy-value .ant-btn {
-  color: #64748b;
+  gap: 3px;
 }
 
 .license-payment-content {
-  margin: 13px 0 16px;
-  padding: 11px 12px;
-  background: #f8fafc;
-  border: 1px solid #e5eaf0;
-  border-radius: 9px;
+  margin: 18px 0;
+  padding: 13px;
+  border-radius: 12px;
+  background: #f7f9fc;
 }
 
 .license-payment-content > span {
   display: block;
-  margin-bottom: 5px;
-  color: #94a3b8;
+  margin-bottom: 6px;
+  color: #929dae;
   font-size: 10px;
   font-weight: 700;
 }
 
 .license-payment-content > div {
   display: flex;
-  align-items: flex-start;
-  gap: 4px;
+  align-items: center;
+  gap: 5px;
 }
 
 .license-payment-content strong {
   flex: 1;
-  min-width: 0;
-  color: #173b5e;
+  color: #235f9d;
+  font-family: monospace;
   font-size: 11px;
-  line-height: 1.5;
   word-break: break-word;
 }
 
-.license-payment-card .ant-alert {
-  border-radius: 9px;
+/* ============================================================
+   SUPPORT
+   ============================================================ */
+
+.license-support-grid {
+  margin-top: 24px;
 }
 
-.license-payment-card .ant-alert-message {
-  font-size: 11px;
+.license-support-banner {
+  min-height: 190px;
+  background: linear-gradient(125deg, #0d376d, #145994);
+  color: #ffffff;
+}
+
+.license-support-banner .ant-card-body {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+}
+
+.license-support-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.license-support-icon {
+  width: 60px;
+  height: 60px;
+  flex: 0 0 60px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f2cf80;
+  font-size: 27px;
+}
+
+.license-support-content span {
+  font-size: 9px;
   font-weight: 800;
+  letter-spacing: 1px;
+  color: #f1d48d;
 }
 
-.license-payment-card .ant-alert-description {
-  font-size: 10px;
-  line-height: 1.5;
+.license-support-content h2 {
+  margin: 5px 0;
+  color: #ffffff;
+  font-size: 22px;
 }
 
-/* =========================================================
-   HISTORY
-========================================================= */
-
-.license-history-card {
-  min-height: 150px;
+.license-support-content p {
+  max-width: 500px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
-.license-history-header {
+.license-support-button {
+  flex-shrink: 0;
+}
+
+.license-zalo-card {
+  min-height: 190px;
+}
+
+.license-zalo-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
 }
 
-.license-history-header .ant-btn {
-  color: #475569;
-  border-color: #dce4eb;
-  border-radius: 8px;
+.license-zalo-content > div:first-child {
+  min-width: 0;
+}
+
+.license-zalo-content span {
+  color: #9ba5b5;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.license-zalo-content h3 {
+  margin: 5px 0;
+  color: #26364d;
+  font-size: 18px;
+}
+
+.license-zalo-content p {
+  margin: 0;
+  color: #8996a7;
+  font-size: 11px;
+}
+
+.license-zalo-qr-box {
+  width: 110px;
+  height: 110px;
+  flex: 0 0 110px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #e3e7ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.license-zalo-qr-box .ant-image,
+.license-zalo-qr-box img {
+  width: 100%;
+  height: 100%;
+}
+
+.license-zalo-qr-box img {
+  object-fit: contain;
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+
+.license-history-card {
+  margin-top: 24px;
+}
+
+.license-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.license-history-empty {
+  padding: 30px 0;
 }
 
 .license-history-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .license-history-item {
+  position: relative;
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #fafbfd;
-  border: 1px solid #e9eef2;
-  border-radius: 11px;
+  grid-template-columns: 34px 1fr auto;
+  gap: 15px;
+  padding: 5px 0 22px;
 }
 
-.license-history-icon {
+.license-history-line {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.license-history-dot {
+  position: relative;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  color: #d9a441;
-  font-size: 15px;
-  background: #fff9ed;
-  border: 1px solid #f1dfb9;
-  border-radius: 9px;
+  background: #f2f5f8;
+  color: #8090a4;
+  font-size: 14px;
+}
+
+.license-history-item.pending .license-history-dot {
+  color: #c48a1a;
+  background: #fff4d6;
+}
+
+.license-history-item.approved .license-history-dot {
+  color: #26945a;
+  background: #e6f7ee;
+}
+
+.license-history-item.rejected .license-history-dot {
+  color: #d64c4c;
+  background: #fff0f0;
+}
+
+.license-history-connector {
+  position: absolute;
+  top: 32px;
+  bottom: -22px;
+  width: 1px;
+  background: #e5e9ef;
 }
 
 .license-history-main {
@@ -766,285 +976,221 @@
 
 .license-history-title {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.license-history-title > div {
+  min-width: 0;
 }
 
 .license-history-title strong {
-  color: #334155;
-  font-size: 12px;
-  font-weight: 800;
+  display: block;
+  color: #293950;
+  font-size: 14px;
 }
 
-.license-history-title .ant-tag {
-  margin: 0;
-  font-size: 9px;
-  line-height: 20px;
-  border-radius: 5px;
+.license-history-title span {
+  display: block;
+  margin-top: 3px;
+  color: #a0a9b6;
+  font-size: 10px;
 }
 
 .license-history-meta {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 5px 18px;
-  margin-top: 5px;
-  color: #94a3b8;
+  gap: 25px;
+  margin-top: 13px;
+}
+
+.license-history-meta div span,
+.license-history-meta div strong {
+  display: block;
+}
+
+.license-history-meta div span {
+  color: #98a2b1;
   font-size: 10px;
 }
 
-.license-history-meta strong {
-  color: #64748b;
-  font-weight: 700;
+.license-history-meta div strong {
+  margin-top: 2px;
+  color: #46566c;
+  font-size: 11px;
 }
 
 .license-history-reason {
-  margin-top: 6px;
-  padding: 7px 9px;
-  color: #b42318;
-  font-size: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff6f6;
+  display: flex;
+  gap: 8px;
+  color: #c04c4c;
+}
+
+.license-history-reason svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.license-history-reason strong,
+.license-history-reason span {
+  display: block;
+  font-size: 11px;
+}
+
+.license-history-reason span {
+  margin-top: 2px;
+  color: #9c6868;
   line-height: 1.5;
-  background: #fff5f5;
-  border-radius: 7px;
 }
 
 .license-history-action {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
 }
 
 .license-history-image {
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 7px;
+  border-radius: 10px;
+  border: 1px solid #e2e6ec;
 }
 
-.license-history-empty {
-  padding: 15px 0 5px;
+.license-history-image img {
+  object-fit: cover;
 }
 
-.license-history-empty .ant-empty {
-  margin: 0;
-}
+/* ============================================================
+   FOOTER
+   ============================================================ */
 
 .license-footer-note {
+  padding: 25px 0 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  margin-top: 22px;
-  color: #94a3b8;
-  font-size: 10px;
-  font-weight: 600;
+  gap: 7px;
+  color: #9aa4b3;
+  font-size: 11px;
 }
 
 .license-footer-note svg {
-  color: #d9a441;
+  color: #b88a2d;
 }
 
-/* =========================================================
-   TABLET
-========================================================= */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 
 @media (max-width: 991px) {
-  .license-page-container {
-    padding: 0 18px;
+  .license-package-hero {
+    padding: 34px;
   }
 
-  .license-package-content {
-    grid-template-columns: auto 1fr;
-  }
-
-  .license-package-price {
-    grid-column: 2;
-    padding-top: 10px;
-  }
-
-  .license-package-divider {
-    margin-top: 20px;
+  .license-package-right {
+    width: 270px;
   }
 }
 
-/* =========================================================
-   MOBILE
-========================================================= */
-
 @media (max-width: 767px) {
-  .license-page {
-    padding-bottom: 25px;
-  }
-
   .license-page-container {
-    padding: 0 12px;
+    width: min(100% - 24px, 1320px);
   }
 
-  .license-status-alert {
-    margin-bottom: 13px;
+  .license-package-hero {
+    min-height: auto;
+    padding: 28px 24px;
+    flex-direction: column;
   }
 
-  .license-support-card,
-  .license-package-card,
-  .license-form-card,
-  .license-payment-card,
-  .license-history-card {
-    border-radius: 14px;
+  .license-package-left h1 {
+    font-size: 30px;
   }
 
-  .license-package-card .ant-card-body {
+  .license-package-price-large strong {
+    font-size: 31px;
+  }
+
+  .license-package-right {
+    width: 100%;
+  }
+
+  .license-form-card .ant-card-body,
+  .license-payment-card .ant-card-body,
+  .license-support-banner .ant-card-body,
+  .license-zalo-card .ant-card-body,
+  .license-history-card .ant-card-body {
     padding: 20px;
   }
 
-  .license-package-content {
-    grid-template-columns: 42px 1fr;
-    column-gap: 12px;
-  }
-
-  .license-package-icon {
-    width: 42px;
-    height: 42px;
+  .license-card-top h2 {
     font-size: 18px;
   }
 
-  .license-package-heading h2 {
-    font-size: 17px;
+  .license-support-banner .ant-card-body {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .license-package-price {
-    grid-column: 1 / -1;
-    margin-top: 5px;
-    padding-top: 0;
+  .license-support-button {
+    width: 100%;
   }
 
-  .license-package-price strong {
-    font-size: 27px;
-  }
-
-  .license-package-divider {
-    margin: 17px 0 14px;
-  }
-
-  .license-feature-list {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .license-section-heading h2 {
-    font-size: 14px;
-  }
-
-  .license-section-heading p {
-    font-size: 10px;
-  }
-
-  .license-payment-qr {
-    width: 185px;
-    height: 185px;
-  }
-
-  .license-history-header {
+  .license-zalo-content {
     align-items: flex-start;
   }
 
-  .license-history-header .ant-btn {
-    flex: 0 0 auto;
-    font-size: 11px;
+  .license-history-title {
+    flex-direction: column;
   }
 
   .license-history-item {
-    grid-template-columns: 34px minmax(0, 1fr);
-    align-items: start;
-    gap: 9px;
-  }
-
-  .license-history-icon {
-    width: 34px;
-    height: 34px;
+    grid-template-columns: 32px 1fr;
   }
 
   .license-history-action {
     grid-column: 2;
-    justify-content: flex-start;
+    padding-top: 4px;
+  }
+
+  .license-history-meta {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .license-package-hero {
+    border-radius: 20px;
+  }
+
+  .license-package-right {
+    grid-template-columns: 1fr;
+  }
+
+  .license-package-icon-large {
+    grid-column: auto;
+  }
+
+  .license-package-mini-card {
+    width: 100%;
+  }
+
+  .license-payment-qr {
+    width: 200px;
+    height: 200px;
+  }
+
+  .license-upload-preview-content {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .license-history-meta {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-  }
-}
-
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
-
-@media (max-width: 480px) {
-  .license-page-container {
-    padding: 0 9px;
-  }
-
-  .license-support-card .ant-card-body,
-  .license-form-card .ant-card-body,
-  .license-payment-card .ant-card-body,
-  .license-history-card .ant-card-body {
-    padding: 15px;
-  }
-
-  .license-package-card .ant-card-body {
-    padding: 17px;
-  }
-
-  .license-qr-box {
-    width: 165px;
-    height: 165px;
-  }
-
-  .license-payment-qr {
-    width: 170px;
-    height: 170px;
-  }
-
-  .license-upload-preview {
-    grid-template-columns: 65px minmax(0, 1fr);
-  }
-
-  .license-upload-preview-image {
-    width: 65px;
-    height: 65px;
-  }
-
-  .license-upload-preview > .ant-btn {
-    grid-column: 1 / -1;
-    justify-self: end;
-  }
-
-  .license-bank-row {
-    align-items: flex-start;
-  }
-
-  .license-bank-row > span {
-    white-space: normal;
-  }
-
-  .license-bank-row > strong {
-    max-width: 58%;
-    word-break: break-word;
-  }
-}
-
-@media (max-width: 360px) {
-  .license-package-heading h2 {
-    font-size: 15px;
-  }
-
-  .license-package-price strong {
-    font-size: 24px;
-  }
-
-  .license-qr-box,
-  .license-payment-qr {
-    width: 155px;
-    height: 155px;
+    gap: 8px;
   }
 }

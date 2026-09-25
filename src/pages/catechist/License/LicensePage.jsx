@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   Alert,
-  Modal,
   Avatar,
   Button,
   Card,
@@ -17,6 +16,7 @@ import {
   Tag,
   Upload,
   message,
+  Modal,
 } from "antd";
 
 import {
@@ -38,11 +38,13 @@ import {
   ShopOutlined,
   UserOutlined,
   WalletOutlined,
-  WhatsAppOutlined,
 } from "@ant-design/icons";
+
 import qr_img from "../../../assets/images/qr_img.JPG";
 import qr_zalo from "../../../assets/images/qr_zalo.JPG";
+
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
+import AppButton from "../../../components/common/AppButton";
 
 import licenseApi from "../../../api/licenseApi";
 
@@ -77,6 +79,7 @@ const getStatusConfig = (status) => {
     case "approved":
       return {
         color: "success",
+        className: "approved",
         icon: <CheckCircleFilled />,
         label: "Đã duyệt",
       };
@@ -84,6 +87,7 @@ const getStatusConfig = (status) => {
     case "rejected":
       return {
         color: "error",
+        className: "rejected",
         icon: <InfoCircleOutlined />,
         label: "Từ chối",
       };
@@ -92,6 +96,7 @@ const getStatusConfig = (status) => {
     default:
       return {
         color: "warning",
+        className: "pending",
         icon: <ClockCircleOutlined />,
         label: "Đang xử lý",
       };
@@ -108,6 +113,7 @@ const LicensePage = () => {
   const [registrations, setRegistrations] = useState([]);
 
   const [paymentFile, setPaymentFile] = useState(null);
+  const [paymentPreview, setPaymentPreview] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -117,9 +123,6 @@ const LicensePage = () => {
         licenseApi.getConfig(),
         licenseApi.getMyRegistrations(),
       ]);
-
-      console.log("configResponse:::", configResponse);
-      console.log("registrationResponse:::", registrationResponse);
 
       if (configResponse?.success) {
         setConfig(configResponse.data);
@@ -153,6 +156,14 @@ const LicensePage = () => {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    return () => {
+      if (paymentPreview) {
+        URL.revokeObjectURL(paymentPreview);
+      }
+    };
+  }, [paymentPreview]);
+
   const latestRegistration = registrations[0] || null;
 
   const hasPendingRegistration = useMemo(() => {
@@ -165,9 +176,7 @@ const LicensePage = () => {
   };
 
   const church = config?.church || {};
-
   const payment = config?.payment || {};
-
   const support = config?.support || {};
 
   const transferContent =
@@ -183,7 +192,6 @@ const LicensePage = () => {
       message.success(successMessage || "Đã sao chép");
     } catch (error) {
       console.error("COPY ERROR:", error);
-
       message.error("Không thể sao chép");
     }
   };
@@ -195,7 +203,6 @@ const LicensePage = () => {
 
     if (!isImage) {
       message.error("Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP");
-
       return Upload.LIST_IGNORE;
     }
 
@@ -203,29 +210,38 @@ const LicensePage = () => {
 
     if (!isUnder5MB) {
       message.error("Ảnh chuyển khoản không được vượt quá 5MB");
-
       return Upload.LIST_IGNORE;
     }
 
+    if (paymentPreview) {
+      URL.revokeObjectURL(paymentPreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+
     setPaymentFile(file);
+    setPaymentPreview(previewUrl);
 
     return false;
   };
 
   const handleRemovePaymentImage = () => {
+    if (paymentPreview) {
+      URL.revokeObjectURL(paymentPreview);
+    }
+
     setPaymentFile(null);
+    setPaymentPreview("");
   };
 
   const handleSubmit = async (values) => {
     if (hasPendingRegistration) {
       message.warning("Giáo xứ đang có yêu cầu đăng ký chờ xử lý");
-
       return;
     }
 
     if (!paymentFile) {
       message.error("Vui lòng tải ảnh xác nhận chuyển khoản");
-
       return;
     }
 
@@ -235,11 +251,8 @@ const LicensePage = () => {
       const formData = new FormData();
 
       formData.append("name", values.name?.trim() || "");
-
       formData.append("phone", values.phone?.trim() || "");
-
       formData.append("email", values.email?.trim() || "");
-
       formData.append("payment_image", paymentFile);
 
       const response = await licenseApi.createRegistration(formData);
@@ -251,8 +264,7 @@ const LicensePage = () => {
       message.success("Đã gửi đăng ký FaithEdu thành công");
 
       form.resetFields();
-
-      setPaymentFile(null);
+      handleRemovePaymentImage();
 
       await loadData();
     } catch (error) {
@@ -277,6 +289,7 @@ const LicensePage = () => {
       okButtonProps: {
         danger: true,
       },
+      centered: true,
 
       onOk: async () => {
         try {
@@ -299,9 +312,17 @@ const LicensePage = () => {
   if (loading) {
     return (
       <div className="license-page-loading">
-        <Spin indicator={<LoadingOutlined style={{ fontSize: 28 }} spin />} />
+        <div className="license-loading-card">
+          <div className="license-loading-logo">
+            <SafetyCertificateOutlined />
+          </div>
 
-        <span>Đang tải thông tin FaithEdu...</span>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 28 }} spin />} />
+
+          <strong>Đang tải thông tin FaithEdu</strong>
+
+          <span>Vui lòng chờ trong giây lát...</span>
+        </div>
       </div>
     );
   }
@@ -310,55 +331,59 @@ const LicensePage = () => {
     <div className="license-page">
       <PageHeroHeader
         title="Gói FaithEdu"
-        subtitle="Đăng ký và gia hạn dịch vụ FaithEdu cho giáo xứ"
+        subtitle="Đăng ký và kích hoạt hệ thống quản lý giáo lý cho giáo xứ"
         icon={<SafetyCertificateOutlined />}
       />
 
       <div className="license-page-container">
+        {/* =====================================================
+            STATUS
+        ====================================================== */}
+
         {latestRegistration?.status === "pending" && (
           <Alert
-            className="license-status-alert"
+            className="license-status-alert pending"
             type="warning"
             showIcon
             icon={<ClockCircleOutlined />}
             message="Yêu cầu đăng ký đang được xử lý"
             description={
               <span>
-                Giáo xứ đã gửi yêu cầu vào{" "}
+                Yêu cầu được gửi lúc{" "}
                 <strong>{formatDateTime(latestRegistration.created_at)}</strong>
                 . Vui lòng chờ hệ thống xác nhận.
               </span>
             }
             action={
-              <Button
+              <AppButton
+                icon={<DeleteOutlined />}
                 size="small"
                 danger
-                type="text"
-                icon={<DeleteOutlined />}
+                variant="secondary"
                 onClick={() => handleDeletePending(latestRegistration)}
               >
                 Xóa yêu cầu
-              </Button>
+              </AppButton>
             }
           />
         )}
 
         {latestRegistration?.status === "rejected" && (
           <Alert
-            className="license-status-alert"
+            className="license-status-alert rejected"
             type="error"
             showIcon
             message="Yêu cầu đăng ký chưa được chấp nhận"
             description={
               latestRegistration.reject_reason ||
-              "Vui lòng kiểm tra lại thông tin chuyển khoản và gửi yêu cầu mới."
+              "Vui lòng kiểm tra lại thông tin và gửi yêu cầu mới."
             }
           />
         )}
 
         {latestRegistration?.status === "approved" && (
           <Alert
-            className="license-status-alert"
+            className="license-status-alert approved"
             type="success"
             showIcon
             message="Đăng ký FaithEdu đã được xác nhận"
@@ -366,112 +391,105 @@ const LicensePage = () => {
           />
         )}
 
-        <Row gutter={[20, 20]} className="license-top-grid">
-          <Col xs={24} lg={8}>
-            <Card bordered={false} className="license-support-card">
-              <div className="license-card-label">
-                <CustomerServiceOutlined />
-                HỖ TRỢ FAITHEDU
-              </div>
+        {/* =====================================================
+            PACKAGE HERO
+        ====================================================== */}
 
-              <h2>Tham gia nhóm Zalo</h2>
+        <section className="license-package-hero">
+          <div className="license-package-decoration decoration-one" />
+          <div className="license-package-decoration decoration-two" />
 
-              <p className="license-card-description">
-                Trao đổi, nhận hỗ trợ kỹ thuật và cập nhật thông tin mới nhất từ
-                FaithEdu.
-              </p>
+          <div className="license-package-left">
+            <div className="license-package-badge">
+              <SafetyCertificateOutlined />
+              GÓI DỊCH VỤ CHO GIÁO XỨ
+            </div>
 
-              <div className="license-qr-box license-zalo-qr">
-                {support.zalo_qr_url ? (
-                  <Image src={qr_zalo} preview alt="QR nhóm Zalo FaithEdu" />
-                ) : (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="Chưa cấu hình QR Zalo"
-                  />
-                )}
-              </div>
+            <h1>{packageInfo.name}</h1>
 
-              {support.zalo_group_url && (
-                <Button
-                  block
-                  size="large"
-                  icon={<WhatsAppOutlined />}
-                  className="license-zalo-button"
-                  href={support.zalo_group_url}
-                  target="_blank"
-                >
-                  Mở nhóm Zalo hỗ trợ
-                </Button>
-              )}
-            </Card>
-          </Col>
+            <p>
+              Nền tảng số hỗ trợ giáo xứ quản lý lớp giáo lý, học viên, điểm
+              danh, kết quả học tập và báo cáo tập trung.
+            </p>
 
-          <Col xs={24} lg={16}>
-            <Card bordered={false} className="license-package-card">
-              <div className="license-package-glow" />
+            <div className="license-package-price-large">
+              <strong>{formatMoney(packageInfo.amount)}</strong>
 
-              <div className="license-package-content">
-                <div className="license-package-icon">
-                  <ShopOutlined />
-                </div>
+              <span>đ</span>
+            </div>
 
-                <div className="license-package-heading">
-                  <span className="license-eyebrow">GÓI DỊCH VỤ</span>
+            <div className="license-package-note">
+              <CheckCircleFilled />
+              Kích hoạt gói dịch vụ cho giáo xứ
+            </div>
+          </div>
 
-                  <h2>{packageInfo.name}</h2>
+          <div className="license-package-right">
+            <div className="license-package-icon-large">
+              <ShopOutlined />
+            </div>
 
-                  <p>Dành cho công tác quản lý giáo lý tại giáo xứ</p>
-                </div>
+            <div className="license-package-mini-card">
+              <CheckOutlined />
+              <span>Quản lý lớp học</span>
+            </div>
 
-                <div className="license-package-price">
-                  <strong>{formatMoney(packageInfo.amount)}</strong>
+            <div className="license-package-mini-card">
+              <CheckOutlined />
+              <span>Quản lý học viên</span>
+            </div>
 
-                  <span>đ</span>
-                </div>
+            <div className="license-package-mini-card">
+              <CheckOutlined />
+              <span>Điểm danh & kết quả</span>
+            </div>
 
-                <div className="license-package-divider" />
+            <div className="license-package-mini-card">
+              <CheckOutlined />
+              <span>Báo cáo giáo lý</span>
+            </div>
+          </div>
+        </section>
 
-                <div className="license-feature-list">
-                  <div>
-                    <CheckOutlined />
-                    Quản lý lớp học và học viên
-                  </div>
+        {/* =====================================================
+            MAIN CONTENT
+        ====================================================== */}
 
-                  <div>
-                    <CheckOutlined />
-                    Điểm danh và quản lý kết quả
-                  </div>
+        <Row gutter={[24, 24]} className="license-main-grid">
+          {/* ===================================================
+              LEFT
+          ==================================================== */}
 
-                  <div>
-                    <CheckOutlined />
-                    Thư viện giáo lý và kiểm tra
-                  </div>
-
-                  <div>
-                    <CheckOutlined />
-                    Báo cáo quản lý giáo lý
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row gutter={[20, 20]} className="license-main-grid">
           <Col xs={24} lg={14}>
             <Card bordered={false} className="license-form-card">
-              <div className="license-section-heading">
+              <div className="license-card-top">
                 <div className="license-section-icon">
                   <UserOutlined />
                 </div>
 
                 <div>
+                  <span className="license-section-label">
+                    ĐĂNG KÝ GÓI DỊCH VỤ
+                  </span>
+
                   <h2>Thông tin đăng ký</h2>
 
                   <p>Nhập thông tin người phụ trách đăng ký FaithEdu</p>
                 </div>
               </div>
+
+              {church?.name && (
+                <div className="license-church-info">
+                  <div className="license-church-avatar">
+                    <ShopOutlined />
+                  </div>
+
+                  <div>
+                    <span>GIÁO XỨ</span>
+                    <strong>{church.name}</strong>
+                  </div>
+                </div>
+              )}
 
               <Divider />
 
@@ -482,28 +500,30 @@ const LicensePage = () => {
                 onFinish={handleSubmit}
                 disabled={hasPendingRegistration || submitting}
               >
-                <Form.Item
-                  label="Họ và tên"
-                  name="name"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Vui lòng nhập họ và tên",
-                    },
-                    {
-                      max: 255,
-                      message: "Họ và tên không được vượt quá 255 ký tự",
-                    },
-                  ]}
-                >
-                  <Input
-                    size="large"
-                    prefix={<UserOutlined />}
-                    placeholder="Nhập họ và tên người đăng ký"
-                  />
-                </Form.Item>
+                <Row gutter={16}>
+                  <Col xs={24}>
+                    <Form.Item
+                      label="Họ và tên người đăng ký"
+                      name="name"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập họ và tên",
+                        },
+                        {
+                          max: 255,
+                          message: "Họ và tên không được vượt quá 255 ký tự",
+                        },
+                      ]}
+                    >
+                      <Input
+                        size="large"
+                        prefix={<UserOutlined />}
+                        placeholder="Nhập họ và tên"
+                      />
+                    </Form.Item>
+                  </Col>
 
-                <Row gutter={14}>
                   <Col xs={24} sm={12}>
                     <Form.Item
                       label="Số điện thoại"
@@ -535,14 +555,20 @@ const LicensePage = () => {
                   </Col>
                 </Row>
 
-                <div className="license-transfer-content">
-                  <div className="license-transfer-label">
-                    <span>Nội dung chuyển khoản</span>
+                {/* TRANSFER CONTENT */}
 
-                    <Tag color="blue">Tự động</Tag>
+                <div className="license-transfer-box">
+                  <div className="license-transfer-header">
+                    <div>
+                      <span>NỘI DUNG CHUYỂN KHOẢN</span>
+
+                      <strong>Sử dụng chính xác nội dung này</strong>
+                    </div>
+
+                    <Tag color="blue">TỰ ĐỘNG</Tag>
                   </div>
 
-                  <div className="license-transfer-value">
+                  <div className="license-transfer-code">
                     <span>{transferContent}</span>
 
                     <Button
@@ -558,10 +584,11 @@ const LicensePage = () => {
                   </div>
 
                   <small>
-                    Sử dụng đúng nội dung này khi chuyển khoản để hệ thống dễ
-                    đối soát.
+                    Nội dung giúp hệ thống đối soát giao dịch nhanh chóng.
                   </small>
                 </div>
+
+                {/* UPLOAD */}
 
                 <Form.Item
                   label="Ảnh xác nhận chuyển khoản"
@@ -585,7 +612,7 @@ const LicensePage = () => {
                       </div>
 
                       <div className="license-upload-description">
-                        Kéo thả ảnh vào đây hoặc bấm để chọn
+                        Kéo thả ảnh vào đây hoặc bấm để chọn ảnh
                       </div>
 
                       <div className="license-upload-hint">
@@ -595,41 +622,43 @@ const LicensePage = () => {
                   ) : (
                     <div className="license-upload-preview">
                       <div className="license-upload-preview-image">
-                        <Image
-                          src={URL.createObjectURL(paymentFile)}
-                          alt="Ảnh chuyển khoản"
-                        />
+                        <Image src={paymentPreview} alt="Ảnh chuyển khoản" />
                       </div>
 
-                      <div className="license-upload-preview-info">
-                        <div className="license-upload-file-name">
+                      <div className="license-upload-preview-content">
+                        <div className="license-upload-file">
                           <FileImageOutlined />
-                          <span>{paymentFile.name}</span>
+
+                          <div>
+                            <strong>{paymentFile.name}</strong>
+
+                            <span>
+                              {(paymentFile.size / 1024 / 1024).toFixed(2)} MB
+                            </span>
+                          </div>
                         </div>
 
-                        <span>
-                          {(paymentFile.size / 1024 / 1024).toFixed(2)} MB
-                        </span>
+                        <Button
+                          danger
+                          type="text"
+                          icon={<DeleteOutlined />}
+                          onClick={handleRemovePaymentImage}
+                        >
+                          Xóa ảnh
+                        </Button>
                       </div>
-
-                      <Button
-                        danger
-                        type="text"
-                        icon={<DeleteOutlined />}
-                        onClick={handleRemovePaymentImage}
-                      >
-                        Xóa ảnh
-                      </Button>
                     </div>
                   )}
                 </Form.Item>
+
+                {/* NOTE */}
 
                 <div className="license-submit-note">
                   <InfoCircleOutlined />
 
                   <span>
-                    Sau khi gửi, yêu cầu sẽ được kiểm tra và xác nhận. Vui lòng
-                    đảm bảo ảnh chuyển khoản rõ ràng.
+                    Sau khi gửi, yêu cầu sẽ được kiểm tra và xác nhận. Hãy đảm
+                    bảo ảnh giao dịch rõ ràng và đầy đủ.
                   </span>
                 </div>
 
@@ -648,38 +677,57 @@ const LicensePage = () => {
             </Card>
           </Col>
 
+          {/* ===================================================
+              RIGHT PAYMENT
+          ==================================================== */}
+
           <Col xs={24} lg={10}>
             <Card bordered={false} className="license-payment-card">
-              <div className="license-section-heading">
+              <div className="license-card-top">
                 <div className="license-section-icon gold">
                   <WalletOutlined />
                 </div>
 
                 <div>
-                  <h2>Thanh toán</h2>
+                  <span className="license-section-label">THANH TOÁN</span>
 
-                  <p>Quét QR hoặc chuyển khoản theo thông tin bên dưới</p>
+                  <h2>Thông tin chuyển khoản</h2>
+
+                  <p>Quét mã QR hoặc chuyển khoản trực tiếp</p>
                 </div>
               </div>
 
               <Divider />
 
-              <div className="license-payment-qr">
-                {payment.qr_url ? (
-                  <Image src={qr_img} preview alt="QR thanh toán FaithEdu" />
-                ) : (
-                  <div className="license-payment-qr-empty">
-                    <QrcodeOutlined />
-                    <span>Chưa cấu hình QR thanh toán</span>
-                  </div>
-                )}
+              {/* QR */}
+
+              <div className="license-payment-qr-wrapper">
+                <div className="license-payment-qr">
+                  {payment.qr_url ? (
+                    <Image src={qr_img} preview alt="QR thanh toán FaithEdu" />
+                  ) : (
+                    <div className="license-payment-qr-empty">
+                      <QrcodeOutlined />
+                      <span>Chưa cấu hình QR thanh toán</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="license-scan-label">
+                  <QrcodeOutlined />
+                  Quét mã QR để thanh toán
+                </div>
               </div>
+
+              {/* PRICE */}
 
               <div className="license-payment-amount">
                 <span>Số tiền thanh toán</span>
 
                 <strong>{formatMoney(packageInfo.amount)}đ</strong>
               </div>
+
+              {/* BANK */}
 
               <div className="license-bank-info">
                 <div className="license-bank-row">
@@ -720,6 +768,8 @@ const LicensePage = () => {
                 </div>
               </div>
 
+              {/* CONTENT */}
+
               <div className="license-payment-content">
                 <span>Nội dung chuyển khoản</span>
 
@@ -744,30 +794,101 @@ const LicensePage = () => {
                 type="info"
                 showIcon
                 icon={<InfoCircleOutlined />}
-                message="Lưu ý"
-                description="Sau khi chuyển khoản, hãy tải ảnh giao dịch lên biểu mẫu bên trái để hoàn tất đăng ký."
+                message="Sau khi chuyển khoản"
+                description="Tải ảnh giao dịch lên biểu mẫu bên trái rồi gửi đăng ký để hoàn tất."
               />
             </Card>
           </Col>
         </Row>
 
+        {/* =====================================================
+            SUPPORT
+        ====================================================== */}
+
+        <Row gutter={[24, 24]} className="license-support-grid">
+          <Col xs={24} md={14}>
+            <Card bordered={false} className="license-support-banner">
+              <div className="license-support-content">
+                <div className="license-support-icon">
+                  <CustomerServiceOutlined />
+                </div>
+
+                <div>
+                  <span>CẦN HỖ TRỢ?</span>
+
+                  <h2>Đồng hành cùng FaithEdu</h2>
+
+                  <p>
+                    Tham gia nhóm hỗ trợ để trao đổi, nhận hướng dẫn sử dụng và
+                    cập nhật những thông tin mới nhất.
+                  </p>
+                </div>
+              </div>
+
+              {support.zalo_group_url && (
+                <AppButton
+                  href={support.zalo_group_url}
+                  target="_blank"
+                  variant="secondary"
+                  className="license-support-button"
+                >
+                  Mở nhóm hỗ trợ
+                </AppButton>
+              )}
+            </Card>
+          </Col>
+
+          <Col xs={24} md={10}>
+            <Card bordered={false} className="license-zalo-card">
+              <div className="license-zalo-content">
+                <div>
+                  <span>NHÓM ZALO FAITHEDU</span>
+
+                  <h3>Hỗ trợ & cập nhật</h3>
+
+                  <p>Quét mã QR để tham gia nhóm.</p>
+                </div>
+
+                <div className="license-zalo-qr-box">
+                  {support.zalo_qr_url ? (
+                    <Image src={qr_zalo} preview alt="QR nhóm Zalo FaithEdu" />
+                  ) : (
+                    <QrcodeOutlined />
+                  )}
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* =====================================================
+            HISTORY
+        ====================================================== */}
+
         <Card bordered={false} className="license-history-card">
           <div className="license-history-header">
-            <div className="license-section-heading compact">
+            <div className="license-card-top compact">
               <div className="license-section-icon">
                 <ClockCircleOutlined />
               </div>
 
               <div>
+                <span className="license-section-label">THEO DÕI ĐĂNG KÝ</span>
+
                 <h2>Lịch sử đăng ký</h2>
 
                 <p>Các yêu cầu đăng ký FaithEdu của giáo xứ</p>
               </div>
             </div>
 
-            <Button icon={<ReloadOutlined />} onClick={loadData}>
+            <AppButton
+              type="text"
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={loadData}
+            >
               Làm mới
-            </Button>
+            </AppButton>
           </div>
 
           <Divider />
@@ -776,23 +897,36 @@ const LicensePage = () => {
             <div className="license-history-empty">
               <Empty
                 image={
-                  <Avatar size={64} icon={<SafetyCertificateOutlined />} />
+                  <Avatar size={72} icon={<SafetyCertificateOutlined />} />
                 }
                 description="Chưa có lịch sử đăng ký"
               />
             </div>
           ) : (
             <div className="license-history-list">
-              {registrations.map((registration) => {
+              {registrations.map((registration, index) => {
                 const status = getStatusConfig(registration.status);
 
                 return (
-                  <div className="license-history-item" key={registration.id}>
-                    <div className="license-history-icon">{status.icon}</div>
+                  <div
+                    className={`license-history-item ${status.className}`}
+                    key={registration.id}
+                  >
+                    <div className="license-history-line">
+                      <div className="license-history-dot">{status.icon}</div>
+
+                      {index < registrations.length - 1 && (
+                        <div className="license-history-connector" />
+                      )}
+                    </div>
 
                     <div className="license-history-main">
                       <div className="license-history-title">
-                        <strong>{registration.package_name}</strong>
+                        <div>
+                          <strong>{registration.package_name}</strong>
+
+                          <span>{formatDateTime(registration.created_at)}</span>
+                        </div>
 
                         <Tag color={status.color} icon={status.icon}>
                           {status.label}
@@ -800,22 +934,29 @@ const LicensePage = () => {
                       </div>
 
                       <div className="license-history-meta">
-                        <span>
-                          Người đăng ký: <strong>{registration.name}</strong>
-                        </span>
+                        <div>
+                          <span>Người đăng ký</span>
 
-                        <span>
-                          Số tiền:{" "}
+                          <strong>{registration.name || "--"}</strong>
+                        </div>
+
+                        <div>
+                          <span>Số tiền</span>
+
                           <strong>{formatMoney(registration.amount)}đ</strong>
-                        </span>
-
-                        <span>{formatDateTime(registration.created_at)}</span>
+                        </div>
                       </div>
 
                       {registration.status === "rejected" &&
                         registration.reject_reason && (
                           <div className="license-history-reason">
-                            <strong>Lý do:</strong> {registration.reject_reason}
+                            <InfoCircleOutlined />
+
+                            <div>
+                              <strong>Lý do từ chối</strong>
+
+                              <span>{registration.reject_reason}</span>
+                            </div>
                           </div>
                         )}
                     </div>
@@ -823,8 +964,8 @@ const LicensePage = () => {
                     <div className="license-history-action">
                       {registration.payment_image && (
                         <Image
-                          width={54}
-                          height={54}
+                          width={58}
+                          height={58}
                           src={`${process.env.REACT_APP_API_URL}${registration.payment_image}`}
                           preview
                           className="license-history-image"
@@ -834,6 +975,7 @@ const LicensePage = () => {
 
                       {registration.status === "pending" && (
                         <Button
+                          size="small"
                           danger
                           type="text"
                           icon={<DeleteOutlined />}
@@ -847,6 +989,10 @@ const LicensePage = () => {
             </div>
           )}
         </Card>
+
+        {/* =====================================================
+            FOOTER
+        ====================================================== */}
 
         <div className="license-footer-note">
           <SafetyCertificateOutlined />

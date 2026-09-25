@@ -31,7 +31,7 @@ import {
   Layers,
   CircleHelp,
   LibraryBig,
-  // Package,
+  Package,
 } from "lucide-react";
 
 import imgSidebar from "../../assets/images/logosidebar.png";
@@ -352,13 +352,13 @@ export default function CatechistSidebar({
      9. GÓI FAITHEDU
   ======================================================= */
 
-    // if (permission.canViewCatechists) {
-    //   items.push({
-    //     key: MENU_PATHS.license,
-    //     label: "Gói FaithEdu",
-    //     icon: <Package size={18} strokeWidth={2.2} />,
-    //   });
-    // }
+    if (permission.canViewCatechists) {
+      items.push({
+        key: MENU_PATHS.license,
+        label: "Gói FaithEdu",
+        icon: <Package size={18} strokeWidth={2.2} />,
+      });
+    }
 
     return items;
   }, [permission]);
