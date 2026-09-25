@@ -486,20 +486,56 @@ export default function CatechistDashboard() {
           <Col xs={24} sm={12} lg={6}>
             <StatCard
               title="FaithEdu"
-              value="Vĩnh viễn"
-              subText="Đã kích hoạt FaithEdu"
+              value={
+                license?.license.is_trial
+                  ? `${license?.license.days_remaining} ngày`
+                  : license?.license.is_active
+                    ? "Đã kích hoạt"
+                    : license?.license.is_expired
+                      ? "Đã hết hạn"
+                      : "Chưa kích hoạt"
+              }
+              subText={
+                license?.license.is_trial
+                  ? `Dùng thử đến ${new Date(
+                      license.trial_expires_at,
+                    ).toLocaleDateString("vi-VN")}`
+                  : license?.license.is_active
+                    ? "Đã kích hoạt FaithEdu"
+                    : license?.license.is_expired
+                      ? "Gói FaithEdu đã hết hạn"
+                      : "Chưa kích hoạt FaithEdu"
+              }
               icon={IMAGE_ASSETS.achievements}
               tag={
                 <Tag
                   style={{
                     border: "none",
                     borderRadius: 8,
-                    background: "#DCFCE7",
-                    color: "#15803D",
+                    background: license?.license.is_trial
+                      ? "#FEF3C7"
+                      : license?.license.is_active
+                        ? "#DCFCE7"
+                        : license?.license.is_expired
+                          ? "#FEE2E2"
+                          : "#F1F5F9",
+                    color: license?.license.is_trial
+                      ? "#B45309"
+                      : license?.license.is_active
+                        ? "#15803D"
+                        : license?.license.is_expired
+                          ? "#DC2626"
+                          : "#64748B",
                     fontWeight: 700,
                   }}
                 >
-                  Gói FaithEdu
+                  {license?.license.is_trial
+                    ? "Dùng thử"
+                    : license?.license.is_active
+                      ? "Gói FaithEdu"
+                      : license?.license.is_expired
+                        ? "Đã hết hạn"
+                        : "Chưa kích hoạt"}
                 </Tag>
               }
             />

@@ -8,10 +8,7 @@ import {
   ReloadOutlined,
 } from "@ant-design/icons";
 
-import {
-  getResultsLeaderBoard,
-  getClassLeaderboard,
-} from "../../api/resultApi";
+import { getLeaderboard, getClassLeaderboard } from "../../api/resultApi";
 import LoadingLogo from "../../components/LoadingLogo";
 import classApi from "../../api/classApi";
 
@@ -177,7 +174,7 @@ const LeaderboardGame = () => {
   const loadGlobalLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getResultsLeaderBoard();
+      const response = await getLeaderboard();
 
       if (response?.success) {
         const data = normalizeLeaderboardData(response);

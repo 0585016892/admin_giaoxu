@@ -229,7 +229,7 @@ const SummaryItem = ({ icon, label, value }) => {
 const ParishSettingsPage = () => {
   const { user } = useUser();
 
-  const isCatechist = user?.role === "admin_catechist";
+  const isCatechist = ["admin_catechist", "catechist"].includes(user?.role);
 
   const { editChurch, getChurchId } = useChurch();
 

@@ -17,7 +17,7 @@ import CatechistDashboard from "../pages/catechist/CatechistDashboard";
 import ClassManagementDashboard from "../pages/catechist/ClassManagement";
 import StudentManagement from "../pages/catechist/StudentManagement";
 import GameManagementPage from "../pages/catechist/GameManagementPage";
-import ResultsPage from "../pages/catechist/ResultsPage";
+import ResultsPage from "../pages/catechist/ResultsPage/ResultsPage";
 import LeaderboardPage from "../pages/catechist/LeaderboardPage";
 import ProfilePageCate from "../pages/catechist/ProfilePageCate";
 import ParishSettingsPage from "../pages/catechist/ParishSettingsPage";
@@ -32,6 +32,7 @@ import Statistics from "../pages/catechist/Statistics";
 import CertificatePage from "../pages/catechist/CertificatePage";
 import LessonLibraryPage from "../pages/catechist/LessonLibraryPage";
 import ResourceViewerPage from "../pages/catechist/ResourceViewerPage";
+import GradingRulePage from "../pages/catechist/GradingRule/GradingRulePage";
 import QuestionPlayPage from "../pages/catechist/QuestionPlayPage";
 
 import LandingPage from "../pages/LandingPage/LandingPage";
@@ -155,6 +156,11 @@ export default function AppRoutes() {
             <Route
               path="/catechist/questions/play/:lessonId"
               element={<QuestionPlayPage />}
+            />
+
+            <Route
+              path="/catechist/grading-rule"
+              element={<GradingRulePage />}
             />
             <Route path="/catechist/questions" element={<QuestionPage />} />
           </Route>

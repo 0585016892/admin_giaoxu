@@ -98,6 +98,7 @@ const MENU_PATHS = {
   leaderboard: "/catechist/leaderboard",
   certificate: "/catechist/certificate",
   lessonLibrary: "/catechist/lesson-library",
+  gradingRule: "/catechist/grading-rule",
 
   sendNotifications: "/catechist/notifications",
   notifications: "/catechist/my-notifications",
@@ -272,6 +273,11 @@ export default function CatechistSidebar({
         //   key: MENU_PATHS.results,
         //   label: "Kết quả học tập",
         //   icon: <ClipboardCheck size={16} strokeWidth={2.2} />,
+        // },
+        // {
+        //   key: MENU_PATHS.gradingRule,
+        //   label: "Cấu hình hệ số điểm",
+        //   icon: <CircleHelp size={16} strokeWidth={2.2} />,
         // },
         {
           key: MENU_PATHS.questions,

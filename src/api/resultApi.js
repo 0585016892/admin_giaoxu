@@ -1,244 +1,375 @@
 import axiosClient from "./axios";
 
-// =========================================================
-// STATISTICS
-// =========================================================
+/**
+ * ============================================================
+ * RESULT API
+ * ============================================================
+ *
+ * Quản lý:
+ * 1. Quy tắc tính điểm của giáo xứ
+ * 2. Thành phần của quy tắc
+ * 3. Kết quả điểm học sinh
+ * 4. Thống kê
+ * 5. Xếp hạng
+ *
+ * Backend base:
+ * /api
+ *
+ * Route:
+ * /grading-rules
+ * /results
+ */
+
+/* ============================================================
+ * COMMON
+ * ============================================================ */
+
+const unwrap = (response) => response.data;
+
+const requireId = (value, field = "id") => {
+  if (value === undefined || value === null || value === "") {
+    throw new Error(`${field} là bắt buộc`);
+  }
+
+  return value;
+};
+
+/* ============================================================
+ * GRADING RULE
+ * ============================================================ */
 
 /**
- * Thống kê kết quả toàn giáo xứ
+ * Lấy quy tắc tính điểm của giáo xứ hiện tại.
  *
- * GET /api/results/statistics
+ * GET /grading-rules
+ *
+ * Mỗi giáo xứ chỉ có 1 grading rule.
+ */
+export const getGradingRule = async () => {
+  const response = await axiosClient.get("/grading-rules");
+  return unwrap(response);
+};
+
+/**
+ * Lấy chi tiết một quy tắc.
+ *
+ * GET /grading-rules/:id
+ */
+export const getGradingRuleById = async (id) => {
+  requireId(id, "grading rule id");
+
+  const response = await axiosClient.get(`/grading-rules/${id}`);
+
+  return unwrap(response);
+};
+
+/**
+ * Tạo quy tắc tính điểm.
+ *
+ * POST /grading-rules
+ *
+ * data:
+ * {
+ *   calculation_type,
+ *   multiplier,
+ *   divisor,
+ *   rounding_digits,
+ *   pass_score,
+ *   status,
+ *   items: [...]
+ * }
+ */
+export const createGradingRule = async (data) => {
+  if (!data) {
+    throw new Error("Dữ liệu quy tắc là bắt buộc");
+  }
+
+  const response = await axiosClient.post("/grading-rules", data);
+
+  return unwrap(response);
+};
+
+/**
+ * Cập nhật quy tắc tính điểm.
+ *
+ * PUT /grading-rules/:id
+ */
+export const updateGradingRule = async (id, data) => {
+  requireId(id, "grading rule id");
+
+  if (!data) {
+    throw new Error("Dữ liệu cập nhật là bắt buộc");
+  }
+
+  const response = await axiosClient.put(`/grading-rules/${id}`, data);
+
+  return unwrap(response);
+};
+
+/**
+ * Xóa quy tắc.
+ *
+ * DELETE /grading-rules/:id
+ */
+export const deleteGradingRule = async (id) => {
+  requireId(id, "grading rule id");
+
+  const response = await axiosClient.delete(`/grading-rules/${id}`);
+
+  return unwrap(response);
+};
+
+/* ============================================================
+ * RESULTS - STATISTICS
+ * ============================================================ */
+
+/**
+ * Thống kê kết quả toàn giáo xứ.
+ *
+ * GET /results/statistics
  */
 export const getResultStatistics = async () => {
   const response = await axiosClient.get("/results/statistics");
 
-  return response.data;
+  return unwrap(response);
 };
 
 /**
- * Thống kê kết quả của lớp
+ * Thống kê kết quả của một lớp.
  *
- * GET /api/results/class/:classId/statistics
- *
- * @param {number|string} classId
+ * GET /results/class/:classId/statistics
  */
 export const getClassStatistics = async (classId) => {
-  if (!classId) {
-    throw new Error("classId là bắt buộc");
-  }
+  requireId(classId, "classId");
 
   const response = await axiosClient.get(
     `/results/class/${classId}/statistics`,
   );
 
-  return response.data;
+  return unwrap(response);
 };
 
 /**
- * Thống kê kết quả của học sinh
+ * Thống kê kết quả của một học sinh.
  *
- * GET /api/results/student/:studentId/statistics
- *
- * @param {number|string} studentId
+ * GET /results/student/:studentId/statistics
  */
 export const getStudentStatistics = async (studentId) => {
-  if (!studentId) {
-    throw new Error("studentId là bắt buộc");
-  }
+  requireId(studentId, "studentId");
 
   const response = await axiosClient.get(
     `/results/student/${studentId}/statistics`,
   );
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// CLASS
-// =========================================================
+/* ============================================================
+ * RESULTS - LEADERBOARD
+ * ============================================================ */
 
 /**
- * Lấy bảng điểm của lớp
+ * Xếp hạng toàn giáo xứ.
  *
- * GET /api/results/class/:classId
- *
- * @param {number|string} classId
- * @param {object} params
+ * GET /results/leaderboard
  *
  * params:
- * - page
- * - limit
+ * {
+ *   limit,
+ *   page,
+ *   ...
+ * }
+ */
+export const getLeaderboard = async (params = {}) => {
+  const response = await axiosClient.get("/results/leaderboard", {
+    params,
+  });
+
+  return unwrap(response);
+};
+
+/**
+ * Xếp hạng trong lớp.
+ *
+ * GET /results/class/:classId/leaderboard
+ */
+export const getClassLeaderboard = async (classId, params = {}) => {
+  requireId(classId, "classId");
+
+  const response = await axiosClient.get(
+    `/results/class/${classId}/leaderboard`,
+    {
+      params,
+    },
+  );
+
+  return unwrap(response);
+};
+
+/* ============================================================
+ * RESULTS - BY CLASS
+ * ============================================================ */
+
+/**
+ * Lấy bảng điểm của lớp.
+ *
+ * GET /results/class/:classId
+ *
+ * Response dự kiến:
+ *
+ * {
+ *   success: true,
+ *   data: [...],
+ *   grading_rule: {...},
+ *   pagination: {...}
+ * }
  */
 export const getResultsByClass = async (classId, params = {}) => {
-  if (!classId) {
-    throw new Error("classId là bắt buộc");
-  }
+  requireId(classId, "classId");
 
   const response = await axiosClient.get(`/results/class/${classId}`, {
     params,
   });
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// STUDENT
-// =========================================================
+/* ============================================================
+ * RESULTS - BY STUDENT
+ * ============================================================ */
 
 /**
- * Lấy toàn bộ điểm của học sinh
+ * Lấy tất cả kết quả của học sinh.
  *
- * GET /api/results/student/:studentId
- *
- * @param {number|string} studentId
+ * GET /results/student/:studentId
  */
-export const getResultsByStudent = async (studentId) => {
-  if (!studentId) {
-    throw new Error("studentId là bắt buộc");
-  }
+export const getResultsByStudent = async (studentId, params = {}) => {
+  requireId(studentId, "studentId");
 
-  const response = await axiosClient.get(`/results/student/${studentId}`);
+  const response = await axiosClient.get(`/results/student/${studentId}`, {
+    params,
+  });
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// GRADING RULE
-// =========================================================
+/* ============================================================
+ * RESULTS - BY GRADING RULE
+ * ============================================================ */
 
 /**
- * Lấy kết quả theo bộ quy tắc
+ * Lấy kết quả theo quy tắc.
  *
- * GET /api/results/rule/:ruleId
- *
- * @param {number|string} ruleId
+ * GET /results/rule/:ruleId
  */
-export const getResultsByRule = async (ruleId) => {
-  if (!ruleId) {
-    throw new Error("ruleId là bắt buộc");
-  }
+export const getResultsByRule = async (ruleId, params = {}) => {
+  requireId(ruleId, "ruleId");
 
-  const response = await axiosClient.get(`/results/rule/${ruleId}`);
+  const response = await axiosClient.get(`/results/rule/${ruleId}`, {
+    params,
+  });
 
-  return response.data;
+  return unwrap(response);
 };
 
+/* ============================================================
+ * RESULTS - BY GRADING RULE ITEM
+ * ============================================================ */
+
 /**
- * Lấy kết quả theo một đầu điểm
+ * Lấy kết quả theo một thành phần điểm.
  *
- * GET /api/results/rule-item/:ruleItemId
- *
- * @param {number|string} ruleItemId
+ * GET /results/rule-item/:ruleItemId
  */
-export const getResultsByRuleItem = async (ruleItemId) => {
-  if (!ruleItemId) {
-    throw new Error("ruleItemId là bắt buộc");
-  }
+export const getResultsByRuleItem = async (ruleItemId, params = {}) => {
+  requireId(ruleItemId, "ruleItemId");
 
-  const response = await axiosClient.get(`/results/rule-item/${ruleItemId}`);
+  const response = await axiosClient.get(`/results/rule-item/${ruleItemId}`, {
+    params,
+  });
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// LIST
-// =========================================================
+/* ============================================================
+ * RESULTS - GENERAL LIST
+ * ============================================================ */
 
 /**
- * Lấy danh sách kết quả
+ * Lấy danh sách kết quả.
  *
- * GET /api/results
+ * GET /results
  *
- * @param {object} params
+ * params có thể gồm:
  *
- * Hỗ trợ:
- * - page
- * - limit
- * - student_id
- * - grading_rule_id
- * - grading_rule_item_id
- * - class_id
- * - exam_type
- *
- * Ví dụ:
- *
- * getResults({
- *   page: 1,
- *   limit: 20,
- *   class_id: 5,
- *   grading_rule_id: 1,
- *   grading_rule_item_id: 3,
- *   exam_type: "paper",
- * });
+ * {
+ *   page,
+ *   limit,
+ *   student_id,
+ *   class_id,
+ *   grading_rule_id,
+ *   grading_rule_item_id,
+ *   exam_type,
+ *   from_date,
+ *   to_date,
+ *   search
+ * }
  */
 export const getResults = async (params = {}) => {
   const response = await axiosClient.get("/results", {
     params,
   });
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// DETAIL
-// =========================================================
+/* ============================================================
+ * RESULTS - DETAIL
+ * ============================================================ */
 
 /**
- * Lấy chi tiết một kết quả
+ * Lấy một kết quả theo ID.
  *
- * GET /api/results/:id
- *
- * @param {number|string} id
+ * GET /results/:id
  */
 export const getResultById = async (id) => {
-  if (!id) {
-    throw new Error("result id là bắt buộc");
-  }
+  requireId(id, "result id");
 
   const response = await axiosClient.get(`/results/${id}`);
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// CREATE
-// =========================================================
+/* ============================================================
+ * RESULTS - CREATE
+ * ============================================================ */
 
 /**
- * Tạo kết quả mới
+ * Tạo kết quả.
  *
- * POST /api/results
+ * POST /results
  *
  * data:
- *
  * {
- *   student_id: 101,
- *   grading_rule_id: 1,
- *   grading_rule_item_id: 3,
- *   score: 8.5,
- *   exam_type: "paper",
- *   exam_date: "2026-09-24",
- *   note: ""
+ *   student_id,
+ *   grading_rule_id,
+ *   grading_rule_item_id,
+ *   score,
+ *   exam_type,
+ *   exam_date,
+ *   note
  * }
- *
- * @param {object} data
  */
 export const createResult = async (data) => {
   if (!data) {
     throw new Error("Dữ liệu kết quả là bắt buộc");
   }
 
-  if (!data.student_id) {
-    throw new Error("student_id là bắt buộc");
-  }
+  requireId(data.student_id, "student_id");
 
-  if (!data.grading_rule_id) {
-    throw new Error("grading_rule_id là bắt buộc");
-  }
+  requireId(data.grading_rule_id, "grading_rule_id");
 
-  if (!data.grading_rule_item_id) {
-    throw new Error("grading_rule_item_id là bắt buộc");
-  }
+  requireId(data.grading_rule_item_id, "grading_rule_item_id");
 
   if (data.score === undefined || data.score === null || data.score === "") {
     throw new Error("score là bắt buộc");
@@ -246,33 +377,20 @@ export const createResult = async (data) => {
 
   const response = await axiosClient.post("/results", data);
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// UPDATE
-// =========================================================
+/* ============================================================
+ * RESULTS - UPDATE
+ * ============================================================ */
 
 /**
- * Cập nhật kết quả
+ * Cập nhật kết quả.
  *
- * PUT /api/results/:id
- *
- * @param {number|string} id
- * @param {object} data
- *
- * Có thể cập nhật:
- * - grading_rule_id
- * - grading_rule_item_id
- * - score
- * - exam_type
- * - exam_date
- * - note
+ * PUT /results/:id
  */
 export const updateResult = async (id, data) => {
-  if (!id) {
-    throw new Error("result id là bắt buộc");
-  }
+  requireId(id, "result id");
 
   if (!data) {
     throw new Error("Dữ liệu cập nhật là bắt buộc");
@@ -280,46 +398,173 @@ export const updateResult = async (id, data) => {
 
   const response = await axiosClient.put(`/results/${id}`, data);
 
-  return response.data;
+  return unwrap(response);
 };
 
-// =========================================================
-// DELETE
-// =========================================================
+/* ============================================================
+ * RESULTS - DELETE
+ * ============================================================ */
 
 /**
- * Xóa kết quả
+ * Xóa kết quả.
  *
- * DELETE /api/results/:id
- *
- * @param {number|string} id
+ * DELETE /results/:id
  */
 export const deleteResult = async (id) => {
-  if (!id) {
-    throw new Error("result id là bắt buộc");
-  }
+  requireId(id, "result id");
 
   const response = await axiosClient.delete(`/results/${id}`);
 
-  return response.data;
+  return unwrap(response);
 };
 
-export const getLeaderboard = async () => {
-  const response = await axiosClient.get("/results/leaderboard");
+/* ============================================================
+ * HELPER - GRADING RULE
+ * ============================================================ */
 
-  return response.data;
-};
-
-export const getResultsLeaderBoard = getLeaderboard;
-
-export const getClassLeaderboard = async (classId) => {
-  if (!classId) {
-    throw new Error("classId là bắt buộc");
+/**
+ * Lấy danh sách thành phần điểm.
+ *
+ * Ví dụ:
+ *
+ * const rule = await getGradingRule();
+ * const items = getGradingRuleItems(rule);
+ */
+export const getGradingRuleItems = (ruleResponse) => {
+  if (!ruleResponse) {
+    return [];
   }
 
-  const response = await axiosClient.get(
-    `/results/class/${classId}/leaderboard`,
-  );
+  const rule = ruleResponse?.data || ruleResponse;
 
-  return response.data;
+  if (!Array.isArray(rule?.items)) {
+    return [];
+  }
+
+  return rule.items;
 };
+
+/**
+ * Tìm một thành phần điểm theo ID.
+ */
+export const findGradingRuleItem = (ruleResponse, itemId) => {
+  const items = getGradingRuleItems(ruleResponse);
+
+  return items.find((item) => String(item.id) === String(itemId)) || null;
+};
+
+/**
+ * Tìm một thành phần điểm theo code.
+ */
+export const findGradingRuleItemByCode = (ruleResponse, code) => {
+  const items = getGradingRuleItems(ruleResponse);
+
+  return items.find((item) => item.code === code) || null;
+};
+
+/* ============================================================
+ * HELPER - SCORE
+ * ============================================================ */
+
+/**
+ * Kiểm tra điểm hợp lệ.
+ */
+export const isValidScore = (score, maxScore = 10) => {
+  if (score === undefined || score === null || score === "") {
+    return false;
+  }
+
+  const number = Number(score);
+
+  if (!Number.isFinite(number)) {
+    return false;
+  }
+
+  return number >= 0 && number <= Number(maxScore);
+};
+
+/**
+ * Chuẩn hóa điểm trước khi gửi API.
+ */
+export const normalizeScore = (score) => {
+  if (score === undefined || score === null || score === "") {
+    return null;
+  }
+
+  const number = Number(score);
+
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+
+  return Number(number.toFixed(2));
+};
+
+/**
+ * Kiểm tra học sinh đạt hay chưa.
+ */
+export const isPassedScore = (score, passScore = 5) => {
+  if (score === undefined || score === null || score === "") {
+    return false;
+  }
+
+  return Number(score) >= Number(passScore);
+};
+
+/* ============================================================
+ * DEFAULT EXPORT
+ * ============================================================ */
+
+const resultApi = {
+  // grading rule
+  getGradingRule,
+  getGradingRuleById,
+  createGradingRule,
+  updateGradingRule,
+  deleteGradingRule,
+
+  // statistics
+  getResultStatistics,
+  getClassStatistics,
+  getStudentStatistics,
+
+  // leaderboard
+  getLeaderboard,
+  getClassLeaderboard,
+
+  // results
+  getResultsByClass,
+  getResultsByStudent,
+  getResultsByRule,
+  getResultsByRuleItem,
+  getResults,
+  getResultById,
+  createResult,
+  updateResult,
+  deleteResult,
+
+  // helpers
+  getGradingRuleItems,
+  findGradingRuleItem,
+  findGradingRuleItemByCode,
+  isValidScore,
+  normalizeScore,
+  isPassedScore,
+};
+
+export default resultApi;
+
+/**
+ * RESULTS
+├── CRUD kết quả
+├── Bảng điểm
+├── Thống kê
+└── Xếp hạng
+
+GRADING RULE
+├── Lấy quy tắc
+├── Lấy chi tiết
+├── Tạo quy tắc
+├── Cập nhật quy tắc
+└── Xóa quy tắc
+ */

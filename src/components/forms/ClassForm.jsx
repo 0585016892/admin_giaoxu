@@ -86,6 +86,10 @@ const categoryOptions = [
     value: "Giáo lý Mùa Hè",
     label: "Giáo lý Mùa Hè",
   },
+  {
+    value: "Giáo lý Thăng Tiến",
+    label: "Giáo lý Thăng Tiến",
+  },
 ];
 
 const statusOptions = [
