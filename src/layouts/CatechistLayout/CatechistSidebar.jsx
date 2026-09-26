@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Layout,
   Menu,
@@ -111,6 +111,9 @@ const MENU_PATHS = {
     HELPERS
   ========================================================= */
 
+/**
+ * Kiểm tra route hiện tại có thuộc menu hay không.
+ */
 const isPathActive = (pathname, path) => {
   if (!pathname || !path) return false;
 
@@ -119,6 +122,43 @@ const isPathActive = (pathname, path) => {
   }
 
   return pathname === path || pathname.startsWith(`${path}/`);
+};
+
+/**
+ * Tìm toàn bộ parent của một menu item.
+ *
+ * Ví dụ:
+ *
+ * group-training
+ *   └── group-classes
+ *       └── /catechist/classes-teacher
+ *
+ * Kết quả:
+ *
+ * [
+ *   "group-training",
+ *   "group-classes"
+ * ]
+ */
+const getMenuParentKeys = (items, targetKey, parents = []) => {
+  for (const item of items) {
+    if (item.key === targetKey) {
+      return parents;
+    }
+
+    if (item.children) {
+      const result = getMenuParentKeys(item.children, targetKey, [
+        ...parents,
+        item.key,
+      ]);
+
+      if (result) {
+        return result;
+      }
+    }
+  }
+
+  return null;
 };
 
 /* =========================================================
@@ -135,6 +175,10 @@ export default function CatechistSidebar({
   const location = useLocation();
 
   const { canViewClass, canViewStudents, canViewCatechists } = usePermission();
+
+  /* =========================================================
+      PERMISSION
+    ========================================================= */
 
   const permission = useMemo(
     () => ({
@@ -153,8 +197,8 @@ export default function CatechistSidebar({
     const items = [];
 
     /* =======================================================
-     1. TỔNG QUAN
-  ======================================================= */
+      1. TỔNG QUAN
+    ======================================================= */
 
     items.push({
       key: MENU_PATHS.dashboard,
@@ -163,8 +207,8 @@ export default function CatechistSidebar({
     });
 
     /* =======================================================
-     2. QUẢN LÝ ĐÀO TẠO
-  ======================================================= */
+      2. QUẢN LÝ ĐÀO TẠO
+    ======================================================= */
 
     const classChildren = [];
 
@@ -229,8 +273,8 @@ export default function CatechistSidebar({
     });
 
     /* =======================================================
-     3. ĐIỂM DANH
-  ======================================================= */
+      3. ĐIỂM DANH
+    ======================================================= */
 
     items.push({
       key: MENU_PATHS.attendance,
@@ -239,8 +283,8 @@ export default function CatechistSidebar({
     });
 
     /* =======================================================
-     4. KẾT QUẢ & ĐÁNH GIÁ
-  ======================================================= */
+      4. KẾT QUẢ & ĐÁNH GIÁ
+    ======================================================= */
 
     const resultChildren = [
       {
@@ -271,8 +315,8 @@ export default function CatechistSidebar({
     });
 
     /* =======================================================
-     5. HỌC LIỆU & KIỂM TRA
-  ======================================================= */
+      5. HỌC LIỆU & KIỂM TRA
+    ======================================================= */
 
     items.push({
       key: "group-learning",
@@ -298,8 +342,8 @@ export default function CatechistSidebar({
     });
 
     /* =======================================================
-     6. BẰNG & CHỨNG CHỈ
-  ======================================================= */
+      6. BẰNG & CHỨNG CHỈ
+    ======================================================= */
 
     if (permission.canViewCatechists) {
       items.push({
@@ -310,8 +354,8 @@ export default function CatechistSidebar({
     }
 
     /* =======================================================
-     7. BÁO CÁO
-  ======================================================= */
+      7. BÁO CÁO
+    ======================================================= */
 
     if (permission.canViewCatechists) {
       items.push({
@@ -322,8 +366,8 @@ export default function CatechistSidebar({
     }
 
     /* =======================================================
-     8. THÔNG BÁO
-  ======================================================= */
+      8. THÔNG BÁO
+    ======================================================= */
 
     const notificationChildren = [];
 
@@ -349,8 +393,8 @@ export default function CatechistSidebar({
     });
 
     /* =======================================================
-     9. GÓI FAITHEDU
-  ======================================================= */
+      9. GÓI FAITHEDU
+    ======================================================= */
 
     if (permission.canViewCatechists) {
       items.push({
@@ -364,37 +408,114 @@ export default function CatechistSidebar({
   }, [permission]);
 
   /* =========================================================
+      ROOT MENU KEYS
+     
+      Đây là những menu CHA cấp 1 có children.
+     
+      Ví dụ:
+      - group-training
+      - group-results
+      - group-learning
+      - group-notifications
+
+      Chỉ những key này mới tham gia accordion.
+    ========================================================= */
+
+  const rootMenuKeys = useMemo(() => {
+    return menuItems.filter((item) => item.children).map((item) => item.key);
+  }, [menuItems]);
+
+  /* =========================================================
       ACTIVE MENU
     ========================================================= */
 
-  const { selectedKeys, openKeys } = useMemo(() => {
+  const selectedKeys = useMemo(() => {
     const pathname = location.pathname;
 
-    let foundKey = "";
-    let foundOpenKey = "";
+    const findActiveKey = (items) => {
+      for (const item of items) {
+        if (item.children) {
+          const childKey = findActiveKey(item.children);
 
-    menuItems.forEach((item) => {
-      if (item.children) {
-        item.children.forEach((sub) => {
-          if (isPathActive(pathname, sub.key)) {
-            foundKey = sub.key;
-            foundOpenKey = item.key;
+          if (childKey) {
+            return childKey;
           }
-        });
-      } else if (isPathActive(pathname, item.key)) {
-        foundKey = item.key;
+        } else if (isPathActive(pathname, item.key)) {
+          return item.key;
+        }
       }
-    });
 
-    return {
-      selectedKeys: foundKey ? [foundKey] : [],
-
-      openKeys: foundOpenKey ? [foundOpenKey] : [],
+      return "";
     };
+
+    const foundKey = findActiveKey(menuItems);
+
+    return foundKey ? [foundKey] : [];
   }, [location.pathname, menuItems]);
 
   /* =========================================================
-      ACTIONS
+      ACTIVE PARENT CHAIN
+
+      Ví dụ URL:
+
+      /catechist/classes-teacher
+
+      =>
+
+      [
+        "group-training",
+        "group-classes"
+      ]
+    ========================================================= */
+
+  const activeParentKeys = useMemo(() => {
+    const activeKey = selectedKeys[0];
+
+    if (!activeKey) {
+      return [];
+    }
+
+    const parents = getMenuParentKeys(menuItems, activeKey);
+
+    return parents || [];
+  }, [selectedKeys, menuItems]);
+
+  /* =========================================================
+      OPEN KEYS
+    ========================================================= */
+
+  const [openKeys, setOpenKeys] = useState(activeParentKeys);
+
+  /* =========================================================
+      SYNC ROUTE -> OPEN MENU
+
+      QUAN TRỌNG:
+
+      Không merge:
+
+      ❌ setOpenKeys(prev => [
+          ...prev,
+          ...activeParentKeys
+        ]);
+
+      Vì như vậy:
+
+      group-training
+      +
+      group-results
+
+      có thể cùng tồn tại.
+
+      Thay vào đó route thay đổi thì set
+      chính xác parent chain của route.
+    ========================================================= */
+
+  useEffect(() => {
+    setOpenKeys(activeParentKeys);
+  }, [activeParentKeys]);
+
+  /* =========================================================
+      MOBILE
     ========================================================= */
 
   const closeMobileMenu = () => {
@@ -403,9 +524,83 @@ export default function CatechistSidebar({
     }
   };
 
+  /* =========================================================
+      MENU CLICK
+
+      Chỉ xử lý LEAF.
+
+      Khi click:
+
+      Lớp của tôi
+
+      parentKeys:
+
+      [
+        "group-training",
+        "group-classes"
+      ]
+
+      => giữ cả 2.
+    ========================================================= */
+
   const handleMenuClick = ({ key }) => {
-    if (!key || key.startsWith("group-")) {
+    if (!key) {
       return;
+    }
+
+    /*
+     * Nếu key là menu cha/group thì không navigate.
+     * Ant Design sẽ xử lý mở/đóng thông qua onOpenChange.
+     */
+    if (key.startsWith("group-")) {
+      return;
+    }
+
+    const parentKeys = getMenuParentKeys(menuItems, key);
+
+    /*
+     * Nếu menu là child của một menu cha,
+     * giữ nguyên parent chain.
+     */
+    if (parentKeys?.length) {
+      const currentRoot = parentKeys.find((parentKey) =>
+        rootMenuKeys.includes(parentKey),
+      );
+
+      if (currentRoot) {
+        const nestedParentKeys = parentKeys.filter(
+          (parentKey) => parentKey !== currentRoot,
+        );
+
+        /*
+         * Chỉ giữ:
+         *
+         * root hiện tại
+         * +
+         * các submenu cấp dưới
+         *
+         * Ví dụ:
+         *
+         * [
+         *   "group-training",
+         *   "group-classes"
+         * ]
+         */
+        setOpenKeys([currentRoot, ...nestedParentKeys]);
+      }
+    } else {
+      /*
+       * Leaf cấp 1.
+       *
+       * Ví dụ:
+       *
+       * Tổng quan
+       * Điểm danh
+       * Bằng & chứng chỉ
+       *
+       * Khi click thì không cần mở menu cha.
+       */
+      setOpenKeys([]);
     }
 
     navigate(key);
@@ -413,11 +608,129 @@ export default function CatechistSidebar({
     closeMobileMenu();
   };
 
+  /* =========================================================
+      SUBMENU OPEN / CLOSE
+
+      Đây là phần QUAN TRỌNG NHẤT.
+
+      Yêu cầu:
+
+      1. Chỉ 1 root menu mở.
+      2. Submenu bên trong root vẫn được mở nhiều cấp.
+      3. Click root khác -> root cũ đóng.
+      4. Click lại root đang mở -> đóng.
+    ========================================================= */
+
+  const handleOpenChange = (keys) => {
+    const nextKeys = Array.isArray(keys) ? keys : [];
+
+    /*
+     * Tìm những key nào là ROOT.
+     */
+    const openedRootKeys = nextKeys.filter((key) => rootMenuKeys.includes(key));
+
+    /*
+     * =====================================================
+     * TRƯỜNG HỢP 1:
+     *
+     * Không có root nào.
+     *
+     * Ví dụ click đóng:
+     *
+     * group-training
+     *
+     * => []
+     *
+     * Đóng toàn bộ.
+     * =====================================================
+     */
+
+    if (openedRootKeys.length === 0) {
+      setOpenKeys([]);
+      return;
+    }
+
+    /*
+     * =====================================================
+     * TRƯỜNG HỢP 2:
+     *
+     * Chỉ có 1 root.
+     *
+     * Ví dụ:
+     *
+     * [
+     *   "group-training",
+     *   "group-classes"
+     * ]
+     *
+     * Giữ nguyên.
+     *
+     * Như vậy submenu "Lớp học" vẫn mở.
+     * =====================================================
+     */
+
+    if (openedRootKeys.length === 1) {
+      setOpenKeys(nextKeys);
+      return;
+    }
+
+    /*
+     * =====================================================
+     * TRƯỜNG HỢP 3:
+     *
+     * Có từ 2 root trở lên.
+     *
+     * Ví dụ AntD trả về:
+     *
+     * [
+     *   "group-training",
+     *   "group-classes",
+     *   "group-results"
+     * ]
+     *
+     * Ta chỉ giữ root cuối cùng:
+     *
+     * "group-results"
+     *
+     * Đồng thời vẫn giữ các submenu không phải root
+     * của root mới.
+     * =====================================================
+     */
+
+    const latestRootKey = openedRootKeys[openedRootKeys.length - 1];
+
+    const nextOpenKeys = nextKeys.filter((key) => {
+      /*
+       * Nếu là root:
+       * chỉ giữ root mới nhất.
+       */
+      if (rootMenuKeys.includes(key)) {
+        return key === latestRootKey;
+      }
+
+      /*
+       * Nếu là submenu cấp dưới:
+       * giữ lại.
+       */
+      return true;
+    });
+
+    setOpenKeys(nextOpenKeys);
+  };
+
+  /* =========================================================
+      BRAND
+    ========================================================= */
+
   const handleBrandClick = () => {
     navigate(MENU_PATHS.dashboard);
 
     closeMobileMenu();
   };
+
+  /* =========================================================
+      COLLAPSE
+    ========================================================= */
 
   const handleToggleCollapse = () => {
     if (typeof setCollapsed === "function") {
@@ -426,7 +739,7 @@ export default function CatechistSidebar({
   };
 
   /* =========================================================
-      BRAND
+      BRAND COMPONENT
     ========================================================= */
 
   const Brand = ({ compact = false }) => {
@@ -435,16 +748,17 @@ export default function CatechistSidebar({
     return (
       <div
         className={`
-            faith-sidebar-brand
-            ${compact ? "compact" : ""}
-            ${collapsed ? "collapsed" : ""}
-          `}
+          faith-sidebar-brand
+          ${compact ? "compact" : ""}
+          ${collapsed ? "collapsed" : ""}
+        `}
         onClick={handleBrandClick}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
+
             handleBrandClick();
           }
         }}
@@ -473,23 +787,24 @@ export default function CatechistSidebar({
   };
 
   /* =========================================================
-      MENU
+      MENU COMPONENT
     ========================================================= */
 
   const SidebarMenu = ({ mobile = false }) => (
     <div
       className={`
-          faith-sidebar-menu
-          ${mobile ? "mobile" : ""}
-        `}
+        faith-sidebar-menu
+        ${mobile ? "mobile" : ""}
+      `}
     >
       <Menu
         mode="inline"
         inlineCollapsed={mobile ? false : collapsed}
         selectedKeys={selectedKeys}
-        defaultOpenKeys={openKeys}
+        openKeys={openKeys}
         items={menuItems}
         onClick={handleMenuClick}
+        onOpenChange={handleOpenChange}
       />
     </div>
   );
@@ -501,9 +816,9 @@ export default function CatechistSidebar({
   const SidebarFooter = ({ mobile = false }) => (
     <div
       className={`
-          faith-sidebar-footer
-          ${mobile ? "mobile" : ""}
-        `}
+        faith-sidebar-footer
+        ${mobile ? "mobile" : ""}
+      `}
     >
       {!mobile && (
         <Tooltip title={collapsed ? "Mở rộng menu" : ""} placement="right">
@@ -518,9 +833,9 @@ export default function CatechistSidebar({
               )
             }
             className={`
-                faith-collapse-btn
-                ${collapsed ? "collapsed" : ""}
-              `}
+              faith-collapse-btn
+              ${collapsed ? "collapsed" : ""}
+            `}
           >
             {!collapsed && <span>Thu gọn</span>}
           </Button>
@@ -664,1122 +979,1078 @@ export default function CatechistSidebar({
 
       <style>{`
 
-          @import url(
-            'https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap'
-          );
+        @import url(
+          'https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap'
+        );
 
 
-          /* =====================================================
-            SIDEBAR
-          ===================================================== */
+        /* =====================================================
+          SIDEBAR
+        ===================================================== */
 
-          .faith-custom-sidebar {
+        .faith-custom-sidebar {
 
-            font-family:
-              'Quicksand',
-              'Be Vietnam Pro',
-              sans-serif;
+          font-family:
+            'Quicksand',
+            'Be Vietnam Pro',
+            sans-serif;
 
-            height:
-              100vh !important;
+          height:
+            100vh !important;
 
-            position:
-              sticky !important;
+          position:
+            sticky !important;
 
-            top:
-              0 !important;
+          top:
+            0 !important;
 
-            left:
-              0 !important;
+          left:
+            0 !important;
 
-            background:
-              ${COLORS.navy} !important;
+          background:
+            ${COLORS.navy} !important;
 
-            border-right:
-              1px solid
-              rgba(255,255,255,0.06)
-              !important;
+          border-right:
+            1px solid
+            rgba(255,255,255,0.06)
+            !important;
 
-            box-shadow:
-              4px 0 24px
-              rgba(16, 46, 73, 0.08)
-              !important;
+          box-shadow:
+            4px 0 24px
+            rgba(16, 46, 73, 0.08)
+            !important;
 
-            z-index:
-              99;
+          z-index:
+            99;
 
-            transition:
-              width 0.25s ease;
-          }
+          transition:
+            width 0.25s ease;
+        }
 
 
-          .faith-sidebar-inner {
+        .faith-sidebar-inner {
 
-            height:
-              100%;
+          height:
+            100%;
+
+          display:
+            flex;
+
+          flex-direction:
+            column;
+
+          padding:
+            16px 10px;
+
+          overflow:
+            hidden;
+
+          background:
+            ${COLORS.navy};
+        }
+
+
+        /* =====================================================
+          BRAND
+        ===================================================== */
+
+        .faith-sidebar-brand {
+
+          display:
+            flex;
+
+          align-items:
+            center;
+
+          gap:
+            11px;
+
+          padding:
+            10px 11px;
+
+          margin-bottom:
+            12px;
+
+          border-radius:
+            13px;
+
+          background:
+            rgba(255,255,255,0.07);
+
+          border:
+            1px solid
+            rgba(255,255,255,0.09);
+
+          cursor:
+            pointer;
+
+          user-select:
+            none;
+
+          flex-shrink:
+            0;
+
+          transition:
+            all 0.2s ease;
+        }
+
+
+        .faith-sidebar-brand:hover {
+
+          background:
+            rgba(255,255,255,0.11);
+
+          border-color:
+            rgba(217,164,65,0.35);
+        }
+
+
+        .faith-sidebar-brand.collapsed {
+
+          justify-content:
+            center;
+
+          padding:
+            8px 0;
+
+          background:
+            transparent;
+
+          border:
+            none;
+        }
+
+
+        .faith-brand-logo-wrap {
+
+          position:
+            relative;
+
+          flex-shrink:
+            0;
+        }
+
+
+        .faith-brand-logo {
+
+          background:
+            #FFFFFF !important;
+
+          border:
+            2px solid
+            rgba(217,164,65,0.9)
+            !important;
+
+          box-shadow:
+            0 3px 10px
+            rgba(0,0,0,0.14);
+        }
+
+
+        .faith-status-dot {
+
+          position:
+            absolute;
+
+          right:
+            -1px;
+
+          bottom:
+            -1px;
+
+          width:
+            11px;
+
+          height:
+            11px;
+
+          border-radius:
+            50%;
+
+          background:
+            ${COLORS.success};
+
+          border:
+            2px solid
+            ${COLORS.navy};
+        }
+
+
+        .faith-brand-info {
+
+          min-width:
+            0;
+
+          overflow:
+            hidden;
+        }
+
+
+        .faith-brand-title {
+
+          margin:
+            0 !important;
+
+          color:
+            #FFFFFF !important;
+
+          font-weight:
+            800 !important;
+
+          font-size:
+            14px !important;
+
+          line-height:
+            1.2 !important;
+
+          white-space:
+            nowrap;
+        }
+
+
+        .faith-brand-subtitle {
+
+          display:
+            block;
+
+          margin-top:
+            3px;
+
+          color:
+            #B9C7D4 !important;
+
+          font-size:
+            10.5px !important;
+
+          font-weight:
+            600 !important;
+
+          white-space:
+            nowrap;
+        }
+
+
+        /* =====================================================
+          SECTION LABEL
+        ===================================================== */
+
+        .faith-sidebar-section-label {
+
+          padding:
+            4px 13px 7px;
+
+          color:
+            #8195A8;
+
+          font-size:
+            9px;
+
+          font-weight:
+            800;
+
+          letter-spacing:
+            0.08em;
+
+          text-transform:
+            uppercase;
+
+          flex-shrink:
+            0;
+        }
+
+
+        .faith-sidebar-section-label.mobile-label {
+
+          padding:
+            4px 10px 8px;
+        }
+
+
+        /* =====================================================
+          MENU
+        ===================================================== */
+
+        .faith-sidebar-menu {
+
+          flex:
+            1;
+
+          min-height:
+            0;
+
+          overflow-y:
+            auto;
+
+          overflow-x:
+            hidden;
+
+          padding:
+            0 1px;
+        }
+
+
+        .faith-sidebar-menu::-webkit-scrollbar {
+
+          width:
+            4px;
+        }
+
+
+        .faith-sidebar-menu::-webkit-scrollbar-track {
+
+          background:
+            transparent;
+        }
+
+
+        .faith-sidebar-menu::-webkit-scrollbar-thumb {
+
+          background:
+            rgba(255,255,255,0.16);
+
+          border-radius:
+            999px;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu {
+
+          background:
+            transparent !important;
+
+          border:
+            none !important;
+
+          font-family:
+            'Quicksand',
+            sans-serif;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-item,
+        .faith-custom-sidebar
+        .ant-menu-submenu-title {
+
+          font-size:
+            13px !important;
+
+          font-weight:
+            600 !important;
+
+          color:
+            #D6E0E9 !important;
+
+          margin:
+            3px 0 !important;
+
+          width:
+            calc(100% - 4px);
+
+          transition:
+            all 0.18s ease !important;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-item:hover,
+        .faith-custom-sidebar
+        .ant-menu-submenu-title:hover {
+
+          color:
+            #FFFFFF !important;
+
+          background:
+            ${COLORS.navyHover}
+            !important;
+
+          transform:
+            translateX(1px);
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-item-selected {
+
+          color:
+            #FFFFFF !important;
+
+          background:
+            ${COLORS.navyHover}
+            !important;
+
+          box-shadow:
+            inset 3px 0 0
+            ${COLORS.gold},
+
+            0 4px 12px
+            rgba(0,0,0,0.12)
+            !important;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-item-selected
+        .ant-menu-item-icon {
+
+          color:
+            ${COLORS.gold} !important;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-item
+        .ant-menu-item-icon,
+        .faith-custom-sidebar
+        .ant-menu-submenu-title
+        .ant-menu-item-icon {
+
+          color:
+            #AFC0CF !important;
+
+          min-width:
+            22px !important;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-item-selected
+        .ant-menu-item-icon,
+        .faith-custom-sidebar
+        .ant-menu-submenu-selected
+        > .ant-menu-submenu-title
+        .ant-menu-item-icon {
+
+          color:
+            ${COLORS.gold} !important;
+        }
+
+
+        /* =====================================================
+          SUB MENU
+        ===================================================== */
+
+        .faith-custom-sidebar
+        .ant-menu-sub {
+
+          background:
+            rgba(0,0,0,0.10)
+            !important;
+
+          border-radius:
+            8px;
+
+          margin:
+            2px 3px 5px;
+
+          padding:
+            2px 0;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-sub
+        .ant-menu-item {
+
+          height:
+            39px !important;
+
+          line-height:
+            39px !important;
+
+          font-size:
+            12.5px !important;
+
+          color:
+            #B8C8D6 !important;
+
+          margin:
+            2px 0 !important;
+
+          width:
+            100% !important;
+
+          padding-left:
+            43px !important;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-sub
+        .ant-menu-item:hover {
+
+          color:
+            #FFFFFF !important;
+
+          background:
+            rgba(255,255,255,0.07)
+            !important;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-sub
+        .ant-menu-item-selected {
+
+          color:
+            #FFFFFF !important;
+
+          background:
+            rgba(217,164,65,0.14)
+            !important;
+
+          box-shadow:
+            inset 2px 0 0
+            ${COLORS.gold}
+            !important;
+        }
+
+
+        /* =====================================================
+          ARROW
+        ===================================================== */
+
+        .faith-custom-sidebar
+        .ant-menu-submenu-arrow {
+
+          color:
+            #8EA2B4 !important;
+        }
+
+
+        .faith-custom-sidebar
+        .ant-menu-submenu-open
+        > .ant-menu-submenu-title
+        .ant-menu-submenu-arrow {
+
+          color:
+            ${COLORS.gold} !important;
+        }
+
+
+        /* =====================================================
+          FOOTER
+        ===================================================== */
+
+        .faith-sidebar-footer {
+
+          flex-shrink:
+            0;
+
+          margin-top:
+            10px;
+
+          display:
+            flex;
+
+          flex-direction:
+            column;
+
+          gap:
+            9px;
+        }
+
+
+        /* =====================================================
+          COLLAPSE BUTTON
+        ===================================================== */
+
+        .faith-collapse-btn {
+
+          height:
+            40px !important;
+
+          width:
+            100% !important;
+
+          border-radius:
+            9px !important;
+
+          display:
+            flex !important;
+
+          align-items:
+            center !important;
+
+          justify-content:
+            ${collapsed ? "center" : "flex-start"} !important;
+
+          gap:
+            8px;
+
+          padding:
+            ${collapsed ? "0" : "0 12px"} !important;
+
+          color:
+            #BFD0DE !important;
+
+          background:
+            rgba(255,255,255,0.06)
+            !important;
+
+          border:
+            1px solid
+            rgba(255,255,255,0.08)
+            !important;
+
+          font-size:
+            12px !important;
+
+          font-weight:
+            700 !important;
+
+          transition:
+            all 0.2s ease !important;
+        }
+
+
+        .faith-collapse-btn:hover {
+
+          color:
+            #FFFFFF !important;
+
+          background:
+            rgba(255,255,255,0.10)
+            !important;
+
+          border-color:
+            rgba(217,164,65,0.35)
+            !important;
+        }
+
+
+        .faith-collapse-btn
+        svg {
+
+          color:
+            ${COLORS.gold};
+        }
+
+
+        /* =====================================================
+          BANNER
+        ===================================================== */
+
+        .faith-sidebar-banner {
+
+          position:
+            relative;
+
+          overflow:
+            hidden;
+
+          border-radius:
+            12px;
+
+          background:
+            linear-gradient(
+              145deg,
+              #244F78 0%,
+              #173B5E 65%,
+              #102E49 100%
+            );
+
+          border:
+            1px solid
+            rgba(255,255,255,0.09);
+
+          padding:
+            7px;
+
+          text-align:
+            center;
+        }
+
+
+        .faith-sidebar-banner::before {
+
+          content:
+            "";
+
+          position:
+            absolute;
+
+          width:
+            80px;
+
+          height:
+            80px;
+
+          right:
+            -35px;
+
+          top:
+            -35px;
+
+          border-radius:
+            50%;
+
+          border:
+            1px solid
+            rgba(217,164,65,0.22);
+        }
+
+
+        .faith-sidebar-banner::after {
+
+          content:
+            "";
+
+          position:
+            absolute;
+
+          width:
+            60px;
+
+          height:
+            60px;
+
+          left:
+            -30px;
+
+          bottom:
+            -30px;
+
+          border-radius:
+            50%;
+
+          border:
+            1px solid
+            rgba(255,255,255,0.07);
+        }
+
+
+        .faith-sidebar-banner img {
+
+          position:
+            relative;
+
+          z-index:
+            2;
+
+          display:
+            block;
+
+          width:
+            100%;
+
+          height:
+            auto;
+
+          max-height:
+            140px;
+
+          object-fit:
+            contain;
+
+          border-radius:
+            8px;
+        }
+
+
+        /* =====================================================
+          MOBILE DRAWER
+        ===================================================== */
+
+        .faith-mobile-sidebar-drawer {
+
+          z-index:
+            2000;
+        }
+
+
+        .faith-mobile-sidebar-drawer
+        .ant-drawer-content {
+
+          background:
+            ${COLORS.navy}
+            !important;
+
+          border-radius:
+            0 18px 18px 0;
+
+          overflow:
+            hidden;
+        }
+
+
+        .faith-mobile-sidebar-drawer
+        .ant-drawer-body {
+
+          padding:
+            0 !important;
+
+          background:
+            ${COLORS.navy}
+            !important;
+        }
+
+
+        .faith-mobile-sidebar {
+
+          height:
+            100%;
+
+          display:
+            flex;
+
+          flex-direction:
+            column;
+
+          padding:
+            15px 12px;
+
+          background:
+            ${COLORS.navy};
+        }
+
+
+        .faith-mobile-header {
+
+          display:
+            flex;
+
+          align-items:
+            center;
+
+          justify-content:
+            space-between;
+
+          gap:
+            8px;
+
+          margin-bottom:
+            4px;
+        }
+
+
+        .faith-mobile-header
+        .faith-sidebar-brand {
+
+          flex:
+            1;
+
+          margin-bottom:
+            0;
+
+          padding:
+            7px 8px;
+        }
+
+
+        .faith-close-drawer {
+
+          width:
+            38px;
+
+          height:
+            38px;
+
+          border-radius:
+            9px;
+
+          border:
+            1px solid
+            rgba(255,255,255,0.10);
+
+          background:
+            rgba(255,255,255,0.07);
+
+          color:
+            #D6E0E9;
+
+          display:
+            flex;
+
+          align-items:
+            center;
+
+          justify-content:
+            center;
+
+          cursor:
+            pointer;
+
+          flex-shrink:
+            0;
+
+          transition:
+            all 0.2s ease;
+        }
+
+
+        .faith-close-drawer:hover {
+
+          background:
+            rgba(255,255,255,0.13);
+
+          color:
+            #FFFFFF;
+
+          border-color:
+            rgba(217,164,65,0.4);
+        }
+
+
+        .faith-mobile-sidebar
+        .faith-sidebar-menu {
+
+          flex:
+            1;
+
+          min-height:
+            0;
+        }
+
+
+        .faith-mobile-sidebar
+        .ant-menu {
+
+          background:
+            transparent !important;
+
+          border:
+            none !important;
+
+          color:
+            #D6E0E9 !important;
+        }
+
+
+        .faith-mobile-sidebar
+        .ant-menu-item,
+        .faith-mobile-sidebar
+        .ant-menu-submenu-title {
+
+          font-size:
+            13px !important;
+
+          font-weight:
+            600 !important;
+
+          color:
+            #D6E0E9 !important;
+
+          height:
+            43px !important;
+
+          line-height:
+            43px !important;
+
+          margin:
+            3px 0 !important;
+        }
+
+
+        .faith-mobile-sidebar
+        .ant-menu-item:hover,
+        .faith-mobile-sidebar
+        .ant-menu-submenu-title:hover {
+
+          color:
+            #FFFFFF !important;
+
+          background:
+            ${COLORS.navyHover}
+            !important;
+        }
+
+
+        .faith-mobile-sidebar
+        .ant-menu-item-selected {
+
+          color:
+            #FFFFFF !important;
+
+          background:
+            ${COLORS.navyHover}
+            !important;
+
+          box-shadow:
+            inset 3px 0 0
+            ${COLORS.gold}
+            !important;
+        }
+
+
+        .faith-mobile-sidebar
+        .ant-menu-sub {
+
+          background:
+            rgba(0,0,0,0.10)
+            !important;
+
+          border-radius:
+            8px;
+        }
+
+
+        .faith-mobile-sidebar
+        .ant-menu-sub
+        .ant-menu-item {
+
+          padding-left:
+            43px !important;
+
+          font-size:
+            12.5px !important;
+        }
+
+
+        .faith-mobile-sidebar
+        .faith-sidebar-footer {
+
+          margin-top:
+            10px;
+        }
+
+
+        /* =====================================================
+          RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 767px) {
+
+          .desktop-sidebar {
 
             display:
-              flex;
-
-            flex-direction:
-              column;
-
-            padding:
-              16px 10px;
-
-            overflow:
-              hidden;
-
-            background:
-              ${COLORS.navy};
-          }
-
-
-          /* =====================================================
-            BRAND
-          ===================================================== */
-
-          .faith-sidebar-brand {
-
-            display:
-              flex;
-
-            align-items:
-              center;
-
-            gap:
-              11px;
-
-            padding:
-              10px 11px;
-
-            margin-bottom:
-              12px;
-
-            border-radius:
-              13px;
-
-            background:
-              rgba(255,255,255,0.07);
-
-            border:
-              1px solid
-              rgba(255,255,255,0.09);
-
-            cursor:
-              pointer;
-
-            user-select:
-              none;
-
-            flex-shrink:
-              0;
-
-            transition:
-              all 0.2s ease;
-          }
-
-
-          .faith-sidebar-brand:hover {
-
-            background:
-              rgba(255,255,255,0.11);
-
-            border-color:
-              rgba(217,164,65,0.35);
-          }
-
-
-          .faith-sidebar-brand.collapsed {
-
-            justify-content:
-              center;
-
-            padding:
-              8px 0;
-
-            background:
-              transparent;
-
-            border:
-              none;
-          }
-
-
-          .faith-brand-logo-wrap {
-
-            position:
-              relative;
-
-            flex-shrink:
-              0;
-          }
-
-
-          .faith-brand-logo {
-
-            background:
-              #FFFFFF !important;
-
-            border:
-              2px solid
-              rgba(217,164,65,0.9)
-              !important;
-
-            box-shadow:
-              0 3px 10px
-              rgba(0,0,0,0.14);
-          }
-
-
-          .faith-status-dot {
-
-            position:
-              absolute;
-
-            right:
-              -1px;
-
-            bottom:
-              -1px;
-
-            width:
-              11px;
-
-            height:
-              11px;
-
-            border-radius:
-              50%;
-
-            background:
-              ${COLORS.success};
-
-            border:
-              2px solid
-              ${COLORS.navy};
-          }
-
-
-          .faith-brand-info {
-
-            min-width:
-              0;
-
-            overflow:
-              hidden;
-          }
-
-
-          .faith-brand-title {
-
-            margin:
-              0 !important;
-
-            color:
-              #FFFFFF !important;
-
-            font-weight:
-              800 !important;
-
-            font-size:
-              14px !important;
-
-            line-height:
-              1.2 !important;
-
-            white-space:
-              nowrap;
-          }
-
-
-          .faith-brand-subtitle {
-
-            display:
-              block;
-
-            margin-top:
-              3px;
-
-            color:
-              #B9C7D4 !important;
-
-            font-size:
-              10.5px !important;
-
-            font-weight:
-              600 !important;
-
-            white-space:
-              nowrap;
-          }
-
-
-          /* =====================================================
-            SECTION LABEL
-          ===================================================== */
-
-          .faith-sidebar-section-label {
-
-            padding:
-              4px 13px 7px;
-
-            color:
-              #8195A8;
-
-            font-size:
-              9px;
-
-            font-weight:
-              800;
-
-            letter-spacing:
-              0.08em;
-
-            text-transform:
-              uppercase;
-
-            flex-shrink:
-              0;
-          }
-
-
-          .faith-sidebar-section-label.mobile-label {
-
-            padding:
-              4px 10px 8px;
-          }
-
-
-          /* =====================================================
-            MENU
-          ===================================================== */
-
-          .faith-sidebar-menu {
-
-            flex:
-              1;
-
-            min-height:
-              0;
-
-            overflow-y:
-              auto;
-
-            overflow-x:
-              hidden;
-
-            padding:
-              0 1px;
-          }
-
-
-          .faith-sidebar-menu::-webkit-scrollbar {
-
-            width:
-              4px;
-          }
-
-
-          .faith-sidebar-menu::-webkit-scrollbar-track {
-
-            background:
-              transparent;
-          }
-
-
-          .faith-sidebar-menu::-webkit-scrollbar-thumb {
-
-            background:
-              rgba(255,255,255,0.16);
-
-            border-radius:
-              999px;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu {
-
-            background:
-              transparent !important;
-
-            border:
               none !important;
-
-            font-family:
-              'Quicksand',
-              sans-serif;
           }
 
+        }
 
-          .faith-custom-sidebar
-          .ant-menu-item,
-          .faith-custom-sidebar
-          .ant-menu-submenu-title {
 
-            font-size:
-              13px !important;
-
-            font-weight:
-              600 !important;
-
-            color:
-              #D6E0E9 !important;
-
-            margin:
-              3px 0 !important;
-
-            width:
-              calc(100% - 4px);
-
-            transition:
-              all 0.18s ease !important;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-item:hover,
-          .faith-custom-sidebar
-          .ant-menu-submenu-title:hover {
-
-            color:
-              #FFFFFF !important;
-
-            background:
-              ${COLORS.navyHover}
-              !important;
-
-            transform:
-              translateX(1px);
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-item-selected {
-
-            color:
-              #FFFFFF !important;
-
-            background:
-              ${COLORS.navyHover}
-              !important;
-
-            box-shadow:
-              inset 3px 0 0
-              ${COLORS.gold},
-
-              0 4px 12px
-              rgba(0,0,0,0.12)
-              !important;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-item-selected
-          .ant-menu-item-icon {
-
-            color:
-              ${COLORS.gold} !important;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-item
-          .ant-menu-item-icon,
-          .faith-custom-sidebar
-          .ant-menu-submenu-title
-          .ant-menu-item-icon {
-
-            color:
-              #AFC0CF !important;
-
-            min-width:
-              22px !important;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-item-selected
-          .ant-menu-item-icon,
-          .faith-custom-sidebar
-          .ant-menu-submenu-selected
-          > .ant-menu-submenu-title
-          .ant-menu-item-icon {
-
-            color:
-              ${COLORS.gold} !important;
-          }
-
-
-          /* =====================================================
-            SUB MENU
-          ===================================================== */
-
-          .faith-custom-sidebar
-          .ant-menu-sub {
-
-            background:
-              rgba(0,0,0,0.10)
-              !important;
-
-            border-radius:
-              8px;
-
-            margin:
-              2px 3px 5px;
-
-            padding:
-              2px 0;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-sub
-          .ant-menu-item {
-
-            height:
-              39px !important;
-
-            line-height:
-              39px !important;
-
-            font-size:
-              12.5px !important;
-
-            color:
-              #B8C8D6 !important;
-
-            margin:
-              2px 0 !important;
-
-            width:
-              100% !important;
-
-            padding-left:
-              43px !important;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-sub
-          .ant-menu-item:hover {
-
-            color:
-              #FFFFFF !important;
-
-            background:
-              rgba(255,255,255,0.07)
-              !important;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-sub
-          .ant-menu-item-selected {
-
-            color:
-              #FFFFFF !important;
-
-            background:
-              rgba(217,164,65,0.14)
-              !important;
-
-            box-shadow:
-              inset 2px 0 0
-              ${COLORS.gold}
-              !important;
-          }
-
-
-          /* =====================================================
-            ARROW
-          ===================================================== */
-
-          .faith-custom-sidebar
-          .ant-menu-submenu-arrow {
-
-            color:
-              #8EA2B4 !important;
-          }
-
-
-          .faith-custom-sidebar
-          .ant-menu-submenu-open
-          > .ant-menu-submenu-title
-          .ant-menu-submenu-arrow {
-
-            color:
-              ${COLORS.gold} !important;
-          }
-
-
-          /* =====================================================
-            FOOTER
-          ===================================================== */
-
-          .faith-sidebar-footer {
-
-            flex-shrink:
-              0;
-
-            margin-top:
-              10px;
-
-            display:
-              flex;
-
-            flex-direction:
-              column;
-
-            gap:
-              9px;
-          }
-
-
-          /* =====================================================
-            COLLAPSE BUTTON
-          ===================================================== */
-
-          .faith-collapse-btn {
-
-            height:
-              40px !important;
-
-            width:
-              100% !important;
-
-            border-radius:
-              9px !important;
-
-            display:
-              flex !important;
-
-            align-items:
-              center !important;
-
-            justify-content:
-              ${collapsed ? "center" : "flex-start"} !important;
-
-            gap:
-              8px;
-
-            padding:
-              ${collapsed ? "0" : "0 12px"} !important;
-
-            color:
-              #BFD0DE !important;
-
-            background:
-              rgba(255,255,255,0.06)
-              !important;
-
-            border:
-              1px solid
-              rgba(255,255,255,0.08)
-              !important;
-
-            font-size:
-              12px !important;
-
-            font-weight:
-              700 !important;
-
-            transition:
-              all 0.2s ease !important;
-          }
-
-
-          .faith-collapse-btn:hover {
-
-            color:
-              #FFFFFF !important;
-
-            background:
-              rgba(255,255,255,0.10)
-              !important;
-
-            border-color:
-              rgba(217,164,65,0.35)
-              !important;
-          }
-
-
-          .faith-collapse-btn
-          svg {
-
-            color:
-              ${COLORS.gold};
-          }
-
-
-          /* =====================================================
-            BANNER
-          ===================================================== */
-
-          .faith-sidebar-banner {
-
-            position:
-              relative;
-
-            overflow:
-              hidden;
-
-            border-radius:
-              12px;
-
-            background:
-              linear-gradient(
-                145deg,
-                #244F78 0%,
-                #173B5E 65%,
-                #102E49 100%
-              );
-
-            border:
-              1px solid
-              rgba(255,255,255,0.09);
-
-            padding:
-              7px;
-
-            text-align:
-              center;
-          }
-
-
-          .faith-sidebar-banner::before {
-
-            content:
-              "";
-
-            position:
-              absolute;
-
-            width:
-              80px;
-
-            height:
-              80px;
-
-            right:
-              -35px;
-
-            top:
-              -35px;
-
-            border-radius:
-              50%;
-
-            border:
-              1px solid
-              rgba(217,164,65,0.22);
-          }
-
-
-          .faith-sidebar-banner::after {
-
-            content:
-              "";
-
-            position:
-              absolute;
-
-            width:
-              60px;
-
-            height:
-              60px;
-
-            left:
-              -30px;
-
-            bottom:
-              -30px;
-
-            border-radius:
-              50%;
-
-            border:
-              1px solid
-              rgba(255,255,255,0.07);
-          }
-
-
-          .faith-banner-label {
-
-            position:
-              relative;
-
-            z-index:
-              2;
-
-            display:
-              flex;
-
-            justify-content:
-              center;
-
-            align-items:
-              center;
-
-            gap:
-              5px;
-
-            margin-bottom:
-              3px;
-
-            color:
-              #DCE7EF;
-
-            font-size:
-              8.5px;
-
-            font-weight:
-              700;
-          }
-
-
-          .faith-banner-cross {
-
-            color:
-              ${COLORS.gold};
-
-            font-size:
-              11px;
-          }
-
-
-          .faith-sidebar-banner img {
-
-            position:
-              relative;
-
-            z-index:
-              2;
-
-            display:
-              block;
-
-            width:
-              100%;
-
-            height:
-              auto;
-
-            max-height:
-              140px;
-
-            object-fit:
-              contain;
-
-            border-radius:
-              8px;
-          }
-
-
-          /* =====================================================
-            MOBILE DRAWER
-          ===================================================== */
+        @media (min-width: 768px) {
 
           .faith-mobile-sidebar-drawer {
 
-            z-index:
-              2000;
-          }
-
-
-          .faith-mobile-sidebar-drawer
-          .ant-drawer-content {
-
-            background:
-              ${COLORS.navy}
-              !important;
-
-            border-radius:
-              0 18px 18px 0;
-
-            overflow:
-              hidden;
-          }
-
-
-          .faith-mobile-sidebar-drawer
-          .ant-drawer-body {
-
-            padding:
-              0 !important;
-
-            background:
-              ${COLORS.navy}
-              !important;
-          }
-
-
-          .faith-mobile-sidebar {
-
-            height:
-              100%;
-
             display:
-              flex;
-
-            flex-direction:
-              column;
-
-            padding:
-              15px 12px;
-
-            background:
-              ${COLORS.navy};
+              none !important;
           }
 
-
-          .faith-mobile-header {
-
-            display:
-              flex;
-
-            align-items:
-              center;
-
-            justify-content:
-              space-between;
-
-            gap:
-              8px;
-
-            margin-bottom:
-              4px;
-          }
+        }
 
 
-          .faith-mobile-header
-          .faith-sidebar-brand {
+        /* =====================================================
+          REDUCE MOTION
+        ===================================================== */
 
-            flex:
-              1;
+        @media (
+          prefers-reduced-motion: reduce
+        ) {
 
-            margin-bottom:
-              0;
-
-            padding:
-              7px 8px;
-          }
-
-
+          .faith-sidebar-brand,
+          .faith-collapse-btn,
           .faith-close-drawer {
 
-            width:
-              38px;
-
-            height:
-              38px;
-
-            border-radius:
-              9px;
-
-            border:
-              1px solid
-              rgba(255,255,255,0.10);
-
-            background:
-              rgba(255,255,255,0.07);
-
-            color:
-              #D6E0E9;
-
-            display:
-              flex;
-
-            align-items:
-              center;
-
-            justify-content:
-              center;
-
-            cursor:
-              pointer;
-
-            flex-shrink:
-              0;
-
             transition:
-              all 0.2s ease;
-          }
-
-
-          .faith-close-drawer:hover {
-
-            background:
-              rgba(255,255,255,0.13);
-
-            color:
-              #FFFFFF;
-
-            border-color:
-              rgba(217,164,65,0.4);
-          }
-
-
-          .faith-mobile-sidebar
-          .faith-sidebar-menu {
-
-            flex:
-              1;
-
-            min-height:
-              0;
-          }
-
-
-          .faith-mobile-sidebar
-          .ant-menu {
-
-            background:
-              transparent !important;
-
-            border:
               none !important;
-
-            color:
-              #D6E0E9 !important;
           }
 
+        }
 
-          .faith-mobile-sidebar
-          .ant-menu-item,
-          .faith-mobile-sidebar
-          .ant-menu-submenu-title {
-
-            font-size:
-              13px !important;
-
-            font-weight:
-              600 !important;
-
-            color:
-              #D6E0E9 !important;
-
-            height:
-              43px !important;
-
-            line-height:
-              43px !important;
-
-            margin:
-              3px 0 !important;
-          }
-
-
-          .faith-mobile-sidebar
-          .ant-menu-item:hover,
-          .faith-mobile-sidebar
-          .ant-menu-submenu-title:hover {
-
-            color:
-              #FFFFFF !important;
-
-            background:
-              ${COLORS.navyHover}
-              !important;
-          }
-
-
-          .faith-mobile-sidebar
-          .ant-menu-item-selected {
-
-            color:
-              #FFFFFF !important;
-
-            background:
-              ${COLORS.navyHover}
-              !important;
-
-            box-shadow:
-              inset 3px 0 0
-              ${COLORS.gold}
-              !important;
-          }
-
-
-          .faith-mobile-sidebar
-          .ant-menu-sub {
-
-            background:
-              rgba(0,0,0,0.10)
-              !important;
-
-            border-radius:
-              8px;
-          }
-
-
-          .faith-mobile-sidebar
-          .ant-menu-sub
-          .ant-menu-item {
-
-            padding-left:
-              43px !important;
-
-            font-size:
-              12.5px !important;
-          }
-
-
-          .faith-mobile-sidebar
-          .faith-sidebar-footer {
-
-            margin-top:
-              10px;
-          }
-
-
-          /* =====================================================
-            RESPONSIVE
-          ===================================================== */
-
-          @media (max-width: 767px) {
-
-            .desktop-sidebar {
-
-              display:
-                none !important;
-            }
-
-          }
-
-
-          @media (min-width: 768px) {
-
-            .faith-mobile-sidebar-drawer {
-
-              display:
-                none !important;
-            }
-
-          }
-
-
-          /* =====================================================
-            REDUCE MOTION
-          ===================================================== */
-
-          @media (
-            prefers-reduced-motion: reduce
-          ) {
-
-            .faith-sidebar-brand,
-            .faith-collapse-btn,
-            .faith-close-drawer {
-
-              transition:
-                none !important;
-            }
-
-          }
-
-        `}</style>
+      `}</style>
     </>
   );
 }

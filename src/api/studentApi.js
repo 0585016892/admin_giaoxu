@@ -34,7 +34,12 @@ const studentApi = {
   // XÓA HỌC SINH
   // =========================================================
   delete: (id) => axiosClient.delete(`/students/${id}`),
-
+  deleteBulk: (studentIds) =>
+    axiosClient.delete("/students/bulk", {
+      data: {
+        student_ids: studentIds,
+      },
+    }),
   // =========================================================
   // IMPORT HỌC SINH TỪ EXCEL
   // =========================================================

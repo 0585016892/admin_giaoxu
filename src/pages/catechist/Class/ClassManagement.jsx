@@ -28,7 +28,6 @@ import {
   BookOutlined,
   TeamOutlined,
   CheckCircleOutlined,
-  PauseCircleOutlined,
   StopOutlined,
   IdcardOutlined,
   PhoneOutlined,
@@ -38,20 +37,26 @@ import {
   HeartFilled,
   StarFilled,
   SmileOutlined,
+  ClockCircleOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
-import { useUser } from "../../context/UserContext";
 
-import usePermission from "../../hooks/usePermission";
-import AppFormModal from "../../components/common/AppFormModal";
-import ClassForm from "../../components/forms/ClassForm";
-import StatCard from "../../components/common/StatCard";
-import ClassCard from "../../components/class/ClassCard";
-import ClassDetailSkeleton from "../../components/class/ClassDetailSkeleton";
 import dayjs from "dayjs";
-import classApi from "../../api/classApi";
-import PageHeroHeader from "../../components/common/PageHeroHeader";
-import catechistApi from "../../api/catechistApi";
-import AppSearchInput from "../../components/common/SearchInput";
+
+import { useUser } from "../../../context/UserContext";
+import usePermission from "../../../hooks/usePermission";
+
+import AppFormModal from "../../../components/common/AppFormModal";
+import ClassForm from "./components/ClassForm";
+import StatCard from "../../../components/common/StatCard";
+import ClassCard from "./components/ClassCard";
+import ClassDetailSkeleton from "./components/ClassDetailSkeleton";
+import PageHeroHeader from "../../../components/common/PageHeroHeader";
+import AppSearchInput from "../../../components/common/SearchInput";
+
+import classApi from "../../../api/classApi";
+import catechistApi from "../../../api/catechistApi";
+
 const { Text } = Typography;
 
 /* =========================================================
@@ -75,8 +80,10 @@ const COLORS = {
 
   success: "#2E7D5B",
   successBg: "#EAF6F0",
+
   warning: "#B7791F",
   warningBg: "#FFF7E5",
+
   gray: "#64748B",
   grayBg: "#F1F5F9",
 
@@ -85,14 +92,43 @@ const COLORS = {
 };
 
 /* =========================================================
-   HELPERS & NORMALIZE
+   CONSTANTS
+========================================================= */
+
+const DAY_NAMES = {
+  1: "Thứ Hai",
+  2: "Thứ Ba",
+  3: "Thứ Tư",
+  4: "Thứ Năm",
+  5: "Thứ Sáu",
+  6: "Thứ Bảy",
+  7: "Chúa Nhật",
+};
+
+const DAY_SHORT_NAMES = {
+  1: "T2",
+  2: "T3",
+  3: "T4",
+  4: "T5",
+  5: "T6",
+  6: "T7",
+  7: "CN",
+};
+
+/* =========================================================
+   NORMALIZE RESPONSE
 ========================================================= */
 
 const normalizeListResponse = (response) => {
   const data = response?.data;
 
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
 
   return [];
 };
@@ -107,43 +143,101 @@ const normalizeObjectResponse = (response) => {
   return data || null;
 };
 
+/* =========================================================
+   NORMALIZE SCHEDULES
+========================================================= */
+
+const normalizeSchedules = (schedules) => {
+  if (!Array.isArray(schedules)) {
+    return [];
+  }
+
+  return schedules
+    .map((schedule) => ({
+      ...schedule,
+
+      id: schedule?.id ? Number(schedule.id) : undefined,
+
+      class_id: schedule?.class_id ? Number(schedule.class_id) : undefined,
+
+      day_of_week: Number(schedule?.day_of_week),
+
+      start_time: schedule?.start_time
+        ? String(schedule.start_time).slice(0, 5)
+        : "",
+
+      end_time: schedule?.end_time ? String(schedule.end_time).slice(0, 5) : "",
+
+      room: schedule?.room || "",
+    }))
+    .filter(
+      (schedule) =>
+        Number.isInteger(schedule.day_of_week) &&
+        schedule.day_of_week >= 1 &&
+        schedule.day_of_week <= 7,
+    )
+    .sort((a, b) => {
+      if (a.day_of_week !== b.day_of_week) {
+        return a.day_of_week - b.day_of_week;
+      }
+
+      return String(a.start_time).localeCompare(String(b.start_time));
+    });
+};
+
+/* =========================================================
+   FORMATTERS
+========================================================= */
+
 const formatTime = (time) => {
-  if (!time) return "—";
+  if (!time) {
+    return "—";
+  }
+
   return String(time).slice(0, 5);
 };
 
 const formatDate = (date) => {
-  if (!date) return "—";
+  if (!date) {
+    return "—";
+  }
 
   const parsed = dayjs(date);
 
-  if (!parsed.isValid()) return "—";
+  if (!parsed.isValid()) {
+    return "—";
+  }
 
   return parsed.format("DD/MM/YYYY");
 };
 
 const getDayName = (day) => {
-  const days = {
-    0: "Chúa Nhật",
-    1: "Thứ Hai",
-    2: "Thứ Ba",
-    3: "Thứ Tư",
-    4: "Thứ Năm",
-    5: "Thứ Sáu",
-    6: "Thứ Bảy",
-    7: "Chúa Nhật",
+  const numericDay = Number(day);
 
-    monday: "Thứ Hai",
-    tuesday: "Thứ Ba",
-    wednesday: "Thứ Tư",
-    thursday: "Thứ Năm",
-    friday: "Thứ Sáu",
-    saturday: "Thứ Bảy",
-    sunday: "Chúa Nhật",
-  };
-
-  return days[day] || day || "Chưa cập nhật";
+  return DAY_NAMES[numericDay] || "Chưa cập nhật";
 };
+
+// const getScheduleLabel = (schedule) => {
+//   if (!schedule) {
+//     return "Chưa cập nhật";
+//   }
+
+//   const day = getDayName(schedule.day_of_week);
+
+//   const time = `${formatTime(schedule.start_time)} - ${formatTime(
+//     schedule.end_time,
+//   )}`;
+
+//   if (schedule.room) {
+//     return `${day} • ${time} • ${schedule.room}`;
+//   }
+
+//   return `${day} • ${time}`;
+// };
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 const getStatusConfig = (status) => {
   const configs = {
@@ -155,19 +249,19 @@ const getStatusConfig = (status) => {
       icon: <CheckCircleOutlined />,
     },
 
-    paused: {
-      label: "Tạm dừng",
-      color: COLORS.warning,
-      bg: COLORS.warningBg,
-      border: "#F1D48A",
-      icon: <PauseCircleOutlined />,
-    },
-
     completed: {
       label: "Đã kết thúc",
       color: COLORS.gray,
       bg: COLORS.grayBg,
       border: "#E2E8F0",
+      icon: <StopOutlined />,
+    },
+
+    cancelled: {
+      label: "Đã hủy",
+      color: COLORS.danger,
+      bg: COLORS.dangerBg,
+      border: "#F5C6C2",
       icon: <StopOutlined />,
     },
   };
@@ -202,6 +296,142 @@ const StatusTag = ({ status }) => {
       {config.icon}
       {config.label}
     </Tag>
+  );
+};
+
+/* =========================================================
+   SCHEDULE DISPLAY
+========================================================= */
+
+const ScheduleItem = ({ schedule, compact = false }) => {
+  return (
+    <div
+      style={{
+        padding: compact ? "9px 10px" : 12,
+        borderRadius: 10,
+        border: `1px solid ${COLORS.border}`,
+        background: COLORS.background,
+      }}
+    >
+      <Row gutter={[8, 6]} align="middle">
+        <Col flex="auto">
+          <Space size={7}>
+            <div
+              style={{
+                minWidth: 34,
+                height: 28,
+                padding: "0 7px",
+                borderRadius: 7,
+                background: COLORS.navy,
+                color: COLORS.white,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 10,
+                fontWeight: 800,
+              }}
+            >
+              {DAY_SHORT_NAMES[schedule.day_of_week] || "—"}
+            </div>
+
+            <Text
+              strong
+              style={{
+                color: COLORS.text,
+                fontSize: compact ? 12 : 13,
+                fontWeight: 800,
+              }}
+            >
+              {getDayName(schedule.day_of_week)}
+            </Text>
+          </Space>
+        </Col>
+
+        <Col>
+          <Text
+            style={{
+              fontSize: 11,
+              color: COLORS.navy,
+              fontWeight: 800,
+            }}
+          >
+            <ClockCircleOutlined
+              style={{
+                marginRight: 4,
+                color: COLORS.gold,
+              }}
+            />
+            {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+          </Text>
+        </Col>
+      </Row>
+
+      {schedule.room && (
+        <div
+          style={{
+            marginTop: 7,
+            paddingLeft: 41,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              color: COLORS.textSecondary,
+              fontWeight: 600,
+            }}
+          >
+            <EnvironmentOutlined
+              style={{
+                marginRight: 5,
+                color: COLORS.gold,
+              }}
+            />
+
+            {schedule.room}
+          </Text>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* =========================================================
+   SCHEDULE LIST
+========================================================= */
+
+const ScheduleList = ({ schedules = [], compact = false }) => {
+  const normalized = normalizeSchedules(schedules);
+
+  if (!normalized.length) {
+    return (
+      <Text
+        style={{
+          color: COLORS.muted,
+          fontSize: 12,
+          fontWeight: 600,
+        }}
+      >
+        Chưa có lịch học
+      </Text>
+    );
+  }
+
+  return (
+    <Space
+      direction="vertical"
+      size={compact ? 6 : 8}
+      style={{
+        width: "100%",
+      }}
+    >
+      {normalized.map((schedule, index) => (
+        <ScheduleItem
+          key={schedule.id || `${schedule.day_of_week}-${index}`}
+          schedule={schedule}
+          compact={compact}
+        />
+      ))}
+    </Space>
   );
 };
 
@@ -331,7 +561,9 @@ const ClassCardSkeleton = () => {
    CATECHIST ITEM
 ========================================================= */
 
-const CatechistItem = ({ catechist, index, classId, onRemove, removing }) => {
+const CatechistItem = ({ catechist, index, onRemove, removing }) => {
+  // const catechistId = catechist?.catechist_id ?? catechist?.id;
+
   return (
     <div
       style={{
@@ -417,6 +649,7 @@ const CatechistItem = ({ catechist, index, classId, onRemove, removing }) => {
                     marginRight: 4,
                   }}
                 />
+
                 {catechist.catechist_code}
               </Text>
             )}
@@ -478,6 +711,7 @@ const CatechistItem = ({ catechist, index, classId, onRemove, removing }) => {
                 color: COLORS.navy,
               }}
             />
+
             {catechist.phone || "Chưa cập nhật"}
           </Text>
         </Col>
@@ -496,6 +730,7 @@ const CatechistItem = ({ catechist, index, classId, onRemove, removing }) => {
                 color: COLORS.navy,
               }}
             />
+
             {catechist.email || "Chưa cập nhật"}
           </Text>
         </Col>
@@ -599,7 +834,7 @@ const SectionTitle = ({ icon, title, description, count }) => {
 };
 
 /* =========================================================
-   MAIN COMPONENT
+   MAIN
 ========================================================= */
 
 const ClassManagement = () => {
@@ -610,10 +845,15 @@ const ClassManagement = () => {
   const { canCreateClass, canEditClass, canDeleteClass } = usePermission();
 
   const [classesList, setClassesList] = useState([]);
+
   const [loading, setLoading] = useState(false);
+
   const [saving, setSaving] = useState(false);
+
   const [deletingId, setDeletingId] = useState(null);
+
   const [searchText, setSearchText] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -631,7 +871,7 @@ const ClassManagement = () => {
   const [form] = Form.useForm();
 
   /* =====================================================
-     FETCH DATA
+     FETCH CLASSES
   ===================================================== */
 
   const fetchClasses = useCallback(async (showMessage = false) => {
@@ -642,7 +882,19 @@ const ClassManagement = () => {
 
       const data = normalizeListResponse(response);
 
-      setClassesList(data);
+      const normalizedData = data.map((item) => ({
+        ...item,
+
+        id: Number(item.id),
+
+        studentsCount: Number(item.studentsCount || 0),
+
+        schedules: normalizeSchedules(item.schedules),
+
+        catechists: Array.isArray(item.catechists) ? item.catechists : [],
+      }));
+
+      setClassesList(normalizedData);
 
       if (showMessage) {
         message.success("Đã làm mới danh sách lớp học");
@@ -661,30 +913,37 @@ const ClassManagement = () => {
   }, [fetchClasses]);
 
   /* =====================================================
-     EDIT FORM
+     FORM VALUES
   ===================================================== */
 
   useEffect(() => {
-    if (!isModalOpen) return;
+    if (!isModalOpen) {
+      return;
+    }
 
     if (editingClass) {
       form.setFieldsValue({
         name: editingClass.name || "",
+
         category: editingClass.category || "Giáo lý Hôn Nhân",
 
         description: editingClass.description || "",
 
-        room: editingClass.room || "",
+        schedules: normalizeSchedules(editingClass.schedules).map(
+          (schedule) => ({
+            day_of_week: schedule.day_of_week,
 
-        day_of_week: editingClass.day_of_week ?? null,
+            start_time: schedule.start_time
+              ? dayjs(schedule.start_time, "HH:mm")
+              : null,
 
-        start_time: editingClass.start_time
-          ? dayjs(editingClass.start_time, "HH:mm:ss")
-          : null,
+            end_time: schedule.end_time
+              ? dayjs(schedule.end_time, "HH:mm")
+              : null,
 
-        end_time: editingClass.end_time
-          ? dayjs(editingClass.end_time, "HH:mm:ss")
-          : null,
+            room: schedule.room || "",
+          }),
+        ),
 
         start_date: editingClass.start_date
           ? dayjs(editingClass.start_date)
@@ -699,7 +958,10 @@ const ClassManagement = () => {
 
       form.setFieldsValue({
         category: "Giáo lý Hôn Nhân",
+
         status: "active",
+
+        schedules: [],
       });
     }
   }, [editingClass, isModalOpen, form]);
@@ -715,12 +977,12 @@ const ClassManagement = () => {
       (item) => item.status === "active",
     ).length;
 
-    const pausedClasses = classesList.filter(
-      (item) => item.status === "paused",
-    ).length;
-
     const completedClasses = classesList.filter(
       (item) => item.status === "completed",
+    ).length;
+
+    const cancelledClasses = classesList.filter(
+      (item) => item.status === "cancelled",
     ).length;
 
     const totalStudents = classesList.reduce(
@@ -736,8 +998,8 @@ const ClassManagement = () => {
     return {
       totalClasses,
       activeClasses,
-      pausedClasses,
       completedClasses,
+      cancelledClasses,
       totalStudents,
       totalCatechists,
     };
@@ -751,12 +1013,26 @@ const ClassManagement = () => {
     const keyword = searchText.toLowerCase().trim();
 
     return classesList.filter((item) => {
+      const schedules = normalizeSchedules(item.schedules);
+
+      const scheduleSearchText = schedules
+        .map(
+          (schedule) =>
+            `${getDayName(schedule.day_of_week)} ${
+              schedule.room || ""
+            } ${formatTime(schedule.start_time)} ${formatTime(
+              schedule.end_time,
+            )}`,
+        )
+        .join(" ")
+        .toLowerCase();
+
       const matchSearch =
         !keyword ||
         item.name?.toLowerCase().includes(keyword) ||
         item.code?.toLowerCase().includes(keyword) ||
         item.category?.toLowerCase().includes(keyword) ||
-        item.room?.toLowerCase().includes(keyword);
+        scheduleSearchText.includes(keyword);
 
       const matchStatus =
         statusFilter === "all" || item.status === statusFilter;
@@ -770,7 +1046,9 @@ const ClassManagement = () => {
   ===================================================== */
 
   const handleCreate = useCallback(() => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
 
     setEditingClass(null);
     setIsModalOpen(true);
@@ -782,7 +1060,9 @@ const ClassManagement = () => {
 
   const handleEdit = useCallback(
     (item) => {
-      if (saving) return;
+      if (saving) {
+        return;
+      }
 
       setEditingClass(item);
       setIsModalOpen(true);
@@ -795,7 +1075,9 @@ const ClassManagement = () => {
   ===================================================== */
 
   const closeModal = useCallback(() => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
 
     setIsModalOpen(false);
     setEditingClass(null);
@@ -808,15 +1090,80 @@ const ClassManagement = () => {
 
   const handleSave = useCallback(
     async (values) => {
-      if (saving) return;
+      if (saving) {
+        return;
+      }
 
       if (!churchId) {
         message.error("Không xác định được giáo xứ của tài khoản");
+
         return;
       }
 
       try {
         setSaving(true);
+
+        /* ---------------------------------------------
+             NORMALIZE SCHEDULES
+          --------------------------------------------- */
+
+        const schedules = Array.isArray(values.schedules)
+          ? values.schedules
+              .filter(
+                (schedule) =>
+                  schedule &&
+                  schedule.day_of_week &&
+                  schedule.start_time &&
+                  schedule.end_time,
+              )
+              .map((schedule) => ({
+                day_of_week: Number(schedule.day_of_week),
+
+                start_time: schedule.start_time.format("HH:mm:ss"),
+
+                end_time: schedule.end_time.format("HH:mm:ss"),
+
+                room: schedule.room?.trim() || null,
+              }))
+          : [];
+
+        /* ---------------------------------------------
+             VALIDATE SCHEDULE
+          --------------------------------------------- */
+
+        for (const schedule of schedules) {
+          if (schedule.day_of_week < 1 || schedule.day_of_week > 7) {
+            message.error("Thứ trong tuần không hợp lệ");
+
+            return;
+          }
+
+          if (schedule.start_time >= schedule.end_time) {
+            message.error("Giờ kết thúc phải lớn hơn giờ bắt đầu");
+
+            return;
+          }
+        }
+
+        /* ---------------------------------------------
+             CHECK DUPLICATE SCHEDULE
+          --------------------------------------------- */
+
+        const scheduleKeys = schedules.map(
+          (schedule) => `${schedule.day_of_week}-${schedule.start_time}`,
+        );
+
+        const uniqueKeys = new Set(scheduleKeys);
+
+        if (uniqueKeys.size !== scheduleKeys.length) {
+          message.error("Lịch học bị trùng thứ và giờ bắt đầu");
+
+          return;
+        }
+
+        /* ---------------------------------------------
+             PAYLOAD
+          --------------------------------------------- */
 
         const payload = {
           name: values.name?.trim(),
@@ -827,16 +1174,6 @@ const ClassManagement = () => {
 
           description: values.description?.trim() || null,
 
-          room: values.room?.trim() || null,
-
-          day_of_week: values.day_of_week || null,
-
-          start_time: values.start_time
-            ? values.start_time.format("HH:mm:ss")
-            : null,
-
-          end_time: values.end_time ? values.end_time.format("HH:mm:ss") : null,
-
           start_date: values.start_date
             ? values.start_date.format("YYYY-MM-DD")
             : null,
@@ -846,26 +1183,38 @@ const ClassManagement = () => {
             : null,
 
           status: values.status || "active",
+
+          schedules,
         };
 
-        if (editingClass) {
-          await classApi.update(editingClass.id, payload);
+        /* ---------------------------------------------
+             CREATE
+          --------------------------------------------- */
 
-          message.success("Cập nhật lớp học thành công");
-        } else {
+        if (!editingClass) {
           const response = await classApi.create(payload);
 
-          const generatedCode = response?.data?.data?.code;
+          const createdData = normalizeObjectResponse(response);
+
+          const generatedCode = createdData?.code;
 
           if (generatedCode) {
             message.success(`Tạo lớp thành công • Mã lớp: ${generatedCode}`);
           } else {
             message.success("Tạo lớp học thành công");
           }
+        } else {
+          /* ---------------------------------------------
+             UPDATE
+          --------------------------------------------- */
+          await classApi.update(editingClass.id, payload);
+
+          message.success("Cập nhật lớp học thành công");
         }
 
         setIsModalOpen(false);
         setEditingClass(null);
+
         form.resetFields();
 
         await fetchClasses();
@@ -886,7 +1235,9 @@ const ClassManagement = () => {
 
   const handleDelete = useCallback(
     (item) => {
-      if (deletingId) return;
+      if (deletingId) {
+        return;
+      }
 
       Modal.confirm({
         title: "Xác nhận xóa lớp học",
@@ -900,7 +1251,11 @@ const ClassManagement = () => {
         ),
 
         content: (
-          <div style={{ marginTop: 10 }}>
+          <div
+            style={{
+              marginTop: 10,
+            }}
+          >
             <Text>
               Bạn có chắc chắn muốn xóa lớp <strong>{item.name}</strong>?
             </Text>
@@ -911,7 +1266,7 @@ const ClassManagement = () => {
                 padding: 12,
                 borderRadius: 10,
                 background: COLORS.dangerBg,
-                border: `1px solid #F5C6C2`,
+                border: "1px solid #F5C6C2",
               }}
             >
               <Text
@@ -920,8 +1275,7 @@ const ClassManagement = () => {
                   color: COLORS.danger,
                 }}
               >
-                Việc xóa lớp có thể ảnh hưởng đến dữ liệu học viên và Giáo lý
-                viên phụ trách.
+                Lịch học của lớp cũng sẽ được xóa theo lớp.
               </Text>
             </div>
           </div>
@@ -932,6 +1286,7 @@ const ClassManagement = () => {
 
         okButtonProps: {
           danger: true,
+
           style: {
             borderRadius: 8,
             fontWeight: 700,
@@ -978,7 +1333,17 @@ const ClassManagement = () => {
 
       const response = await classApi.getById(item.id);
 
-      setClassDetail(normalizeObjectResponse(response));
+      const detail = normalizeObjectResponse(response);
+
+      if (detail) {
+        detail.schedules = normalizeSchedules(detail.schedules);
+
+        detail.catechists = Array.isArray(detail.catechists)
+          ? detail.catechists
+          : [];
+      }
+
+      setClassDetail(detail);
     } catch (error) {
       message.error(
         error?.response?.data?.message || "Không thể tải thông tin lớp học",
@@ -1002,11 +1367,13 @@ const ClassManagement = () => {
 
       if (!classId) {
         message.error("Không xác định được lớp học");
+
         return;
       }
 
       if (!catechistId) {
         message.error("Không xác định được giáo lý viên");
+
         return;
       }
 
@@ -1022,7 +1389,11 @@ const ClassManagement = () => {
         ),
 
         content: (
-          <div style={{ marginTop: 10 }}>
+          <div
+            style={{
+              marginTop: 10,
+            }}
+          >
             <Text>
               Bạn có chắc muốn xóa{" "}
               <strong>
@@ -1038,7 +1409,7 @@ const ClassManagement = () => {
                 padding: 12,
                 borderRadius: 10,
                 background: COLORS.goldLight,
-                border: `1px solid #EBD9A8`,
+                border: "1px solid #EBD9A8",
               }}
             >
               <Text
@@ -1058,6 +1429,7 @@ const ClassManagement = () => {
 
         okButtonProps: {
           danger: true,
+
           style: {
             borderRadius: 8,
             fontWeight: 700,
@@ -1072,7 +1444,7 @@ const ClassManagement = () => {
 
         onOk: async () => {
           try {
-            setRemovingCatechistId(catechistId);
+            setRemovingCatechistId(Number(catechistId));
 
             await catechistApi.removeClass({
               catechist_id: Number(catechistId),
@@ -1084,7 +1456,19 @@ const ClassManagement = () => {
 
             const response = await classApi.getById(classId);
 
-            setClassDetail(normalizeObjectResponse(response));
+            const updatedDetail = normalizeObjectResponse(response);
+
+            if (updatedDetail) {
+              updatedDetail.schedules = normalizeSchedules(
+                updatedDetail.schedules,
+              );
+
+              updatedDetail.catechists = Array.isArray(updatedDetail.catechists)
+                ? updatedDetail.catechists
+                : [];
+            }
+
+            setClassDetail(updatedDetail);
 
             await fetchClasses();
           } catch (error) {
@@ -1102,6 +1486,19 @@ const ClassManagement = () => {
   );
 
   /* =====================================================
+     CLOSE DETAIL
+  ===================================================== */
+
+  const closeDetail = useCallback(() => {
+    if (detailLoading) {
+      return;
+    }
+
+    setDetailOpen(false);
+    setClassDetail(null);
+  }, [detailLoading]);
+
+  /* =====================================================
      RENDER
   ===================================================== */
 
@@ -1113,15 +1510,15 @@ const ClassManagement = () => {
         paddingBottom: 24,
       }}
     >
-      {/* =====================================================
+      {/* =================================================
           HERO
-      ===================================================== */}
+      ================================================= */}
 
       <PageHeroHeader
         icon={<BookOutlined />}
         badgeText="QUẢN LÝ GIÁO LÝ"
         title="Quản lý lớp học"
-        description="Theo dõi lịch học, danh sách học viên và Giáo lý viên phụ trách."
+        description="Theo dõi lớp học, lịch học hàng tuần, học viên và Giáo lý viên phụ trách."
         onRefresh={() => fetchClasses(true)}
         refreshLoading={loading}
         primaryButtonText={canCreateClass ? "Tạo lớp mới" : undefined}
@@ -1130,9 +1527,9 @@ const ClassManagement = () => {
         primaryDisabled={loading || saving || !canCreateClass}
       />
 
-      {/* =====================================================
+      {/* =================================================
           STATISTICS
-      ===================================================== */}
+      ================================================= */}
 
       <Row
         gutter={[16, 16]}
@@ -1193,9 +1590,9 @@ const ClassManagement = () => {
         </Col>
       </Row>
 
-      {/* =====================================================
+      {/* =================================================
           SEARCH / FILTER
-      ===================================================== */}
+      ================================================= */}
 
       <Card
         bordered={false}
@@ -1216,10 +1613,8 @@ const ClassManagement = () => {
           <Col xs={24} lg={15}>
             <AppSearchInput
               value={searchText}
-              onChange={(value) => {
-                setSearchText(value);
-              }}
-              placeholder="Tìm tên lớp, mã lớp, chương trình hoặc phòng học..."
+              onChange={(value) => setSearchText(value)}
+              placeholder="Tìm tên lớp, mã lớp, chương trình, thứ học hoặc phòng học..."
             />
           </Col>
 
@@ -1244,12 +1639,12 @@ const ClassManagement = () => {
                   value: "active",
                 },
                 {
-                  label: "Tạm dừng",
-                  value: "paused",
-                },
-                {
                   label: "Kết thúc",
                   value: "completed",
+                },
+                {
+                  label: "Đã hủy",
+                  value: "cancelled",
                 },
               ]}
             />
@@ -1257,9 +1652,9 @@ const ClassManagement = () => {
         </Row>
       </Card>
 
-      {/* =====================================================
+      {/* =================================================
           LIST HEADER
-      ===================================================== */}
+      ================================================= */}
 
       <Row
         justify="space-between"
@@ -1330,9 +1725,9 @@ const ClassManagement = () => {
         </Col>
       </Row>
 
-      {/* =====================================================
+      {/* =================================================
           CLASS GRID
-      ===================================================== */}
+      ================================================= */}
 
       {loading ? (
         <Row gutter={[16, 16]}>
@@ -1382,27 +1777,29 @@ const ClassManagement = () => {
               </Text>
             }
           >
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
-              style={{
-                borderRadius: 8,
-                background: COLORS.navy,
-                borderColor: COLORS.navy,
-                fontWeight: 700,
-                height: 40,
-              }}
-            >
-              Tạo lớp mới
-            </Button>
+            {canCreateClass && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+                style={{
+                  borderRadius: 8,
+                  background: COLORS.navy,
+                  borderColor: COLORS.navy,
+                  fontWeight: 700,
+                  height: 40,
+                }}
+              >
+                Tạo lớp mới
+              </Button>
+            )}
           </Empty>
         </Card>
       )}
 
-      {/* =====================================================
-          CREATE / EDIT MODAL
-      ===================================================== */}
+      {/* =================================================
+          CREATE / EDIT
+      ================================================= */}
 
       <AppFormModal
         title={editingClass ? "Chỉnh sửa lớp học" : "Tạo lớp học mới"}
@@ -1419,9 +1816,9 @@ const ClassManagement = () => {
         />
       </AppFormModal>
 
-      {/* =====================================================
+      {/* =================================================
           DETAIL DRAWER
-      ===================================================== */}
+      ================================================= */}
 
       <Drawer
         title={
@@ -1463,7 +1860,7 @@ const ClassManagement = () => {
                     borderRadius: 6,
                     background: COLORS.goldLight,
                     color: COLORS.navy,
-                    border: `1px solid #EBD9A8`,
+                    border: "1px solid #EBD9A8",
                     fontSize: 10,
                     fontWeight: 800,
                   }}
@@ -1474,9 +1871,9 @@ const ClassManagement = () => {
             </div>
           </Space>
         }
-        width={520}
+        width={540}
         open={detailOpen}
-        onClose={() => setDetailOpen(false)}
+        onClose={closeDetail}
         styles={{
           header: {
             background: COLORS.white,
@@ -1494,12 +1891,14 @@ const ClassManagement = () => {
           <ClassDetailSkeleton />
         ) : classDetail ? (
           <div>
-            {/* TỔNG QUAN */}
+            {/* =========================================
+                THÔNG TIN TỔNG QUAN
+            ========================================= */}
 
             <SectionTitle
               icon={<StarFilled />}
               title="Thông tin tổng quan"
-              description="Lịch học và thời gian khóa học"
+              description="Thông tin cơ bản của lớp học"
             />
 
             <Descriptions
@@ -1512,17 +1911,8 @@ const ClassManagement = () => {
                 overflow: "hidden",
               }}
             >
-              <Descriptions.Item label="Lịch học">
-                {getDayName(classDetail.day_of_week)}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Thời gian">
-                {formatTime(classDetail.start_time)} -{" "}
-                {formatTime(classDetail.end_time)}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Phòng học">
-                {classDetail.room || "Chưa cập nhật"}
+              <Descriptions.Item label="Chương trình">
+                {classDetail.category || "Chưa cập nhật"}
               </Descriptions.Item>
 
               <Descriptions.Item label="Trạng thái">
@@ -1536,9 +1926,89 @@ const ClassManagement = () => {
               <Descriptions.Item label="Ngày kết thúc">
                 {formatDate(classDetail.end_date)}
               </Descriptions.Item>
+
+              <Descriptions.Item label="Học viên">
+                <Text
+                  strong
+                  style={{
+                    color: COLORS.navy,
+                  }}
+                >
+                  {Number(classDetail.studentsCount || 0)} học viên
+                </Text>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Giáo lý viên">
+                <Text
+                  strong
+                  style={{
+                    color: COLORS.navy,
+                  }}
+                >
+                  {classDetail.catechists?.length || 0} người
+                </Text>
+              </Descriptions.Item>
+
+              {classDetail.description && (
+                <Descriptions.Item label="Mô tả" span={2}>
+                  {classDetail.description}
+                </Descriptions.Item>
+              )}
             </Descriptions>
 
-            {/* GIÁO LÝ VIÊN */}
+            {/* =========================================
+                LỊCH HỌC
+            ========================================= */}
+
+            <SectionTitle
+              icon={<CalendarOutlined />}
+              title="Lịch học hàng tuần"
+              description="Lịch học được lặp lại mỗi tuần"
+              count={normalizeSchedules(classDetail.schedules).length}
+            />
+
+            <div
+              style={{
+                marginBottom: 24,
+              }}
+            >
+              {normalizeSchedules(classDetail.schedules).length > 0 ? (
+                <ScheduleList schedules={classDetail.schedules} />
+              ) : (
+                <div
+                  style={{
+                    padding: 24,
+                    borderRadius: 12,
+                    background: COLORS.white,
+                    border: `1px dashed ${COLORS.border}`,
+                    textAlign: "center",
+                  }}
+                >
+                  <CalendarOutlined
+                    style={{
+                      fontSize: 24,
+                      color: COLORS.gold,
+                      marginBottom: 8,
+                    }}
+                  />
+
+                  <Text
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      color: COLORS.muted,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Chưa có lịch học
+                  </Text>
+                </div>
+              )}
+            </div>
+
+            {/* =========================================
+                GIÁO LÝ VIÊN
+            ========================================= */}
 
             <SectionTitle
               icon={<HeartFilled />}
@@ -1547,16 +2017,19 @@ const ClassManagement = () => {
             />
 
             {classDetail.catechists?.length > 0 ? (
-              classDetail.catechists.map((c, idx) => (
-                <CatechistItem
-                  key={c.id || idx}
-                  catechist={c}
-                  index={idx}
-                  classId={classDetail.id}
-                  onRemove={handleRemoveCatechist}
-                  removing={removingCatechistId === c.id}
-                />
-              ))
+              classDetail.catechists.map((catechist, index) => {
+                const catechistId = catechist?.catechist_id ?? catechist?.id;
+
+                return (
+                  <CatechistItem
+                    key={catechistId || index}
+                    catechist={catechist}
+                    index={index}
+                    onRemove={handleRemoveCatechist}
+                    removing={removingCatechistId === Number(catechistId)}
+                  />
+                );
+              })
             ) : (
               <div
                 style={{
@@ -1594,9 +2067,9 @@ const ClassManagement = () => {
         )}
       </Drawer>
 
-      {/* =====================================================
-          LOCAL OVERRIDE STYLE
-      ===================================================== */}
+      {/* =================================================
+          LOCAL STYLE
+      ================================================= */}
 
       <style>
         {`

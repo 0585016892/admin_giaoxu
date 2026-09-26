@@ -14,7 +14,7 @@ import {
   Tabs,
   message,
 } from "antd";
-import AppButton from "../common/AppButton";
+import AppButton from "../../../../components/common/AppButton";
 
 import {
   CameraOutlined,

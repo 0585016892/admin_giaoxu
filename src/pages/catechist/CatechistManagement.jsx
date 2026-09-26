@@ -92,6 +92,14 @@ const LEVEL_OPTIONS = [
     value: "Huấn luyện viên",
     label: "Huấn luyện viên",
   },
+  {
+    value: "Cha phó",
+    label: "Cha phó",
+  },
+  {
+    value: "Cha chánh xứ",
+    label: "Cha chánh xứ",
+  },
 ];
 
 const STATUS_OPTIONS = [

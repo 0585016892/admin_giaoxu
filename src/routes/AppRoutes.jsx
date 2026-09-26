@@ -13,9 +13,9 @@ import ProtectedRoute, { RoleGuard } from "../components/ProtectedRoute";
 
 // ==================== CATECHIST ====================
 import CatechistManagement from "../pages/catechist/CatechistManagement";
-import CatechistDashboard from "../pages/catechist/CatechistDashboard";
-import ClassManagementDashboard from "../pages/catechist/ClassManagement";
-import StudentManagement from "../pages/catechist/StudentManagement";
+import CatechistDashboard from "../pages/catechist/Dashboard/CatechistDashboard";
+import ClassManagementDashboard from "../pages/catechist/Class/ClassManagement";
+import StudentManagement from "../pages/catechist/Students/StudentManagement";
 import GameManagementPage from "../pages/catechist/GameManagementPage";
 import ResultsPage from "../pages/catechist/ResultsPage/ResultsPage";
 import LeaderboardPage from "../pages/catechist/LeaderboardPage";
@@ -23,7 +23,7 @@ import ProfilePageCate from "../pages/catechist/ProfilePageCate";
 import ParishSettingsPage from "../pages/catechist/ParishSettingsPage";
 import AttendancePage from "../pages/catechist/AttendancePage";
 import TeacherClassesPage from "../pages/catechist/TeacherClassesPage";
-import MyStudentsPage from "../pages/catechist/MyStudentsPage";
+import MyStudentsPage from "../pages/catechist/Students/MyStudentsPage";
 import SendNotificationPage from "../pages/catechist/SendNotificationPage";
 import NotificationsCatePage from "../pages/catechist/NotificationsCatePage";
 import ErrorPage from "../pages/catechist/ErrorPage";

@@ -9,7 +9,6 @@ import {
   Empty,
   Select,
   message,
-  Table,
   Descriptions,
   Divider,
 } from "antd";
@@ -23,13 +22,14 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 
-import StatCard from "../../components/common/StatCard";
-import AppDetailModal from "../../components/common/AppDetailModal";
-import PageHeroHeader from "../../components/common/PageHeroHeader";
-import AppSearchInput from "../../components/common/SearchInput";
-import AppButton from "../../components/common/AppButton";
-import studentApi from "../../api/studentApi";
-import ErrorPage from "./ErrorPage";
+import StatCard from "../../../components/common/StatCard";
+import AppDetailModal from "../../../components/common/AppDetailModal";
+import PageHeroHeader from "../../../components/common/PageHeroHeader";
+import AppSearchInput from "../../../components/common/SearchInput";
+import AppButton from "../../../components/common/AppButton";
+import AppTable from "../../../components/common/AppTable";
+import studentApi from "../../../api/studentApi";
+import ErrorPage from "../ErrorPage";
 
 const { Text } = Typography;
 
@@ -417,35 +417,37 @@ const MyStudentsPage = () => {
       <Card
         bordered={false}
         className="students-table-card"
-        styles={{ body: { padding: 0 } }}
+        styles={{
+          body: {
+            padding: 0,
+          },
+        }}
       >
-        <Table
+        <AppTable
           dataSource={filteredStudents}
           columns={columns}
           rowKey="id"
           loading={loading}
           size="middle"
-          scroll={{ x: 1010 }}
+          scrollX={1010}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
             responsive: true,
             showTotal: (total) => `Tổng số ${total} học sinh`,
           }}
-          locale={{
-            emptyText: (
-              <div className="table-empty-box">
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={
-                    <Text className="empty-text">
-                      Chưa có học sinh nào trong các lớp bạn phụ trách.
-                    </Text>
-                  }
-                />
-              </div>
-            ),
-          }}
+          emptyText={
+            <div className="table-empty-box">
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <Text className="empty-text">
+                    Chưa có học sinh nào trong các lớp bạn phụ trách.
+                  </Text>
+                }
+              />
+            </div>
+          }
         />
       </Card>
 

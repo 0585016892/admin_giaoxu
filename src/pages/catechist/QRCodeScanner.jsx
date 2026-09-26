@@ -67,7 +67,13 @@ const DUPLICATE_SCAN_TIME = 2500;
    COMPONENT
 ========================================================= */
 
-const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
+const QRCodeScanner = ({
+  open,
+  classId,
+  attendanceType = "catechism",
+  onSuccess,
+  onFinishAttendance,
+}) => {
   const [processing, setProcessing] = useState(false);
   const [scanMessage, setScanMessage] = useState(null);
 
@@ -260,11 +266,32 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
       /* =================================================
          API
       ================================================= */
+      const normalizedAttendanceType = String(attendanceType || "")
+        .trim()
+        .toLowerCase();
+
+      if (!["catechism", "mass"].includes(normalizedAttendanceType)) {
+        processingRef.current = true;
+
+        showMessage(
+          {
+            type: "error",
+            title: "Loại điểm danh không hợp lệ",
+            message: "Vui lòng chọn Giáo lý hoặc Thánh lễ trước khi quét.",
+          },
+          DISPLAY_TIME.error,
+        );
+
+        vibrate([150, 100, 150]);
+
+        return;
+      }
 
       try {
         const response = await scanQRCode({
           qr_token: qrToken,
           class_id: Number(classId),
+          attendance_type: normalizedAttendanceType,
         });
 
         const data = response?.data || response;
@@ -435,7 +462,15 @@ const QRCodeScanner = ({ open, classId, onSuccess, onFinishAttendance }) => {
         vibrate([150, 100, 150]);
       }
     },
-    [open, classId, onSuccess, showMessage, clearMessageTimeout, vibrate],
+    [
+      open,
+      classId,
+      attendanceType,
+      onSuccess,
+      showMessage,
+      clearMessageTimeout,
+      vibrate,
+    ],
   );
 
   /* =======================================================

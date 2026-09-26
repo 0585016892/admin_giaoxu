@@ -8,13 +8,16 @@ import {
   Select,
   Spin,
   Tabs,
+  Tag,
   message,
 } from "antd";
 
 import {
   BookOutlined,
   CalculatorOutlined,
+  CheckCircleOutlined,
   TrophyOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 import classApi from "../../../api/classApi";
@@ -74,11 +77,8 @@ const ResultsPage = () => {
   ========================================================== */
 
   const [classes, setClasses] = useState([]);
-
   const [students, setStudents] = useState([]);
-
   const [results, setResults] = useState([]);
-
   const [gradingRule, setGradingRule] = useState(null);
 
   /* ==========================================================
@@ -86,17 +86,11 @@ const ResultsPage = () => {
   ========================================================== */
 
   const [initialLoading, setInitialLoading] = useState(true);
-
   const [classLoading, setClassLoading] = useState(false);
-
   const [studentLoading, setStudentLoading] = useState(false);
-
   const [resultLoading, setResultLoading] = useState(false);
-
   const [ruleLoading, setRuleLoading] = useState(false);
-
   const [submitting, setSubmitting] = useState(false);
-
   const [deletingId, setDeletingId] = useState(null);
 
   /* ==========================================================
@@ -110,11 +104,8 @@ const ResultsPage = () => {
   ========================================================== */
 
   const [searchText, setSearchText] = useState("");
-
   const [scoreFilter, setScoreFilter] = useState("all");
-
   const [currentPage, setCurrentPage] = useState(1);
-
   const [pageSize, setPageSize] = useState(10);
 
   /* ==========================================================
@@ -122,11 +113,8 @@ const ResultsPage = () => {
   ========================================================== */
 
   const [detailOpen, setDetailOpen] = useState(false);
-
   const [detailStudent, setDetailStudent] = useState(null);
-
   const [detailResults, setDetailResults] = useState([]);
-
   const [detailLoading, setDetailLoading] = useState(false);
 
   /* ==========================================================
@@ -134,7 +122,6 @@ const ResultsPage = () => {
   ========================================================== */
 
   const [formOpen, setFormOpen] = useState(false);
-
   const [editingResult, setEditingResult] = useState(null);
 
   /* ==========================================================
@@ -146,17 +133,14 @@ const ResultsPage = () => {
       setRuleLoading(true);
 
       const response = await resultApi.getGradingRule();
-
       const data = unwrap(response);
 
       if (data?.success === false) {
         setGradingRule(null);
-
         return null;
       }
 
       const rawRule = data?.data || data?.rule || data;
-
       const rule = normalizeRule(rawRule);
 
       setGradingRule(rule);
@@ -184,15 +168,12 @@ const ResultsPage = () => {
       setClassLoading(true);
 
       const response = await classApi.getClassTeacher();
-
       const data = unwrap(response);
 
       const list = extractList(data)
         .map((item) => ({
           ...item,
-
           id: Number(item.id),
-
           name:
             item.name || item.class_name || item.className || `Lớp #${item.id}`,
         }))
@@ -232,7 +213,6 @@ const ResultsPage = () => {
       });
 
       const data = unwrap(response);
-
       const list = extractList(data);
 
       setStudents(list);
@@ -265,7 +245,6 @@ const ResultsPage = () => {
       setResultLoading(true);
 
       const response = await resultApi.getResultsByClass(classId);
-
       const data = unwrap(response);
 
       if (data?.success === false) {
@@ -306,13 +285,15 @@ const ResultsPage = () => {
 
       const [classList] = await Promise.all([loadClasses(), loadRule()]);
 
-      if (mounted && classList?.length === 1) {
+      if (!mounted) {
+        return;
+      }
+
+      if (classList?.length === 1) {
         setSelectedClassId(classList[0].id);
       }
 
-      if (mounted) {
-        setInitialLoading(false);
-      }
+      setInitialLoading(false);
     };
 
     init();
@@ -338,7 +319,6 @@ const ResultsPage = () => {
     setScoreFilter("all");
 
     loadStudents(selectedClassId);
-
     loadResults(selectedClassId);
   }, [selectedClassId, loadStudents, loadResults]);
 
@@ -394,15 +374,13 @@ const ResultsPage = () => {
     const keyword = searchText.trim().toLowerCase();
 
     if (keyword) {
-      data = data.filter(
-        (item) =>
-          String(item.student_name || "")
-            .toLowerCase()
-            .includes(keyword) ||
-          String(item.student_code || "")
-            .toLowerCase()
-            .includes(keyword),
-      );
+      data = data.filter((item) => {
+        const name = String(item.student_name || "").toLowerCase();
+
+        const code = String(item.student_code || "").toLowerCase();
+
+        return name.includes(keyword) || code.includes(keyword);
+      });
     }
 
     if (scoreFilter !== "all") {
@@ -417,19 +395,19 @@ const ResultsPage = () => {
           return false;
         }
 
+        const numericScore = Number(score);
+        const passScore = Number(gradingRule?.pass_score || 5);
+
         if (scoreFilter === "good") {
-          return Number(score) >= 8;
+          return numericScore >= 8;
         }
 
         if (scoreFilter === "pass") {
-          return (
-            Number(score) >= Number(gradingRule?.pass_score || 5) &&
-            Number(score) < 8
-          );
+          return numericScore >= passScore && numericScore < 8;
         }
 
         if (scoreFilter === "fail") {
-          return Number(score) < Number(gradingRule?.pass_score || 5);
+          return numericScore < passScore;
         }
 
         return true;
@@ -477,9 +455,7 @@ const ResultsPage = () => {
       setDetailStudent(
         student || {
           id: record.student_id,
-
           name: record.student_name,
-
           code: record.student_code,
         },
       );
@@ -516,7 +492,7 @@ const ResultsPage = () => {
      CREATE
   ========================================================== */
 
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     if (!selectedClassId) {
       message.warning("Vui lòng chọn lớp trước");
       return;
@@ -533,19 +509,17 @@ const ResultsPage = () => {
     }
 
     setEditingResult(null);
-
     setFormOpen(true);
-  };
+  }, [selectedClassId, students, gradingRule]);
 
   /* ==========================================================
      EDIT
   ========================================================== */
 
-  const handleEdit = (record) => {
+  const handleEdit = useCallback((record) => {
     setEditingResult(record);
-
     setFormOpen(true);
-  };
+  }, []);
 
   /* ==========================================================
      SUBMIT RESULT
@@ -561,7 +535,6 @@ const ResultsPage = () => {
 
       const finalPayload = {
         ...payload,
-
         class_id: Number(selectedClassId),
       };
 
@@ -584,25 +557,14 @@ const ResultsPage = () => {
       );
 
       setFormOpen(false);
-
       setEditingResult(null);
 
       await loadResults(selectedClassId);
 
       if (detailStudent?.id) {
-        const student = students.find(
-          (item) => Number(item.id) === Number(detailStudent.id),
-        );
-
-        if (student) {
-          await handleViewDetail({
-            student_id: student.id,
-
-            results: results.filter(
-              (item) => Number(item.student_id) === Number(student.id),
-            ),
-          });
-        }
+        await handleViewDetail({
+          student_id: detailStudent.id,
+        });
       }
     } catch (error) {
       message.error(
@@ -640,13 +602,13 @@ const ResultsPage = () => {
       await loadResults(selectedClassId);
 
       if (detailStudent?.id) {
-        const currentResults = await resultApi.getResultsByStudent(
-          detailStudent.id,
-        );
+        const response = await resultApi.getResultsByStudent(detailStudent.id);
 
-        const currentData = unwrap(currentResults);
+        const data = unwrap(response);
 
-        setDetailResults(normalizeResults(extractList(currentData)));
+        const list = normalizeResults(extractList(data));
+
+        setDetailResults(list);
       }
     } catch (error) {
       message.error(
@@ -669,7 +631,6 @@ const ResultsPage = () => {
     }
 
     setFormOpen(false);
-
     setEditingResult(null);
   };
 
@@ -680,9 +641,17 @@ const ResultsPage = () => {
   if (initialLoading) {
     return (
       <div className="results-page results-page-loading">
-        <Spin size="large" />
+        <div className="results-loading-box">
+          <div className="results-loading-icon">
+            <CalculatorOutlined />
+          </div>
 
-        <span>Đang tải bảng điểm...</span>
+          <Spin />
+
+          <strong>Đang tải bảng điểm</strong>
+
+          <span>Vui lòng chờ trong giây lát...</span>
+        </div>
       </div>
     );
   }
@@ -693,6 +662,10 @@ const ResultsPage = () => {
 
   return (
     <div className="results-page">
+      {/* ====================================================
+          HEADER
+      ==================================================== */}
+
       <ResultsHeader
         onRefresh={handleRefresh}
         refreshLoading={
@@ -703,6 +676,10 @@ const ResultsPage = () => {
           !selectedClassId || !gradingRule || !gradingRule.items?.length
         }
       />
+
+      {/* ====================================================
+          WARNING
+      ==================================================== */}
 
       {!gradingRule && (
         <Alert
@@ -719,87 +696,146 @@ const ResultsPage = () => {
         <Alert
           type="warning"
           showIcon
+          className="results-warning"
           message="Quy tắc chưa có đầu điểm"
           description="Hãy thêm ít nhất một đầu điểm vào quy tắc tính điểm."
         />
       )}
 
-      {/* ======================================================
-          CLASS SELECT
-      ====================================================== */}
-
+      {/* ====================================================
+          CLASS SELECTOR
+      ==================================================== */}
       <Card bordered={false} className="results-class-selector">
-        <div className="results-class-selector-left">
+        <div className="results-class-selector-main">
           <div className="results-class-selector-icon">
             <BookOutlined />
           </div>
 
-          <div>
-            <strong>Lớp học</strong>
+          <span className="results-class-selector-label">Lớp học</span>
 
-            <span>Chọn lớp để xem bảng điểm</span>
-          </div>
+          <Select
+            size="middle"
+            showSearch
+            allowClear
+            optionFilterProp="label"
+            placeholder="Chọn lớp học"
+            value={selectedClassId ? String(selectedClassId) : undefined}
+            onChange={(value) => {
+              setSelectedClassId(value ? Number(value) : null);
+            }}
+            loading={classLoading}
+            options={classes.map((item) => ({
+              value: String(item.id),
+              label: item.name,
+            }))}
+            className="results-class-select"
+          />
         </div>
-
-        <Select
-          size="large"
-          showSearch
-          optionFilterProp="label"
-          placeholder="Chọn lớp học"
-          value={selectedClassId ? String(selectedClassId) : undefined}
-          onChange={(value) => {
-            setSelectedClassId(Number(value));
-          }}
-          loading={classLoading}
-          options={classes.map((item) => ({
-            value: String(item.id),
-            label: item.name,
-          }))}
-          className="results-class-select"
-        />
       </Card>
+      {/* ====================================================
+          EMPTY CLASS
+      ==================================================== */}
 
       {!selectedClassId ? (
         <Card bordered={false} className="results-empty-card">
+          <div className="results-empty-icon">
+            <BookOutlined />
+          </div>
+
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Chọn lớp học để bắt đầu quản lý bảng điểm"
+            description={
+              <div className="results-empty-content">
+                <strong>Chưa chọn lớp học</strong>
+
+                <span>
+                  Chọn một lớp ở phía trên để bắt đầu quản lý bảng điểm.
+                </span>
+              </div>
+            }
           />
         </Card>
       ) : (
         <>
-          <ResultsOverview statistics={statistics} rule={gradingRule} />
+          {/* ==================================================
+              OVERVIEW
+          ================================================== */}
+
+          <ResultsOverview
+            statistics={statistics}
+            rule={gradingRule}
+            loading={studentLoading || resultLoading}
+          />
+
+          {/* ==================================================
+              MAIN CONTENT
+          ================================================== */}
 
           <Card bordered={false} className="results-content-card">
+            {/* ------------------------------------------------
+                CONTENT HEADER
+            ------------------------------------------------ */}
+
             <div className="results-content-heading">
-              <div>
-                <div className="results-content-title">
-                  <div className="results-content-title-icon">
-                    <TrophyOutlined />
+              <div className="results-heading-left">
+                <div className="results-heading-icon">
+                  <TrophyOutlined />
+                </div>
+
+                <div className="results-heading-info">
+                  <div className="results-heading-title">
+                    {selectedClass?.name || "Bảng điểm"}
                   </div>
 
-                  <div>
-                    <strong>{selectedClass?.name || "Bảng điểm"}</strong>
+                  <div className="results-heading-meta">
+                    <span>
+                      <UserOutlined />
+                      {students.length} học viên
+                    </span>
 
-                    <span>{filteredSummaries.length} học viên</span>
+                    <span className="results-heading-dot">•</span>
+
+                    <span>{results.length} kết quả</span>
                   </div>
                 </div>
               </div>
+
+              <div className="results-heading-right">
+                {gradingRule ? (
+                  <Tag icon={<CheckCircleOutlined />} color="success">
+                    Đã cấu hình điểm
+                  </Tag>
+                ) : (
+                  <Tag icon={<CalculatorOutlined />} color="warning">
+                    Chưa cấu hình
+                  </Tag>
+                )}
+              </div>
             </div>
 
-            <ResultsFilters
-              searchText={searchText}
-              setSearchText={(value) => {
-                setSearchText(value);
-                setCurrentPage(1);
-              }}
-              scoreFilter={scoreFilter}
-              setScoreFilter={(value) => {
-                setScoreFilter(value);
-                setCurrentPage(1);
-              }}
-              rule={gradingRule}
-            />
+            {/* ------------------------------------------------
+                FILTER
+            ------------------------------------------------ */}
+
+            <div className="results-filter-wrapper">
+              <ResultsFilters
+                searchText={searchText}
+                setSearchText={(value) => {
+                  setSearchText(value);
+                  setCurrentPage(1);
+                }}
+                scoreFilter={scoreFilter}
+                setScoreFilter={(value) => {
+                  setScoreFilter(value);
+                  setCurrentPage(1);
+                }}
+                rule={gradingRule}
+              />
+            </div>
+
+            {/* ------------------------------------------------
+                TABS
+            ------------------------------------------------ */}
 
             <Tabs
               className="results-tabs"
@@ -808,14 +844,17 @@ const ResultsPage = () => {
                   key: "table",
 
                   label: (
-                    <span>
+                    <span className="results-tab-label">
                       <BookOutlined />
                       Bảng điểm
+                      <span className="results-tab-count">
+                        {filteredSummaries.length}
+                      </span>
                     </span>
                   ),
 
                   children: (
-                    <>
+                    <div className="results-table-section">
                       <ResultsTable
                         data={paginatedSummaries}
                         rule={gradingRule}
@@ -827,11 +866,11 @@ const ResultsPage = () => {
 
                       {filteredSummaries.length > 0 && (
                         <div className="results-pagination">
-                          <span>
+                          <div className="results-pagination-info">
                             Hiển thị{" "}
                             <strong>{paginatedSummaries.length}</strong> /{" "}
-                            <strong>{filteredSummaries.length}</strong>
-                          </span>
+                            <strong>{filteredSummaries.length}</strong> học viên
+                          </div>
 
                           <Pagination
                             current={currentPage}
@@ -841,14 +880,27 @@ const ResultsPage = () => {
                             pageSizeOptions={["10", "20", "50"]}
                             onChange={(page, size) => {
                               setCurrentPage(page);
-
                               setPageSize(size);
                             }}
                             size="small"
+                            showTotal={(total, range) =>
+                              `${range[0]}-${range[1]} / ${total}`
+                            }
                           />
                         </div>
                       )}
-                    </>
+
+                      {!filteredSummaries.length &&
+                        !studentLoading &&
+                        !resultLoading && (
+                          <div className="results-filter-empty">
+                            <Empty
+                              image={Empty.PRESENTED_IMAGE_SIMPLE}
+                              description="Không tìm thấy học viên phù hợp"
+                            />
+                          </div>
+                        )}
+                    </div>
                   ),
                 },
 
@@ -856,9 +908,12 @@ const ResultsPage = () => {
                   key: "leaderboard",
 
                   label: (
-                    <span>
+                    <span className="results-tab-label">
                       <TrophyOutlined />
                       Xếp hạng
+                      <span className="results-tab-count">
+                        {leaderboard.length}
+                      </span>
                     </span>
                   ),
 
@@ -872,13 +927,16 @@ const ResultsPage = () => {
         </>
       )}
 
-      {/* ======================================================
-          DETAIL
-      ====================================================== */}
+      {/* ====================================================
+          DETAIL MODAL
+      ==================================================== */}
 
       <StudentResultModal
         open={detailOpen}
-        onClose={() => setDetailOpen(false)}
+        onClose={() => {
+          setDetailOpen(false);
+          setDetailStudent(null);
+        }}
         student={detailStudent}
         results={detailResults}
         rule={gradingRule}
@@ -888,9 +946,9 @@ const ResultsPage = () => {
         deletingId={deletingId}
       />
 
-      {/* ======================================================
-          FORM
-      ====================================================== */}
+      {/* ====================================================
+          FORM MODAL
+      ==================================================== */}
 
       <ResultFormModal
         open={formOpen}

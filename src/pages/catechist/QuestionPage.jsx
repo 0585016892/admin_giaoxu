@@ -11,7 +11,6 @@ import {
   Select,
   Space,
   Spin,
-  Table,
   Tabs,
   Tag,
   Typography,
@@ -33,6 +32,7 @@ import AppFormModal from "../../components/common/AppFormModal";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
+import AppTable from "../../components/common/AppTable";
 
 import {
   getLessons,
@@ -107,6 +107,10 @@ const FALLBACK_LESSON_TYPES = [
   {
     value: "mua_he",
     label: "Mùa Hè",
+  },
+  {
+    value: "hiep_thong",
+    label: "Hiệp Thông",
   },
 ];
 
@@ -1227,28 +1231,21 @@ const LessonQuestionPage = () => {
                       </Space>
                     </div>
 
-                    <Table
+                    <AppTable
                       rowKey="id"
                       loading={lessonLoading}
                       columns={lessonColumns}
                       dataSource={lessons}
                       pagination={{
                         current: lessonPagination.current,
-
                         pageSize: lessonPagination.pageSize,
-
                         total: lessonPagination.total,
-
                         showSizeChanger: true,
-
                         pageSizeOptions: ["10", "20", "50", "100"],
-
                         onChange: (page, pageSize) =>
                           loadLessons(page, pageSize, lessonSearch),
                       }}
-                      locale={{
-                        emptyText: <Empty description="Chưa có bài học" />,
-                      }}
+                      emptyText="Chưa có bài học"
                     />
                   </div>
                 ),
@@ -1359,22 +1356,17 @@ const LessonQuestionPage = () => {
                       </Space>
                     </div>
 
-                    <Table
+                    <AppTable
                       rowKey="id"
                       loading={questionLoading}
                       columns={questionColumns}
                       dataSource={questions}
                       pagination={{
                         current: questionPagination.current,
-
                         pageSize: questionPagination.pageSize,
-
                         total: questionPagination.total,
-
                         showSizeChanger: true,
-
                         pageSizeOptions: ["10", "20", "50", "100"],
-
                         onChange: (page, pageSize) =>
                           loadQuestions(
                             page,
@@ -1383,9 +1375,7 @@ const LessonQuestionPage = () => {
                             questionLessonFilter,
                           ),
                       }}
-                      locale={{
-                        emptyText: <Empty description="Chưa có câu hỏi" />,
-                      }}
+                      emptyText="Chưa có câu hỏi"
                     />
                   </div>
                 ),

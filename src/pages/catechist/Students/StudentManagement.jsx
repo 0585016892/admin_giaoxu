@@ -15,7 +15,6 @@ import {
   Descriptions,
   Divider,
   Dropdown,
-  Empty,
   Form,
   Modal,
   Pagination,
@@ -23,8 +22,6 @@ import {
   Row,
   Select,
   Space,
-  Spin,
-  Table,
   Tabs,
   Tag,
   Tooltip,
@@ -53,20 +50,21 @@ import {
 
 import dayjs from "dayjs";
 
-import studentApi from "../../api/studentApi";
-import classStudentApi from "../../api/classStudentApi";
-import classApi from "../../api/classApi";
+import studentApi from "../../../api/studentApi";
+import classStudentApi from "../../../api/classStudentApi";
+import classApi from "../../../api/classApi";
 
-import AppFormModal from "../../components/common/AppFormModal";
-import StudentForm from "../../components/forms/StudentForm";
-import StatCard from "../../components/common/StatCard";
-import AppDetailModal from "../../components/common/AppDetailModal";
-import PageHeroHeader from "../../components/common/PageHeroHeader";
-import AppButton from "../../components/common/AppButton";
-import AppSearchInput from "../../components/common/SearchInput";
+import AppFormModal from "../../../components/common/AppFormModal";
+import StudentForm from "./components/StudentForm";
+import StatCard from "../../../components/common/StatCard";
+import AppDetailModal from "../../../components/common/AppDetailModal";
+import AppTable from "../../../components/common/AppTable";
+import PageHeroHeader from "../../../components/common/PageHeroHeader";
+import AppButton from "../../../components/common/AppButton";
+import AppSearchInput from "../../../components/common/SearchInput";
 import JSZip from "jszip";
 import { QRCodeCanvas } from "qrcode.react";
-import backqr from "../../assets/images/backqr.png";
+import backqr from "../../../assets/images/backqr.png";
 const { Text } = Typography;
 
 /* =====================================================
@@ -223,6 +221,7 @@ export default function StudentManagement() {
   const [searchText, setSearchText] = useState("");
 
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [sortOrder, setSortOrder] = useState("az");
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -809,7 +808,14 @@ export default function StudentManagement() {
 
         setStudents(formattedStudents);
 
-        setSelectedRowKeys([]);
+        // Chỉ giữ lại những ID vẫn còn tồn tại
+        setSelectedRowKeys((prev) =>
+          prev.filter((id) =>
+            formattedStudents.some(
+              (student) => String(student.id) === String(id),
+            ),
+          ),
+        );
       } catch (error) {
         if (mountedRef.current) {
           message.error(
@@ -848,10 +854,15 @@ export default function StudentManagement() {
   /* ===================================================
      FILTER
   =================================================== */
+  const getVietnameseGivenName = (name = "") => {
+    const parts = String(name).trim().split(/\s+/);
+    return parts[parts.length - 1] || "";
+  };
 
   const filteredStudents = useMemo(() => {
     let result = [...students];
 
+    // Lọc theo lớp
     if (activeClassTab === "unassigned") {
       result = result.filter((student) => !student.classId);
     } else if (activeClassTab !== "all") {
@@ -860,6 +871,7 @@ export default function StudentManagement() {
       );
     }
 
+    // Tìm kiếm
     const keyword = searchText.trim().toLowerCase();
 
     if (keyword) {
@@ -872,12 +884,50 @@ export default function StudentManagement() {
       );
     }
 
+    // Lọc trạng thái
     if (selectedStatus !== "all") {
       result = result.filter((student) => student.status === selectedStatus);
     }
 
+    // =========================
+    // SẮP XẾP ALPHABET
+    // =========================
+    result.sort((a, b) => {
+      const nameA = String(a.name || "").trim();
+      const nameB = String(b.name || "").trim();
+
+      const emptyA = !nameA || nameA === "Chưa có tên";
+      const emptyB = !nameB || nameB === "Chưa có tên";
+
+      // Người chưa có tên đưa xuống cuối
+      if (emptyA && !emptyB) return 1;
+      if (!emptyA && emptyB) return -1;
+      if (emptyA && emptyB) return 0;
+
+      // Lấy tên gọi cuối cùng
+      const givenNameA = getVietnameseGivenName(nameA);
+      const givenNameB = getVietnameseGivenName(nameB);
+
+      const compareGivenName = givenNameA.localeCompare(givenNameB, "vi", {
+        sensitivity: "base",
+        numeric: true,
+      });
+
+      if (compareGivenName !== 0) {
+        return sortOrder === "az" ? compareGivenName : -compareGivenName;
+      }
+
+      // Nếu trùng tên gọi thì sort tiếp theo toàn bộ họ tên
+      const compareFullName = nameA.localeCompare(nameB, "vi", {
+        sensitivity: "base",
+        numeric: true,
+      });
+
+      return sortOrder === "az" ? compareFullName : -compareFullName;
+    });
+
     return result;
-  }, [students, activeClassTab, searchText, selectedStatus]);
+  }, [students, activeClassTab, searchText, selectedStatus, sortOrder]);
 
   /* ===================================================
      PAGINATION
@@ -931,6 +981,7 @@ export default function StudentManagement() {
   const resetFilters = () => {
     setSearchText("");
     setSelectedStatus("all");
+    setSortOrder("az");
     setActiveClassTab("all");
     setCurrentPage(1);
     setSelectedRowKeys([]);
@@ -1757,29 +1808,32 @@ export default function StudentManagement() {
       const hide = message.loading(`Đang xóa ${deleteCount} học sinh...`, 0);
 
       try {
-        await Promise.all(selectedRowKeys.map((id) => studentApi.delete(id)));
+        const response = await studentApi.deleteBulk(selectedRowKeys);
+
+        // Axios response
+        const result = response?.data;
+
+        if (!result?.success) {
+          throw new Error(result?.message || "Không thể xóa học sinh");
+        }
+
+        message.success(result.message || `Đã xóa ${deleteCount} học sinh!`);
+
+        setSelectedRowKeys([]);
+
+        await fetchStudents({
+          silent: true,
+        });
       } finally {
         hide();
       }
-
-      message.success(`Đã xóa ${deleteCount} học sinh!`);
-
-      setSelectedRowKeys([]);
-
-      const nextTotal = filteredStudents.length - deleteCount;
-
-      const maxPage = Math.max(1, Math.ceil(nextTotal / pageSize));
-
-      if (currentPage > maxPage) {
-        setCurrentPage(maxPage);
-      }
-
-      await fetchStudents({
-        silent: true,
-      });
     } catch (error) {
+      console.error("BULK DELETE ERROR:", error);
+
       message.error(
-        error?.response?.data?.message || "Không thể xóa một số học sinh!",
+        error?.response?.data?.message ||
+          error?.message ||
+          "Không thể xóa học sinh!",
       );
 
       await fetchStudents({
@@ -3121,37 +3175,20 @@ export default function StudentManagement() {
               <Select
                 className="student-filter-control"
                 size="large"
-                value={selectedStatus}
+                value={sortOrder}
                 disabled={loading || bulkDeleting}
                 onChange={(value) => {
-                  setSelectedStatus(value);
-
+                  setSortOrder(value);
                   setCurrentPage(1);
                 }}
                 options={[
                   {
-                    value: "all",
-                    label: "Tất cả trạng thái",
+                    value: "az",
+                    label: "Tên A → Z",
                   },
                   {
-                    value: "active",
-                    label: "Đang hoạt động",
-                  },
-                  {
-                    value: "inactive",
-                    label: "Tạm khóa",
-                  },
-                  {
-                    value: "graduated",
-                    label: "Đã tốt nghiệp",
-                  },
-                  {
-                    value: "transferred",
-                    label: "Đã chuyển đi",
-                  },
-                  {
-                    value: "dropped",
-                    label: "Đã nghỉ",
+                    value: "za",
+                    label: "Tên Z → A",
                   },
                 ]}
               />
@@ -3263,36 +3300,52 @@ export default function StudentManagement() {
           ================================================= */}
 
           <div className="student-table">
-            <Table
+            <AppTable
               rowKey="id"
-              loading={{
-                spinning: loading,
-                indicator: <Spin size="large" />,
-              }}
+              loading={loading}
               columns={columns}
               dataSource={paginatedStudents}
-              pagination={false}
-              scroll={{
-                x: 1150,
-              }}
-              locale={{
-                emptyText: (
-                  <Empty
-                    description={
-                      searchText || selectedStatus !== "all"
-                        ? "Không tìm thấy học sinh phù hợp"
-                        : "Chưa có học sinh"
-                    }
-                  />
-                ),
-              }}
+              scrollX={1150}
+              emptyText={
+                searchText || selectedStatus !== "all"
+                  ? "Không tìm thấy học sinh phù hợp"
+                  : "Chưa có học sinh"
+              }
               rowSelection={{
                 selectedRowKeys,
 
-                onChange: (keys) => {
-                  setSelectedRowKeys(keys);
+                // Giữ selection khi chuyển trang
+                preserveSelectedRowKeys: true,
+
+                // Chọn / bỏ chọn từng học sinh
+                onSelect: (record, selected) => {
+                  setSelectedRowKeys((prev) => {
+                    if (selected) {
+                      if (prev.includes(record.id)) {
+                        return prev;
+                      }
+
+                      return [...prev, record.id];
+                    }
+
+                    return prev.filter((id) => id !== record.id);
+                  });
                 },
 
+                // Chọn / bỏ chọn toàn bộ TRANG HIỆN TẠI
+                onSelectAll: (selected, selectedRows, changeRows) => {
+                  const currentPageIds = changeRows.map((row) => row.id);
+
+                  setSelectedRowKeys((prev) => {
+                    if (selected) {
+                      return [...new Set([...prev, ...currentPageIds])];
+                    }
+
+                    return prev.filter((id) => !currentPageIds.includes(id));
+                  });
+                },
+
+                // Disable checkbox theo trạng thái
                 getCheckboxProps: (record) => ({
                   disabled:
                     actionLoading.delete === record.id ||
