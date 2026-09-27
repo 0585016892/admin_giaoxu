@@ -57,6 +57,21 @@ const studentApi = {
       },
     });
   },
+
+  exportExcel: async ({ studentIds, fields }) => {
+    const response = await axiosClient.post(
+      "/students/export-excel",
+      {
+        student_ids: studentIds,
+        fields,
+      },
+      {
+        responseType: "blob",
+      },
+    );
+
+    return response;
+  },
 };
 
 export default studentApi;

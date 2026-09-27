@@ -56,6 +56,7 @@ import classApi from "../../../api/classApi";
 
 import AppFormModal from "../../../components/common/AppFormModal";
 import StudentForm from "./components/StudentForm";
+import StudentExportModal from "./components/StudentExportModal";
 import StatCard from "../../../components/common/StatCard";
 import AppDetailModal from "../../../components/common/AppDetailModal";
 import AppTable from "../../../components/common/AppTable";
@@ -274,6 +275,9 @@ export default function StudentManagement() {
 
   const [qrStudent, setQrStudent] = useState(null);
   const [bulkQRDownloading, setBulkQRDownloading] = useState(false);
+
+  //=============Excel=============
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   const handleOpenQR = useCallback((student) => {
     if (!student?.qr_token) {
@@ -765,6 +769,7 @@ export default function StudentManagement() {
         }
 
         const studentData = getResponseData(studentRes, ["students"]);
+        console.log("studentRes:::", studentRes);
 
         const classData = getResponseData(classRes, ["classes"]);
 
@@ -3274,7 +3279,16 @@ export default function StudentManagement() {
                 >
                   Chuyển lớp
                 </AppButton>
-
+                <AppButton
+                  icon={<DownloadOutlined />}
+                  disabled={selectedRowKeys.length === 0}
+                  onClick={() => setExportModalOpen(true)}
+                >
+                  Xuất danh sách
+                  {selectedRowKeys.length > 0
+                    ? ` (${selectedRowKeys.length})`
+                    : ""}
+                </AppButton>
                 {/* BỎ CHỌN */}
                 <AppButton
                   size="small"
@@ -3991,6 +4005,12 @@ export default function StudentManagement() {
             </div>
           )}
         </Modal>
+
+        <StudentExportModal
+          open={exportModalOpen}
+          selectedStudentIds={selectedRowKeys}
+          onCancel={() => setExportModalOpen(false)}
+        />
       </div>
     </>
   );
