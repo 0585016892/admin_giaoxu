@@ -378,6 +378,7 @@ const AttendancePage = () => {
       }
 
       const list = normalizeClasses(response);
+      console.log(list);
 
       setClasses(list);
 
@@ -505,19 +506,23 @@ const AttendancePage = () => {
 
   const updateAttendance = useCallback(
     async (student, status) => {
+      console.log(student);
+
       if (isLocked) {
         message.warning("Ngày này đã khóa, không thể thay đổi điểm danh.");
 
         return;
       }
+      console.log(student?.id);
 
-      if (!student?.student_id) {
+      if (!student?.id) {
         return;
       }
 
       const currentStatus = normalizeAttendanceStatus(
         student.attendance_status ?? student.status,
       );
+      console.log(currentStatus);
 
       if (["present", "late", "absent", "excused"].includes(currentStatus)) {
         message.info("Học sinh này đã được điểm danh.");
@@ -542,7 +547,7 @@ const AttendancePage = () => {
 
           students: [
             {
-              student_id: student.student_id,
+              student_id: student.id,
 
               status,
 
@@ -673,7 +678,7 @@ const AttendancePage = () => {
   ======================================================= */
 
   const openHistory = useCallback(async (student) => {
-    if (!student?.student_id) {
+    if (!student?.id) {
       return;
     }
 
@@ -684,9 +689,7 @@ const AttendancePage = () => {
     try {
       setHistoryLoading(true);
 
-      const response = await attendanceApi.getStudentHistory(
-        student.student_id,
-      );
+      const response = await attendanceApi.getStudentHistory(student.id);
 
       const body = getApiBody(response);
 
@@ -749,9 +752,7 @@ const AttendancePage = () => {
                 </Text>
 
                 <Text type="secondary" className="student-code">
-                  {record.code ||
-                    record.student_code ||
-                    `ID #${record.student_id}`}
+                  {record.code || record.student_code || `ID #${record.id}`}
                 </Text>
               </div>
             </div>
@@ -1362,7 +1363,7 @@ const AttendancePage = () => {
 
               <div className="attendance-table-wrap">
                 <Table
-                  rowKey={(record) => record.student_id ?? record.id}
+                  rowKey={(record) => record.id ?? record.id}
                   columns={columns}
                   dataSource={tableData}
                   loading={loadingAttendance}
