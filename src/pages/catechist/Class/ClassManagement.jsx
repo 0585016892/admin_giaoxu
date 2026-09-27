@@ -1900,9 +1900,15 @@ const ClassManagement = () => {
               title="Thông tin tổng quan"
               description="Thông tin cơ bản của lớp học"
             />
-
             <Descriptions
-              column={2}
+              column={{
+                xs: 1,
+                sm: 1,
+                md: 2,
+                lg: 2,
+                xl: 2,
+                xxl: 2,
+              }}
               bordered
               size="small"
               style={{
@@ -1928,23 +1934,13 @@ const ClassManagement = () => {
               </Descriptions.Item>
 
               <Descriptions.Item label="Học viên">
-                <Text
-                  strong
-                  style={{
-                    color: COLORS.navy,
-                  }}
-                >
+                <Text strong style={{ color: COLORS.navy }}>
                   {Number(classDetail.studentsCount || 0)} học viên
                 </Text>
               </Descriptions.Item>
 
               <Descriptions.Item label="Giáo lý viên">
-                <Text
-                  strong
-                  style={{
-                    color: COLORS.navy,
-                  }}
-                >
+                <Text strong style={{ color: COLORS.navy }}>
                   {classDetail.catechists?.length || 0} người
                 </Text>
               </Descriptions.Item>
@@ -1955,7 +1951,6 @@ const ClassManagement = () => {
                 </Descriptions.Item>
               )}
             </Descriptions>
-
             {/* =========================================
                 LỊCH HỌC
             ========================================= */}

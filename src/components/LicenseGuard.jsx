@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Spin } from "antd";
 import { useLocation } from "react-router-dom";
 
 import axios from "../api/axios";
@@ -138,13 +137,8 @@ const LicenseGuard = ({ children }) => {
   // ==========================================
 
   if (checking && !checked) {
-    return (
-      <div className="license-initial-loading">
-        <Spin size="large" />
-      </div>
-    );
+    return null;
   }
-
   // ==========================================
   // EXPIRED
   // ==========================================

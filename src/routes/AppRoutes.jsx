@@ -1,5 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
+import { useUser } from "../context/UserContext";
 // ==================== AUTH ====================
 import CatechistLogin from "../pages/catechist/CatechistLogin";
 
@@ -8,8 +9,6 @@ import CatechistLayout from "../layouts/CatechistLayout/CatechistLayout";
 
 // ==================== GUARDS ====================
 import ProtectedRoute, { RoleGuard } from "../components/ProtectedRoute";
-
-// ==================== CERTIFICATE ====================
 
 // ==================== CATECHIST ====================
 import CatechistManagement from "../pages/catechist/CatechistManagement";
@@ -44,8 +43,32 @@ import QuestionPage from "../pages/catechist/QuestionPage";
 // ROLES
 // ============================================================
 
-// Giáo lý viên
 const CATECHIST_ROLES = ["catechist", "teacher", "admin_catechist"];
+
+// ============================================================
+// ROOT REDIRECT
+// ============================================================
+
+function RootRedirect() {
+  const { user, authReady } = useUser();
+
+  // Đợi UserProvider restore JWT
+  if (!authReady) {
+    return null;
+  }
+
+  // Đã đăng nhập
+  if (user) {
+    return <Navigate to="/catechist" replace />;
+  }
+
+  // Chưa đăng nhập
+  return <CatechistLogin />;
+}
+
+// ============================================================
+// ROUTES
+// ============================================================
 
 export default function AppRoutes() {
   return (
@@ -54,106 +77,90 @@ export default function AppRoutes() {
           PUBLIC ROUTES
       ====================================================== */}
 
-      {/* Đăng nhập hệ thống Giáo lý */}
-      <Route path="/" element={<CatechistLogin />} />
+      <Route path="/" element={<RootRedirect />} />
 
       <Route path="/register" element={<FaithEduRegister />} />
 
       <Route path="/intro" element={<LandingPage />} />
+
       <Route path="/xac-thuc" element={<VerifyCertificate />} />
 
-      {/* ------------------------------------------------------
-          Xác thực chứng chỉ - Public
-          ------------------------------------------------------ */}
-
       {/* ======================================================
-          PARISH ADMIN SYSTEM
-      ====================================================== */}
-
-      {/* ======================================================
-          CATECHIST / GIÁO LÝ SYSTEM
+          CATECHIST SYSTEM
       ====================================================== */}
 
       <Route element={<ProtectedRoute loginPath="/" />}>
         <Route element={<RoleGuard allowedRoles={CATECHIST_ROLES} />}>
           <Route element={<CatechistLayout />}>
-            {/* --------------------------------------------------
-                Giáo lý Dashboard
-                -------------------------------------------------- */}
             <Route path="/catechist" element={<CatechistDashboard />} />
 
-            {/* --------------------------------------------------
-                Quản lý lớp
-                -------------------------------------------------- */}
             <Route
               path="/catechist/classes"
               element={<ClassManagementDashboard />}
             />
+
             <Route
               path="/catechist/classes-teacher"
               element={<TeacherClassesPage />}
             />
-            {/* --------------------------------------------------
-                Quản lý học sinh
-                -------------------------------------------------- */}
+
             <Route path="/catechist/students" element={<StudentManagement />} />
+
             <Route
               path="/catechist/student-class"
               element={<MyStudentsPage />}
             />
 
-            {/* --------------------------------------------------
-                Game giáo lý
-                -------------------------------------------------- */}
             <Route path="/catechist/games" element={<GameManagementPage />} />
 
-            {/* --------------------------------------------------
-                Kết quả
-                -------------------------------------------------- */}
             <Route path="/catechist/results" element={<ResultsPage />} />
 
-            {/* --------------------------------------------------
-                Bảng xếp hạng
-                -------------------------------------------------- */}
             <Route
               path="/catechist/leaderboard"
               element={<LeaderboardPage />}
             />
 
-            {/* --------------------------------------------------
-                Bài học / câu hỏi
-                -------------------------------------------------- */}
             <Route
               path="/catechist-management"
               element={<CatechistManagement />}
             />
+
             <Route path="/attendance" element={<AttendancePage />} />
+
             <Route path="/catechist/profile" element={<ProfilePageCate />} />
+
             <Route
               path="/catechist/notifications"
               element={<SendNotificationPage />}
             />
+
             <Route
               path="/catechist/my-notifications"
               element={<NotificationsCatePage />}
             />
+
             <Route
               path="/catechist/certificate"
               element={<CertificatePage />}
             />
+
             <Route path="/catechist/statistics" element={<Statistics />} />
+
             <Route
               path="/catechist/settings"
               element={<ParishSettingsPage />}
             />
+
             <Route
               path="/catechist/lesson-library"
               element={<LessonLibraryPage />}
             />
+
             <Route
               path="/catechist/resources/:id"
               element={<ResourceViewerPage />}
             />
+
             <Route
               path="/catechist/questions/play/:lessonId"
               element={<QuestionPlayPage />}
@@ -163,7 +170,9 @@ export default function AppRoutes() {
               path="/catechist/grading-rule"
               element={<GradingRulePage />}
             />
+
             <Route path="/catechist/license" element={<LicensePage />} />
+
             <Route path="/catechist/questions" element={<QuestionPage />} />
           </Route>
         </Route>
