@@ -378,7 +378,6 @@ const AttendancePage = () => {
       }
 
       const list = normalizeClasses(response);
-      console.log(list);
 
       setClasses(list);
 
@@ -506,14 +505,11 @@ const AttendancePage = () => {
 
   const updateAttendance = useCallback(
     async (student, status) => {
-      console.log(student);
-
       if (isLocked) {
         message.warning("Ngày này đã khóa, không thể thay đổi điểm danh.");
 
         return;
       }
-      console.log(student?.id);
 
       if (!student?.id) {
         return;
@@ -522,7 +518,6 @@ const AttendancePage = () => {
       const currentStatus = normalizeAttendanceStatus(
         student.attendance_status ?? student.status,
       );
-      console.log(currentStatus);
 
       if (["present", "late", "absent", "excused"].includes(currentStatus)) {
         message.info("Học sinh này đã được điểm danh.");

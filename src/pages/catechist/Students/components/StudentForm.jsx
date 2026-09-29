@@ -520,10 +520,6 @@ const StudentForm = ({
                   label: "Nữ",
                   value: "female",
                 },
-                {
-                  label: "Khác",
-                  value: "other",
-                },
               ]}
             />
           </Form.Item>

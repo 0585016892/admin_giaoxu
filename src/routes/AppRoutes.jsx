@@ -1,16 +1,30 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { useUser } from "../context/UserContext";
-// ==================== AUTH ====================
+
+// ============================================================
+// AUTH
+// ============================================================
+
 import CatechistLogin from "../pages/catechist/CatechistLogin";
 
-// ==================== LAYOUT ====================
-import CatechistLayout from "../layouts/CatechistLayout/CatechistLayout";
+// ============================================================
+// LAYOUT
+// ============================================================
 
-// ==================== GUARDS ====================
+import CatechistLayout from "../layouts/CatechistLayout/CatechistLayout";
+import ParentLayout from "../layouts/ParentLayout/ParentLayout";
+
+// ============================================================
+// GUARDS
+// ============================================================
+
 import ProtectedRoute, { RoleGuard } from "../components/ProtectedRoute";
 
-// ==================== CATECHIST ====================
+// ============================================================
+// CATECHIST
+// ============================================================
+
 import CatechistManagement from "../pages/catechist/CatechistManagement";
 import CatechistDashboard from "../pages/catechist/Dashboard/CatechistDashboard";
 import ClassManagementDashboard from "../pages/catechist/Class/ClassManagement";
@@ -34,16 +48,54 @@ import ResourceViewerPage from "../pages/catechist/ResourceViewerPage";
 import GradingRulePage from "../pages/catechist/GradingRule/GradingRulePage";
 import QuestionPlayPage from "../pages/catechist/QuestionPlayPage";
 import LicensePage from "../pages/catechist/License/LicensePage";
+import QuestionPage from "../pages/catechist/QuestionPage";
+
+// ============================================================
+// PARENTS
+// ============================================================
+import ParentDashboard from "../pages/Parent/ParentDashboard";
+
+// ============================================================
+// PUBLIC
+// ============================================================
 
 import LandingPage from "../pages/LandingPage/LandingPage";
 import VerifyCertificate from "../components/VerifyCertificate";
-import QuestionPage from "../pages/catechist/QuestionPage";
+
+// ============================================================
+// PARENT
+// ============================================================
+
+// Sau này thay bằng page thật.
+// Tạm thời dùng các component bên dưới nếu chưa tạo page.
+
+function ParentStudents() {
+  return <div>Con của tôi</div>;
+}
+
+function ParentAttendance() {
+  return <div>Điểm danh</div>;
+}
+
+function ParentResults() {
+  return <div>Kết quả học tập</div>;
+}
+
+function ParentCertificates() {
+  return <div>Chứng chỉ</div>;
+}
+
+function ParentProfile() {
+  return <div>Thông tin tài khoản</div>;
+}
 
 // ============================================================
 // ROLES
 // ============================================================
 
 const CATECHIST_ROLES = ["catechist", "teacher", "admin_catechist"];
+
+const PARENT_ROLES = ["parent"];
 
 // ============================================================
 // ROOT REDIRECT
@@ -52,18 +104,43 @@ const CATECHIST_ROLES = ["catechist", "teacher", "admin_catechist"];
 function RootRedirect() {
   const { user, authReady } = useUser();
 
-  // Đợi UserProvider restore JWT
+  // ==========================================================
+  // ĐỢI RESTORE AUTH
+  // ==========================================================
+
   if (!authReady) {
     return null;
   }
 
-  // Đã đăng nhập
-  if (user) {
+  // ==========================================================
+  // CHƯA LOGIN
+  // ==========================================================
+
+  if (!user) {
+    return <CatechistLogin />;
+  }
+
+  // ==========================================================
+  // PARENT
+  // ==========================================================
+
+  if (user.role === "parent") {
+    return <Navigate to="/parent" replace />;
+  }
+
+  // ==========================================================
+  // CATECHIST / TEACHER / ADMIN CATECHIST
+  // ==========================================================
+
+  if (CATECHIST_ROLES.includes(user.role)) {
     return <Navigate to="/catechist" replace />;
   }
 
-  // Chưa đăng nhập
-  return <CatechistLogin />;
+  // ==========================================================
+  // ROLE KHÔNG XÁC ĐỊNH
+  // ==========================================================
+
+  return <Navigate to="/" replace />;
 }
 
 // ============================================================
@@ -86,13 +163,21 @@ export default function AppRoutes() {
       <Route path="/xac-thuc" element={<VerifyCertificate />} />
 
       {/* ======================================================
+          ======================================================
           CATECHIST SYSTEM
-      ====================================================== */}
+          ======================================================
+          ====================================================== */}
 
       <Route element={<ProtectedRoute loginPath="/" />}>
-        <Route element={<RoleGuard allowedRoles={CATECHIST_ROLES} />}>
+        <Route
+          element={<RoleGuard allowedRoles={CATECHIST_ROLES} loginPath="/" />}
+        >
           <Route element={<CatechistLayout />}>
+            {/* ================= DASHBOARD ================= */}
+
             <Route path="/catechist" element={<CatechistDashboard />} />
+
+            {/* ================= CLASSES ================= */}
 
             <Route
               path="/catechist/classes"
@@ -104,6 +189,8 @@ export default function AppRoutes() {
               element={<TeacherClassesPage />}
             />
 
+            {/* ================= STUDENTS ================= */}
+
             <Route path="/catechist/students" element={<StudentManagement />} />
 
             <Route
@@ -111,7 +198,11 @@ export default function AppRoutes() {
               element={<MyStudentsPage />}
             />
 
+            {/* ================= GAMES ================= */}
+
             <Route path="/catechist/games" element={<GameManagementPage />} />
+
+            {/* ================= RESULTS ================= */}
 
             <Route path="/catechist/results" element={<ResultsPage />} />
 
@@ -120,14 +211,22 @@ export default function AppRoutes() {
               element={<LeaderboardPage />}
             />
 
+            {/* ================= CATECHISTS ================= */}
+
             <Route
               path="/catechist-management"
               element={<CatechistManagement />}
             />
 
+            {/* ================= ATTENDANCE ================= */}
+
             <Route path="/attendance" element={<AttendancePage />} />
 
+            {/* ================= PROFILE ================= */}
+
             <Route path="/catechist/profile" element={<ProfilePageCate />} />
+
+            {/* ================= NOTIFICATIONS ================= */}
 
             <Route
               path="/catechist/notifications"
@@ -139,17 +238,25 @@ export default function AppRoutes() {
               element={<NotificationsCatePage />}
             />
 
+            {/* ================= CERTIFICATE ================= */}
+
             <Route
               path="/catechist/certificate"
               element={<CertificatePage />}
             />
 
+            {/* ================= STATISTICS ================= */}
+
             <Route path="/catechist/statistics" element={<Statistics />} />
+
+            {/* ================= SETTINGS ================= */}
 
             <Route
               path="/catechist/settings"
               element={<ParishSettingsPage />}
             />
+
+            {/* ================= LESSON ================= */}
 
             <Route
               path="/catechist/lesson-library"
@@ -161,19 +268,66 @@ export default function AppRoutes() {
               element={<ResourceViewerPage />}
             />
 
+            {/* ================= QUESTIONS ================= */}
+
             <Route
               path="/catechist/questions/play/:lessonId"
               element={<QuestionPlayPage />}
             />
+
+            <Route path="/catechist/questions" element={<QuestionPage />} />
+
+            {/* ================= GRADING ================= */}
 
             <Route
               path="/catechist/grading-rule"
               element={<GradingRulePage />}
             />
 
-            <Route path="/catechist/license" element={<LicensePage />} />
+            {/* ================= LICENSE ================= */}
 
-            <Route path="/catechist/questions" element={<QuestionPage />} />
+            <Route path="/catechist/license" element={<LicensePage />} />
+          </Route>
+        </Route>
+      </Route>
+
+      {/* ======================================================
+          ======================================================
+          PARENT SYSTEM
+          ======================================================
+          ====================================================== */}
+
+      <Route element={<ProtectedRoute loginPath="/" />}>
+        <Route
+          element={<RoleGuard allowedRoles={PARENT_ROLES} loginPath="/" />}
+        >
+          <Route element={<ParentLayout />}>
+            {/* ================= DASHBOARD ================= */}
+
+            <Route path="/parent" element={<ParentDashboard />} />
+
+            {/* ================= CHILDREN ================= */}
+
+            <Route path="/parent/students" element={<ParentStudents />} />
+
+            {/* ================= ATTENDANCE ================= */}
+
+            <Route path="/parent/attendance" element={<ParentAttendance />} />
+
+            {/* ================= RESULTS ================= */}
+
+            <Route path="/parent/results" element={<ParentResults />} />
+
+            {/* ================= CERTIFICATES ================= */}
+
+            <Route
+              path="/parent/certificates"
+              element={<ParentCertificates />}
+            />
+
+            {/* ================= PROFILE ================= */}
+
+            <Route path="/parent/profile" element={<ParentProfile />} />
           </Route>
         </Route>
       </Route>

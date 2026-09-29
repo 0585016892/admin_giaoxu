@@ -648,17 +648,96 @@ export default function StudentManagement() {
      FORMAT STUDENT
   =================================================== */
 
-  const formatStudent = useCallback((student, relation, classData) => {
-    const classId =
-      relation?.class_id ??
-      relation?.classId ??
-      student?.class_id ??
-      student?.classId ??
-      null;
+  const formatStudent = useCallback((student, classData) => {
+    /*
+     * =========================================================
+     * LẤY CLASS ID
+     * =========================================================
+     *
+     * BE hiện tại trả:
+     *
+     * class_ids: "190"
+     * class_names: "Tên lớp học"
+     *
+     * Có thể sau này BE trả:
+     * class_id / class_name
+     *
+     * nên xử lý cả 2 trường hợp.
+     */
+
+    let classId = student?.class_id ?? student?.classId ?? null;
+
+    let className = student?.class_name ?? student?.className ?? null;
+
+    /*
+     * =========================================================
+     * FALLBACK: BE TRẢ class_ids / class_names
+     * =========================================================
+     */
+
+    if (
+      (classId === null || classId === undefined || classId === "") &&
+      student?.class_ids
+    ) {
+      /*
+       * class_ids có thể là:
+       *
+       * "190"
+       * "190,191"
+       * ["190", "191"]
+       */
+
+      if (Array.isArray(student.class_ids)) {
+        classId = student.class_ids[0] ?? null;
+      } else {
+        const ids = String(student.class_ids)
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean);
+
+        classId = ids[0] ?? null;
+      }
+    }
+
+    /*
+     * =========================================================
+     * FALLBACK CLASS NAME
+     * =========================================================
+     */
+
+    if ((!className || className === EMPTY_VALUE) && student?.class_names) {
+      if (Array.isArray(student.class_names)) {
+        className = student.class_names[0] ?? null;
+      } else {
+        const names = String(student.class_names)
+          .split(",")
+          .map((name) => name.trim())
+          .filter(Boolean);
+
+        className = names[0] ?? null;
+      }
+    }
+
+    /*
+     * =========================================================
+     * MATCH VỚI DANH SÁCH CLASSES
+     * =========================================================
+     */
 
     const matchedClass = classData.find(
       (item) => String(item.id) === String(classId),
     );
+
+    /*
+     * Nếu tìm được class trong API classes
+     * thì ưu tiên tên lớp từ classes.
+     *
+     * Nếu không tìm được thì dùng class_names BE trả về.
+     */
+
+    const finalClassId = matchedClass?.id ?? classId ?? null;
+
+    const finalClassName = matchedClass?.name ?? className ?? "Chưa xếp lớp";
 
     return {
       key: student.id,
@@ -738,12 +817,17 @@ export default function StudentManagement() {
 
       updated_at: student.updated_at || null,
 
-      classId: matchedClass?.id || classId || null,
+      /*
+       * =======================================================
+       * QUAN TRỌNG
+       * =======================================================
+       */
 
-      className: matchedClass?.name || relation?.class_name || "Chưa xếp lớp",
+      classId: finalClassId,
+
+      className: finalClassName,
     };
   }, []);
-
   /* ===================================================
      LOAD DATA
   =================================================== */
@@ -769,7 +853,6 @@ export default function StudentManagement() {
         }
 
         const studentData = getResponseData(studentRes, ["students"]);
-        console.log("studentRes:::", studentRes);
 
         const classData = getResponseData(classRes, ["classes"]);
 
@@ -792,19 +875,7 @@ export default function StudentManagement() {
         }
 
         const formattedStudents = studentData.map((student) => {
-          const relation = {
-            class_id: student.class_id,
-
-            class_name: student.class_name,
-
-            class_code: student.class_code,
-
-            status: student.class_student_status,
-
-            joined_at: student.joined_at,
-          };
-
-          return formatStudent(student, relation, formattedClasses);
+          return formatStudent(student, formattedClasses);
         });
 
         if (!mountedRef.current) {
@@ -1506,18 +1577,42 @@ export default function StudentManagement() {
 
     setIsBulkChangeClassModalOpen(true);
   }, [selectedRowKeys, students, bulkChangeClassForm]);
-
   const handleBulkChangeClassSubmit = async (values) => {
-    if (!selectedRowKeys.length || bulkChangeClassLoading) {
+    if (!selectedRowKeys.length) {
+      message.warning("Vui lòng chọn ít nhất một học sinh!");
       return;
     }
 
-    const newClassId = values.new_class_id;
+    if (bulkChangeClassLoading) {
+      return;
+    }
 
-    if (!newClassId) {
+    // =====================================================
+    // LẤY LỚP MỚI
+    // =====================================================
+
+    const newClassId = values?.new_class_id;
+
+    if (newClassId === undefined || newClassId === null || newClassId === "") {
       message.warning("Vui lòng chọn lớp mới!");
       return;
     }
+
+    const parsedNewClassId = Number(newClassId);
+
+    if (!Number.isInteger(parsedNewClassId) || parsedNewClassId <= 0) {
+      console.error("❌ NEW CLASS ID INVALID:", {
+        newClassId,
+        parsedNewClassId,
+      });
+
+      message.error("Lớp mới không hợp lệ!");
+      return;
+    }
+
+    // =====================================================
+    // LẤY HỌC SINH
+    // =====================================================
 
     const selectedStudents = students.filter((student) =>
       selectedRowKeys.includes(student.id),
@@ -1528,60 +1623,96 @@ export default function StudentManagement() {
       return;
     }
 
+    // =====================================================
+    // TÌM LỚP MỚI
+    // =====================================================
+
     const newClass = classes.find(
-      (item) => String(item.id) === String(newClassId),
+      (item) => String(item.id) === String(parsedNewClassId),
     );
 
     if (!newClass) {
-      message.error("Không tìm thấy lớp mới.");
+      message.error("Không tìm thấy lớp mới!");
       return;
     }
 
     // =====================================================
-    // KIỂM TRA HỌC SINH ĐÃ Ở LỚP MỚI CHƯA
+    // KIỂM TRA NHỮNG HỌC SINH ĐÃ Ở LỚP MỚI
     // =====================================================
 
     const alreadyInNewClass = selectedStudents.filter(
       (student) =>
-        student.classId && String(student.classId) === String(newClassId),
+        student.classId !== null &&
+        student.classId !== undefined &&
+        String(student.classId) === String(parsedNewClassId),
     );
 
+    /*
+     * Nếu tất cả học sinh đã ở lớp mới
+     */
     if (alreadyInNewClass.length === selectedStudents.length) {
       message.info("Tất cả học sinh được chọn đã ở lớp này.");
       return;
     }
 
     // =====================================================
-    // CHUYỂN TẤT CẢ
+    // DANH SÁCH ID GỬI BE
+    // =====================================================
+
+    const studentIds = selectedStudents
+      .map((student) => Number(student.id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+
+    if (!studentIds.length) {
+      message.error("Danh sách học sinh không hợp lệ!");
+      return;
+    }
+
+    // =====================================================
+    // GỌI API
     // =====================================================
 
     try {
       setBulkChangeClassLoading(true);
 
       const hide = message.loading(
-        `Đang chuyển ${selectedStudents.length} học sinh...`,
+        `Đang chuyển ${studentIds.length} học sinh...`,
         0,
       );
 
       try {
         /*
-         * Gửi toàn bộ danh sách học sinh.
+         * ===================================================
+         * QUAN TRỌNG
          *
-         * Backend cần xử lý:
-         * - học sinh đang có lớp → chuyển lớp
-         * - học sinh chưa có lớp → thêm vào lớp
+         * BE ROUTE:
+         *
+         * PUT /class-students/classes/:classId/change-students
+         *
+         * :classId = LỚP MỚI
+         *
+         * Body:
+         * {
+         *   studentIds: [...]
+         * }
+         * ===================================================
          */
-        await classStudentApi.changeClasses(null, selectedRowKeys, newClassId);
+
+        await classStudentApi.changeClassStudents(parsedNewClassId, studentIds);
       } finally {
         hide();
       }
 
+      // =====================================================
+      // SUCCESS
+      // =====================================================
+
       message.success(
-        `Đã chuyển ${selectedStudents.length} học sinh sang ${newClass.name}!`,
+        `Đã chuyển ${studentIds.length} học sinh sang ${newClass.name}!`,
       );
 
       // =====================================================
-      // RESET
+      // RESET MODAL
       // =====================================================
 
       setIsBulkChangeClassModalOpen(false);
@@ -1598,6 +1729,19 @@ export default function StudentManagement() {
         silent: true,
       });
     } catch (error) {
+      console.error("");
+      console.error(
+        "============================================================",
+      );
+      console.error("❌ BULK CHANGE CLASS ERROR");
+      console.error(
+        "============================================================",
+      );
+      console.error("ERROR:", error);
+      console.error("RESPONSE:", error?.response);
+      console.error("RESPONSE DATA:", error?.response?.data);
+      console.error("STATUS:", error?.response?.status);
+
       message.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||

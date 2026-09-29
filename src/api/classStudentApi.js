@@ -30,7 +30,7 @@ const classStudentApi = {
   // =========================================================
   // CHUYỂN NHIỀU HỌC SINH SANG 1 LỚP KHÁC
   // =========================================================
-  changeClasses: (classId, studentIds, newClassId) =>
+  changeClassStudents: (classId, studentIds, newClassId) =>
     axiosClient.put(`/class-students/classes/${classId}/change-students`, {
       studentIds,
       newClassId,

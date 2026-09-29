@@ -239,8 +239,6 @@ const parseDob = (student) => {
 ========================================================= */
 
 const buildCertificateDataFromStudent = (student, previousData = {}) => {
-  console.log("STUDENT:::", student);
-
   return {
     ...DEFAULT_CERT_DATA,
 
