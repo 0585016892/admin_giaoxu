@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, Spin } from "antd";
-import { TeamOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  ArrowRightOutlined,
+  ReloadOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 
 import "./ParentChildren.css";
 
@@ -72,46 +76,51 @@ const extractChildren = (response) => {
     return [];
   }
 
-  // Trường hợp:
   // {
   //   success: true,
   //   data: [...]
   // }
+
   if (Array.isArray(response.data)) {
     return response.data;
   }
 
-  // Trường hợp:
   // {
   //   success: true,
   //   data: {
   //      children: [...]
   //   }
   // }
+
   if (Array.isArray(response.data?.children)) {
     return response.data.children;
   }
 
-  // Trường hợp:
   // {
   //   success: true,
   //   children: [...]
   // }
+
   if (Array.isArray(response.children)) {
     return response.children;
   }
 
-  // Trường hợp data là object có items
-  if (Array.isArray(response.data?.items)) {
-    return response.data.items;
-  }
-
-  // Trường hợp:
   // {
+  //   success: true,
   //   data: {
   //      items: [...]
   //   }
   // }
+
+  if (Array.isArray(response.data?.items)) {
+    return response.data.items;
+  }
+
+  // {
+  //   success: true,
+  //   items: [...]
+  // }
+
   if (Array.isArray(response.items)) {
     return response.items;
   }
@@ -171,6 +180,7 @@ const ParentChildren = () => {
       const rawChildren = extractChildren(response.data);
 
       console.log("RAW CHILDREN:", rawChildren);
+
       console.log("CHILDREN COUNT:", rawChildren.length);
 
       const normalizedChildren = rawChildren
@@ -208,6 +218,7 @@ const ParentChildren = () => {
   const displayChildren = useMemo(() => {
     return children.map((child) => ({
       ...child,
+
       formattedDateOfBirth:
         child.formattedDateOfBirth || formatDate(child.date_of_birth),
     }));
@@ -222,8 +233,10 @@ const ParentChildren = () => {
     console.log("==================================================");
     console.log("👨‍👩‍👧 PARENT VIEW CHILD");
     console.log("==================================================");
+
     console.log("CHILD:", child);
     console.log("CHILD ID:", child?.id);
+
     console.log("==================================================");
 
     if (!child?.id) {
@@ -243,7 +256,11 @@ const ParentChildren = () => {
     return (
       <div className="parent-children-page">
         <div className="parent-children-loading">
-          <Spin size="large" />
+          <div className="parent-children-loading-icon">
+            <TeamOutlined />
+          </div>
+
+          <Spin size="small" />
 
           <div className="parent-children-loading-text">
             Đang tải thông tin các con...
@@ -263,11 +280,7 @@ const ParentChildren = () => {
         <div className="parent-children-container">
           <ChildrenHeader count={0} />
 
-          <div
-            style={{
-              marginTop: 24,
-            }}
-          >
+          <div className="parent-children-error">
             <Alert
               type="error"
               showIcon
@@ -276,22 +289,12 @@ const ParentChildren = () => {
               action={
                 <button
                   type="button"
+                  className="parent-children-retry"
                   onClick={loadChildren}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    color: "#173B5E",
-                    fontWeight: 600,
-                    padding: 0,
-                  }}
                 >
-                  <ReloadOutlined
-                    style={{
-                      marginRight: 6,
-                    }}
-                  />
-                  Thử lại
+                  <ReloadOutlined />
+
+                  <span>Thử lại</span>
                 </button>
               }
             />
@@ -333,24 +336,28 @@ const ParentChildren = () => {
         )}
 
         {/* =================================================
-            FOOTER INFO
+            FOOTER SUMMARY
         ================================================= */}
 
         {displayChildren.length > 0 && (
-          <div className="parent-children-footer">
-            <div className="parent-children-footer-icon">
-              <TeamOutlined />
-            </div>
-
-            <div>
-              <div className="parent-children-footer-title">
-                {displayChildren.length} học sinh được liên kết
+          <div className="parent-children-summary">
+            <div className="parent-children-summary-left">
+              <div className="parent-children-summary-icon">
+                <TeamOutlined />
               </div>
 
-              <div className="parent-children-footer-text">
-                Thông tin được quản lý bởi giáo xứ và giáo lý viên.
+              <div>
+                <div className="parent-children-summary-title">
+                  {displayChildren.length} học sinh được liên kết
+                </div>
+
+                <div className="parent-children-summary-description">
+                  Thông tin được quản lý bởi giáo xứ và giáo lý viên.
+                </div>
               </div>
             </div>
+
+            <ArrowRightOutlined className="parent-children-summary-arrow" />
           </div>
         )}
       </div>

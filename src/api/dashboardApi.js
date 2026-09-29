@@ -12,6 +12,16 @@ export const getDashboardCate = async () => {
     throw error;
   }
 };
+export const getDashboardParent = async () => {
+  try {
+    const response = await axios.get("/dashboard/dashboard-parent");
+
+    return response.data;
+  } catch (error) {
+    console.error("Dashboard API error:", error);
+    throw error;
+  }
+};
 
 // Lấy thông tin license của giáo xứ hiện tại
 export const getMyLicense = async () => {

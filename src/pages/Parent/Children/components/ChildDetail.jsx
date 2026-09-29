@@ -300,7 +300,132 @@ const getMonthRange = (monthValue) => {
  * NORMALIZE CHILD
  * =========================================================
  */
+const normalizeChildData = (response) => {
+  if (!response?.success) {
+    return null;
+  }
 
+  const data = response?.data || {};
+  const student = data?.student || {};
+
+  const classes = Array.isArray(data?.classes) ? data.classes : [];
+
+  const currentClass = classes.length > 0 ? classes[0] : null;
+
+  const attendance = data?.attendance || {
+    total: 0,
+    present: 0,
+    absent: 0,
+    late: 0,
+    excused: 0,
+    attended: 0,
+    rate: 0,
+  };
+
+  const family = data?.family || {
+    father: {
+      name: null,
+      phone: null,
+    },
+    mother: {
+      name: null,
+      phone: null,
+    },
+    guardian: {
+      name: null,
+      phone: null,
+      relationship: null,
+    },
+  };
+
+  return {
+    ...student,
+
+    id: student.id,
+    church_id: student.church_id,
+
+    code: student.code || "",
+    name: student.name || "Học sinh",
+
+    gender: student.gender || null,
+    date_of_birth: student.date_of_birth || null,
+
+    phone: student.phone || null,
+    email: student.email || null,
+
+    address: student.address || null,
+    parish: student.parish || null,
+
+    avatar: student.avatar || null,
+
+    status: student.status || null,
+
+    birth_place: student.birth_place || null,
+    nationality: student.nationality || null,
+
+    saint_name: student.saint_name || null,
+
+    catechism_level: student.catechism_level || null,
+
+    catechism_status: student.catechism_status || null,
+
+    enrollment_date: student.enrollment_date || null,
+
+    note: student.note || null,
+
+    qr_token: student.qr_token || null,
+
+    created_at: student.created_at || null,
+
+    updated_at: student.updated_at || null,
+
+    relationship: data.relationship || null,
+
+    is_primary: data.is_primary ?? false,
+
+    family,
+
+    classes,
+
+    class: currentClass,
+
+    className: currentClass?.name || "Chưa xếp lớp",
+
+    classCode: currentClass?.code || "",
+
+    room: currentClass?.room || null,
+
+    catechist:
+      currentClass?.catechist_name || currentClass?.catechistName || null,
+
+    attendance,
+
+    latestResult: data.latest_result || null,
+
+    latest_result: data.latest_result || null,
+
+    sacraments: Array.isArray(data.sacraments) ? data.sacraments : [],
+
+    baptism: student.baptism || {
+      name: null,
+      date: null,
+      place: null,
+      parish: null,
+      certificate_no: null,
+    },
+
+    first_communion: student.first_communion || {
+      date: null,
+      place: null,
+    },
+
+    confirmation: student.confirmation || {
+      date: null,
+      place: null,
+      saint_name: null,
+    },
+  };
+};
 /**
  * =========================================================
  * COMPONENT
@@ -373,9 +498,7 @@ export default function ChildDetail() {
   const loadChild = useCallback(async () => {
     if (!studentId) {
       setError("Không tìm thấy mã học sinh");
-
       setLoadingChild(false);
-
       return;
     }
 
@@ -383,32 +506,29 @@ export default function ChildDetail() {
       setLoadingChild(true);
       setError("");
 
-      console.log("🔵 LOAD CHILD:", studentId);
-
       const response = await parentApi.getChild(studentId);
 
-      console.log("🟢 CHILD RESPONSE:", response);
+      const payload = response?.data;
 
-      if (!response?.status) {
-        throw new Error(
-          response?.message || "Không thể tải thông tin học sinh",
-        );
+      if (!payload?.success) {
+        throw new Error(payload?.message || "Không thể tải thông tin học sinh");
       }
 
-      const normalized = response.data;
-      console.log("normalized:::", normalized);
+      const normalized = normalizeChildData(payload);
+
+      if (!normalized) {
+        throw new Error("Không có dữ liệu học sinh");
+      }
 
       setChild(normalized);
     } catch (err) {
-      console.error("❌ LOAD CHILD ERROR:", err);
-
       setError(err?.message || "Không thể tải thông tin học sinh");
+
+      setChild(null);
     } finally {
       setLoadingChild(false);
     }
   }, [studentId]);
-  console.log("child:::", child);
-
   /**
    * =======================================================
    * LOAD ATTENDANCE
@@ -440,32 +560,57 @@ export default function ChildDetail() {
         params.to = monthRange.to;
       }
 
-      console.log("🔵 LOAD ATTENDANCE:", params);
-
       const response = await parentApi.getChildAttendance(studentId, params);
 
-      console.log("🟢 ATTENDANCE RESPONSE:", response);
-
-      if (!response?.success) {
+      if (!response?.status) {
         throw new Error(response?.message || "Không thể tải dữ liệu điểm danh");
       }
 
-      setAttendanceData(response);
-    } catch (err) {
-      console.error("❌ LOAD ATTENDANCE ERROR:", err);
+      const attendance = response?.data.data || {};
 
       setAttendanceData({
-        success: false,
-        message: err?.message || "Không thể tải dữ liệu điểm danh",
-        data: [],
+        records: Array.isArray(attendance.records) ? attendance.records : [],
+
+        summary: attendance.summary || {
+          total: 0,
+          present: 0,
+          absent: 0,
+          late: 0,
+          excused: 0,
+          attended: 0,
+          rate: 0,
+        },
+
+        pagination: attendance.pagination || {
+          page: 1,
+          pageSize: 100,
+          total: 0,
+          totalPages: 1,
+        },
+      });
+    } catch (err) {
+      setAttendanceData({
         records: [],
-        summary: {},
+        summary: {
+          total: 0,
+          present: 0,
+          absent: 0,
+          late: 0,
+          excused: 0,
+          attended: 0,
+          rate: 0,
+        },
+        pagination: {
+          page: 1,
+          pageSize: 100,
+          total: 0,
+          totalPages: 1,
+        },
       });
     } finally {
       setLoadingAttendance(false);
     }
   }, [studentId, attendanceMonth, attendanceType]);
-
   /**
    * =======================================================
    * LOAD RESULTS
@@ -484,20 +629,14 @@ export default function ChildDetail() {
         params.exam_type = resultExamType;
       }
 
-      console.log("🔵 LOAD RESULTS:", params);
-
       const response = await parentApi.getChildResults(studentId, params);
 
-      console.log("🟢 RESULTS RESPONSE:", response);
-
-      if (!response?.success) {
+      if (!response?.status) {
         throw new Error(response?.message || "Không thể tải kết quả");
       }
 
-      setResultsData(response);
+      setResultsData(response.data);
     } catch (err) {
-      console.error("❌ LOAD RESULTS ERROR:", err);
-
       setResultsData({
         success: false,
         message: err?.message || "Không thể tải kết quả",
@@ -522,20 +661,10 @@ export default function ChildDetail() {
     try {
       setLoadingSchedule(true);
 
-      console.log("🔵 LOAD SCHEDULE:", studentId);
-
       const response = await parentApi.getChildSchedule(studentId);
 
-      console.log("🟢 SCHEDULE RESPONSE:", response);
-
-      if (!response?.success) {
-        throw new Error(response?.message || "Không thể tải lịch học");
-      }
-
-      setScheduleData(response);
+      setScheduleData(response.data);
     } catch (err) {
-      console.error("❌ LOAD SCHEDULE ERROR:", err);
-
       setScheduleData({
         success: false,
         message: err?.message || "Không thể tải lịch học",
@@ -559,11 +688,7 @@ export default function ChildDetail() {
     try {
       setLoadingCertificates(true);
 
-      console.log("🔵 LOAD CERTIFICATES:", studentId);
-
       const response = await parentApi.getChildCertificates(studentId);
-
-      console.log("🟢 CERTIFICATES RESPONSE:", response);
 
       if (!response?.success) {
         throw new Error(response?.message || "Không thể tải chứng chỉ");
@@ -571,8 +696,6 @@ export default function ChildDetail() {
 
       setCertificatesData(response);
     } catch (err) {
-      console.error("❌ LOAD CERTIFICATES ERROR:", err);
-
       setCertificatesData({
         success: false,
         message: err?.message || "Không thể tải chứng chỉ",
@@ -709,13 +832,19 @@ export default function ChildDetail() {
     if (!currentClass) return null;
 
     return {
-      day: currentClass.day_of_week ?? currentClass.dayOfWeek,
+      day:
+        currentClass?.schedules?.[0]?.day_of_week ??
+        currentClass?.schedules?.[0]?.dayOfWeek,
 
-      start: currentClass.start_time ?? currentClass.startTime,
+      start:
+        currentClass?.schedules?.[0]?.start_time ??
+        currentClass?.schedules?.[0]?.startTime,
 
-      end: currentClass.end_time ?? currentClass.endTime,
+      end:
+        currentClass?.schedules?.[0]?.end_time ??
+        currentClass?.schedules?.[0]?.endTime,
 
-      room: currentClass.room,
+      room: currentClass?.schedules?.[0]?.room,
 
       name: currentClass.name || child?.className || "Lớp Giáo lý",
     };
@@ -904,12 +1033,6 @@ export default function ChildDetail() {
       </div>
     );
   }
-
-  /**
-   * =======================================================
-   * RENDER
-   * =======================================================
-   */
 
   return (
     <div style={styles.page}>
@@ -1341,27 +1464,31 @@ function OverviewTab({
             <InfoRow
               icon={<EnvironmentOutlined />}
               label="Phòng"
-              value={currentClass?.room || child.room || "Chưa cập nhật"}
+              value={
+                currentClass?.schedules?.[0]?.room ||
+                child.room ||
+                "Chưa cập nhật"
+              }
             />
 
             <InfoRow
               icon={<CalendarOutlined />}
               label="Ngày học"
-              value={getDayName(
-                currentClass?.day_of_week ?? currentClass?.dayOfWeek,
-              )}
+              value={
+                currentClass?.schedules?.[0]?.day_of_week != null
+                  ? getDayName(currentClass.schedules[0].day_of_week)
+                  : "Chưa cập nhật"
+              }
             />
 
             <InfoRow
               icon={<ClockCircleOutlined />}
               label="Thời gian"
               value={
-                currentClass
+                currentClass?.schedules?.[0]
                   ? `${formatTime(
-                      currentClass.start_time || currentClass.startTime,
-                    )} - ${formatTime(
-                      currentClass.end_time || currentClass.endTime,
-                    )}`
+                      currentClass.schedules[0].start_time,
+                    )} - ${formatTime(currentClass.schedules[0].end_time)}`
                   : "Chưa cập nhật"
               }
             />
@@ -1492,7 +1619,8 @@ function OverviewTab({
                   </span>
 
                   <span>
-                    <EnvironmentOutlined /> {nextClass.room || "Chưa cập nhật"}
+                    <EnvironmentOutlined />
+                    Phòng {nextClass.room || "Chưa cập nhật"}
                   </span>
                 </Space>
               </div>

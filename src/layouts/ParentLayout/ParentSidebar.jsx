@@ -49,7 +49,7 @@ export const MENU_ITEMS = [
     label: "Liên hệ giáo xứ",
   },
   {
-    key: "/parent/account",
+    key: "/parent/profile",
     icon: <UserOutlined />,
     label: "Tài khoản",
   },
@@ -75,15 +75,16 @@ const SIDEBAR_CSS = `
 
 .parent-sidebar {
   --parent-navy: #173B5E;
-  --parent-navy-dark: #102F4B;
+  --parent-navy-dark: #102E49;
+  --parent-navy-light: #214F73;
+  --parent-navy-soft: #285C82;
+
   --parent-gold: #D9A441;
+  --parent-gold-light: #E8C56F;
 
-  --parent-bg: #FFFFFF;
-  --parent-soft: #F7F9FC;
-  --parent-border: #E7ECF2;
-
-  --parent-text: #1E293B;
-  --parent-muted: #718096;
+  --parent-white: #FFFFFF;
+  --parent-white-soft: rgba(255, 255, 255, 0.78);
+  --parent-white-muted: rgba(255, 255, 255, 0.48);
 
   width: 250px;
   height: 100vh;
@@ -93,7 +94,9 @@ const SIDEBAR_CSS = `
 
   overflow: hidden;
 
-  background: var(--parent-bg);
+  background: var(--parent-navy);
+
+  color: var(--parent-white);
 
   font-family:
     Inter,
@@ -102,7 +105,9 @@ const SIDEBAR_CSS = `
     Arial,
     sans-serif;
 
-  color: var(--parent-text);
+  box-shadow:
+    4px 0 24px
+    rgba(15, 45, 73, 0.08);
 }
 
 /* =========================================================
@@ -121,9 +126,11 @@ const SIDEBAR_CSS = `
   align-items: center;
   gap: 11px;
 
-  border-bottom: 1px solid var(--parent-border);
+  background: var(--parent-navy-dark);
 
-  background: #fff;
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.08);
 }
 
 .parent-sidebar__brand::after {
@@ -134,8 +141,8 @@ const SIDEBAR_CSS = `
   left: 18px;
   bottom: -1px;
 
-  width: 34px;
-  height: 2px;
+  width: 38px;
+  height: 3px;
 
   border-radius: 10px;
 
@@ -151,6 +158,14 @@ const SIDEBAR_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
+
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.12);
 }
 
 .parent-sidebar__logo img {
@@ -172,20 +187,16 @@ const SIDEBAR_CSS = `
 
   border-radius: 12px;
 
-  background:
-    linear-gradient(
-      135deg,
-      #173B5E,
-      #285E86
-    );
+  background: var(--parent-gold);
 
-  color: #fff;
+  color: var(--parent-navy-dark);
 
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 900;
 
   box-shadow:
-    0 5px 14px rgba(23, 59, 94, 0.16);
+    0 6px 16px
+    rgba(0, 0, 0, 0.12);
 }
 
 .parent-sidebar__brand-text {
@@ -193,7 +204,7 @@ const SIDEBAR_CSS = `
 }
 
 .parent-sidebar__brand-name {
-  color: var(--parent-navy);
+  color: var(--parent-white);
 
   font-size: 19px;
   font-weight: 800;
@@ -206,7 +217,7 @@ const SIDEBAR_CSS = `
 .parent-sidebar__brand-subtitle {
   margin-top: 5px;
 
-  color: #8A96A8;
+  color: var(--parent-gold-light);
 
   font-size: 9px;
   font-weight: 800;
@@ -239,47 +250,44 @@ const SIDEBAR_CSS = `
 
   border:
     1px solid
-    #E8EDF3;
+    rgba(255, 255, 255, 0.10);
 
   border-radius: 14px;
 
   background:
-    linear-gradient(
-      145deg,
-      #FAFCFE 0%,
-      #F5F8FB 100%
-    );
+    rgba(255, 255, 255, 0.07);
 
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .parent-sidebar__user-card:hover {
-  border-color: #D9E3ED;
+  background:
+    rgba(255, 255, 255, 0.10);
 
-  box-shadow:
-    0 5px 18px
-    rgba(23, 59, 94, 0.05);
+  border-color:
+    rgba(255, 255, 255, 0.16);
 }
 
 .parent-sidebar__avatar {
   flex-shrink: 0;
 
   background:
-    linear-gradient(
-      135deg,
-      #173B5E,
-      #2C638D
-    ) !important;
+    var(--parent-gold) !important;
 
-  color: #fff;
+  color:
+    var(--parent-navy-dark) !important;
 
-  font-weight: 700;
+  font-weight: 800;
+
+  border:
+    2px solid
+    rgba(255, 255, 255, 0.16);
 
   box-shadow:
-    0 4px 10px
-    rgba(23, 59, 94, 0.14);
+    0 4px 12px
+    rgba(0, 0, 0, 0.12);
 }
 
 .parent-sidebar__user-info {
@@ -295,7 +303,8 @@ const SIDEBAR_CSS = `
   white-space: nowrap;
   text-overflow: ellipsis;
 
-  color: #172B45 !important;
+  color:
+    var(--parent-white) !important;
 
   font-size: 12.5px;
   font-weight: 700;
@@ -310,7 +319,8 @@ const SIDEBAR_CSS = `
   align-items: center;
   gap: 6px;
 
-  color: #8190A3;
+  color:
+    var(--parent-white-muted);
 
   font-size: 10.5px;
 }
@@ -323,11 +333,11 @@ const SIDEBAR_CSS = `
 
   border-radius: 50%;
 
-  background: #22C55E;
+  background: #4ADE80;
 
   box-shadow:
     0 0 0 3px
-    rgba(34, 197, 94, 0.09);
+    rgba(74, 222, 128, 0.10);
 }
 
 /* =========================================================
@@ -338,7 +348,7 @@ const SIDEBAR_CSS = `
   flex: 1;
   min-height: 0;
 
-  padding: 4px 10px 8px;
+  padding: 5px 10px 8px;
 
   overflow-x: hidden;
   overflow-y: auto;
@@ -349,7 +359,8 @@ const SIDEBAR_CSS = `
 .parent-sidebar__section-title {
   padding: 7px 10px 9px;
 
-  color: #A0ACBA;
+  color:
+    rgba(255, 255, 255, 0.38);
 
   font-size: 9px;
   font-weight: 800;
@@ -367,7 +378,9 @@ const SIDEBAR_CSS = `
   background: transparent !important;
 }
 
-/* MENU ITEM */
+/* =========================================================
+   MENU ITEM
+========================================================= */
 
 .parent-sidebar__menu
 .ant-menu-item {
@@ -375,10 +388,10 @@ const SIDEBAR_CSS = `
 
   width: 100%;
 
-  height: 43px;
-  line-height: 43px;
+  height: 44px;
+  line-height: 44px;
 
-  margin: 2px 0 !important;
+  margin: 3px 0 !important;
 
   padding:
     0 13px !important;
@@ -388,9 +401,10 @@ const SIDEBAR_CSS = `
 
   gap: 11px;
 
-  border-radius: 10px;
+  border-radius: 11px;
 
-  color: #63748A;
+  color:
+    rgba(255, 255, 255, 0.66);
 
   font-size: 12px;
   font-weight: 500;
@@ -408,7 +422,8 @@ const SIDEBAR_CSS = `
 
   flex-shrink: 0;
 
-  color: #8494A8;
+  color:
+    rgba(255, 255, 255, 0.48);
 
   font-size: 17px;
 
@@ -427,15 +442,17 @@ const SIDEBAR_CSS = `
   text-overflow: ellipsis;
 }
 
-/* HOVER */
+/* =========================================================
+   HOVER
+========================================================= */
 
 .parent-sidebar__menu
 .ant-menu-item:hover {
   color:
-    var(--parent-navy) !important;
+    var(--parent-white) !important;
 
   background:
-    #F5F8FB !important;
+    rgba(255, 255, 255, 0.08) !important;
 
   transform:
     translateX(2px);
@@ -445,27 +462,29 @@ const SIDEBAR_CSS = `
 .ant-menu-item:hover
 .anticon {
   color:
-    var(--parent-navy);
+    var(--parent-gold-light);
 
   transform:
     scale(1.04);
 }
 
-/* ACTIVE */
+/* =========================================================
+   ACTIVE
+========================================================= */
 
 .parent-sidebar__menu
 .ant-menu-item-selected {
   color:
-    var(--parent-navy) !important;
+    var(--parent-white) !important;
 
   background:
-    linear-gradient(
-      90deg,
-      #EDF4F8 0%,
-      #F6F9FC 100%
-    ) !important;
+    rgba(255, 255, 255, 0.13) !important;
 
   font-weight: 700;
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(255, 255, 255, 0.045);
 }
 
 .parent-sidebar__menu
@@ -475,13 +494,13 @@ const SIDEBAR_CSS = `
   position: absolute;
 
   left: 0;
-  top: 9px;
-  bottom: 9px;
+  top: 8px;
+  bottom: 8px;
 
   width: 3px;
 
   border-radius:
-    0 4px 4px 0;
+    0 5px 5px 0;
 
   background:
     var(--parent-gold);
@@ -491,7 +510,7 @@ const SIDEBAR_CSS = `
 .ant-menu-item-selected
 .anticon {
   color:
-    var(--parent-navy) !important;
+    var(--parent-gold-light) !important;
 }
 
 .parent-sidebar__menu
@@ -500,7 +519,7 @@ const SIDEBAR_CSS = `
 }
 
 /* =========================================================
-   BOTTOM AREA
+   BOTTOM
 ========================================================= */
 
 .parent-sidebar__bottom {
@@ -511,10 +530,17 @@ const SIDEBAR_CSS = `
   padding:
     0 12px 13px;
 
-  background: #fff;
+  background:
+    var(--parent-navy-dark);
+
+  border-top:
+    1px solid
+    rgba(255, 255, 255, 0.06);
 }
 
-/* CHURCH */
+/* =========================================================
+   CHURCH
+========================================================= */
 
 .parent-sidebar__church {
   height: 76px;
@@ -540,11 +566,15 @@ const SIDEBAR_CSS = `
   object-fit: contain;
   object-position: center bottom;
 
-  opacity: 0.95;
+  opacity: 0.42;
+
+  filter:
+    brightness(0)
+    invert(1);
 }
 
 /* =========================================================
-   SUPPORT CARD
+   SUPPORT
 ========================================================= */
 
 .parent-sidebar__support {
@@ -556,20 +586,35 @@ const SIDEBAR_CSS = `
 
   border:
     1px solid
-    #E4EBF2;
+    rgba(255, 255, 255, 0.09);
 
   border-radius: 13px;
 
   background:
-    linear-gradient(
-      145deg,
-      #F8FBFF 0%,
-      #F0F6FC 100%
-    );
+    rgba(255, 255, 255, 0.065);
 
   box-shadow:
     0 5px 18px
-    rgba(23, 59, 94, 0.045);
+    rgba(0, 0, 0, 0.08);
+}
+
+.parent-sidebar__support::before {
+  content: "";
+
+  position: absolute;
+
+  width: 90px;
+  height: 90px;
+
+  right: -48px;
+  bottom: -52px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(217, 164, 65, 0.12);
+
+  pointer-events: none;
 }
 
 .parent-sidebar__support::after {
@@ -577,16 +622,17 @@ const SIDEBAR_CSS = `
 
   position: absolute;
 
-  width: 80px;
-  height: 80px;
+  width: 45px;
+  height: 45px;
 
-  right: -42px;
-  bottom: -46px;
+  right: 20px;
+  top: -30px;
 
   border-radius: 50%;
 
-  background:
-    rgba(217, 164, 65, 0.09);
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.06);
 
   pointer-events: none;
 }
@@ -614,10 +660,10 @@ const SIDEBAR_CSS = `
   border-radius: 9px;
 
   background:
-    #E6F0FB;
+    rgba(217, 164, 65, 0.15);
 
   color:
-    #27618D;
+    var(--parent-gold-light);
 
   font-size: 16px;
 }
@@ -628,7 +674,7 @@ const SIDEBAR_CSS = `
 
 .parent-sidebar__support-title {
   color:
-    var(--parent-navy);
+    var(--parent-white);
 
   font-size: 11px;
   font-weight: 800;
@@ -637,7 +683,8 @@ const SIDEBAR_CSS = `
 .parent-sidebar__support-desc {
   margin-top: 2px;
 
-  color: #7B8798;
+  color:
+    rgba(255, 255, 255, 0.50);
 
   font-size: 9.5px;
 
@@ -665,14 +712,15 @@ const SIDEBAR_CSS = `
   border-radius: 8px;
 
   background:
-    var(--parent-navy);
+    var(--parent-gold);
 
-  color: #fff;
+  color:
+    var(--parent-navy-dark);
 
   font-family: inherit;
 
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
 
   cursor: pointer;
 
@@ -684,14 +732,17 @@ const SIDEBAR_CSS = `
 
 .parent-sidebar__support-button:hover {
   background:
+    var(--parent-gold-light);
+
+  color:
     var(--parent-navy-dark);
 
   transform:
     translateY(-1px);
 
   box-shadow:
-    0 5px 12px
-    rgba(23, 59, 94, 0.16);
+    0 5px 14px
+    rgba(217, 164, 65, 0.20);
 }
 
 .parent-sidebar__support-button:active {
@@ -702,7 +753,7 @@ const SIDEBAR_CSS = `
 .parent-sidebar__support-button:focus-visible {
   outline:
     3px solid
-    rgba(217, 164, 65, 0.28);
+    rgba(217, 164, 65, 0.25);
 
   outline-offset: 2px;
 }
@@ -721,15 +772,16 @@ const SIDEBAR_CSS = `
 
 .parent-sidebar__navigation::-webkit-scrollbar-thumb {
   background:
-    #DDE5ED;
+    rgba(255, 255, 255, 0.14);
 
   border-radius: 10px;
 }
 
 .parent-sidebar__navigation {
   scrollbar-width: thin;
+
   scrollbar-color:
-    #DDE5ED
+    rgba(255, 255, 255, 0.14)
     transparent;
 }
 
@@ -807,6 +859,7 @@ const SIDEBAR_CSS = `
   .parent-sidebar__menu
   .ant-menu-item {
     padding-inline: 11px !important;
+
     font-size: 11.5px;
   }
 
@@ -829,6 +882,8 @@ const SIDEBAR_CSS = `
     overflow: visible;
 
     border-right: none;
+
+    box-shadow: none;
   }
 
   .parent-sidebar__brand {
@@ -900,6 +955,7 @@ const SIDEBAR_CSS = `
   .ant-menu-item
   .anticon {
     width: 17px;
+
     font-size: 15px;
   }
 
@@ -927,6 +983,7 @@ const SIDEBAR_CSS = `
 
   .parent-sidebar__support-button {
     min-height: 38px;
+
     font-size: 11px;
   }
 }
@@ -971,6 +1028,7 @@ const SIDEBAR_CSS = `
   .parent-sidebar__menu
   .ant-menu-item {
     min-height: 41px;
+
     padding:
       7px !important;
 
@@ -981,6 +1039,7 @@ const SIDEBAR_CSS = `
   .ant-menu-item
   .anticon {
     width: 16px;
+
     font-size: 14px;
   }
 

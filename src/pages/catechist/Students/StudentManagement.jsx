@@ -289,124 +289,193 @@ export default function StudentManagement() {
     setIsQRModalOpen(true);
   }, []);
 
-  const handleDownloadQR = () => {
+  // =========================================================
+  // CẤU HÌNH THẺ QR
+  // Kích thước in: 5,3cm × 8cm
+  // Độ phân giải: ~600 DPI
+  // =========================================================
+
+  const QR_CARD_WIDTH = 1252;
+  const QR_CARD_HEIGHT = 1890;
+
+  // =========================================================
+  // TẠO ẢNH THẺ QR
+  // =========================================================
+
+  const createQRCardBlob = async ({
+    background,
+    qrCanvas,
+    studentName = "",
+    className = "Chưa xếp lớp",
+  }) => {
+    const canvas = document.createElement("canvas");
+
+    canvas.width = QR_CARD_WIDTH;
+    canvas.height = QR_CARD_HEIGHT;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("Không thể tạo canvas!");
+    }
+
+    // =======================================================
+    // 1. BACKGROUND
+    // =======================================================
+
+    ctx.drawImage(background, 0, 0, QR_CARD_WIDTH, QR_CARD_HEIGHT);
+
+    // =======================================================
+    // 2. QR CODE
+    // =======================================================
+    //
+    // Tỷ lệ QR khoảng 38% chiều ngang thẻ
+    //
+    // 1252 × 0.38 ≈ 476px
+    //
+    // =======================================================
+
+    const qrSize = 500;
+
+    // Căn giữa theo chiều ngang
+    const qrX = (QR_CARD_WIDTH - qrSize) / 2;
+
+    // Vị trí QR
+    const qrY = 500;
+
+    // =======================================================
+    // 3. VẼ QR
+    // =======================================================
+
+    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+    // =======================================================
+    // 4. TEXT
+    // =======================================================
+
+    const centerX = QR_CARD_WIDTH / 2;
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // =======================================================
+    // 5. TÊN HỌC SINH
+    // =======================================================
+
+    ctx.font = "bold 52px Arial";
+    ctx.fillStyle = "#17365D";
+
+    ctx.fillText(studentName, centerX, qrY + qrSize + 70);
+
+    // =======================================================
+    // 6. TÊN LỚP
+    // =======================================================
+
+    ctx.font = "bold 42px Arial";
+    ctx.fillStyle = "#555555";
+
+    ctx.fillText(className, centerX, qrY + qrSize + 135);
+
+    // =======================================================
+    // 7. CANVAS -> BLOB
+    // =======================================================
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Không thể tạo ảnh QR!"));
+            return;
+          }
+
+          resolve(blob);
+        },
+        "image/png",
+        1,
+      );
+    });
+  };
+
+  // =========================================================
+  // DOWNLOAD QR - 1 HỌC SINH
+  // =========================================================
+
+  const handleDownloadQR = async () => {
     if (!qrStudent?.qr_token) {
       message.error("Không có mã QR để tải!");
       return;
     }
 
-    const qrCanvas = document.getElementById(`student-qr-${qrStudent.id}`);
+    try {
+      // =======================================================
+      // LOAD BACKGROUND
+      // =======================================================
 
-    if (!qrCanvas) {
-      message.error("Không tìm thấy mã QR!");
-      return;
+      const background = await new Promise((resolve, reject) => {
+        const img = new Image();
+
+        img.onload = () => resolve(img);
+
+        img.onerror = () => {
+          reject(new Error("Không thể tải background backqr.png!"));
+        };
+
+        img.src = backqr;
+      });
+
+      // =======================================================
+      // LẤY QR CANVAS
+      // =======================================================
+
+      const qrCanvas = document.getElementById(`student-qr-${qrStudent.id}`);
+
+      if (!qrCanvas) {
+        message.error("Không tìm thấy mã QR!");
+        return;
+      }
+
+      // =======================================================
+      // TẠO ẢNH THẺ
+      // =======================================================
+
+      const blob = await createQRCardBlob({
+        background,
+        qrCanvas,
+        studentName: qrStudent.name || "",
+        className: qrStudent.className || "Chưa xếp lớp",
+      });
+
+      // =======================================================
+      // DOWNLOAD
+      // =======================================================
+
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = url;
+
+      link.download = `${qrStudent.code || qrStudent.id}-QR.png`;
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+
+      message.success("Đã tải ảnh QR!");
+    } catch (error) {
+      console.error("Lỗi tải QR:", error);
+
+      message.error(error?.message || "Không thể tạo ảnh QR!");
     }
-
-    // =========================
-    // KÍCH THƯỚC ẢNH
-    // =========================
-    const canvasWidth = 800;
-    const canvasHeight = 1000;
-
-    const canvas = document.createElement("canvas");
-
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      message.error("Không thể tạo canvas!");
-      return;
-    }
-
-    const background = new Image();
-
-    background.onload = () => {
-      // =========================
-      // 1. VẼ BACKGROUND
-      // =========================
-      ctx.drawImage(background, 0, 0, canvasWidth, canvasHeight);
-
-      // =========================
-      // 2. CẤU HÌNH QR
-      // =========================
-      const qrSize = 430;
-
-      // Vị trí QR
-      const qrX = 265;
-      const qrY = 270;
-
-      // =========================
-      // 3. VẼ QR
-      // =========================
-      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-      // =========================
-      // 4. THÔNG TIN HỌC SINH
-      // =========================
-      const studentName = qrStudent.name || "";
-      const className = qrStudent.className || "Chưa xếp lớp";
-
-      // Tâm chính xác của QR
-      const centerX = qrX + qrSize / 2;
-
-      // =========================
-      // CẤU HÌNH TEXT
-      // =========================
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      // =========================
-      // 5. TÊN HỌC SINH
-      // =========================
-      ctx.font = "bold 34px Arial";
-      ctx.fillStyle = "#17365D";
-
-      ctx.fillText(studentName, centerX, qrY + qrSize + 30);
-
-      // =========================
-      // 6. TÊN LỚP
-      // =========================
-      ctx.font = "bold 28px Arial";
-      ctx.fillStyle = "#555555";
-
-      ctx.fillText(`${className}`, centerX, qrY + qrSize + 65);
-
-      // =========================
-      // 7. TẢI ẢNH
-      // =========================
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          message.error("Không thể tạo ảnh QR!");
-          return;
-        }
-
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-
-        link.href = url;
-        link.download = `${qrStudent.code || qrStudent.id}-QR.png`;
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-
-        message.success("Đã tải ảnh QR!");
-      }, "image/png");
-    };
-
-    background.onerror = () => {
-      message.error("Không thể tải background backqr.png!");
-    };
-
-    background.src = backqr;
   };
+
+  // =========================================================
+  // DOWNLOAD BULK QR
+  // =========================================================
 
   const handleDownloadBulkQR = async () => {
     if (!students || students.length === 0) {
@@ -418,6 +487,10 @@ export default function StudentManagement() {
 
     const zip = new JSZip();
 
+    // =======================================================
+    // LOAD IMAGE
+    // =======================================================
+
     const loadImage = (src) => {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -425,46 +498,34 @@ export default function StudentManagement() {
         img.onload = () => resolve(img);
 
         img.onerror = () => {
-          reject(new Error("Không thể tải ảnh background"));
+          reject(new Error("Không thể tải background"));
         };
 
         img.src = src;
       });
     };
 
-    try {
-      // =========================
-      // LOAD BACKGROUND
-      // =========================
-      const background = await loadImage(backqr);
+    // =======================================================
+    // RENDER QR CANVAS
+    // =======================================================
 
-      // =========================
-      // DUYỆT TỪNG HỌC SINH
-      // =========================
-      for (const student of students) {
-        if (!student.qr_token) {
-          continue;
-        }
+    const createTempQRCanvas = async (student) => {
+      const container = document.createElement("div");
 
-        // =========================
-        // TẠO CONTAINER QR TẠM
-        // =========================
-        const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.left = "-99999px";
+      container.style.top = "0";
 
-        container.style.position = "fixed";
-        container.style.left = "-99999px";
-        container.style.top = "0";
-        container.style.width = "520px";
-        container.style.height = "520px";
-        container.style.visibility = "hidden";
+      container.style.width = "520px";
+      container.style.height = "520px";
 
-        document.body.appendChild(container);
+      container.style.visibility = "hidden";
 
-        // =========================
-        // RENDER QR
-        // =========================
-        const root = createRoot(container);
+      document.body.appendChild(container);
 
+      const root = createRoot(container);
+
+      try {
         root.render(
           <QRCodeCanvas
             value={student.qr_token}
@@ -474,7 +535,7 @@ export default function StudentManagement() {
           />,
         );
 
-        // Chờ QR render
+        // Chờ React render QR
         await new Promise((resolve) => {
           setTimeout(resolve, 100);
         });
@@ -482,120 +543,112 @@ export default function StudentManagement() {
         const qrCanvas = container.querySelector("canvas");
 
         if (!qrCanvas) {
-          root.unmount();
-          document.body.removeChild(container);
-          continue;
+          throw new Error(`Không tạo được QR cho ${student.name}`);
         }
 
-        // =========================
-        // TẠO CANVAS
-        // =========================
-        const canvasWidth = 800;
-        const canvasHeight = 1000;
-
-        const canvas = document.createElement("canvas");
-
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
-
-        const ctx = canvas.getContext("2d");
-
-        if (!ctx) {
-          root.unmount();
-          document.body.removeChild(container);
-          continue;
-        }
-
-        // =========================
-        // VẼ BACKGROUND
-        // =========================
-        ctx.drawImage(background, 0, 0, canvasWidth, canvasHeight);
-
-        // =========================
-        // VẼ QR
-        // =========================
-        const qrSize = 430;
-        const qrX = 265;
-        const qrY = 270;
-
-        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-        // =========================
-        // THÔNG TIN HỌC SINH
-        // =========================
-        const studentName = student.name || "";
-
-        const className = student.className || "Chưa xếp lớp";
-
-        // Tâm QR
-        const centerX = qrX + qrSize / 2;
-
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-
-        // =========================
-        // TÊN HỌC SINH
-        // =========================
-        ctx.font = "bold 34px Arial";
-        ctx.fillStyle = "#17365D";
-
-        ctx.fillText(studentName, centerX, qrY + qrSize + 30);
-
-        // =========================
-        // TÊN LỚP
-        // =========================
-        ctx.font = "bold 28px Arial";
-        ctx.fillStyle = "#555555";
-
-        ctx.fillText(`${className}`, centerX, qrY + qrSize + 65);
-
-        // =========================
-        // XÓA QR TẠM
-        // =========================
+        return qrCanvas;
+      } finally {
         root.unmount();
 
-        document.body.removeChild(container);
+        if (container.parentNode) {
+          container.parentNode.removeChild(container);
+        }
+      }
+    };
 
-        // =========================
-        // CANVAS -> BLOB
-        // =========================
-        const blob = await new Promise((resolve) => {
-          canvas.toBlob((result) => {
-            resolve(result);
-          }, "image/png");
-        });
+    try {
+      // =======================================================
+      // LOAD BACKGROUND 1 LẦN
+      // =======================================================
 
-        if (!blob) {
+      const background = await loadImage(backqr);
+
+      // =======================================================
+      // DUYỆT HỌC SINH
+      // =======================================================
+
+      let successCount = 0;
+      let skipCount = 0;
+
+      for (const student of students) {
+        // -----------------------------------------------------
+        // Không có QR
+        // -----------------------------------------------------
+
+        if (!student.qr_token) {
+          skipCount++;
           continue;
         }
 
-        // =========================
-        // TÊN FILE
-        // =========================
-        const fileName = `${student.code || student.id}-QR.png`;
+        try {
+          // ---------------------------------------------------
+          // TẠO QR TẠM
+          // ---------------------------------------------------
 
-        // =========================
-        // THÊM VÀO ZIP
-        // =========================
-        zip.file(fileName, blob);
+          const qrCanvas = await createTempQRCanvas(student);
+
+          // ---------------------------------------------------
+          // TẠO THẺ
+          // ---------------------------------------------------
+
+          const blob = await createQRCardBlob({
+            background,
+            qrCanvas,
+            studentName: student.name || "",
+            className: student.className || "Chưa xếp lớp",
+          });
+
+          // ---------------------------------------------------
+          // TÊN FILE
+          // ---------------------------------------------------
+
+          const fileName = `${student.code || student.id}-QR.png`;
+
+          // ---------------------------------------------------
+          // THÊM ZIP
+          // ---------------------------------------------------
+
+          zip.file(fileName, blob);
+
+          successCount++;
+        } catch (error) {
+          console.error(`Lỗi tạo QR học sinh ${student.name}:`, error);
+
+          skipCount++;
+        }
       }
 
-      // =========================
+      // =======================================================
+      // KHÔNG CÓ FILE
+      // =======================================================
+
+      if (successCount === 0) {
+        message.warning("Không có mã QR hợp lệ để tải!");
+
+        return;
+      }
+
+      // =======================================================
       // TẠO ZIP
-      // =========================
+      // =======================================================
+
       const zipBlob = await zip.generateAsync({
         type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: {
+          level: 6,
+        },
       });
 
-      // =========================
+      // =======================================================
       // DOWNLOAD ZIP
-      // =========================
+      // =======================================================
+
       const url = URL.createObjectURL(zipBlob);
 
       const link = document.createElement("a");
 
       link.href = url;
-
       link.download = "QR_Hoc_Sinh.zip";
 
       document.body.appendChild(link);
@@ -606,15 +659,22 @@ export default function StudentManagement() {
 
       URL.revokeObjectURL(url);
 
-      message.success("Đã tải toàn bộ mã QR!");
-    } catch (error) {
-      console.error("Lỗi tải QR:", error);
+      // =======================================================
+      // THÔNG BÁO
+      // =======================================================
 
-      message.error("Có lỗi khi tạo mã QR!");
+      if (skipCount > 0) {
+        message.success(
+          `Đã tải ${successCount} mã QR. Bỏ qua ${skipCount} học sinh.`,
+        );
+      } else {
+        message.success(`Đã tải ${successCount} mã QR!`);
+      }
+    } catch (error) {
+      console.error("Lỗi tải toàn bộ QR:", error);
+
+      message.error(error?.message || "Có lỗi khi tạo mã QR!");
     } finally {
-      // =========================
-      // KẾT THÚC DOWNLOAD
-      // =========================
       setBulkQRDownloading(false);
     }
   };
@@ -846,7 +906,7 @@ export default function StudentManagement() {
         const [studentRes, classRes] = await Promise.all([
           studentApi.getAll({
             page: 1,
-            pageSize: 1000,
+            pageSize: 10000,
           }),
           classApi.getAll(),
         ]);

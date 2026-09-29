@@ -1,5 +1,15 @@
-import React from "react";
-import { Avatar, Badge, Button, Card, Col, Empty, Row, Typography } from "antd";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Col,
+  Empty,
+  Row,
+  Typography,
+  message,
+} from "antd";
 
 import {
   CalendarOutlined,
@@ -8,7 +18,9 @@ import {
   BellOutlined,
   BookOutlined,
 } from "@ant-design/icons";
-
+import { getDashboardParent } from "../../api/dashboardApi";
+import DashboardSkeleton from "./DashboardSkeleton";
+import parentApi from "../../api/parentApi";
 const { Title, Text } = Typography;
 
 /**
@@ -39,79 +51,6 @@ const COLORS = {
 
   orange: "#D97706",
   orangeBg: "#FFF7ED",
-};
-
-/**
- * =========================================================
- * FAKE DATA
- *
- * Sau này chỉ cần thay object này bằng API response.
- * =========================================================
- */
-
-const DASHBOARD_DATA = {
-  greeting: {
-    name: "Anh Hùng",
-    subtitle: "Chúc gia đình một ngày bình an.",
-  },
-
-  students: [
-    {
-      id: 1,
-      name: "Nguyễn Minh An",
-      className: "Lớp Ấu 2",
-      code: "HS260012",
-      avatar: null,
-      attendanceRate: 96,
-      latestAttendance: "Có mặt",
-    },
-    {
-      id: 2,
-      name: "Nguyễn Minh Anh",
-      className: "Lớp Thiếu 1",
-      code: "HS260018",
-      avatar: null,
-      attendanceRate: 91,
-      latestAttendance: "Có mặt",
-    },
-  ],
-
-  upcomingSchedule: {
-    date: "Thứ 7",
-    time: "19:00",
-    subject: "Giáo lý",
-    className: "Lớp Ấu 2",
-    room: "Phòng Giáo lý 2",
-  },
-
-  latestResult: {
-    studentName: "Nguyễn Minh An",
-    subject: "Giáo lý",
-    title: "Bài kiểm tra tháng 9",
-    score: 8.5,
-    maxScore: 10,
-  },
-
-  notifications: [
-    {
-      id: 1,
-      title: "Thông báo lịch học tuần này",
-      time: "2 giờ trước",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "Lịch kiểm tra tháng 10",
-      time: "Hôm qua",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "Thông báo từ giáo xứ",
-      time: "2 ngày trước",
-      unread: false,
-    },
-  ],
 };
 
 /**
@@ -808,8 +747,68 @@ function StudentCard({ student }) {
  */
 
 export default function ParentDashboard() {
-  const data = DASHBOARD_DATA;
+  const [dashboard, setDashboard] = useState(null);
+  const [me, setMe] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  const fetchDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const response = await getDashboardParent();
+
+      const data = response?.data?.data || response?.data || response || null;
+
+      if (!data) {
+        throw new Error("Không có dữ liệu dashboard");
+      }
+
+      setDashboard(data);
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || "Không thể tải dữ liệu dashboard",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  const fetchMe = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const res = await parentApi.getMe();
+
+      const data = res?.data?.data || res?.data || {};
+
+      if (!data) {
+        throw new Error("Không có dữ liệu dashboard");
+      }
+
+      setMe(data);
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || "Không thể tải dữ liệu dashboard",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+    fetchMe();
+  }, [fetchDashboard, fetchMe]);
+  const data = dashboard;
+
+  console.log(me);
+
+  if (loading) {
+    return (
+      <div style={{ padding: 24 }}>
+        <DashboardSkeleton />
+      </div>
+    );
+  }
   return (
     <div className="parent-dashboard">
       <style>{CSS}</style>
@@ -821,13 +820,11 @@ export default function ParentDashboard() {
       <div className="parent-dashboard__hero">
         <div className="parent-dashboard__hero-left">
           <div className="parent-dashboard__eyebrow">Không gian gia đình</div>
-
           <Title level={1} className="parent-dashboard__title">
-            Xin chào, {data.greeting.name}
+            Xin chào, {me.full_name}
           </Title>
-
           <Text className="parent-dashboard__subtitle">
-            {data.greeting.subtitle}
+            Quan hệ với học sinh: {me.role === "parent" ? "Phụ huynh" : "Khác"}
           </Text>
         </div>
 
@@ -944,6 +941,7 @@ export default function ParentDashboard() {
               </div>
 
               <div className="parent-dashboard__result-student">
+                Tên con:
                 {data.latestResult.studentName}
               </div>
             </Card>
