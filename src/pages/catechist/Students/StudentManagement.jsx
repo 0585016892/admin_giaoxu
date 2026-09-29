@@ -844,10 +844,12 @@ export default function StudentManagement() {
         }
 
         const [studentRes, classRes] = await Promise.all([
-          studentApi.getAll(),
+          studentApi.getAll({
+            page: 1,
+            pageSize: 1000,
+          }),
           classApi.getAll(),
         ]);
-
         if (!mountedRef.current) {
           return;
         }

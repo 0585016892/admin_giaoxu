@@ -54,6 +54,8 @@ import QuestionPage from "../pages/catechist/QuestionPage";
 // PARENTS
 // ============================================================
 import ParentDashboard from "../pages/Parent/ParentDashboard";
+import ParentChildren from "../pages/Parent/Children/ParentChildren";
+import ChildDetail from "../pages/Parent/Children/components/ChildDetail";
 
 // ============================================================
 // PUBLIC
@@ -68,10 +70,6 @@ import VerifyCertificate from "../components/VerifyCertificate";
 
 // Sau này thay bằng page thật.
 // Tạm thời dùng các component bên dưới nếu chưa tạo page.
-
-function ParentStudents() {
-  return <div>Con của tôi</div>;
-}
 
 function ParentAttendance() {
   return <div>Điểm danh</div>;
@@ -308,8 +306,11 @@ export default function AppRoutes() {
 
             {/* ================= CHILDREN ================= */}
 
-            <Route path="/parent/students" element={<ParentStudents />} />
-
+            <Route path="/parent/students" element={<ParentChildren />} />
+            <Route
+              path="/parent/children/:studentId"
+              element={<ChildDetail />}
+            />
             {/* ================= ATTENDANCE ================= */}
 
             <Route path="/parent/attendance" element={<ParentAttendance />} />

@@ -448,6 +448,7 @@ export default function CatechistManagement() {
       setDetailCatechist(record);
 
       const response = await catechistApi.getById(record.id);
+      console.log(response);
 
       const data = response?.data?.data || response?.data;
 

@@ -4,12 +4,7 @@ import { Menu } from "antd";
 import {
   DashboardOutlined,
   TeamOutlined,
-  CheckCircleOutlined,
-  BarChartOutlined,
-  SafetyCertificateOutlined,
   HomeOutlined,
-  CalendarOutlined,
-  BookOutlined,
   BellOutlined,
   UserOutlined,
   CustomerServiceOutlined,
@@ -42,31 +37,6 @@ export const MENU_ITEMS = [
     key: "/parent/students",
     icon: <TeamOutlined />,
     label: "Con của tôi",
-  },
-  {
-    key: "/parent/schedule",
-    icon: <CalendarOutlined />,
-    label: "Lịch học",
-  },
-  {
-    key: "/parent/attendance",
-    icon: <CheckCircleOutlined />,
-    label: "Điểm danh",
-  },
-  {
-    key: "/parent/results",
-    icon: <BarChartOutlined />,
-    label: "Kết quả học tập",
-  },
-  {
-    key: "/parent/materials",
-    icon: <BookOutlined />,
-    label: "Tài liệu học tập",
-  },
-  {
-    key: "/parent/certificates",
-    icon: <SafetyCertificateOutlined />,
-    label: "Chứng chỉ - Văn bằng",
   },
   {
     key: "/parent/notifications",
