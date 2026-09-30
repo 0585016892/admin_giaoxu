@@ -15,6 +15,7 @@ import {
   Tabs,
   Tag,
   Typography,
+  message,
 } from "antd";
 
 import {
@@ -25,6 +26,7 @@ import {
   PictureOutlined,
   FontSizeOutlined,
   AppstoreOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -43,13 +45,39 @@ const CertificateSettingsPanel = ({
   design,
   onChange,
   onReset,
-}) => {
-  const [localDesign, setLocalDesign] = useState(DEFAULT_CERTIFICATE_DESIGN);
 
-  const [activeTab, setActiveTab] = useState("paper");
+  // Dữ liệu chứng chỉ
+  certData,
+  certType = "",
+  parish = "",
+  diocese = "",
+  pastorName = "",
+
+  // Callback gửi thông tin chỉnh sửa lên component cha
+  onCertDataChange,
+}) => {
+  // ============================================================
+  // STATE
+  // ============================================================
+
+  const [localDesign, setLocalDesign] = useState({
+    ...DEFAULT_CERTIFICATE_DESIGN,
+  });
+
+  const [activeTab, setActiveTab] = useState("certificate");
+
+  const [certDataForm, setCertDataForm] = useState({
+    certNo: "",
+    type: "",
+    student: "",
+    parish: "",
+    diocese: "",
+    pastor_name: "",
+    achievement: "",
+  });
 
   // ============================================================
-  // SYNC DESIGN
+  // ĐỒNG BỘ THIẾT KẾ
   // ============================================================
 
   useEffect(() => {
@@ -58,9 +86,35 @@ const CertificateSettingsPanel = ({
       ...(design || {}),
     });
   }, [design]);
+  console.log(certData);
 
   // ============================================================
-  // UPDATE DESIGN
+  // ĐỒNG BỘ DỮ LIỆU CHỨNG CHỈ TỪ COMPONENT CHA
+  // ============================================================
+
+  useEffect(() => {
+    setCertDataForm({
+      certNo: certData?.certNo ?? "",
+      type: certType ?? "",
+      student: certData?.fullName ?? "",
+      parish: parish ?? "",
+      diocese: diocese ?? "",
+      pastor_name: pastorName ?? "",
+      achievement: certData?.achievement || "",
+    });
+  }, [
+    certData?.certNo,
+    certData?.fullName,
+    certData?.achievement,
+    certType,
+    parish,
+    diocese,
+    pastorName,
+  ]);
+  console.log("certDataForm:::", certDataForm);
+
+  // ============================================================
+  // CẬP NHẬT THIẾT KẾ
   // ============================================================
 
   const update = (field, value) => {
@@ -75,7 +129,7 @@ const CertificateSettingsPanel = ({
   };
 
   // ============================================================
-  // APPLY STYLE PRESET
+  // ÁP DỤNG MẪU THIẾT KẾ
   // ============================================================
 
   const applyPreset = (presetKey) => {
@@ -85,8 +139,8 @@ const CertificateSettingsPanel = ({
 
     const next = {
       ...localDesign,
-      stylePreset: presetKey,
       ...preset,
+      stylePreset: presetKey,
     };
 
     setLocalDesign(next);
@@ -99,7 +153,7 @@ const CertificateSettingsPanel = ({
   };
 
   // ============================================================
-  // RESET
+  // KHÔI PHỤC THIẾT KẾ MẶC ĐỊNH
   // ============================================================
 
   const reset = () => {
@@ -113,7 +167,39 @@ const CertificateSettingsPanel = ({
   };
 
   // ============================================================
-  // PAPER
+  // CẬP NHẬT THÔNG TIN CHỨNG CHỈ
+  // ============================================================
+
+  const handleCertDataChange = (field, value) => {
+    const next = {
+      ...certDataForm,
+      [field]: value,
+    };
+
+    console.log("CERT DATA CHANGE:", {
+      field,
+      value,
+      next,
+    });
+
+    setCertDataForm(next);
+
+    onCertDataChange?.({
+      certNo: next.certNo,
+      fullName: next.student,
+      achievement: next.achievement,
+
+      certType: next.type,
+
+      parish: next.parish,
+      diocese: next.diocese,
+
+      pastorName: next.pastor_name,
+    });
+  };
+
+  // ============================================================
+  // KHỔ GIẤY HIỆN TẠI
   // ============================================================
 
   const currentPaper =
@@ -122,7 +208,7 @@ const CertificateSettingsPanel = ({
       : PAPER_SIZES_MM[localDesign.paperSize];
 
   // ============================================================
-  // HIDE
+  // ẨN PANEL
   // ============================================================
 
   if (!open) {
@@ -136,414 +222,255 @@ const CertificateSettingsPanel = ({
   return (
     <>
       <style>{`
-
-        /* ======================================================
-           MAIN PANEL
-        ====================================================== */
-
         .certificate-settings-panel {
           margin-top: 12px;
           margin-bottom: 16px;
-
           border-radius: 12px !important;
-
           border: 1px solid #E2E8F0 !important;
-
-          box-shadow:
-            0 4px 18px
-            rgba(23, 59, 94, 0.06);
-
+          box-shadow: 0 4px 18px rgba(23, 59, 94, 0.06);
           overflow: hidden;
         }
 
-        .certificate-settings-panel
-        .ant-card-body {
+        .certificate-settings-panel .ant-card-body {
           padding: 18px;
         }
 
-        /* ======================================================
-           HEADER
-        ====================================================== */
-
         .certificate-settings-header {
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
+          gap: 12px;
           padding-bottom: 14px;
-
           margin-bottom: 14px;
-
-          border-bottom:
-            1px solid #E2E8F0;
+          border-bottom: 1px solid #E2E8F0;
         }
 
         .certificate-settings-header-left {
           display: flex;
-
           align-items: center;
-
           gap: 10px;
         }
 
         .certificate-settings-header-icon {
           width: 34px;
           height: 34px;
-
+          flex-shrink: 0;
           border-radius: 8px;
-
           background: #EEF3F7;
-
           color: #173B5E;
-
           display: flex;
-
           align-items: center;
-
           justify-content: center;
-
           font-size: 16px;
         }
 
         .certificate-settings-header-title {
           font-size: 14px;
-
           font-weight: 700;
-
           color: #173B5E;
         }
 
         .certificate-settings-header-subtitle {
           font-size: 11px;
-
           color: #64748B;
-
           margin-top: 2px;
         }
 
-        /* ======================================================
-           TABS
-        ====================================================== */
-
-        .certificate-settings-tabs
-        .ant-tabs-nav {
+        .certificate-settings-tabs .ant-tabs-nav {
           margin-bottom: 14px;
         }
 
-        .certificate-settings-tabs
-        .ant-tabs-tab {
-          padding:
-            8px 14px;
-
+        .certificate-settings-tabs .ant-tabs-tab {
+          padding: 8px 12px;
           font-size: 12px;
         }
 
-        .certificate-settings-tabs
-        .ant-tabs-tab-btn {
+        .certificate-settings-tabs .ant-tabs-tab-btn {
           display: flex;
-
           align-items: center;
-
           gap: 6px;
         }
 
-        .certificate-settings-tabs
-        .ant-tabs-ink-bar {
+        .certificate-settings-tabs .ant-tabs-ink-bar {
           background: #173B5E;
         }
 
-        /* ======================================================
-           SECTION
-        ====================================================== */
-
         .certificate-settings-section {
           background: #F8FAFC;
-
-          border:
-            1px solid #EDF1F5;
-
+          border: 1px solid #EDF1F5;
           border-radius: 9px;
-
           padding: 16px;
-
           min-height: 260px;
         }
 
         .certificate-settings-section-title {
           display: flex;
-
           align-items: center;
-
           gap: 7px;
-
           font-size: 12px;
-
           font-weight: 700;
-
           color: #173B5E;
-
           margin-bottom: 14px;
         }
 
-        /* ======================================================
-           SETTING ITEM
-        ====================================================== */
-
         .certificate-setting-item {
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
           gap: 12px;
-
           min-height: 36px;
         }
 
-        .certificate-setting-item
-        + .certificate-setting-item {
+        .certificate-setting-item + .certificate-setting-item {
           margin-top: 10px;
         }
 
         .certificate-setting-label {
           font-size: 12px;
-
           color: #475569;
         }
 
         .certificate-setting-control {
           flex: 1;
-
           max-width: 220px;
         }
 
-        .certificate-setting-control
-        .ant-select,
-        .certificate-setting-control
-        .ant-input-number {
+        .certificate-setting-control .ant-select,
+        .certificate-setting-control .ant-input-number {
           width: 100%;
         }
-
-        /* ======================================================
-           COLOR
-        ====================================================== */
 
         .certificate-color-input {
           width: 100%;
-
           height: 38px;
-
           padding: 3px;
-
           cursor: pointer;
-
-          border:
-            1px solid #D9E1EA;
-
+          border: 1px solid #D9E1EA;
           border-radius: 6px;
         }
 
-        /* ======================================================
-           BACKGROUND GRID
-        ====================================================== */
-
         .certificate-background-grid {
           display: grid;
-
-          grid-template-columns:
-            repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           gap: 12px;
-
           margin-top: 12px;
         }
 
         .certificate-background-card {
           position: relative;
-
           cursor: pointer;
-
           background: #FFFFFF;
-
-          border:
-            1px solid #E2E8F0;
-
+          border: 1px solid #E2E8F0;
           border-radius: 9px;
-
           overflow: hidden;
-
-          transition:
-            border-color 0.2s ease,
-            box-shadow 0.2s ease,
-            transform 0.2s ease;
+          transition: border-color 0.2s ease,
+                      box-shadow 0.2s ease,
+                      transform 0.2s ease;
         }
 
         .certificate-background-card:hover {
           border-color: #9DB3C8;
-
-          box-shadow:
-            0 4px 12px
-            rgba(23, 59, 94, 0.10);
-
-          transform:
-            translateY(-1px);
+          box-shadow: 0 4px 12px rgba(23, 59, 94, 0.10);
+          transform: translateY(-1px);
         }
 
         .certificate-background-card.selected {
-          border:
-            2px solid #173B5E;
-
-          box-shadow:
-            0 0 0 2px
-            rgba(23, 59, 94, 0.08);
+          border: 2px solid #173B5E;
+          box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.08);
         }
-
-        /* ======================================================
-           BACKGROUND IMAGE
-        ====================================================== */
 
         .certificate-background-image-wrapper {
           position: relative;
-
           width: 100%;
-
           aspect-ratio: 16 / 10;
-
           background: #F1F5F9;
-
           overflow: hidden;
         }
 
         .certificate-background-image {
           width: 100%;
-
           height: 100%;
-
           display: block;
-
           object-fit: cover;
-
-          transition:
-            transform 0.25s ease;
+          transition: transform 0.25s ease;
         }
 
-        .certificate-background-card:hover
-        .certificate-background-image {
-          transform:
-            scale(1.03);
+        .certificate-background-card:hover .certificate-background-image {
+          transform: scale(1.03);
         }
-
-        /* ======================================================
-           SELECTED
-        ====================================================== */
 
         .certificate-background-selected {
           position: absolute;
-
           top: 7px;
-
           right: 7px;
-
           width: 25px;
-
           height: 25px;
-
           border-radius: 50%;
-
           background: #173B5E;
-
           color: #FFFFFF;
-
           display: flex;
-
           align-items: center;
-
           justify-content: center;
-
           font-size: 14px;
-
-          box-shadow:
-            0 2px 6px
-            rgba(0, 0, 0, 0.18);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
-        /* ======================================================
-           BACKGROUND INFO
-        ====================================================== */
-
         .certificate-background-info {
-          padding:
-            8px 9px;
+          padding: 8px 9px;
         }
 
         .certificate-background-name {
           font-size: 12px;
-
           font-weight: 700;
-
           color: #173B5E;
         }
 
         .certificate-background-description {
           margin-top: 2px;
-
           font-size: 10px;
-
           line-height: 1.4;
-
           color: #64748B;
-
           display: -webkit-box;
-
           -webkit-line-clamp: 2;
-
           -webkit-box-orient: vertical;
-
           overflow: hidden;
         }
 
-        /* ======================================================
-           FOOTER
-        ====================================================== */
-
         .certificate-settings-footer {
           display: flex;
-
           justify-content: space-between;
-
           align-items: center;
-
           gap: 8px;
-
           margin-top: 16px;
-
           padding-top: 14px;
-
-          border-top:
-            1px solid #E2E8F0;
+          border-top: 1px solid #E2E8F0;
         }
 
         .certificate-settings-footer-right {
           display: flex;
-
           gap: 8px;
         }
 
-        /* ======================================================
-           MOBILE
-        ====================================================== */
+        .certificate-info-note {
+          display: block;
+          margin-top: 8px;
+          font-size: 11px;
+          color: #64748B;
+        }
+
+        @media (max-width: 1000px) {
+          .certificate-background-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
 
         @media (max-width: 768px) {
-
           .certificate-settings-header {
             align-items: flex-start;
           }
 
           .certificate-settings-footer {
             flex-direction: column;
-
             align-items: stretch;
           }
 
@@ -551,38 +478,28 @@ const CertificateSettingsPanel = ({
             flex-direction: column;
           }
 
-          .certificate-settings-footer
-          .ant-btn {
+          .certificate-settings-footer .ant-btn {
             width: 100%;
           }
 
           .certificate-background-grid {
-            grid-template-columns:
-              repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .certificate-settings-tabs
-          .ant-tabs-tab {
-            padding:
-              8px 9px;
+          .certificate-settings-tabs .ant-tabs-tab {
+            padding: 8px 7px;
           }
-
         }
 
         @media (max-width: 480px) {
-
           .certificate-background-grid {
             grid-template-columns: 1fr;
           }
-
         }
-
       `}</style>
 
       <Card className="certificate-settings-panel" bordered={false}>
-        {/* ====================================================
-            HEADER
-        ==================================================== */}
+        {/* HEADER */}
 
         <div className="certificate-settings-header">
           <div className="certificate-settings-header-left">
@@ -596,7 +513,7 @@ const CertificateSettingsPanel = ({
               </div>
 
               <div className="certificate-settings-header-subtitle">
-                Thay đổi cấu hình và xem kết quả trực tiếp trên bản xem trước
+                Chỉnh sửa thông tin và tùy chỉnh thiết kế chứng chỉ
               </div>
             </div>
           </div>
@@ -606,22 +523,224 @@ const CertificateSettingsPanel = ({
           </Button>
         </div>
 
-        {/* ====================================================
-            TABS
-        ==================================================== */}
+        {/* TABS */}
 
         <Tabs
           className="certificate-settings-tabs"
           activeKey={activeTab}
           onChange={setActiveTab}
           items={[
-            /* ==================================================
-               TAB 1 - PAPER
-            ================================================== */
+            // ==================================================
+            // TAB 1 - THÔNG TIN CHỨNG CHỈ
+            // ==================================================
+
+            {
+              key: "certificate",
+              label: (
+                <>
+                  <IdcardOutlined />
+                  Thông tin chứng chỉ
+                </>
+              ),
+
+              children: (
+                <div className="certificate-settings-section">
+                  <div className="certificate-settings-section-title">
+                    <IdcardOutlined />
+                    Chỉnh sửa thông tin chứng chỉ
+                  </div>
+
+                  <Text type="secondary">
+                    Các thông tin dưới đây được gửi về component cha khi bạn
+                    chỉnh sửa.
+                  </Text>
+
+                  <Row gutter={[16, 16]} style={{ marginTop: 18 }}>
+                    <Col xs={24} md={12}>
+                      <Text strong>Số chứng chỉ</Text>
+
+                      <Input
+                        value={certDataForm.certNo}
+                        placeholder="Nhập số chứng chỉ"
+                        onChange={(event) =>
+                          handleCertDataChange("certNo", event.target.value)
+                        }
+                        style={{ marginTop: 8 }}
+                      />
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                      <Text strong>Loại chứng chỉ</Text>
+
+                      <Input
+                        value={certDataForm.type}
+                        placeholder="Nhập loại chứng chỉ"
+                        onChange={(event) =>
+                          handleCertDataChange("type", event.target.value)
+                        }
+                        style={{ marginTop: 8 }}
+                      />
+                    </Col>
+
+                    <Col span={24}>
+                      <Text strong>Họ và tên học viên</Text>
+
+                      <Input
+                        value={certDataForm.student}
+                        placeholder="Nhập họ và tên học viên"
+                        onChange={(event) =>
+                          handleCertDataChange("student", event.target.value)
+                        }
+                        style={{ marginTop: 8 }}
+                      />
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                      <Text strong>Giáo xứ</Text>
+
+                      <Input
+                        value={certDataForm.parish}
+                        placeholder="Nhập tên giáo xứ"
+                        onChange={(event) =>
+                          handleCertDataChange("parish", event.target.value)
+                        }
+                        style={{ marginTop: 8 }}
+                      />
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                      <Text strong>Giáo phận</Text>
+
+                      <Input
+                        value={certDataForm.diocese}
+                        placeholder="Nhập tên giáo phận"
+                        onChange={(event) =>
+                          handleCertDataChange("diocese", event.target.value)
+                        }
+                        style={{ marginTop: 8 }}
+                      />
+                    </Col>
+
+                    <Col span={24}>
+                      <Text strong>Tên linh mục quản xứ</Text>
+
+                      <Input
+                        value={certDataForm.pastor_name}
+                        placeholder="Nhập tên linh mục quản xứ"
+                        onChange={(event) =>
+                          handleCertDataChange(
+                            "pastor_name",
+                            event.target.value,
+                          )
+                        }
+                        style={{ marginTop: 8 }}
+                      />
+                    </Col>
+                    <Col span={24}>
+                      <Typography.Text strong>Thành tích</Typography.Text>
+
+                      <Select
+                        style={{ width: "100%", marginTop: 6 }}
+                        placeholder="Chọn mẫu thành tích hoặc tự nhập"
+                        value={
+                          [
+                            "Đạt thành tích xuất sắc trong học tập Giáo lý",
+                            "Đạt thành tích tốt trong học tập Giáo lý",
+                            "Có nhiều tiến bộ trong học tập và sinh hoạt",
+                            "Chuyên cần, tích cực trong học tập và sinh hoạt",
+                            "Có tinh thần nhiệt tình, tích cực trong các hoạt động",
+                            "Hoàn thành tốt chương trình Giáo lý năm học",
+                            "Hoàn thành xuất sắc chương trình Giáo lý năm học",
+                            "Có nhiều đóng góp tích cực cho lớp Giáo lý",
+                          ].includes(certDataForm.achievement)
+                            ? certDataForm.achievement
+                            : undefined
+                        }
+                        options={[
+                          {
+                            value:
+                              "Đạt thành tích xuất sắc trong học tập Giáo lý",
+                            label:
+                              "Đạt thành tích xuất sắc trong học tập Giáo lý",
+                          },
+                          {
+                            value: "Đạt thành tích tốt trong học tập Giáo lý",
+                            label: "Đạt thành tích tốt trong học tập Giáo lý",
+                          },
+                          {
+                            value:
+                              "Có nhiều tiến bộ trong học tập và sinh hoạt",
+                            label:
+                              "Có nhiều tiến bộ trong học tập và sinh hoạt",
+                          },
+                          {
+                            value:
+                              "Chuyên cần, tích cực trong học tập và sinh hoạt",
+                            label:
+                              "Chuyên cần, tích cực trong học tập và sinh hoạt",
+                          },
+                          {
+                            value:
+                              "Có tinh thần nhiệt tình, tích cực trong các hoạt động",
+                            label:
+                              "Có tinh thần nhiệt tình, tích cực trong các hoạt động",
+                          },
+                          {
+                            value:
+                              "Hoàn thành tốt chương trình Giáo lý năm học",
+                            label:
+                              "Hoàn thành tốt chương trình Giáo lý năm học",
+                          },
+                          {
+                            value:
+                              "Hoàn thành xuất sắc chương trình Giáo lý năm học",
+                            label:
+                              "Hoàn thành xuất sắc chương trình Giáo lý năm học",
+                          },
+                          {
+                            value: "Có nhiều đóng góp tích cực cho lớp Giáo lý",
+                            label: "Có nhiều đóng góp tích cực cho lớp Giáo lý",
+                          },
+                        ]}
+                        onChange={(value) =>
+                          handleCertDataChange("achievement", value)
+                        }
+                        allowClear
+                      />
+
+                      <Input
+                        style={{ marginTop: 8 }}
+                        value={certDataForm.achievement}
+                        placeholder="Hoặc nhập thành tích riêng..."
+                        onChange={(e) =>
+                          handleCertDataChange("achievement", e.target.value)
+                        }
+                      />
+                    </Col>
+                  </Row>
+
+                  <Divider />
+
+                  <Button
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => {
+                      setActiveTab("paper");
+                      message.success("Thông tin đã được cập nhật");
+                    }}
+                  >
+                    Hoàn tất chỉnh sửa
+                  </Button>
+                </div>
+              ),
+            },
+
+            // ==================================================
+            // TAB 2 - KHỔ GIẤY
+            // ==================================================
 
             {
               key: "paper",
-
               label: (
                 <>
                   <PrinterOutlined />
@@ -636,8 +755,6 @@ const CertificateSettingsPanel = ({
                     Khổ giấy & kích thước in
                   </div>
 
-                  {/* KHỔ GIẤY */}
-
                   <div className="certificate-setting-item">
                     <Text className="certificate-setting-label">Khổ giấy</Text>
 
@@ -650,25 +767,19 @@ const CertificateSettingsPanel = ({
                           ...Object.entries(PAPER_SIZES_MM).map(
                             ([key, item]) => ({
                               value: key,
-
                               label:
                                 `${item.label} — ` +
-                                `${item.width} × ` +
-                                `${item.height} mm`,
+                                `${item.width} × ${item.height} mm`,
                             }),
                           ),
-
                           {
                             value: "CUSTOM",
-
                             label: "Tùy chỉnh",
                           },
                         ]}
                       />
                     </div>
                   </div>
-
-                  {/* HƯỚNG */}
 
                   <div className="certificate-setting-item">
                     <Text className="certificate-setting-label">
@@ -688,7 +799,6 @@ const CertificateSettingsPanel = ({
                           label: "Ngang",
                           value: "landscape",
                         },
-
                         {
                           label: "Dọc",
                           value: "portrait",
@@ -696,8 +806,6 @@ const CertificateSettingsPanel = ({
                       ]}
                     />
                   </div>
-
-                  {/* THÔNG SỐ */}
 
                   <div className="certificate-setting-item">
                     <Text className="certificate-setting-label">
@@ -714,8 +822,6 @@ const CertificateSettingsPanel = ({
                       )}
                     </div>
                   </div>
-
-                  {/* CUSTOM */}
 
                   {localDesign.paperSize === "CUSTOM" && (
                     <>
@@ -751,8 +857,6 @@ const CertificateSettingsPanel = ({
                     </>
                   )}
 
-                  {/* PADDING */}
-
                   <div className="certificate-setting-item">
                     <Text className="certificate-setting-label">
                       Khoảng cách mép
@@ -768,13 +872,7 @@ const CertificateSettingsPanel = ({
                     />
                   </div>
 
-                  {/* CONTENT WIDTH */}
-
-                  <div
-                    style={{
-                      marginTop: 16,
-                    }}
-                  >
+                  <div style={{ marginTop: 16 }}>
                     <Text strong>Độ rộng vùng nội dung</Text>
 
                     <Slider
@@ -791,13 +889,12 @@ const CertificateSettingsPanel = ({
               ),
             },
 
-            /* ==================================================
-               TAB 2 - BACKGROUND
-            ================================================== */
+            // ==================================================
+            // TAB 3 - BACKGROUND
+            // ==================================================
 
             {
               key: "background",
-
               label: (
                 <>
                   <PictureOutlined />
@@ -814,8 +911,6 @@ const CertificateSettingsPanel = ({
 
                   <Text strong>Chọn mẫu thiết kế</Text>
 
-                  {/* BACKGROUND GRID */}
-
                   <div className="certificate-background-grid">
                     {Object.entries(STYLE_PRESETS).map(([key, item]) => {
                       const selected = localDesign.stylePreset === key;
@@ -823,10 +918,19 @@ const CertificateSettingsPanel = ({
                       return (
                         <div
                           key={key}
-                          className={`certificate-background-card ${
-                            selected ? "selected" : ""
-                          }`}
+                          className={
+                            `certificate-background-card ` +
+                            (selected ? "selected" : "")
+                          }
                           onClick={() => applyPreset(key)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              applyPreset(key);
+                            }
+                          }}
                         >
                           <div className="certificate-background-image-wrapper">
                             {item.backgroundImage ? (
@@ -839,17 +943,11 @@ const CertificateSettingsPanel = ({
                               <div
                                 style={{
                                   width: "100%",
-
                                   height: "100%",
-
                                   display: "flex",
-
                                   alignItems: "center",
-
                                   justifyContent: "center",
-
                                   color: "#94A3B8",
-
                                   fontSize: 11,
                                 }}
                               >
@@ -878,13 +976,7 @@ const CertificateSettingsPanel = ({
                     })}
                   </div>
 
-                  {/* CURRENT */}
-
-                  <div
-                    style={{
-                      marginTop: 14,
-                    }}
-                  >
+                  <div style={{ marginTop: 14 }}>
                     <Tag color="blue">
                       Đang chọn:{" "}
                       {STYLE_PRESETS[localDesign.stylePreset]?.label ||
@@ -892,22 +984,11 @@ const CertificateSettingsPanel = ({
                     </Tag>
                   </div>
 
-                  <Divider
-                    style={{
-                      margin: "16px 0",
-                    }}
-                  />
-
-                  {/* COLORS */}
+                  <Divider style={{ margin: "16px 0" }} />
 
                   <Text strong>Màu sắc</Text>
 
-                  <Row
-                    gutter={[10, 10]}
-                    style={{
-                      marginTop: 10,
-                    }}
-                  >
+                  <Row gutter={[10, 10]} style={{ marginTop: 10 }}>
                     <Col span={8}>
                       <Text strong>Màu chính</Text>
 
@@ -948,13 +1029,7 @@ const CertificateSettingsPanel = ({
                     </Col>
                   </Row>
 
-                  <Divider
-                    style={{
-                      margin: "16px 0",
-                    }}
-                  />
-
-                  {/* BORDER */}
+                  <Divider style={{ margin: "16px 0" }} />
 
                   <div className="certificate-setting-item">
                     <Text className="certificate-setting-label">Kiểu viền</Text>
@@ -968,13 +1043,7 @@ const CertificateSettingsPanel = ({
                     />
                   </div>
 
-                  {/* BORDER WIDTH */}
-
-                  <div
-                    style={{
-                      marginTop: 12,
-                    }}
-                  >
+                  <div style={{ marginTop: 12 }}>
                     <Text strong>Độ dày viền</Text>
 
                     <Slider
@@ -984,8 +1053,6 @@ const CertificateSettingsPanel = ({
                       onChange={(value) => update("borderWidth", value)}
                     />
                   </div>
-
-                  {/* RADIUS */}
 
                   <div>
                     <Text strong>Bo góc</Text>
@@ -1001,13 +1068,12 @@ const CertificateSettingsPanel = ({
               ),
             },
 
-            /* ==================================================
-               TAB 3 - TYPOGRAPHY
-            ================================================== */
+            // ==================================================
+            // TAB 4 - TYPOGRAPHY
+            // ==================================================
 
             {
               key: "typography",
-
               label: (
                 <>
                   <FontSizeOutlined />
@@ -1022,8 +1088,6 @@ const CertificateSettingsPanel = ({
                     Kiểu chữ & typography
                   </div>
 
-                  {/* FONT BODY */}
-
                   <Text strong>Font nội dung</Text>
 
                   <Select
@@ -1037,13 +1101,7 @@ const CertificateSettingsPanel = ({
                     options={FONT_OPTIONS}
                   />
 
-                  {/* HEADING FONT */}
-
-                  <div
-                    style={{
-                      marginTop: 16,
-                    }}
-                  >
+                  <div style={{ marginTop: 16 }}>
                     <Text strong>Font tiêu đề</Text>
 
                     <Select
@@ -1058,14 +1116,7 @@ const CertificateSettingsPanel = ({
                     />
                   </div>
 
-                  {/* FONT SIZE */}
-
-                  <Row
-                    gutter={[12, 12]}
-                    style={{
-                      marginTop: 16,
-                    }}
-                  >
+                  <Row gutter={[12, 12]} style={{ marginTop: 16 }}>
                     <Col xs={24} md={12}>
                       <Text strong>Cỡ tiêu đề</Text>
 
@@ -1138,13 +1189,12 @@ const CertificateSettingsPanel = ({
               ),
             },
 
-            /* ==================================================
-               TAB 4 - ELEMENTS
-            ================================================== */
+            // ==================================================
+            // TAB 5 - THÀNH PHẦN
+            // ==================================================
 
             {
               key: "elements",
-
               label: (
                 <>
                   <AppstoreOutlined />
@@ -1159,19 +1209,11 @@ const CertificateSettingsPanel = ({
                     Thành phần hiển thị
                   </div>
 
-                  {/* ORNAMENT */}
-
                   <div className="certificate-setting-item">
                     <div>
                       <Text strong>Hoa văn</Text>
 
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "#64748B",
-                          marginTop: 2,
-                        }}
-                      >
+                      <div style={{ fontSize: 11, color: "#64748B" }}>
                         Hiển thị họa tiết trang trí
                       </div>
                     </div>
@@ -1183,19 +1225,11 @@ const CertificateSettingsPanel = ({
                     />
                   </div>
 
-                  {/* WATERMARK */}
-
                   <div className="certificate-setting-item">
                     <div>
                       <Text strong>Watermark</Text>
 
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "#64748B",
-                          marginTop: 2,
-                        }}
-                      >
+                      <div style={{ fontSize: 11, color: "#64748B" }}>
                         Hiển thị dấu chìm trên nền
                       </div>
                     </div>
@@ -1207,19 +1241,11 @@ const CertificateSettingsPanel = ({
                     />
                   </div>
 
-                  {/* SHADOW */}
-
                   <div className="certificate-setting-item">
                     <div>
                       <Text strong>Đổ bóng</Text>
 
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "#64748B",
-                          marginTop: 2,
-                        }}
-                      >
+                      <div style={{ fontSize: 11, color: "#64748B" }}>
                         Tạo hiệu ứng chiều sâu
                       </div>
                     </div>
@@ -1233,19 +1259,11 @@ const CertificateSettingsPanel = ({
 
                   <Divider />
 
-                  {/* SIGNATURE */}
-
                   <div className="certificate-setting-item">
                     <div>
                       <Text strong>Chữ ký</Text>
 
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "#64748B",
-                          marginTop: 2,
-                        }}
-                      >
+                      <div style={{ fontSize: 11, color: "#64748B" }}>
                         Hiển thị khu vực chữ ký
                       </div>
                     </div>
@@ -1257,19 +1275,11 @@ const CertificateSettingsPanel = ({
                     />
                   </div>
 
-                  {/* QR */}
-
                   <div className="certificate-setting-item">
                     <div>
                       <Text strong>QR xác thực</Text>
 
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "#64748B",
-                          marginTop: 2,
-                        }}
-                      >
+                      <div style={{ fontSize: 11, color: "#64748B" }}>
                         Hiển thị mã QR xác thực chứng chỉ
                       </div>
                     </div>
@@ -1281,14 +1291,8 @@ const CertificateSettingsPanel = ({
                     />
                   </div>
 
-                  {/* QR SIZE */}
-
                   {localDesign.showQRCode && (
-                    <div
-                      style={{
-                        marginTop: 16,
-                      }}
-                    >
+                    <div style={{ marginTop: 16 }}>
                       <Text strong>Kích thước QR</Text>
 
                       <InputNumber
@@ -1311,9 +1315,7 @@ const CertificateSettingsPanel = ({
           ]}
         />
 
-        {/* ====================================================
-            FOOTER
-        ==================================================== */}
+        {/* FOOTER */}
 
         <div className="certificate-settings-footer">
           <Button icon={<ReloadOutlined />} onClick={reset}>

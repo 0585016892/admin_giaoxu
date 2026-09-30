@@ -13,17 +13,9 @@ const DefaultCertificateTemplate = ({
   design,
   qrVerificationUrl,
 }) => {
-  const config = certificateTypes?.[certType] || {};
+  const selectedConfig = certificateTypes?.[certType];
 
-  // =========================================================
-  // DEBUG
-  // =========================================================
-
-  console.log("certData:::", certData);
-  console.log("churchData:::", churchData);
-  console.log("issuedDateParts:::", issuedDateParts);
-  console.log("certType:::", certType);
-  console.log("design:::", design);
+  const certificateTitle = selectedConfig?.title || certType || "GIẤY KHEN";
 
   // =========================================================
   // DESIGN
@@ -96,7 +88,7 @@ const DefaultCertificateTemplate = ({
 
   const studentName = certData?.fullName || certData?.godName || "Tên Học Sinh";
 
-  const certificateNo = certData?.certNo || "KTGL/TN/062025";
+  // const certificateNo = certData?.certNo || "KTGL/TN/062025";
 
   const dateFull = issuedDateParts?.full || issuedDate || "";
 
@@ -161,32 +153,34 @@ const DefaultCertificateTemplate = ({
            CONTAINER
         ===================================================== */
 
-        .cert-container-modern-pro {
-          width: 100%;
-          height: 100%;
-          min-height: 100%;
+    .cert-container-modern-pro {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
 
-          margin: 0 auto;
+  margin: 0 auto;
 
-          position: relative;
+  position: relative;
+  overflow: hidden;
 
-          overflow: hidden;
+  font-family:
+    var(--cert-font),
+    'Montserrat',
+    sans-serif;
 
-          font-family:
-            var(--cert-font),
-            'Montserrat',
-            sans-serif;
+  color: ${primaryColor};
 
-          color: ${primaryColor};
+  border-radius: ${borderRadius}px;
 
-          border-radius: ${borderRadius}px;
+  background-color: #ffffff;
 
-          background-color: #ffffff;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-        }
+  /* SCALE THEO KHỔ GIẤY */
+  --cert-scale: ${currentDesign.paperSize === "A5" ? 0.707 : 1};
+}
 
         /* =====================================================
            BACKGROUND OVERLAY
@@ -253,10 +247,10 @@ const DefaultCertificateTemplate = ({
         .cert-custom-image-badge {
           position: absolute;
 
-             top: 72px;
+             top: 56px;
             left: 60px;
-            width: 100px;
-            height: 100px;
+            width: 85px;
+            height: 85px;
 
           border-radius: 50%;
 
@@ -389,7 +383,7 @@ const DefaultCertificateTemplate = ({
             42px
             60px
             34px
-            260px;
+            160px;
 
           display: flex;
 
@@ -406,8 +400,6 @@ const DefaultCertificateTemplate = ({
 
         .cert-top-header-pro {
           text-align: center;
-
-          padding-left: 80px;
 
           margin-bottom: 8px;
 
@@ -449,7 +441,7 @@ const DefaultCertificateTemplate = ({
             'Great Vibes',
             cursive;
 
-          font-size: 18px;
+          font-size: 14px;
 
           font-weight: 400;
 
@@ -467,7 +459,7 @@ const DefaultCertificateTemplate = ({
         .cert-titles-area {
           text-align: center;
 
-          padding-top: 30px;
+          padding-top: 10px;
 
           width: ${contentWidth}%;
 
@@ -499,7 +491,7 @@ const DefaultCertificateTemplate = ({
         .cert-main-title-subpro {
           font-family:'Great Vibes';
 
-          font-size: 25px;
+          font-size: 20px;
 
           color: ${primaryColor};
 
@@ -525,8 +517,6 @@ const DefaultCertificateTemplate = ({
 
           flex-direction: column;
 
-          gap: 20px;
-
           justify-content: center;
         }
 
@@ -534,7 +524,7 @@ const DefaultCertificateTemplate = ({
           font-family:
             ${headingFont};
 
-          font-size: 22px;
+          font-size: 21px;
 
           font-style: italic;
 
@@ -575,7 +565,7 @@ const DefaultCertificateTemplate = ({
           font-family:
             ${certFont};
 
-          font-size: 20px;
+          font-size: 10px;
 
           color: ${textColor};
 
@@ -609,7 +599,7 @@ const DefaultCertificateTemplate = ({
           font-family:
             ${certFont};
 
-          font-size: 14px;
+          font-size: 10px;
 
           color: ${textColor};
 
@@ -695,7 +685,7 @@ const DefaultCertificateTemplate = ({
         }
 
         .cert-signature-blank {
-          height: 65px;
+          height: 70px;
         }
 
         .cert-signer-fullname {
@@ -796,9 +786,6 @@ const DefaultCertificateTemplate = ({
             left: 28px;
           }
 
-          .cert-top-header-pro {
-            padding-left: 60px;
-          }
 
           .cert-main-title-pro {
             font-size: 28px;
@@ -874,11 +861,11 @@ const DefaultCertificateTemplate = ({
               <small>Xác thực điện tử</small>
             </div>
 
-            <div className="cert-serial-info">
+            {/* <div className="cert-serial-info">
               <div>Vào sổ khen thưởng</div>
 
               <div>Số: {certificateNo}</div>
-            </div>
+            </div> */}
           </div>
         )}
 
@@ -907,9 +894,7 @@ const DefaultCertificateTemplate = ({
           ================================================== */}
 
           <div className="cert-titles-area">
-            <h1 className="cert-main-title-pro">
-              {config.title || "GIẤY KHEN"}
-            </h1>
+            <h1 className="cert-main-title-pro">{certificateTitle}</h1>
 
             <h3 className="cert-main-title-subpro">
               Linh Mục Giáo xứ {churchName}

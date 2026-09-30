@@ -59,6 +59,8 @@ const MyStudentsPage = () => {
       setLoading(true);
 
       const response = await studentApi.getStudentsByTeacher();
+      console.log(response);
+
       const data = response?.data;
 
       if (Array.isArray(data)) {

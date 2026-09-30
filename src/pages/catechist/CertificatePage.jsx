@@ -117,6 +117,7 @@ const CERTIFICATE_TYPES = {
 
 const DEFAULT_CERT_DATA = {
   certNo: DEFAULT_CERTIFICATE_NUMBER,
+  achievement: "Anh chị vào phần setting để thay nội dung phần này.",
 
   fullName: "",
   godName: "",
@@ -131,8 +132,6 @@ const DEFAULT_CERT_DATA = {
 
   examName: "",
   score: "",
-
-  achievement: "",
 
   godFather: "",
   fatherName: "",
@@ -398,6 +397,7 @@ const CertificatePage = () => {
   const [certData, setCertData] = useState({
     ...DEFAULT_CERT_DATA,
   });
+  console.log("setCertData", certData);
 
   const [certificateDesign, setCertificateDesign] = useState(cloneDesign());
 
@@ -413,7 +413,7 @@ const CertificatePage = () => {
 
   const churchId =
     user?.church_id || user?.church?.id || user?.parish_id || user?.parish?.id;
-
+  const [certificateInfoOverrides, setCertificateInfoOverrides] = useState({});
   /* =======================================================
      DATE
   ======================================================= */
@@ -484,25 +484,38 @@ const CertificatePage = () => {
      CHURCH DISPLAY
   ======================================================= */
 
+  /* =======================================================
+   CHURCH DISPLAY
+======================================================= */
+
   const parish = useMemo(
-    () => removePrefix(churchData?.name, ["Giáo xứ"]),
-    [churchData],
+    () =>
+      certificateInfoOverrides.parish ??
+      removePrefix(churchData?.name, ["Giáo xứ"]),
+    [churchData?.name, certificateInfoOverrides.parish],
   );
 
   const diocese = useMemo(
-    () => removePrefix(churchData?.diocese, ["Giáo phận"]),
-    [churchData],
+    () =>
+      certificateInfoOverrides.diocese ??
+      removePrefix(churchData?.diocese, ["Giáo phận"]),
+    [churchData?.diocese, certificateInfoOverrides.diocese],
+  );
+
+  const pastorName = useMemo(
+    () => certificateInfoOverrides.pastorName ?? churchData?.pastor_name ?? "",
+    [churchData?.pastor_name, certificateInfoOverrides.pastorName],
   );
 
   const displayChurchData = useMemo(
     () => ({
       ...churchData,
-
       name: parish || churchData?.name || "",
+      diocese: diocese || churchData?.diocese || "",
+      pastor_name: pastorName,
     }),
-    [churchData, parish],
+    [churchData, parish, diocese, pastorName],
   );
-
   /* =======================================================
      QR URL - MAIN PREVIEW
   ======================================================= */
@@ -514,14 +527,10 @@ const CertificatePage = () => {
         certType,
         parish,
         diocese,
-        pastorName: churchData?.pastor_name || "",
+        pastorName,
       }),
-    [certData, certType, parish, diocese, churchData?.pastor_name],
+    [certData, certType, parish, diocese, pastorName],
   );
-
-  /* =======================================================
-     QR URL - BATCH
-  ======================================================= */
 
   const batchQrUrl = useMemo(
     () =>
@@ -530,9 +539,9 @@ const CertificatePage = () => {
         certType,
         parish,
         diocese,
-        pastorName: churchData?.pastor_name || "",
+        pastorName,
       }),
-    [batchCertificateData, certType, parish, diocese, churchData?.pastor_name],
+    [batchCertificateData, certType, parish, diocese, pastorName],
   );
 
   /* =======================================================
@@ -1203,8 +1212,31 @@ const CertificatePage = () => {
           design={certificateDesign}
           onChange={updateCertificateDesign}
           onReset={resetDesign}
-        />
+          certData={certData}
+          certType={certType}
+          parish={parish}
+          diocese={diocese}
+          pastorName={pastorName}
+          onCertDataChange={(updated) => {
+            // Cập nhật số chứng chỉ và tên học viên
+            setCertData((prev) => ({
+              ...prev,
+              certNo: updated.certNo ?? prev.certNo,
+              fullName: updated.fullName ?? prev.fullName,
+              achievement: updated.achievement ?? prev.achievement,
+            }));
+            // Cập nhật loại chứng chỉ
+            setCertType(updated.certType);
 
+            // Lưu thông tin giáo xứ có thể chỉnh sửa
+            setCertificateInfoOverrides((prev) => ({
+              ...prev,
+              parish: updated.parish,
+              diocese: updated.diocese,
+              pastorName: updated.pastorName,
+            }));
+          }}
+        />
         {/* =================================================
             HIDDEN EXCEL INPUT
         ================================================= */}

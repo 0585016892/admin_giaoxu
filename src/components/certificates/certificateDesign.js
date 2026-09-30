@@ -288,93 +288,49 @@ export const STYLE_PRESETS = {
 // ============================================================
 
 export const DEFAULT_CERTIFICATE_DESIGN = {
-  // ----------------------------------------------------------
   // PAPER
-  // ----------------------------------------------------------
-
-  paperSize: "A4",
-
+  paperSize: "A5",
   orientation: "landscape",
+  customWidth: 210,
+  customHeight: 148,
 
-  customWidth: 297,
-
-  customHeight: 210,
-
-  // ----------------------------------------------------------
   // LAYOUT
-  // ----------------------------------------------------------
+  padding: 6,
+  contentWidth: 88,
 
-  padding: 10,
-
-  contentWidth: 86,
-
-  // ----------------------------------------------------------
   // STYLE
-  // ----------------------------------------------------------
-
   stylePreset: "sacred",
-
   backgroundImage: Chungchichiennon,
-
   primaryColor: "#173B5E",
-
   secondaryColor: "#D9A441",
-
   textColor: "#1E293B",
-
   borderStyle: "double",
-
-  borderWidth: 3,
-
+  borderWidth: 2,
   borderRadius: 0,
-
   shadow: false,
-
   ornament: true,
-
   watermark: true,
 
-  // ----------------------------------------------------------
   // TYPOGRAPHY
-  // ----------------------------------------------------------
-
   fontFamily: "Be Vietnam Pro",
-
   headingFontFamily: "Playfair Display",
-
-  bodyFontSize: 15,
-
-  titleFontSize: 28,
-
-  subtitleFontSize: 15,
-
-  nameFontSize: 54,
-
+  bodyFontSize: 10,
+  titleFontSize: 19,
+  subtitleFontSize: 10,
+  nameFontSize: 32,
   nameFontWeight: 700,
-
-  lineHeight: 1.6,
-
+  lineHeight: 1.25,
   letterSpacing: 0,
 
-  // ----------------------------------------------------------
   // ELEMENTS
-  // ----------------------------------------------------------
-
   showSignature: true,
-
   showQRCode: true,
+  qrSize: 48,
+  signatureGap: 10,
 
-  qrSize: 72,
-
-  signatureGap: 24,
-
-  // ----------------------------------------------------------
   // RENDER
-  // ----------------------------------------------------------
-
   renderScale: 3,
 };
-
 // ============================================================
 // GET PAPER SIZE
 // ============================================================

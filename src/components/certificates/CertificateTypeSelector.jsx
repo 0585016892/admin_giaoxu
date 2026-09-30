@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Select, Typography } from "antd";
+import { AutoComplete, Card, Typography } from "antd";
 import { SafetyCertificateOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -34,14 +34,17 @@ const CertificateTypeSelector = ({ certType, certificateTypes, onChange }) => {
           border: 1px solid ${COLORS.border};
           margin-bottom: 16px;
         }
+
         .cert-type-card .ant-card-body {
           padding: 16px 20px;
         }
+
         .cert-type-wrapper {
           display: flex;
           align-items: flex-start;
           gap: 14px;
         }
+
         .cert-type-icon {
           width: 40px;
           height: 40px;
@@ -54,9 +57,12 @@ const CertificateTypeSelector = ({ certType, certificateTypes, onChange }) => {
           font-size: 18px;
           flex-shrink: 0;
         }
+
         .cert-type-content {
           flex: 1;
+          min-width: 0;
         }
+
         .cert-type-label {
           display: block;
           font-size: 10px;
@@ -66,17 +72,22 @@ const CertificateTypeSelector = ({ certType, certificateTypes, onChange }) => {
           margin-bottom: 4px;
           text-transform: uppercase;
         }
+
         .cert-type-select {
           width: 100%;
         }
+
         .cert-type-select .ant-select-selector {
           border-radius: 6px !important;
           border-color: ${COLORS.border} !important;
         }
-        .cert-type-select.ant-select-focused .ant-select-selector {
+
+        .cert-type-select.ant-select-focused
+          .ant-select-selector {
           border-color: ${COLORS.navy} !important;
           box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.1) !important;
         }
+
         .cert-type-desc {
           margin-top: 6px;
           font-size: 12px;
@@ -97,13 +108,16 @@ const CertificateTypeSelector = ({ certType, certificateTypes, onChange }) => {
           <div className="cert-type-content">
             <Text className="cert-type-label">LOẠI CHỨNG CHỈ</Text>
 
-            <Select
-              value={certType}
+            <AutoComplete
+              value={certType || ""}
               options={options}
               onChange={onChange}
               className="cert-type-select"
-              size="middle"
-              placeholder="Chọn loại chứng chỉ..."
+              placeholder="Chọn hoặc nhập loại chứng chỉ..."
+              allowClear
+              filterOption={(inputValue, option) =>
+                option?.label?.toLowerCase().includes(inputValue.toLowerCase())
+              }
             />
           </div>
         </div>

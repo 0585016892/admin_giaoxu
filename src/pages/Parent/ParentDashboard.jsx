@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Avatar,
   Badge,
@@ -10,7 +10,6 @@ import {
   Typography,
   message,
 } from "antd";
-
 import {
   CalendarOutlined,
   CheckCircleFilled,
@@ -18,71 +17,71 @@ import {
   BellOutlined,
   BookOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+
 import { getDashboardParent } from "../../api/dashboardApi";
-import DashboardSkeleton from "./DashboardSkeleton";
 import parentApi from "../../api/parentApi";
+import DashboardSkeleton from "./DashboardSkeleton";
+
 const { Title, Text } = Typography;
 
-/**
- * =========================================================
- * DESIGN TOKENS
- * =========================================================
- */
+/* =========================================================
+   FAITHEDU DESIGN TOKENS
+========================================================= */
 
 const COLORS = {
   navy: "#173B5E",
-  navyDark: "#102E49",
+  navyHover: "#244F78",
   gold: "#D9A441",
 
-  background: "#F6F8FB",
+  background: "#F7F9FC",
   white: "#FFFFFF",
 
-  text: "#172033",
+  text: "#173B5E",
   textSecondary: "#64748B",
-  textMuted: "#94A3B8",
+  muted: "#94A3B8",
 
-  border: "#E5EAF0",
+  border: "#E2E8F0",
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
 
-  green: "#16A34A",
-  greenBg: "#ECFDF3",
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
 
   blue: "#2563EB",
   blueBg: "#EFF6FF",
 
-  orange: "#D97706",
-  orangeBg: "#FFF7ED",
+  orange: "#C47A20",
+  orangeBg: "#FBF1E3",
 };
 
-/**
- * =========================================================
- * CSS
- * =========================================================
- */
+/* =========================================================
+   CSS
+========================================================= */
 
 const CSS = `
 .parent-dashboard {
   width: 100%;
+  min-width: 0;
   color: ${COLORS.text};
-  font-family:
-    Inter,
-    "Be Vietnam Pro",
-    "Segoe UI",
-    Arial,
-    sans-serif;
+  font-family: Inter, "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
 }
 
-/* =========================================================
-   HEADER
-========================================================= */
+.parent-dashboard *,
+.parent-dashboard *::before,
+.parent-dashboard *::after {
+  box-sizing: border-box;
+}
 
 .parent-dashboard__hero {
-  margin-bottom: 22px;
-
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-
   gap: 20px;
+  margin-bottom: 25px;
 }
 
 .parent-dashboard__hero-left {
@@ -92,239 +91,214 @@ const CSS = `
 .parent-dashboard__eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-
-  margin-bottom: 7px;
-
+  gap: 8px;
+  margin-bottom: 8px;
   color: ${COLORS.gold};
-
   font-size: 10px;
   font-weight: 800;
-
-  letter-spacing: 1px;
+  letter-spacing: 1.3px;
   text-transform: uppercase;
 }
 
 .parent-dashboard__eyebrow::before {
   content: "";
-
-  width: 18px;
+  display: inline-block;
+  width: 20px;
   height: 2px;
-
   border-radius: 10px;
-
   background: ${COLORS.gold};
 }
 
 .parent-dashboard__title {
   margin: 0 !important;
-
   color: ${COLORS.navy} !important;
-
   font-size: 27px !important;
   font-weight: 800 !important;
-
-  line-height: 1.25 !important;
-
-  letter-spacing: -0.7px;
+  line-height: 1.35 !important;
+  letter-spacing: -0.6px;
+  overflow-wrap: anywhere;
 }
 
 .parent-dashboard__subtitle {
   display: block;
-
-  margin-top: 5px;
-
+  margin-top: 7px;
   color: ${COLORS.textSecondary};
-
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 .parent-dashboard__date {
-  flex-shrink: 0;
-
-  padding: 9px 13px;
-
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 8px;
-
+  gap: 9px;
+  padding: 10px 13px;
   border: 1px solid ${COLORS.border};
-  border-radius: 10px;
-
+  border-radius: 11px;
   background: ${COLORS.white};
-
   color: ${COLORS.textSecondary};
-
   font-size: 11px;
   font-weight: 600;
+  box-shadow: 0 3px 12px rgba(23, 59, 94, 0.025);
 }
 
-/* =========================================================
-   SECTION
-========================================================= */
+.parent-dashboard__date .anticon {
+  color: ${COLORS.gold};
+  font-size: 15px;
+}
+
+/* SECTION */
 
 .parent-dashboard__section {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .parent-dashboard__section-header {
-  margin-bottom: 11px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   gap: 12px;
+  margin-bottom: 13px;
+}
+
+.parent-dashboard__section-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.parent-dashboard__section-mark {
+  width: 4px;
+  height: 19px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  background: ${COLORS.gold};
 }
 
 .parent-dashboard__section-title {
   margin: 0;
-
   color: ${COLORS.navy};
-
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
+}
 
-  letter-spacing: 0.2px;
+.parent-dashboard__section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: ${COLORS.navyLight};
+  color: ${COLORS.navy};
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .parent-dashboard__section-action {
-  padding: 0;
-
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: auto;
+  padding: 5px 0;
   color: ${COLORS.textSecondary};
-
   font-size: 11px;
   font-weight: 600;
 }
 
 .parent-dashboard__section-action:hover {
-  color: ${COLORS.navy} !important;
+  color: ${COLORS.navyHover} !important;
 }
 
-/* =========================================================
-   STUDENT CARD
-========================================================= */
+/* STUDENT CARD */
 
 .parent-dashboard__student-card {
   height: 100%;
-
-  border:
-    1px solid
-    ${COLORS.border};
-
+  overflow: hidden;
+  border: 1px solid ${COLORS.border};
   border-radius: 15px;
-
   background: ${COLORS.white};
-
-  box-shadow:
-    0 4px 18px
-    rgba(15, 23, 42, 0.035);
-
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease;
+  box-shadow: 0 3px 14px rgba(23, 59, 94, 0.025);
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .parent-dashboard__student-card:hover {
   transform: translateY(-2px);
-
-  border-color: #D9E2EC;
-
-  box-shadow:
-    0 10px 28px
-    rgba(15, 23, 42, 0.065);
+  border-color: #C8D6E3;
+  box-shadow: 0 9px 24px rgba(23, 59, 94, 0.07);
 }
 
-.parent-dashboard__student-card
-.ant-card-body {
+.parent-dashboard__student-card .ant-card-body {
   padding: 17px;
 }
 
 .parent-dashboard__student-top {
   display: flex;
   align-items: center;
-
   gap: 12px;
+  min-width: 0;
 }
 
 .parent-dashboard__student-avatar {
   flex-shrink: 0;
-
-  background:
-    linear-gradient(
-      135deg,
-      ${COLORS.navy},
-      #2D668F
-    );
-
-  color: #fff;
-
-  font-weight: 700;
+  background: linear-gradient(135deg, ${COLORS.navy}, #376B91);
+  color: ${COLORS.white};
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .parent-dashboard__student-info {
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 }
 
 .parent-dashboard__student-name {
   display: block;
-
   overflow: hidden;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
   color: ${COLORS.text};
-
   font-size: 13px;
   font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .parent-dashboard__student-class {
   display: block;
-
-  margin-top: 3px;
-
-  color: ${COLORS.textMuted};
-
+  margin-top: 5px;
+  overflow: hidden;
+  color: ${COLORS.muted};
   font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .parent-dashboard__student-status {
-  display: flex;
+  display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 5px;
-
-  flex-shrink: 0;
-
   padding: 5px 7px;
-
   border-radius: 7px;
-
-  background: ${COLORS.greenBg};
-
-  color: ${COLORS.green};
-
+  background: ${COLORS.successBg};
+  color: ${COLORS.success};
   font-size: 9px;
   font-weight: 700;
 }
 
 .parent-dashboard__student-divider {
   height: 1px;
-
-  margin: 15px 0 13px;
-
+  margin: 16px 0 13px;
   background: #EEF2F6;
 }
 
 .parent-dashboard__student-bottom {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-
-  gap: 15px;
+  gap: 12px;
 }
 
 .parent-dashboard__attendance {
@@ -333,299 +307,254 @@ const CSS = `
 
 .parent-dashboard__mini-label {
   display: block;
-
-  margin-bottom: 3px;
-
-  color: ${COLORS.textMuted};
-
-  font-size: 9.5px;
+  margin-bottom: 5px;
+  color: ${COLORS.muted};
+  font-size: 10px;
 }
 
 .parent-dashboard__attendance-value {
   color: ${COLORS.navy};
-
-  font-size: 16px;
+  font-size: 21px;
   font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .parent-dashboard__attendance-unit {
   margin-left: 3px;
-
-  color: ${COLORS.textMuted};
-
-  font-size: 10px;
-  font-weight: 500;
+  color: ${COLORS.textSecondary};
+  font-size: 11px;
 }
 
 .parent-dashboard__student-code {
-  color: ${COLORS.textMuted};
-
-  font-size: 9.5px;
+  max-width: 50%;
+  overflow: hidden;
+  color: ${COLORS.muted};
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* =========================================================
-   SMALL CARDS
-========================================================= */
+/* INFORMATION CARDS */
 
 .parent-dashboard__info-card {
   height: 100%;
-
-  border:
-    1px solid
-    ${COLORS.border};
-
+  border: 1px solid ${COLORS.border};
   border-radius: 15px;
-
   background: ${COLORS.white};
-
-  box-shadow:
-    0 4px 18px
-    rgba(15, 23, 42, 0.03);
+  box-shadow: 0 3px 14px rgba(23, 59, 94, 0.025);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.parent-dashboard__info-card
-.ant-card-body {
+.parent-dashboard__info-card:hover {
+  border-color: #D1DCE7;
+  box-shadow: 0 8px 22px rgba(23, 59, 94, 0.045);
+}
+
+.parent-dashboard__info-card .ant-card-body {
   height: 100%;
-  padding: 17px;
+  padding: 18px;
 }
 
 .parent-dashboard__info-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
 }
 
 .parent-dashboard__info-icon {
-  width: 35px;
-  height: 35px;
-
-  flex-shrink: 0;
-
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-
-  border-radius: 10px;
-
-  background: ${COLORS.blueBg};
-
-  color: ${COLORS.blue};
-
-  font-size: 16px;
+  width: 39px;
+  height: 39px;
+  border-radius: 11px;
+  background: ${COLORS.navyLight};
+  color: ${COLORS.navy};
+  font-size: 17px;
 }
 
 .parent-dashboard__info-label {
-  color: ${COLORS.textMuted};
-
+  color: ${COLORS.muted};
   font-size: 9.5px;
-  font-weight: 700;
-
+  font-weight: 750;
+  letter-spacing: 0.55px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
 }
 
 .parent-dashboard__info-title {
-  margin-top: 3px;
-
+  margin-top: 4px;
   color: ${COLORS.navy};
-
   font-size: 13px;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .parent-dashboard__schedule-time {
-  margin-top: 18px;
-
+  margin-top: 20px;
   color: ${COLORS.navy};
-
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 800;
-
+  line-height: 1.4;
   letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
 }
 
 .parent-dashboard__schedule-meta {
-  margin-top: 4px;
-
+  margin-top: 7px;
   color: ${COLORS.textSecondary};
+  font-size: 11px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
 
+.parent-dashboard__result-score {
+  margin-top: 21px;
+  color: ${COLORS.navy};
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.8px;
+}
+
+.parent-dashboard__result-score span {
+  color: ${COLORS.muted};
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.parent-dashboard__result-title {
+  margin-top: 8px;
+  color: ${COLORS.textSecondary};
   font-size: 11px;
   line-height: 1.6;
 }
 
-.parent-dashboard__result-score {
-  margin-top: 17px;
-
-  color: ${COLORS.navy};
-
-  font-size: 27px;
-  font-weight: 800;
-
-  line-height: 1;
-}
-
-.parent-dashboard__result-score span {
-  color: ${COLORS.textMuted};
-
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.parent-dashboard__result-title {
-  margin-top: 7px;
-
-  color: ${COLORS.textSecondary};
-
-  font-size: 10.5px;
-}
-
 .parent-dashboard__result-student {
-  margin-top: 4px;
-
+  margin-top: 5px;
   color: ${COLORS.text};
-
   font-size: 11px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
-/* =========================================================
-   NOTIFICATIONS
-========================================================= */
+/* NOTIFICATIONS */
 
 .parent-dashboard__notifications {
-  border:
-    1px solid
-    ${COLORS.border};
-
-  border-radius: 15px;
-
-  background: ${COLORS.white};
-
   overflow: hidden;
-
-  box-shadow:
-    0 4px 18px
-    rgba(15, 23, 42, 0.03);
+  border: 1px solid ${COLORS.border};
+  border-radius: 15px;
+  background: ${COLORS.white};
+  box-shadow: 0 3px 14px rgba(23, 59, 94, 0.025);
 }
 
 .parent-dashboard__notification {
-  min-height: 58px;
-
-  padding: 11px 15px;
-
   display: flex;
   align-items: center;
-
-  gap: 11px;
-
-  border-bottom:
-    1px solid
-    #EEF2F6;
+  gap: 12px;
+  min-height: 66px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #EEF2F6;
+  transition: background 0.15s ease;
 }
 
 .parent-dashboard__notification:last-child {
   border-bottom: none;
 }
 
+.parent-dashboard__notification:hover {
+  background: #FAFBFD;
+}
+
 .parent-dashboard__notification-icon {
-  width: 30px;
-  height: 30px;
-
-  flex-shrink: 0;
-
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-
-  border-radius: 9px;
-
-  background: #F5F8FB;
-
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
+  background: ${COLORS.goldLight};
   color: ${COLORS.navy};
-
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .parent-dashboard__notification-content {
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 }
 
 .parent-dashboard__notification-title {
   display: block;
-
   overflow: hidden;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
   color: ${COLORS.text};
-
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .parent-dashboard__notification-time {
   display: block;
-
-  margin-top: 3px;
-
-  color: ${COLORS.textMuted};
-
-  font-size: 9.5px;
+  margin-top: 5px;
+  color: ${COLORS.muted};
+  font-size: 10px;
 }
 
 .parent-dashboard__notification-dot {
-  width: 6px;
-  height: 6px;
-
+  width: 7px;
+  height: 7px;
   flex-shrink: 0;
-
   border-radius: 50%;
-
   background: ${COLORS.gold};
 }
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
+.parent-dashboard__empty {
+  padding: 24px 12px;
+}
+
+/* RESPONSIVE */
 
 @media (max-width: 900px) {
+  .parent-dashboard__hero {
+    align-items: flex-start;
+  }
 
   .parent-dashboard__title {
     font-size: 24px !important;
   }
 
-  .parent-dashboard__hero {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .parent-dashboard__date {
-    display: none;
+    font-size: 10px;
   }
 }
 
 @media (max-width: 767px) {
-
   .parent-dashboard__hero {
-    margin-bottom: 17px;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
   }
 
   .parent-dashboard__title {
-    font-size: 21px !important;
+    font-size: 22px !important;
   }
 
   .parent-dashboard__subtitle {
     font-size: 11.5px;
   }
 
-  .parent-dashboard__section {
-    margin-bottom: 17px;
+  .parent-dashboard__date {
+    display: none;
   }
 
-  .parent-dashboard__student-card
-  .ant-card-body {
+  .parent-dashboard__section {
+    margin-bottom: 20px;
+  }
+
+  .parent-dashboard__student-card .ant-card-body,
+  .parent-dashboard__info-card .ant-card-body {
     padding: 14px;
   }
 
@@ -633,49 +562,54 @@ const CSS = `
     display: none;
   }
 
-  .parent-dashboard__info-card
-  .ant-card-body {
-    padding: 14px;
-  }
-
   .parent-dashboard__schedule-time {
-    margin-top: 14px;
+    margin-top: 16px;
+    font-size: 19px;
   }
 
-  .parent-dashboard__notifications {
-    border-radius: 12px;
+  .parent-dashboard__result-score {
+    font-size: 27px;
+  }
+
+  .parent-dashboard__notification {
+    padding: 12px;
   }
 }
 
 @media (max-width: 380px) {
+  .parent-dashboard__title {
+    font-size: 20px !important;
+  }
 
   .parent-dashboard__student-name {
     font-size: 12px;
   }
 
-  .parent-dashboard__student-card
-  .ant-card-body {
+  .parent-dashboard__student-card .ant-card-body {
     padding: 12px;
+  }
+
+  .parent-dashboard__section-title {
+    font-size: 13px;
+  }
+
+  .parent-dashboard__section-action {
+    font-size: 10px;
   }
 }
 
-/* =========================================================
-   REDUCE MOTION
-========================================================= */
-
 @media (prefers-reduced-motion: reduce) {
-
-  .parent-dashboard * {
+  .parent-dashboard *,
+  .parent-dashboard *::before,
+  .parent-dashboard *::after {
     transition: none !important;
   }
 }
 `;
 
-/**
- * =========================================================
- * HELPERS
- * =========================================================
- */
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function getInitials(name) {
   if (!name) return "HS";
@@ -686,39 +620,84 @@ function getInitials(name) {
     return parts[0].slice(0, 2).toUpperCase();
   }
 
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (
+    parts[parts.length - 2][0] + parts[parts.length - 1][0]
+  ).toUpperCase();
 }
 
-/**
- * =========================================================
- * STUDENT CARD
- * =========================================================
- */
+function getTodayLabel() {
+  return new Intl.DateTimeFormat("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date());
+}
+
+function getResponseData(response) {
+  return response?.data?.data ?? response?.data ?? response ?? null;
+}
+
+function formatDisplay(value, fallback = "Chưa có dữ liệu") {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+
+  return value;
+}
+
+/* =========================================================
+   STUDENT CARD
+========================================================= */
 
 function StudentCard({ student }) {
+  const name =
+    student?.name || student?.full_name || student?.fullName || "Học sinh";
+
+  const avatar =
+    student?.avatar || student?.avatar_url || student?.avatarUrl || null;
+
+  const className =
+    student?.className ||
+    student?.class_name ||
+    student?.class?.name ||
+    "Chưa cập nhật lớp";
+
+  const attendanceRate =
+    student?.attendanceRate ??
+    student?.attendance_rate ??
+    student?.attendance ??
+    null;
+
+  const code =
+    student?.code || student?.studentCode || student?.student_code || "";
+
+  const latestAttendance =
+    student?.latestAttendance || student?.latest_attendance || "";
+
   return (
     <Card bordered={false} className="parent-dashboard__student-card">
       <div className="parent-dashboard__student-top">
         <Avatar
-          size={42}
-          src={student.avatar}
+          size={44}
+          src={avatar}
           className="parent-dashboard__student-avatar"
         >
-          {!student.avatar && getInitials(student.name)}
+          {!avatar && getInitials(name)}
         </Avatar>
 
         <div className="parent-dashboard__student-info">
-          <span className="parent-dashboard__student-name">{student.name}</span>
+          <span className="parent-dashboard__student-name">{name}</span>
 
-          <span className="parent-dashboard__student-class">
-            {student.className}
-          </span>
+          <span className="parent-dashboard__student-class">{className}</span>
         </div>
 
-        <div className="parent-dashboard__student-status">
-          <CheckCircleFilled />
-          {student.latestAttendance}
-        </div>
+        {latestAttendance && (
+          <div className="parent-dashboard__student-status">
+            <CheckCircleFilled />
+            {latestAttendance}
+          </div>
+        )}
       </div>
 
       <div className="parent-dashboard__student-divider" />
@@ -728,148 +707,195 @@ function StudentCard({ student }) {
           <span className="parent-dashboard__mini-label">Chuyên cần</span>
 
           <span className="parent-dashboard__attendance-value">
-            {student.attendanceRate}
+            {attendanceRate === null ? "--" : Number(attendanceRate)}
           </span>
 
-          <span className="parent-dashboard__attendance-unit">%</span>
+          <span className="parent-dashboard__attendance-unit">
+            {attendanceRate === null ? "" : "%"}
+          </span>
         </div>
 
-        <span className="parent-dashboard__student-code">{student.code}</span>
+        {code && (
+          <span className="parent-dashboard__student-code">Mã: {code}</span>
+        )}
       </div>
     </Card>
   );
 }
 
-/**
- * =========================================================
- * DASHBOARD
- * =========================================================
- */
+/* =========================================================
+   DASHBOARD
+========================================================= */
 
 export default function ParentDashboard() {
+  const navigate = useNavigate();
+
   const [dashboard, setDashboard] = useState(null);
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchDashboard = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const response = await getDashboardParent();
-
-      const data = response?.data?.data || response?.data || response || null;
-
-      if (!data) {
-        throw new Error("Không có dữ liệu dashboard");
-      }
-
-      setDashboard(data);
-    } catch (err) {
-      message.error(
-        err?.response?.data?.message || "Không thể tải dữ liệu dashboard",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  const fetchMe = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const res = await parentApi.getMe();
-
-      const data = res?.data?.data || res?.data || {};
-
-      if (!data) {
-        throw new Error("Không có dữ liệu dashboard");
-      }
-
-      setMe(data);
-    } catch (err) {
-      message.error(
-        err?.response?.data?.message || "Không thể tải dữ liệu dashboard",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchDashboard();
-    fetchMe();
-  }, [fetchDashboard, fetchMe]);
-  const data = dashboard;
+    let active = true;
 
-  console.log(me);
+    const loadData = async () => {
+      setLoading(true);
+
+      try {
+        const results = await Promise.allSettled([
+          getDashboardParent(),
+          parentApi.getMe(),
+        ]);
+
+        if (!active) return;
+
+        const dashboardResult = results[0];
+        const profileResult = results[1];
+
+        if (dashboardResult.status === "fulfilled") {
+          const result = getResponseData(dashboardResult.value);
+
+          if (result) {
+            setDashboard(result);
+          } else {
+            message.error("Không có dữ liệu dashboard");
+          }
+        } else {
+          message.error(
+            dashboardResult.reason?.response?.data?.message ||
+              "Không thể tải dữ liệu dashboard",
+          );
+        }
+
+        if (profileResult.status === "fulfilled") {
+          const result = getResponseData(profileResult.value);
+
+          if (result) {
+            setMe(result);
+          }
+        } else {
+          message.error(
+            profileResult.reason?.response?.data?.message ||
+              "Không thể tải thông tin phụ huynh",
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const students = Array.isArray(dashboard?.students) ? dashboard.students : [];
+
+  const notifications = Array.isArray(dashboard?.notifications)
+    ? dashboard.notifications
+    : [];
+
+  const upcomingSchedule = dashboard?.upcomingSchedule || {};
+  const latestResult = dashboard?.latestResult || {};
+
+  const unreadCount = notifications.filter((item) => item?.unread).length;
+
+  const fullName =
+    me?.full_name || me?.fullName || me?.name || me?.username || "Phụ huynh";
+
+  const relationship =
+    me?.relationship ||
+    me?.relation ||
+    (me?.role === "parent" ? "Phụ huynh" : null);
 
   if (loading) {
     return (
-      <div style={{ padding: 24 }}>
+      <div className="parent-dashboard">
+        <style>{CSS}</style>
         <DashboardSkeleton />
       </div>
     );
   }
+
   return (
     <div className="parent-dashboard">
       <style>{CSS}</style>
 
-      {/* ===================================================
-          HERO
-      =================================================== */}
+      {/* HERO */}
 
       <div className="parent-dashboard__hero">
         <div className="parent-dashboard__hero-left">
           <div className="parent-dashboard__eyebrow">Không gian gia đình</div>
+
           <Title level={1} className="parent-dashboard__title">
-            Xin chào, {me.full_name}
+            Xin chào, {fullName}!
           </Title>
+
           <Text className="parent-dashboard__subtitle">
-            Quan hệ với học sinh: {me.role === "parent" ? "Phụ huynh" : "Khác"}
+            {relationship
+              ? `Quan hệ với học sinh: ${relationship}`
+              : "Cùng theo dõi hành trình học tập và đức tin của con."}
           </Text>
         </div>
 
         <div className="parent-dashboard__date">
           <CalendarOutlined />
-          Thứ Hai, 28/09/2026
+          <span>{getTodayLabel()}</span>
         </div>
       </div>
 
-      {/* ===================================================
-          STUDENTS
-      =================================================== */}
+      {/* STUDENTS */}
 
       <section className="parent-dashboard__section">
         <div className="parent-dashboard__section-header">
-          <h2 className="parent-dashboard__section-title">Con của tôi</h2>
+          <div className="parent-dashboard__section-heading">
+            <span className="parent-dashboard__section-mark" />
+            <h2 className="parent-dashboard__section-title">Con của tôi</h2>
+            <span className="parent-dashboard__section-count">
+              {students.length}
+            </span>
+          </div>
 
-          <Button type="text" className="parent-dashboard__section-action">
+          <Button
+            type="text"
+            className="parent-dashboard__section-action"
+            onClick={() => navigate("/parent/students")}
+          >
             Xem tất cả
-            <RightOutlined
-              style={{
-                fontSize: 8,
-                marginLeft: 5,
-              }}
-            />
+            <RightOutlined style={{ fontSize: 9 }} />
           </Button>
         </div>
 
-        <Row gutter={[12, 12]}>
-          {data.students.map((student) => (
-            <Col key={student.id} xs={24} sm={12} lg={12}>
-              <StudentCard student={student} />
-            </Col>
-          ))}
-        </Row>
+        {students.length > 0 ? (
+          <Row gutter={[14, 14]}>
+            {students.map((student, index) => (
+              <Col
+                key={student?.id ?? student?.studentId ?? index}
+                xs={24}
+                sm={12}
+                lg={12}
+              >
+                <StudentCard student={student || {}} />
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <Card bordered={false} className="parent-dashboard__student-card">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="Chưa có thông tin học sinh"
+            />
+          </Card>
+        )}
       </section>
 
-      {/* ===================================================
-          SCHEDULE + RESULT
-      =================================================== */}
+      {/* SCHEDULE + RESULT */}
 
       <section className="parent-dashboard__section">
-        <Row gutter={[12, 12]}>
-          {/* SCHEDULE */}
-
+        <Row gutter={[14, 14]}>
           <Col xs={24} md={12}>
             <Card bordered={false} className="parent-dashboard__info-card">
               <div className="parent-dashboard__info-header">
@@ -883,28 +909,28 @@ export default function ParentDashboard() {
                   </div>
 
                   <div className="parent-dashboard__info-title">
-                    {data.upcomingSchedule.subject}
+                    {formatDisplay(upcomingSchedule.subject)}
                   </div>
                 </div>
               </div>
 
               <div className="parent-dashboard__schedule-time">
-                {data.upcomingSchedule.date}
-                {" · "}
-                {data.upcomingSchedule.time}
+                {upcomingSchedule.date || "Chưa có lịch học"}
+                {upcomingSchedule.time ? ` · ${upcomingSchedule.time}` : ""}
               </div>
 
               <div className="parent-dashboard__schedule-meta">
-                {data.upcomingSchedule.className}
+                {formatDisplay(
+                  upcomingSchedule.className || upcomingSchedule.class_name,
+                  "Chưa cập nhật lớp học",
+                )}
 
                 <br />
 
-                {data.upcomingSchedule.room}
+                {formatDisplay(upcomingSchedule.room, "Chưa cập nhật địa điểm")}
               </div>
             </Card>
           </Col>
-
-          {/* RESULT */}
 
           <Col xs={24} md={12}>
             <Card bordered={false} className="parent-dashboard__info-card">
@@ -912,8 +938,8 @@ export default function ParentDashboard() {
                 <div
                   className="parent-dashboard__info-icon"
                   style={{
-                    background: COLORS.orangeBg,
-                    color: COLORS.orange,
+                    background: COLORS.goldLight,
+                    color: COLORS.navy,
                   }}
                 >
                   <BookOutlined />
@@ -925,49 +951,71 @@ export default function ParentDashboard() {
                   </div>
 
                   <div className="parent-dashboard__info-title">
-                    {data.latestResult.subject}
+                    {formatDisplay(latestResult.subject)}
                   </div>
                 </div>
               </div>
 
               <div className="parent-dashboard__result-score">
-                {data.latestResult.score}
+                {formatDisplay(latestResult.score, "--")}
 
-                <span> / {data.latestResult.maxScore}</span>
+                <span> / {formatDisplay(latestResult.maxScore, "--")}</span>
               </div>
 
               <div className="parent-dashboard__result-title">
-                {data.latestResult.title}
+                {formatDisplay(latestResult.title, "Chưa có kết quả đánh giá")}
               </div>
 
               <div className="parent-dashboard__result-student">
-                Tên con:
-                {data.latestResult.studentName}
+                Tên con:{" "}
+                {formatDisplay(
+                  latestResult.studentName || latestResult.student_name,
+                  "Chưa có dữ liệu",
+                )}
               </div>
             </Card>
           </Col>
         </Row>
       </section>
 
-      {/* ===================================================
-          NOTIFICATIONS
-      =================================================== */}
+      {/* NOTIFICATIONS */}
 
       <section className="parent-dashboard__section">
         <div className="parent-dashboard__section-header">
-          <h2 className="parent-dashboard__section-title">Thông báo</h2>
+          <div className="parent-dashboard__section-heading">
+            <span className="parent-dashboard__section-mark" />
 
-          <Badge
-            count={data.notifications.filter((item) => item.unread).length}
-            size="small"
-          />
+            <h2 className="parent-dashboard__section-title">Thông báo</h2>
+
+            {unreadCount > 0 && (
+              <Badge
+                count={unreadCount}
+                size="small"
+                style={{
+                  backgroundColor: COLORS.gold,
+                  color: COLORS.navy,
+                  boxShadow: "none",
+                  fontWeight: 700,
+                }}
+              />
+            )}
+          </div>
+
+          <Button
+            type="text"
+            className="parent-dashboard__section-action"
+            onClick={() => navigate("/parent/notifications")}
+          >
+            Xem tất cả
+            <RightOutlined style={{ fontSize: 9 }} />
+          </Button>
         </div>
 
         <div className="parent-dashboard__notifications">
-          {data.notifications.length > 0 ? (
-            data.notifications.map((notification) => (
+          {notifications.length > 0 ? (
+            notifications.map((notification, index) => (
               <div
-                key={notification.id}
+                key={notification?.id ?? index}
                 className="parent-dashboard__notification"
               >
                 <div className="parent-dashboard__notification-icon">
@@ -976,24 +1024,29 @@ export default function ParentDashboard() {
 
                 <div className="parent-dashboard__notification-content">
                   <span className="parent-dashboard__notification-title">
-                    {notification.title}
+                    {notification?.title || "Thông báo mới"}
                   </span>
 
                   <span className="parent-dashboard__notification-time">
-                    {notification.time}
+                    {notification?.time ||
+                      notification?.createdAt ||
+                      notification?.created_at ||
+                      "Chưa có thời gian"}
                   </span>
                 </div>
 
-                {notification.unread && (
+                {notification?.unread && (
                   <span className="parent-dashboard__notification-dot" />
                 )}
               </div>
             ))
           ) : (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="Chưa có thông báo"
-            />
+            <div className="parent-dashboard__empty">
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Chưa có thông báo"
+              />
+            </div>
           )}
         </div>
       </section>

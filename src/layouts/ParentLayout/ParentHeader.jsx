@@ -1,5 +1,5 @@
 import React from "react";
-import { Avatar, Button, Dropdown, Space } from "antd";
+import { Avatar, Button, Dropdown } from "antd";
 
 import {
   MenuOutlined,
@@ -9,8 +9,40 @@ import {
   BellOutlined,
 } from "@ant-design/icons";
 
+/* =========================================================
+   COLORS - FAITHEDU
+========================================================= */
+
+const COLORS = {
+  navy: "#173B5E",
+  navyHover: "#244F78",
+  gold: "#D9A441",
+  background: "#F7F9FC",
+  white: "#FFFFFF",
+  text: "#173B5E",
+  textSecondary: "#64748B",
+  muted: "#94A3B8",
+  border: "#E2E8F0",
+  navyLight: "#EEF3F7",
+  goldLight: "#FBF5E7",
+  success: "#2E7D5B",
+  successBg: "#EAF6F0",
+  warning: "#B7791F",
+  warningBg: "#FFF7E5",
+  gray: "#64748B",
+  grayBg: "#F1F5F9",
+  danger: "#C0392B",
+  dangerBg: "#FDEDEC",
+};
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function getInitials(name) {
-  if (!name || !String(name).trim()) return "PH";
+  if (!name || !String(name).trim()) {
+    return "PH";
+  }
 
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
 
@@ -21,60 +53,65 @@ function getInitials(name) {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
+/* =========================================================
+   CSS
+========================================================= */
+
 const HEADER_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+
 .parent-header,
-.parent-header * {
+.parent-header *,
+.parent-header-dropdown,
+.parent-header-dropdown * {
   box-sizing: border-box;
 }
 
 .parent-header {
-  height: 76px;
-  width: 100%;
-  padding: 0 28px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  --header-navy: ${COLORS.navy};
+  --header-navy-hover: ${COLORS.navyHover};
+  --header-gold: ${COLORS.gold};
+  --header-background: ${COLORS.background};
+  --header-white: ${COLORS.white};
+  --header-text: ${COLORS.text};
+  --header-secondary: ${COLORS.textSecondary};
+  --header-muted: ${COLORS.muted};
+  --header-border: ${COLORS.border};
+  --header-navy-light: ${COLORS.navyLight};
+  --header-gold-light: ${COLORS.goldLight};
+  --header-danger: ${COLORS.danger};
+  --header-danger-bg: ${COLORS.dangerBg};
 
   position: sticky;
   top: 0;
   z-index: 90;
 
-  background: rgba(255, 255, 255, 0.97);
-  border-bottom: 1px solid #E5EAF0;
-  backdrop-filter: blur(12px);
+  width: 100%;
+  height: 76px;
+  padding: 0 28px;
 
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  background: var(--header-white);
+  border-bottom: 1px solid var(--header-border);
+
+  font-family: "Be Vietnam Pro", Inter, "Segoe UI", Arial, sans-serif;
 }
 
+/* =========================================================
+   LEFT
+========================================================= */
+
 .parent-header__left {
+  min-width: 0;
+  flex: 1;
+
   display: flex;
   align-items: center;
   gap: 14px;
-  min-width: 0;
-}
-
-.parent-header__menu-button.ant-btn {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px solid #E5EAF0;
-  border-radius: 11px;
-  color: #173B5E;
-  background: #fff;
-  box-shadow: none;
-}
-
-.parent-header__menu-button.ant-btn:hover {
-  color: #173B5E !important;
-  background: #F3F7FC !important;
-  border-color: #D5E2F0 !important;
 }
 
 .parent-header__heading {
@@ -82,132 +119,264 @@ const HEADER_CSS = `
 }
 
 .parent-header__title {
-  color: #173B5E;
-  font-size: 19px;
-  font-weight: 800;
-  line-height: 1.3;
+  overflow: hidden;
+
+  color: var(--header-navy);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.35;
   letter-spacing: -0.4px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .parent-header__subtitle {
-  margin-top: 4px;
-  color: #7B8798;
-  font-size: 11px;
+  margin-top: 3px;
+  overflow: hidden;
+
+  color: var(--header-secondary);
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1.4;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.parent-header__right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
+/* =========================================================
+   ICON BUTTONS
+========================================================= */
 
-.parent-header__notification.ant-btn {
-  width: 40px;
-  height: 40px;
+.parent-header__icon-button.ant-btn {
+  position: relative;
+
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  padding: 0;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  border: 1px solid #E5EAF0;
-  border-radius: 11px;
-  background: #fff;
-  color: #526782;
+  border: 1px solid var(--header-border);
+  border-radius: 12px;
+
+  background: var(--header-white);
+  color: var(--header-navy);
+
   box-shadow: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
-.parent-header__notification.ant-btn:hover {
-  color: #173B5E !important;
-  background: #F3F7FC !important;
-  border-color: #D5E2F0 !important;
+.parent-header__icon-button.ant-btn:hover {
+  color: var(--header-navy) !important;
+  background: var(--header-navy-light) !important;
+  border-color: #CBD8E5 !important;
 }
+
+.parent-header__icon-button.ant-btn:active {
+  background: var(--header-gold-light) !important;
+}
+
+.parent-header__icon-button .anticon {
+  font-size: 18px;
+}
+
+.parent-header__icon-button.ant-btn:focus-visible,
+.parent-header__account.ant-btn:focus-visible {
+  outline: 3px solid rgba(217, 164, 65, 0.55);
+  outline-offset: 2px;
+}
+
+/* Notification dot */
+
+.parent-header__notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  width: 9px;
+  height: 9px;
+
+  border: 2px solid var(--header-white);
+  border-radius: 50%;
+  background: var(--header-gold);
+}
+
+/* =========================================================
+   RIGHT
+========================================================= */
+
+.parent-header__right {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* =========================================================
+   ACCOUNT BUTTON
+========================================================= */
 
 .parent-header__account.ant-btn {
   height: 52px;
-  max-width: 280px;
-  padding: 5px 9px;
+  max-width: 320px;
+  padding: 5px 12px 5px 6px;
 
   display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
 
-  border: 1px solid transparent;
+  border: 1px solid var(--header-border);
   border-radius: 13px;
-  background: transparent;
+
+  background: var(--header-white);
+  color: var(--header-text);
+
   box-shadow: none;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .parent-header__account.ant-btn:hover {
-  background: #F8FAFC !important;
-  border-color: #E5EAF0 !important;
+  color: var(--header-text) !important;
+  background: var(--header-background) !important;
+  border-color: #CBD8E5 !important;
+}
+
+.parent-header__account-inner {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .parent-header__avatar {
   flex-shrink: 0;
-  background: linear-gradient(135deg, #173B5E, #285E86);
-  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--header-navy) !important;
+  color: var(--header-white) !important;
+
+  font-size: 14px;
   font-weight: 700;
+}
+
+.parent-header__avatar.ant-avatar-image {
+  background: var(--header-white) !important;
 }
 
 .parent-header__user-info {
   min-width: 0;
-  max-width: 155px;
+  width: 155px;
   text-align: left;
 }
 
 .parent-header__user-name {
   overflow: hidden;
+
+  color: var(--header-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+
   white-space: nowrap;
   text-overflow: ellipsis;
-
-  color: #1E293B;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
 }
 
 .parent-header__username {
-  margin-top: 3px;
-
+  margin-top: 2px;
   overflow: hidden;
+
+  color: var(--header-secondary);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+
   white-space: nowrap;
   text-overflow: ellipsis;
-
-  color: #94A3B8;
-  font-size: 10px;
-  line-height: 1.4;
 }
 
 .parent-header__chevron {
-  color: #94A3B8;
+  margin-left: 3px;
+  color: var(--header-muted);
   font-size: 10px;
 }
 
-/* Dropdown Ant Design */
+/* =========================================================
+   DROPDOWN
+========================================================= */
 
 .parent-header-dropdown .ant-dropdown-menu {
-  min-width: 205px;
+  min-width: 230px;
   padding: 6px;
-  border: 1px solid #E5EAF0;
-  border-radius: 12px;
+
+  border: 1px solid ${COLORS.border};
+  border-radius: 13px;
+
+  background: ${COLORS.white};
   box-shadow: 0 12px 32px rgba(23, 59, 94, 0.12);
+
+  font-family: "Be Vietnam Pro", Inter, "Segoe UI", Arial, sans-serif;
 }
 
 .parent-header-dropdown .ant-dropdown-menu-item {
-  min-height: 40px;
+  min-height: 42px;
+  margin: 2px 0;
+  padding: 0 12px;
+
   display: flex;
   align-items: center;
-  gap: 9px;
-  border-radius: 8px;
-  font-size: 12px;
+  gap: 10px;
+
+  border-radius: 9px;
+
+  color: ${COLORS.textSecondary};
+  font-size: 13px;
+  font-weight: 500;
+
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.parent-header-dropdown .ant-dropdown-menu-item:hover {
+  color: ${COLORS.navy} !important;
+  background: ${COLORS.navyLight} !important;
 }
 
 .parent-header-dropdown .ant-dropdown-menu-item .anticon {
-  font-size: 15px;
+  width: 18px;
+  font-size: 16px;
 }
 
-/* Tablet */
+.parent-header-dropdown .ant-dropdown-menu-item-danger {
+  color: ${COLORS.danger};
+}
+
+.parent-header-dropdown .ant-dropdown-menu-item-danger:hover {
+  color: ${COLORS.danger} !important;
+  background: ${COLORS.dangerBg} !important;
+}
+
+.parent-header-dropdown .ant-dropdown-menu-item-divider {
+  margin: 5px 4px;
+  background: ${COLORS.border};
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
 
 @media (max-width: 1024px) {
   .parent-header {
@@ -215,29 +384,36 @@ const HEADER_CSS = `
   }
 
   .parent-header__title {
-    font-size: 18px;
+    font-size: 19px;
   }
 
   .parent-header__user-info {
-    max-width: 125px;
+    width: 125px;
+  }
+
+  .parent-header__right {
+    gap: 8px;
   }
 }
 
-/* Mobile */
+/* =========================================================
+   MOBILE
+========================================================= */
 
 @media (max-width: 768px) {
   .parent-header {
-    height: 64px;
+    height: 66px;
     padding: 0 14px;
     gap: 8px;
   }
 
   .parent-header__left {
-    gap: 10px;
+    flex: 1;
+    gap: 9px;
   }
 
   .parent-header__title {
-    font-size: 16px;
+    font-size: 17px;
     letter-spacing: -0.2px;
   }
 
@@ -246,64 +422,121 @@ const HEADER_CSS = `
   }
 
   .parent-header__right {
-    gap: 6px;
+    gap: 7px;
+  }
+
+  .parent-header__icon-button.ant-btn {
+    width: 39px;
+    height: 39px;
+    min-width: 39px;
+    border-radius: 11px;
   }
 
   .parent-header__account.ant-btn {
-    height: 44px;
-    padding: 3px;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    padding: 1px;
+
+    justify-content: center;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .parent-header__account.ant-btn:hover {
+    background: var(--header-navy-light) !important;
+    border-color: transparent !important;
+  }
+
+  .parent-header__account-inner {
+    gap: 0;
   }
 
   .parent-header__avatar {
-    width: 36px;
-    height: 36px;
+    width: 39px !important;
+    height: 39px !important;
+  }
+
+  .parent-header__user-info,
+  .parent-header__chevron {
+    display: none;
   }
 }
 
-/* Small mobile */
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
 
 @media (max-width: 380px) {
   .parent-header {
     padding: 0 9px;
+    gap: 5px;
   }
 
   .parent-header__left {
-    gap: 7px;
+    gap: 6px;
   }
 
   .parent-header__title {
-    font-size: 14px;
+    max-width: 120px;
+    font-size: 15px;
   }
 
   .parent-header__right {
     gap: 4px;
   }
 
-  .parent-header__notification.ant-btn {
-    width: 34px;
-    height: 36px;
+  .parent-header__icon-button.ant-btn {
+    width: 35px;
+    height: 35px;
+    min-width: 35px;
   }
 
-  .parent-header__menu-button.ant-btn {
-    width: 36px;
-    height: 36px;
+  .parent-header__account.ant-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  .parent-header__avatar {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+/* ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+  .parent-header *,
+  .parent-header-dropdown * {
+    transition: none !important;
   }
 }
 `;
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function ParentHeader({
   user,
-  isMobile,
+  isMobile = false,
   onMenuOpen,
   onProfile,
   onLogout,
   onNotifications,
 }) {
-  const fullName = user?.full_name || user?.name || "Phụ huynh";
+  const fullName =
+    user?.full_name ||
+    user?.name ||
+    user?.fullName ||
+    user?.username ||
+    "Phụ huynh";
 
-  const avatar = user?.avatar || null;
+  const username =
+    user?.username || user?.phone || user?.email || "Tài khoản phụ huynh";
 
-  const username = user?.username || user?.phone || "Phụ huynh";
+  const avatar = user?.avatar || user?.avatar_url || user?.avatarUrl || null;
 
   const userMenuItems = [
     {
@@ -342,15 +575,17 @@ export default function ParentHeader({
           {isMobile && (
             <Button
               type="text"
-              className="parent-header__menu-button"
+              className="parent-header__icon-button"
               icon={<MenuOutlined />}
               onClick={onMenuOpen}
-              aria-label="Mở menu"
+              aria-label="Mở menu điều hướng"
             />
           )}
 
           <div className="parent-header__heading">
-            <div className="parent-header__title">Cổng phụ huynh</div>
+            <div className="parent-header__title" title="Cổng phụ huynh">
+              Cổng phụ huynh
+            </div>
 
             <div className="parent-header__subtitle">
               Theo dõi hành trình học tập và đức tin của con
@@ -362,11 +597,13 @@ export default function ParentHeader({
         <div className="parent-header__right">
           <Button
             type="text"
-            className="parent-header__notification"
-            icon={<BellOutlined />}
+            className="parent-header__icon-button"
             onClick={onNotifications}
-            aria-label="Thông báo"
-          />
+            aria-label="Mở thông báo"
+          >
+            <BellOutlined />
+            <span className="parent-header__notification-dot" />
+          </Button>
 
           <Dropdown
             menu={{
@@ -380,11 +617,11 @@ export default function ParentHeader({
             <Button
               type="text"
               className="parent-header__account"
-              aria-label="Menu tài khoản"
+              aria-label="Mở menu tài khoản"
             >
-              <Space size={9}>
+              <div className="parent-header__account-inner">
                 <Avatar
-                  size={38}
+                  size={40}
                   src={avatar}
                   className="parent-header__avatar"
                 >
@@ -409,7 +646,7 @@ export default function ParentHeader({
                     <DownOutlined className="parent-header__chevron" />
                   </>
                 )}
-              </Space>
+              </div>
             </Button>
           </Dropdown>
         </div>

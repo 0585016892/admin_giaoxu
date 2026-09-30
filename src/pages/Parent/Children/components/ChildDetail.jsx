@@ -439,6 +439,42 @@ export default function ChildDetail() {
 
   const [messageApi, contextHolder] = message.useMessage();
 
+  // CSS responsive được giới hạn trong trang chi tiết học sinh.
+  useEffect(() => {
+    const styleId = "parent-child-detail-responsive-styles";
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      .parent-child-detail-page { color: #173B5E; }
+      .parent-child-detail-container { box-sizing: border-box; }
+      .parent-child-detail-page .ant-card { transition: box-shadow .2s ease, transform .2s ease; }
+      .parent-child-detail-page .ant-card:not(.ant-card-small):hover { box-shadow: 0 8px 28px rgba(23,59,94,.07); }
+      .parent-child-detail-page .ant-card-head { border-bottom-color: #EEF2F6; }
+      .parent-child-detail-page .ant-card-head-title { color: #173B5E; font-weight: 700; }
+      .parent-child-detail-page .ant-btn-primary { background: #173B5E; box-shadow: 0 4px 10px rgba(23,59,94,.12); }
+      .parent-child-detail-page .ant-btn-primary:hover { background: #244F78 !important; }
+      .parent-child-detail-page .ant-select-selector,
+      .parent-child-detail-page input[type=month] { border-radius: 9px !important; }
+      .parent-child-detail-page .ant-tag { border-radius: 7px; padding-inline: 9px; }
+      .parent-child-detail-page button:focus-visible { outline: 3px solid rgba(217,164,65,.55); outline-offset: 2px; }
+      @media (max-width: 768px) {
+        .parent-child-detail-container { padding-left: 14px !important; padding-right: 14px !important; }
+        .parent-child-detail-page { padding-top: 14px !important; }
+        .parent-child-detail-page .ant-card-body { padding: 16px; }
+        .parent-child-detail-page .ant-card-head { padding-inline: 16px; }
+        .parent-child-detail-page .ant-card-head-title { white-space: normal; }
+      }
+      @media (max-width: 560px) {
+        .parent-child-detail-page .ant-statistic-title { font-size: 12px; }
+        .parent-child-detail-page .ant-statistic-content { font-size: 23px; }
+        .parent-child-detail-page .ant-space { max-width: 100%; }
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   /**
    * =======================================================
    * STATE
@@ -566,7 +602,7 @@ export default function ChildDetail() {
         throw new Error(response?.message || "Không thể tải dữ liệu điểm danh");
       }
 
-      const attendance = response?.data.data || {};
+      const attendance = response?.data?.data || response?.data || {};
 
       setAttendanceData({
         records: Array.isArray(attendance.records) ? attendance.records : [],
@@ -983,10 +1019,13 @@ export default function ChildDetail() {
 
   if (loadingChild) {
     return (
-      <div style={styles.page}>
+      <div className="parent-child-detail-page" style={styles.page}>
         {contextHolder}
 
-        <div style={styles.loadingContainer}>
+        <div
+          className="parent-child-detail-container parent-child-detail-loading"
+          style={styles.loadingContainer}
+        >
           <Card style={styles.loadingCard}>
             <Skeleton
               active
@@ -1009,10 +1048,10 @@ export default function ChildDetail() {
 
   if (error || !child) {
     return (
-      <div style={styles.page}>
+      <div className="parent-child-detail-page" style={styles.page}>
         {contextHolder}
 
-        <div style={styles.container}>
+        <div className="parent-child-detail-container" style={styles.container}>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate(-1)}
@@ -1035,10 +1074,10 @@ export default function ChildDetail() {
   }
 
   return (
-    <div style={styles.page}>
+    <div className="parent-child-detail-page" style={styles.page}>
       {contextHolder}
 
-      <div style={styles.container}>
+      <div className="parent-child-detail-container" style={styles.container}>
         {/* =================================================
             BACK
         ================================================= */}
@@ -2600,14 +2639,13 @@ const styles = {
   page: {
     minHeight: "100vh",
     background: "#F7F9FC",
-    padding: "24px 0 60px",
   },
 
   container: {
     width: "100%",
-    maxWidth: 1400,
+    maxWidth: 1440,
     margin: "0 auto",
-    padding: "0 24px",
+    padding: "0 28px",
   },
 
   loadingContainer: {
@@ -2629,11 +2667,11 @@ const styles = {
   },
 
   heroCard: {
-    borderRadius: 20,
-    border: "1px solid #E2E8F0",
+    borderRadius: 22,
+    border: "1px solid #E5EAF0",
     overflow: "hidden",
     background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-    boxShadow: "0 8px 30px rgba(23,59,94,0.06)",
+    boxShadow: "0 12px 36px rgba(23,59,94,0.07)",
   },
 
   hero: {
@@ -2726,16 +2764,16 @@ const styles = {
   },
 
   statCard: {
-    borderRadius: 14,
-    border: "1px solid #E2E8F0",
+    borderRadius: 18,
+    border: "1px solid #E5EAF0",
     height: "100%",
-    boxShadow: "0 4px 15px rgba(15,23,42,0.03)",
+    boxShadow: "0 6px 22px rgba(15,23,42,0.035)",
   },
 
   sectionCard: {
-    borderRadius: 14,
-    border: "1px solid #E2E8F0",
-    boxShadow: "0 4px 15px rgba(15,23,42,0.03)",
+    borderRadius: 18,
+    border: "1px solid #E5EAF0",
+    boxShadow: "0 6px 22px rgba(15,23,42,0.035)",
   },
 
   filterCard: {

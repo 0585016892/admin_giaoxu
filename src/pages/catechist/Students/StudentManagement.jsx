@@ -3625,6 +3625,10 @@ export default function StudentManagement() {
                       value: "50",
                       label: "50 / trang",
                     },
+                    {
+                      value: "100",
+                      label: "100 / trang",
+                    },
                   ]}
                 />
 
