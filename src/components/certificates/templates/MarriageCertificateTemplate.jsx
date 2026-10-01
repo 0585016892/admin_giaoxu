@@ -262,16 +262,7 @@ const MarriageCertificateTemplate = ({
               fontFamily: bodyFont,
             }}
           >
-            {cleanDiocese ? `GIÁO PHẬN ${cleanDiocese}` : "GIÁO PHẬN"}
-          </div>
-
-          <div
-            className="marriage-church-line marriage-church-line--parish"
-            style={{
-              color: textColor,
-              fontFamily: bodyFont,
-            }}
-          >
+            {cleanDiocese ? `GIÁO PHẬN ${cleanDiocese}` : "GIÁO PHẬN"} -{" "}
             {cleanParish ? `GIÁO XỨ ${cleanParish}` : "GIÁO XỨ"}
           </div>
 

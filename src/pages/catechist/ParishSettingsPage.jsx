@@ -12,7 +12,6 @@ import {
   Upload,
   message,
   Tabs,
-  InputNumber,
   Spin,
   Typography,
   Tag,
@@ -231,8 +230,13 @@ const ParishSettingsPage = () => {
 
   const isCatechist = ["admin_catechist", "catechist"].includes(user?.role);
 
-  const { editChurch, getChurchId } = useChurch();
-
+  const {
+    editChurch,
+    getChurchId,
+    fetchArchdioceses,
+    fetchDiocesesByParent,
+    fetchDeaneriesByDiocese,
+  } = useChurch();
   const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
@@ -242,7 +246,15 @@ const ParishSettingsPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [churchData, setChurchData] = useState(null);
+  const [archdioceses, setArchdioceses] = useState([]);
+  const [dioceses, setDioceses] = useState([]);
+  const [deaneries, setDeaneries] = useState([]);
 
+  const [loadingArchdioceses, setLoadingArchdioceses] = useState(false);
+
+  const [loadingDioceses, setLoadingDioceses] = useState(false);
+
+  const [loadingDeaneries, setLoadingDeaneries] = useState(false);
   /* =======================================================
      CHURCH ID
   ======================================================= */
@@ -280,6 +292,32 @@ const ParishSettingsPage = () => {
   /* =======================================================
      FETCH CHURCH
   ======================================================= */
+  // =======================================================
+  // LOAD TỔNG GIÁO PHẬN
+  // =======================================================
+
+  const loadArchdioceses = useCallback(async () => {
+    setLoadingArchdioceses(true);
+
+    try {
+      const res = await fetchArchdioceses();
+
+      console.log("ARCHDIOCESES:", res);
+
+      const data = res?.data || [];
+
+      setArchdioceses(data);
+    } catch (error) {
+      console.error("LOAD ARCHDIOCESES ERROR:", error);
+
+      message.error(
+        error?.response?.data?.message ||
+          "Không thể tải danh sách Tổng Giáo phận!",
+      );
+    } finally {
+      setLoadingArchdioceses(false);
+    }
+  }, [fetchArchdioceses]);
 
   const fetchParishInfo = useCallback(async () => {
     if (!churchId) {
@@ -304,8 +342,38 @@ const ParishSettingsPage = () => {
 
         return;
       }
+      console.log("CHURCHES:::", data);
+
+      const parentDioceseId =
+        data?.diocese?.parent_diocese_id || data?.parent_diocese_id || null;
+      setImageUrl(data.image || "");
 
       setChurchData(data);
+      // =====================================================
+      // LOAD DỮ LIỆU HIERARCHY
+      // =====================================================
+
+      if (parentDioceseId) {
+        try {
+          const dioceseRes = await fetchDiocesesByParent(parentDioceseId);
+
+          setDioceses(dioceseRes?.data || []);
+        } catch (error) {
+          console.error("LOAD DIOCESES BY PARENT ERROR:", error);
+        }
+      }
+
+      if (data.diocese_id) {
+        try {
+          const deaneryRes = await fetchDeaneriesByDiocese(
+            Number(data.diocese_id),
+          );
+
+          setDeaneries(deaneryRes?.data || []);
+        } catch (error) {
+          console.error("LOAD DEANERIES ERROR:", error);
+        }
+      }
 
       form.setFieldsValue({
         code: data.code || "",
@@ -320,15 +388,14 @@ const ParishSettingsPage = () => {
         address: data.address || "",
         ward: data.ward || "",
         district: data.district || "",
-
-        latitude:
-          data.latitude !== null && data.latitude !== undefined
-            ? Number(data.latitude)
+        diocese_id:
+          data.diocese_id !== null && data.diocese_id !== undefined
+            ? Number(data.diocese_id)
             : null,
 
-        longitude:
-          data.longitude !== null && data.longitude !== undefined
-            ? Number(data.longitude)
+        deanery_id:
+          data.deanery_id !== null && data.deanery_id !== undefined
+            ? Number(data.deanery_id)
             : null,
 
         is_active:
@@ -339,7 +406,6 @@ const ParishSettingsPage = () => {
         description: data.description || "",
       });
 
-      setImageUrl(data.image || "");
       setSelectedFile(null);
     } catch (error) {
       message.error(
@@ -348,12 +414,96 @@ const ParishSettingsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [churchId, getChurchId, form]);
+  }, [
+    churchId,
+    getChurchId,
+    form,
+    fetchDiocesesByParent,
+    fetchDeaneriesByDiocese,
+  ]);
 
   useEffect(() => {
     fetchParishInfo();
   }, [fetchParishInfo]);
+  useEffect(() => {
+    loadArchdioceses();
+  }, [loadArchdioceses]);
 
+  // =======================================================
+  // CHỌN TỔNG GIÁO PHẬN
+  // =======================================================
+
+  const handleArchdioceseChange = useCallback(
+    async (parentDioceseId) => {
+      // Reset cấp dưới
+      setDioceses([]);
+      setDeaneries([]);
+
+      form.setFieldsValue({
+        diocese_id: null,
+        deanery_id: null,
+      });
+
+      if (!parentDioceseId) {
+        return;
+      }
+
+      setLoadingDioceses(true);
+
+      try {
+        const res = await fetchDiocesesByParent(parentDioceseId);
+
+        console.log("DIOCESES BY PARENT:", res);
+
+        setDioceses(res?.data || []);
+      } catch (error) {
+        console.error("LOAD DIOCESES ERROR:", error);
+
+        message.error(
+          error?.response?.data?.message ||
+            "Không thể tải danh sách Giáo phận!",
+        );
+      } finally {
+        setLoadingDioceses(false);
+      }
+    },
+    [fetchDiocesesByParent, form],
+  );
+  // =======================================================
+  // CHỌN GIÁO PHẬN
+  // =======================================================
+
+  const handleDioceseChange = useCallback(
+    async (dioceseId) => {
+      // Reset Giáo hạt
+      setDeaneries([]);
+
+      form.setFieldValue("deanery_id", null);
+
+      if (!dioceseId) {
+        return;
+      }
+
+      setLoadingDeaneries(true);
+
+      try {
+        const res = await fetchDeaneriesByDiocese(dioceseId);
+
+        console.log("DEANERIES BY DIOCESE:", res);
+
+        setDeaneries(res?.data || []);
+      } catch (error) {
+        console.error("LOAD DEANERIES ERROR:", error);
+
+        message.error(
+          error?.response?.data?.message || "Không thể tải danh sách Giáo hạt!",
+        );
+      } finally {
+        setLoadingDeaneries(false);
+      }
+    },
+    [fetchDeaneriesByDiocese, form],
+  );
   /* =======================================================
      SAVE
   ======================================================= */
@@ -949,20 +1099,30 @@ const ParishSettingsPage = () => {
                                 />
                               </Form.Item>
                             </Col>
+                            {/* =====================================================
+    TỈNH / THÀNH PHỐ
+===================================================== */}
 
                             <Col xs={24}>
-                              <Form.Item label="Giáo phận" name="address">
+                              <Form.Item
+                                label="Tỉnh / Thành phố"
+                                name="address"
+                              >
                                 <Input
                                   prefix={
                                     <EnvironmentOutlined className="input-icon" />
                                   }
-                                  placeholder="Vui lòng nhập -Thái Bình- "
+                                  placeholder="VD: Thái Bình"
                                   className="form-input"
                                 />
                               </Form.Item>
                             </Col>
 
-                            <Col xs={24} sm={12}>
+                            {/* =====================================================
+    PHƯỜNG / XÃ
+===================================================== */}
+
+                            <Col xs={24}>
                               <Form.Item label="Phường / Xã" name="ward">
                                 <Input
                                   placeholder="VD: Quang Trung"
@@ -971,46 +1131,80 @@ const ParishSettingsPage = () => {
                               </Form.Item>
                             </Col>
 
-                            <Col xs={24} sm={12}>
+                            {/* =====================================================
+    TỔNG GIÁO PHẬN
+===================================================== */}
+
+                            <Col xs={24} sm={8}>
                               <Form.Item
-                                label="Quận / Huyện / Thị Xã"
-                                name="district"
+                                label="Tổng Giáo phận"
+                                name="archdiocese_id"
                               >
-                                <Input
-                                  placeholder="VD: Đống Đa"
-                                  className="form-input"
+                                <Select
+                                  allowClear
+                                  showSearch
+                                  loading={loadingArchdioceses}
+                                  placeholder="Chọn Tổng Giáo phận"
+                                  className="form-select"
+                                  optionFilterProp="label"
+                                  onChange={handleArchdioceseChange}
+                                  options={archdioceses.map((item) => ({
+                                    value: item.id,
+                                    label: item.name,
+                                  }))}
                                 />
                               </Form.Item>
                             </Col>
 
-                            <Col xs={24} sm={12}>
-                              <Form.Item
-                                label="Vĩ Độ (Latitude)"
-                                name="latitude"
-                              >
-                                <InputNumber
-                                  style={{
-                                    width: "100%",
-                                  }}
-                                  step={0.000001}
-                                  placeholder="VD: 21.012345"
-                                  className="form-input-number"
+                            {/* =====================================================
+    GIÁO PHẬN
+===================================================== */}
+
+                            <Col xs={24} sm={8}>
+                              <Form.Item label="Giáo phận" name="diocese_id">
+                                <Select
+                                  allowClear
+                                  showSearch
+                                  disabled={!archdioceses.length}
+                                  loading={loadingDioceses}
+                                  placeholder={
+                                    form.getFieldValue("archdiocese_id")
+                                      ? "Chọn Giáo phận"
+                                      : "Chọn Tổng Giáo phận trước"
+                                  }
+                                  className="form-select"
+                                  optionFilterProp="label"
+                                  onChange={handleDioceseChange}
+                                  options={dioceses.map((item) => ({
+                                    value: item.id,
+                                    label: item.name,
+                                  }))}
                                 />
                               </Form.Item>
                             </Col>
 
-                            <Col xs={24} sm={12}>
-                              <Form.Item
-                                label="Kinh Độ (Longitude)"
-                                name="longitude"
-                              >
-                                <InputNumber
-                                  style={{
-                                    width: "100%",
-                                  }}
-                                  step={0.000001}
-                                  placeholder="VD: 105.823456"
-                                  className="form-input-number"
+                            {/* =====================================================
+    GIÁO HẠT
+===================================================== */}
+
+                            <Col xs={24} sm={8}>
+                              <Form.Item label="Giáo hạt" name="deanery_id">
+                                <Select
+                                  allowClear
+                                  showSearch
+                                  disabled={!dioceses.length}
+                                  loading={loadingDeaneries}
+                                  placeholder={
+                                    form.getFieldValue("diocese_id")
+                                      ? "Chọn Giáo hạt"
+                                      : "Chọn Giáo phận trước"
+                                  }
+                                  className="form-select"
+                                  optionFilterProp="label"
+                                  options={deaneries.map((item) => ({
+                                    value: item.id,
+                                    label: item.name,
+                                  }))}
                                 />
                               </Form.Item>
                             </Col>

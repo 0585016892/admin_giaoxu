@@ -1,6 +1,5 @@
 import React from "react";
-import { Avatar, Button, Dropdown } from "antd";
-
+import { Avatar, Button, Dropdown, Badge } from "antd";
 import {
   MenuOutlined,
   UserOutlined,
@@ -10,7 +9,7 @@ import {
 } from "@ant-design/icons";
 
 /* =========================================================
-   COLORS - FAITHEDU
+   FAITHEDU THEME
 ========================================================= */
 
 const COLORS = {
@@ -20,17 +19,9 @@ const COLORS = {
   background: "#F7F9FC",
   white: "#FFFFFF",
   text: "#173B5E",
-  textSecondary: "#64748B",
-  muted: "#94A3B8",
+  secondary: "#64748B",
   border: "#E2E8F0",
-  navyLight: "#EEF3F7",
-  goldLight: "#FBF5E7",
-  success: "#2E7D5B",
-  successBg: "#EAF6F0",
-  warning: "#B7791F",
-  warningBg: "#FFF7E5",
-  gray: "#64748B",
-  grayBg: "#F1F5F9",
+  lightBlue: "#EEF3F7",
   danger: "#C0392B",
   dangerBg: "#FDEDEC",
 };
@@ -40,9 +31,7 @@ const COLORS = {
 ========================================================= */
 
 function getInitials(name) {
-  if (!name || !String(name).trim()) {
-    return "PH";
-  }
+  if (!name || !String(name).trim()) return "PH";
 
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
 
@@ -50,11 +39,11 @@ function getInitials(name) {
     return parts[0].slice(0, 2).toUpperCase();
   }
 
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 /* =========================================================
-   CSS
+   CSS - EMBEDDED
 ========================================================= */
 
 const HEADER_CSS = `
@@ -68,26 +57,12 @@ const HEADER_CSS = `
 }
 
 .parent-header {
-  --header-navy: ${COLORS.navy};
-  --header-navy-hover: ${COLORS.navyHover};
-  --header-gold: ${COLORS.gold};
-  --header-background: ${COLORS.background};
-  --header-white: ${COLORS.white};
-  --header-text: ${COLORS.text};
-  --header-secondary: ${COLORS.textSecondary};
-  --header-muted: ${COLORS.muted};
-  --header-border: ${COLORS.border};
-  --header-navy-light: ${COLORS.navyLight};
-  --header-gold-light: ${COLORS.goldLight};
-  --header-danger: ${COLORS.danger};
-  --header-danger-bg: ${COLORS.dangerBg};
-
   position: sticky;
   top: 0;
   z-index: 90;
 
   width: 100%;
-  height: 76px;
+  min-height: 76px;
   padding: 0 28px;
 
   display: flex;
@@ -95,19 +70,17 @@ const HEADER_CSS = `
   justify-content: space-between;
   gap: 20px;
 
-  background: var(--header-white);
-  border-bottom: 1px solid var(--header-border);
+  background: ${COLORS.white};
+  border-bottom: 1px solid ${COLORS.border};
 
-  font-family: "Be Vietnam Pro", Inter, "Segoe UI", Arial, sans-serif;
+  font-family: "Be Vietnam Pro", Inter, "Segoe UI", sans-serif;
 }
 
-/* =========================================================
-   LEFT
-========================================================= */
+/* LEFT */
 
 .parent-header__left {
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 
   display: flex;
   align-items: center;
@@ -120,11 +93,11 @@ const HEADER_CSS = `
 
 .parent-header__title {
   overflow: hidden;
+  color: ${COLORS.navy};
 
-  color: var(--header-navy);
   font-size: 21px;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.4;
   letter-spacing: -0.4px;
 
   white-space: nowrap;
@@ -135,21 +108,19 @@ const HEADER_CSS = `
   margin-top: 3px;
   overflow: hidden;
 
-  color: var(--header-secondary);
+  color: ${COLORS.secondary};
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
 
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-/* =========================================================
-   ICON BUTTONS
-========================================================= */
+/* BUTTONS */
 
 .parent-header__icon-button.ant-btn {
   position: relative;
+  flex-shrink: 0;
 
   width: 42px;
   height: 42px;
@@ -160,57 +131,42 @@ const HEADER_CSS = `
   align-items: center;
   justify-content: center;
 
-  border: 1px solid var(--header-border);
+  border: 1px solid ${COLORS.border};
   border-radius: 12px;
 
-  background: var(--header-white);
-  color: var(--header-navy);
-
+  background: ${COLORS.white};
+  color: ${COLORS.navy};
   box-shadow: none;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
+
+  transition: all 0.2s ease;
 }
 
 .parent-header__icon-button.ant-btn:hover {
-  color: var(--header-navy) !important;
-  background: var(--header-navy-light) !important;
+  color: ${COLORS.navy} !important;
+  background: ${COLORS.lightBlue} !important;
   border-color: #CBD8E5 !important;
-}
-
-.parent-header__icon-button.ant-btn:active {
-  background: var(--header-gold-light) !important;
 }
 
 .parent-header__icon-button .anticon {
   font-size: 18px;
 }
 
-.parent-header__icon-button.ant-btn:focus-visible,
-.parent-header__account.ant-btn:focus-visible {
-  outline: 3px solid rgba(217, 164, 65, 0.55);
-  outline-offset: 2px;
+/* NOTIFICATION */
+
+.parent-header__notification-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Notification dot */
-
-.parent-header__notification-dot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-
+.parent-header__notification-badge .ant-badge-dot {
   width: 9px;
   height: 9px;
-
-  border: 2px solid var(--header-white);
-  border-radius: 50%;
-  background: var(--header-gold);
+  background: ${COLORS.gold};
+  box-shadow: 0 0 0 2px ${COLORS.white};
 }
 
-/* =========================================================
-   RIGHT
-========================================================= */
+/* RIGHT */
 
 .parent-header__right {
   flex-shrink: 0;
@@ -220,9 +176,7 @@ const HEADER_CSS = `
   gap: 12px;
 }
 
-/* =========================================================
-   ACCOUNT BUTTON
-========================================================= */
+/* ACCOUNT */
 
 .parent-header__account.ant-btn {
   height: 52px;
@@ -233,22 +187,19 @@ const HEADER_CSS = `
   align-items: center;
   justify-content: flex-start;
 
-  border: 1px solid var(--header-border);
+  border: 1px solid ${COLORS.border};
   border-radius: 13px;
 
-  background: var(--header-white);
-  color: var(--header-text);
-
+  background: ${COLORS.white};
+  color: ${COLORS.text};
   box-shadow: none;
 
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .parent-header__account.ant-btn:hover {
-  color: var(--header-text) !important;
-  background: var(--header-background) !important;
+  color: ${COLORS.text} !important;
+  background: ${COLORS.background} !important;
   border-color: #CBD8E5 !important;
 }
 
@@ -267,27 +218,23 @@ const HEADER_CSS = `
   align-items: center;
   justify-content: center;
 
-  background: var(--header-navy) !important;
-  color: var(--header-white) !important;
+  background: ${COLORS.navy} !important;
+  color: ${COLORS.white} !important;
 
   font-size: 14px;
   font-weight: 700;
 }
 
-.parent-header__avatar.ant-avatar-image {
-  background: var(--header-white) !important;
-}
-
 .parent-header__user-info {
-  min-width: 0;
   width: 155px;
+  min-width: 0;
   text-align: left;
 }
 
 .parent-header__user-name {
   overflow: hidden;
 
-  color: var(--header-text);
+  color: ${COLORS.navy};
   font-size: 13px;
   font-weight: 700;
   line-height: 1.5;
@@ -300,7 +247,7 @@ const HEADER_CSS = `
   margin-top: 2px;
   overflow: hidden;
 
-  color: var(--header-secondary);
+  color: ${COLORS.secondary};
   font-size: 11px;
   font-weight: 400;
   line-height: 1.4;
@@ -311,13 +258,11 @@ const HEADER_CSS = `
 
 .parent-header__chevron {
   margin-left: 3px;
-  color: var(--header-muted);
+  color: #94A3B8;
   font-size: 10px;
 }
 
-/* =========================================================
-   DROPDOWN
-========================================================= */
+/* DROPDOWN */
 
 .parent-header-dropdown .ant-dropdown-menu {
   min-width: 230px;
@@ -329,7 +274,7 @@ const HEADER_CSS = `
   background: ${COLORS.white};
   box-shadow: 0 12px 32px rgba(23, 59, 94, 0.12);
 
-  font-family: "Be Vietnam Pro", Inter, "Segoe UI", Arial, sans-serif;
+  font-family: "Be Vietnam Pro", Inter, "Segoe UI", sans-serif;
 }
 
 .parent-header-dropdown .ant-dropdown-menu-item {
@@ -343,16 +288,14 @@ const HEADER_CSS = `
 
   border-radius: 9px;
 
-  color: ${COLORS.textSecondary};
+  color: ${COLORS.secondary};
   font-size: 13px;
   font-weight: 500;
-
-  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .parent-header-dropdown .ant-dropdown-menu-item:hover {
   color: ${COLORS.navy} !important;
-  background: ${COLORS.navyLight} !important;
+  background: ${COLORS.lightBlue} !important;
 }
 
 .parent-header-dropdown .ant-dropdown-menu-item .anticon {
@@ -369,14 +312,7 @@ const HEADER_CSS = `
   background: ${COLORS.dangerBg} !important;
 }
 
-.parent-header-dropdown .ant-dropdown-menu-item-divider {
-  margin: 5px 4px;
-  background: ${COLORS.border};
-}
-
-/* =========================================================
-   TABLET
-========================================================= */
+/* TABLET */
 
 @media (max-width: 1024px) {
   .parent-header {
@@ -396,19 +332,16 @@ const HEADER_CSS = `
   }
 }
 
-/* =========================================================
-   MOBILE
-========================================================= */
+/* MOBILE */
 
 @media (max-width: 768px) {
   .parent-header {
-    height: 66px;
+    min-height: 66px;
     padding: 0 14px;
     gap: 8px;
   }
 
   .parent-header__left {
-    flex: 1;
     gap: 9px;
   }
 
@@ -443,18 +376,8 @@ const HEADER_CSS = `
     background: transparent;
   }
 
-  .parent-header__account.ant-btn:hover {
-    background: var(--header-navy-light) !important;
-    border-color: transparent !important;
-  }
-
   .parent-header__account-inner {
     gap: 0;
-  }
-
-  .parent-header__avatar {
-    width: 39px !important;
-    height: 39px !important;
   }
 
   .parent-header__user-info,
@@ -463,9 +386,7 @@ const HEADER_CSS = `
   }
 }
 
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
+/* SMALL MOBILE */
 
 @media (max-width: 380px) {
   .parent-header {
@@ -503,8 +424,6 @@ const HEADER_CSS = `
     height: 36px !important;
   }
 }
-
-/* ACCESSIBILITY */
 
 @media (prefers-reduced-motion: reduce) {
   .parent-header *,
@@ -570,7 +489,6 @@ export default function ParentHeader({
       <style>{HEADER_CSS}</style>
 
       <header className="parent-header">
-        {/* LEFT */}
         <div className="parent-header__left">
           {isMobile && (
             <Button
@@ -593,7 +511,6 @@ export default function ParentHeader({
           </div>
         </div>
 
-        {/* RIGHT */}
         <div className="parent-header__right">
           <Button
             type="text"
@@ -601,8 +518,9 @@ export default function ParentHeader({
             onClick={onNotifications}
             aria-label="Mở thông báo"
           >
-            <BellOutlined />
-            <span className="parent-header__notification-dot" />
+            <Badge dot className="parent-header__notification-badge">
+              <BellOutlined />
+            </Badge>
           </Button>
 
           <Dropdown

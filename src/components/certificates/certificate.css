@@ -697,7 +697,7 @@
 .marriage-cross {
   margin: 8px 0 3px;
 
-  font-size: 42px;
+  font-size: 35px;
 
   line-height: 1;
 
@@ -711,7 +711,7 @@
 .marriage-certificate-title {
   margin: 0;
 
-  font-size: calc(var(--cert-title-size) * 0.7);
+  font-size: calc(var(--cert-title-size) * 0.5);
 
   font-weight: 700;
 
@@ -968,8 +968,6 @@
    ============================================================ */
 
 .marriage-certificate-footer {
-  margin-top: 150px;
-
   padding-top: 12px;
 
   padding-bottom: 3px;

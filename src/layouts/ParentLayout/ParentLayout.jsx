@@ -7,7 +7,6 @@ import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 
 import ParentSidebar, { MENU_ITEMS } from "./ParentSidebar";
-
 import ParentHeader from "./ParentHeader";
 
 const { Sider, Content } = Layout;
@@ -25,18 +24,7 @@ const COLORS = {
   white: "#FFFFFF",
   text: "#173B5E",
   textSecondary: "#64748B",
-  muted: "#94A3B8",
   border: "#E2E8F0",
-  navyLight: "#EEF3F7",
-  goldLight: "#FBF5E7",
-  success: "#2E7D5B",
-  successBg: "#EAF6F0",
-  warning: "#B7791F",
-  warningBg: "#FFF7E5",
-  gray: "#64748B",
-  grayBg: "#F1F5F9",
-  danger: "#C0392B",
-  dangerBg: "#FDEDEC",
 };
 
 /* =========================================================
@@ -117,16 +105,18 @@ const LAYOUT_CSS = `
   height: 100%;
   overflow: hidden;
 
+  display: flex;
+  flex-direction: column;
+
   background: var(--layout-white) !important;
 }
-
-/* ParentSidebar fills the Sider */
 
 .parent-layout__sider .parent-sidebar {
   width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
   flex: 1 1 auto;
+
   border-right: none;
 }
 
@@ -156,6 +146,7 @@ const LAYOUT_CSS = `
   width: 100%;
   height: var(--header-height);
   min-width: 0;
+  flex-shrink: 0;
 
   background: var(--layout-white);
 }
@@ -166,6 +157,7 @@ const LAYOUT_CSS = `
 
   width: 100%;
   height: var(--header-height) !important;
+  min-height: var(--header-height);
   min-width: 0;
 }
 
@@ -189,8 +181,6 @@ const LAYOUT_CSS = `
 
   margin: 0 auto;
 }
-
-/* Prevent child pages from stretching the entire layout */
 
 .parent-layout__content-inner > * {
   min-width: 0;
@@ -226,6 +216,7 @@ const LAYOUT_CSS = `
   width: 100% !important;
   height: auto !important;
   min-height: 100% !important;
+
   border-right: none;
 }
 
@@ -308,8 +299,7 @@ export default function ParentLayout() {
 
   const screens = useBreakpoint();
 
-  // Khi breakpoint chưa được xác định,
-  // tạm thời hiển thị desktop để tránh layout nhảy.
+  // Dùng breakpoint md để phân biệt mobile và desktop.
   const isMobile = screens.md === false;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -325,17 +315,28 @@ export default function ParentLayout() {
       return "/parent";
     }
 
-    const matchedItem = MENU_ITEMS.filter((item) => item.key !== "/parent")
+    const matchedItem = [...MENU_ITEMS]
+      .filter((item) => item.key !== "/parent")
       .sort((a, b) => b.key.length - a.key.length)
       .find((item) => {
         return pathname === item.key || pathname.startsWith(`${item.key}/`);
       });
 
+    // Trang chi tiết học sinh vẫn chọn menu Con của tôi.
+    if (pathname.startsWith("/parent/children/")) {
+      return "/parent/students";
+    }
+
+    // Trang hồ sơ tài khoản không thuộc menu nội dung.
+    if (pathname === "/parent/profile") {
+      return "";
+    }
+
     return matchedItem?.key || "/parent";
   }, [location.pathname]);
 
   /* =======================================================
-     CLOSE DRAWER WHEN ROUTE CHANGES
+     DRAWER
   ======================================================= */
 
   useEffect(() => {
@@ -348,18 +349,6 @@ export default function ParentLayout() {
     }
   }, [isMobile]);
 
-  /* =======================================================
-     NAVIGATION HANDLERS
-  ======================================================= */
-
-  const handleMenuClick = useCallback(
-    ({ key }) => {
-      navigate(key);
-      setDrawerOpen(false);
-    },
-    [navigate],
-  );
-
   const handleMenuOpen = useCallback(() => {
     setDrawerOpen(true);
   }, []);
@@ -367,6 +356,20 @@ export default function ParentLayout() {
   const handleDrawerClose = useCallback(() => {
     setDrawerOpen(false);
   }, []);
+
+  /* =======================================================
+     NAVIGATION
+  ======================================================= */
+
+  const handleMenuClick = useCallback(
+    ({ key }) => {
+      if (!key) return;
+
+      navigate(key);
+      setDrawerOpen(false);
+    },
+    [navigate],
+  );
 
   const handleProfile = useCallback(() => {
     navigate("/parent/profile");

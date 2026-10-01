@@ -1217,18 +1217,18 @@ const CertificatePage = () => {
           parish={parish}
           diocese={diocese}
           pastorName={pastorName}
+          issuedDate={issuedDate}
+          onIssuedDateChange={setIssuedDate}
           onCertDataChange={(updated) => {
-            // Cập nhật số chứng chỉ và tên học viên
             setCertData((prev) => ({
               ...prev,
               certNo: updated.certNo ?? prev.certNo,
               fullName: updated.fullName ?? prev.fullName,
               achievement: updated.achievement ?? prev.achievement,
             }));
-            // Cập nhật loại chứng chỉ
+
             setCertType(updated.certType);
 
-            // Lưu thông tin giáo xứ có thể chỉnh sửa
             setCertificateInfoOverrides((prev) => ({
               ...prev,
               parish: updated.parish,

@@ -28,7 +28,8 @@ import {
   AppstoreOutlined,
   IdcardOutlined,
 } from "@ant-design/icons";
-
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
 import {
   BORDER_OPTIONS,
   DEFAULT_CERTIFICATE_DESIGN,
@@ -45,15 +46,13 @@ const CertificateSettingsPanel = ({
   design,
   onChange,
   onReset,
-
-  // Dữ liệu chứng chỉ
   certData,
-  certType = "",
-  parish = "",
-  diocese = "",
-  pastorName = "",
-
-  // Callback gửi thông tin chỉnh sửa lên component cha
+  certType,
+  parish,
+  diocese,
+  pastorName,
+  issuedDate,
+  onIssuedDateChange,
   onCertDataChange,
 }) => {
   // ============================================================
@@ -636,6 +635,55 @@ const CertificateSettingsPanel = ({
                         style={{ marginTop: 8 }}
                       />
                     </Col>
+                    <Card
+                      bordered={false}
+                      style={{
+                        marginBottom: 16,
+                        border: "1px solid #E2E8F0",
+                        borderRadius: 10,
+                      }}
+                    >
+                      <Typography.Text
+                        style={{
+                          display: "block",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: "#64748B",
+                          letterSpacing: 0.8,
+                          marginBottom: 8,
+                        }}
+                      >
+                        NGÀY CẤP CHỨNG CHỈ
+                      </Typography.Text>
+
+                      <DatePicker
+                        style={{ width: "100%" }}
+                        format="DD/MM/YYYY"
+                        value={
+                          issuedDate ? dayjs(issuedDate, "DD/MM/YYYY") : null
+                        }
+                        onChange={(date) => {
+                          const value = date ? date.format("DD/MM/YYYY") : "";
+
+                          console.log("ISSUED DATE CHANGE:", value);
+
+                          onIssuedDateChange?.(value);
+                        }}
+                        placeholder="Chọn ngày cấp chứng chỉ"
+                        allowClear
+                      />
+
+                      <Typography.Text
+                        type="secondary"
+                        style={{
+                          display: "block",
+                          marginTop: 6,
+                          fontSize: 12,
+                        }}
+                      >
+                        Ngày này sẽ được hiển thị trên chứng chỉ.
+                      </Typography.Text>
+                    </Card>
                     <Col span={24}>
                       <Typography.Text strong>Thành tích</Typography.Text>
 

@@ -1,70 +1,48 @@
 import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, Menu } from "antd";
 import {
-  DashboardOutlined,
+  HomeFilled,
   TeamOutlined,
-  // BellOutlined,
-  // UserOutlined,
-  CustomerServiceOutlined,
-  RightOutlined,
+  BellOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 
 import logoxn from "../../assets/images/logoXn.png";
+import churchSidebar from "../../assets/images/church-sidebar.png";
 
-const COLORS = {
-  navy: "#173B5E",
-  navyHover: "#244F78",
-  gold: "#D9A441",
-  background: "#F7F9FC",
-  white: "#FFFFFF",
-  text: "#173B5E",
-  textSecondary: "#64748B",
-  muted: "#94A3B8",
-  border: "#E2E8F0",
-  navyLight: "#EEF3F7",
-  goldLight: "#FBF5E7",
-  success: "#2E7D5B",
-  successBg: "#EAF6F0",
-  warning: "#B7791F",
-  warningBg: "#FFF7E5",
-  gray: "#64748B",
-  grayBg: "#F1F5F9",
-  danger: "#C0392B",
-  dangerBg: "#FDEDEC",
-};
-
-const SIDEBAR_IMAGES = {
-  logo: logoxn,
-  church: logoxn,
-};
+// ========================================
+// MENU
+// ========================================
 
 export const MENU_ITEMS = [
   {
     key: "/parent",
-    icon: <DashboardOutlined />,
-    label: "Tổng quan",
+    icon: <HomeFilled />,
+    label: "Trang chủ",
   },
   {
     key: "/parent/students",
     icon: <TeamOutlined />,
     label: "Con của tôi",
   },
-  // {
-  //   key: "/parent/notifications",
-  //   icon: <BellOutlined />,
-  //   label: "Thông báo",
-  // },
-  // {
-  //   key: "/parent/contact",
-  //   icon: <CustomerServiceOutlined />,
-  //   label: "Liên hệ giáo xứ",
-  // },
-  // {
-  //   key: "/parent/profile",
-  //   icon: <UserOutlined />,
-  //   label: "Tài khoản",
-  // },
+
+  {
+    key: "/parent/notifications",
+    icon: <BellOutlined />,
+    label: "Thông báo",
+  },
+
+  {
+    key: "/parent/support",
+    icon: <QuestionCircleOutlined />,
+    label: "Hỗ trợ",
+  },
 ];
+
+// ========================================
+// CSS NHÚNG TRỰC TIẾP TRONG JS
+// ========================================
 
 const SIDEBAR_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
@@ -75,69 +53,67 @@ const SIDEBAR_CSS = `
 }
 
 .parent-sidebar {
-  --ps-navy: ${COLORS.navy};
-  --ps-navy-hover: ${COLORS.navyHover};
-  --ps-gold: ${COLORS.gold};
-  --ps-bg: ${COLORS.background};
-  --ps-white: ${COLORS.white};
-  --ps-text: ${COLORS.text};
-  --ps-secondary: ${COLORS.textSecondary};
-  --ps-muted: ${COLORS.muted};
-  --ps-border: ${COLORS.border};
-  --ps-navy-light: ${COLORS.navyLight};
-  --ps-gold-light: ${COLORS.goldLight};
-  --ps-success: ${COLORS.success};
-  --ps-success-bg: ${COLORS.successBg};
+  --ps-navy: #06264c;
+  --ps-gold: #f0c453;
+  --ps-white: #ffffff;
+  --ps-muted: #d5deed;
 
-  width: 268px;
-  height: 100vh;
-  flex: 0 0 268px;
+  position: relative;
+  isolation: isolate;
+
   display: flex;
   flex-direction: column;
+  flex: 0 0 255px;
 
-  background: var(--ps-white);
-  color: var(--ps-text);
-  border-right: 1px solid var(--ps-border);
+  width: 255px;
+  height: 100vh;
+  min-height: 0;
 
-  font-family: "Be Vietnam Pro", sans-serif;
   overflow: hidden;
+  color: var(--ps-white);
+
+  background: linear-gradient(
+    180deg,
+    #06264c 0%,
+    #082d59 55%,
+    #06264c 100%
+  );
+
+  font-family: 'Be Vietnam Pro', sans-serif;
 }
 
 /* BRAND */
 
 .parent-sidebar__brand {
+  position: relative;
+  z-index: 2;
+
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 24px 20px 22px;
+  gap: 10px;
+
+  min-height: 124px;
+  padding: 20px 23px;
+
   flex-shrink: 0;
 }
 
 .parent-sidebar__logo {
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 
-  background: var(--ps-white);
-  border: 1.5px solid var(--ps-border);
-  border-radius: 13px;
+  width: 55px;
+  height: 55px;
+  flex: 0 0 55px;
   overflow: hidden;
 }
 
 .parent-sidebar__logo img {
-  width: 84%;
-  height: 84%;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-}
-
-.parent-sidebar__logo-fallback {
-  display: none;
-  color: var(--ps-navy);
-  font-size: 14px;
-  font-weight: 700;
 }
 
 .parent-sidebar__brand-text {
@@ -145,45 +121,52 @@ const SIDEBAR_CSS = `
 }
 
 .parent-sidebar__brand-name {
-  color: var(--ps-navy);
-  font-size: 23px;
+  color: #fff;
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: -0.7px;
-  line-height: 1.25;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  white-space: nowrap;
+}
+
+.parent-sidebar__brand-name span {
+  color: var(--ps-gold);
 }
 
 .parent-sidebar__brand-subtitle {
-  margin-top: 3px;
-  color: var(--ps-secondary);
-  font-size: 12px;
-  font-weight: 500;
+  margin-top: 4px;
+  color: #d8e2f0;
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
 /* USER CARD */
 
 .parent-sidebar__user-wrap {
-  padding: 0 14px 22px;
   flex-shrink: 0;
+  padding: 0 14px 18px;
 }
 
 .parent-sidebar__user-card {
   display: flex;
   align-items: center;
   gap: 11px;
-  min-width: 0;
-  padding: 12px;
 
-  background: var(--ps-bg);
-  border: 1px solid var(--ps-border);
-  border-radius: 14px;
+  min-width: 0;
+  padding: 11px;
+
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
 }
 
 .parent-sidebar__avatar {
   flex-shrink: 0;
-  background: var(--ps-navy) !important;
-  color: var(--ps-white) !important;
+  background: var(--ps-gold) !important;
+  color: var(--ps-navy) !important;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .parent-sidebar__user-info {
@@ -194,10 +177,9 @@ const SIDEBAR_CSS = `
 .parent-sidebar__user-name {
   display: block;
   overflow: hidden;
-  color: var(--ps-text);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.5;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -205,78 +187,91 @@ const SIDEBAR_CSS = `
 .parent-sidebar__user-role {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  color: var(--ps-secondary);
-  font-size: 11px;
+  gap: 7px;
+  margin-top: 5px;
+  color: #d5deed;
+  font-size: 10px;
 }
 
 .parent-sidebar__status-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
-  background: var(--ps-success);
-  box-shadow: 0 0 0 3px var(--ps-success-bg);
   flex-shrink: 0;
+  border-radius: 50%;
+  background: #65d6a0;
+  box-shadow: 0 0 0 3px rgba(101, 214, 160, 0.12);
 }
 
 /* NAVIGATION */
 
 .parent-sidebar__navigation {
+  position: relative;
+  z-index: 2;
+
   flex: 1;
   min-height: 0;
-  padding: 0 12px 16px;
-  overflow-y: auto;
+  padding: 10px 12px 12px;
+
   overflow-x: hidden;
+  overflow-y: auto;
+
   scrollbar-width: thin;
-  scrollbar-color: var(--ps-border) transparent;
+  scrollbar-color: rgba(255,255,255,.2) transparent;
 }
 
 .parent-sidebar__section-title {
-  padding: 0 12px 12px;
-  color: var(--ps-muted);
-  font-size: 11px;
+  padding: 0 12px 10px;
+  color: #9eb2cc;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.7px;
+  letter-spacing: 1px;
   text-transform: uppercase;
 }
 
-.parent-sidebar__menu.ant-menu {
+.parent-sidebar__menu.ant-menu,
+.parent-sidebar__menu.ant-menu-inline {
   width: 100%;
+  color: var(--ps-muted);
   background: transparent !important;
   border-inline-end: none !important;
-}
-
-.parent-sidebar__menu.ant-menu-inline {
-  border-inline-end: none !important;
+  font-family: inherit;
 }
 
 .parent-sidebar__menu .ant-menu-item {
   position: relative;
-  width: 100%;
-  height: 46px;
-  line-height: 46px;
-  margin: 4px 0 !important;
-  padding: 0 13px !important;
 
   display: flex;
   align-items: center;
   gap: 12px;
 
+  width: 100%;
+  height: 45px;
+  line-height: 45px;
+
+  margin: 4px 0 !important;
+  padding: 0 15px !important;
+
   border-radius: 10px;
-  color: var(--ps-secondary);
-  font-size: 13px;
+  color: #d5deed;
+
+  font-size: 12px;
   font-weight: 500;
 
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background .2s ease, color .2s ease;
 }
 
 .parent-sidebar__menu .ant-menu-item .anticon {
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   width: 20px;
-  color: var(--ps-muted);
-  font-size: 18px;
-  transition: color 0.2s ease;
+  flex: 0 0 20px;
+
+  color: #d5e1f1;
+  font-size: 19px;
+
+  transition: color .2s ease;
 }
 
 .parent-sidebar__menu .ant-menu-title-content {
@@ -290,143 +285,122 @@ const SIDEBAR_CSS = `
   display: none !important;
 }
 
+/* HOVER */
+
 .parent-sidebar__menu .ant-menu-item:hover {
-  color: var(--ps-navy) !important;
-  background: var(--ps-navy-light) !important;
+  color: #fff !important;
+  background: rgba(255, 255, 255, .09) !important;
 }
 
 .parent-sidebar__menu .ant-menu-item:hover .anticon {
-  color: var(--ps-navy);
+  color: #fff;
 }
+
+/* ACTIVE: NỀN VÀNG */
 
 .parent-sidebar__menu .ant-menu-item-selected,
 .parent-sidebar__menu .ant-menu-item-selected:hover {
-  color: var(--ps-white) !important;
-  background: var(--ps-navy) !important;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(23, 59, 94, 0.12);
+  color: #102746 !important;
+
+  background: linear-gradient(
+    100deg,
+    #f5d16f 0%,
+    #efbd4b 100%
+  ) !important;
+
+  font-weight: 700;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .1);
 }
 
 .parent-sidebar__menu .ant-menu-item-selected .anticon,
 .parent-sidebar__menu .ant-menu-item-selected:hover .anticon {
-  color: var(--ps-gold) !important;
-}
-
-.parent-sidebar__menu .ant-menu-item-selected::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  width: 5px;
-  height: 5px;
-  margin-top: -2.5px;
-  border-radius: 50%;
-  background: var(--ps-gold);
+  color: #102746 !important;
 }
 
 .parent-sidebar__menu .ant-menu-item:focus-visible {
-  outline: 2px solid var(--ps-gold);
-  outline-offset: 2px;
+  outline: 2px solid #fff;
+  outline-offset: -3px;
 }
 
-/* BOTTOM SUPPORT */
+/* FOOTER / CHURCH */
 
-.parent-sidebar__bottom {
-  flex-shrink: 0;
-  padding: 12px 14px 18px;
-  border-top: 1px solid var(--ps-border);
-}
-
-.parent-sidebar__support {
+.parent-sidebar__footer {
   position: relative;
-  padding: 17px 15px 15px;
+  z-index: 0;
+  isolation: isolate;
+
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  justify-content: flex-end;
 
-  background: var(--ps-navy);
-  border-radius: 15px;
+  flex: 0 0 260px;
+  min-height: 0;
+
+  padding: 0 24px 26px;
   overflow: hidden;
-  isolation: isolate;
-}
-
-.parent-sidebar__support::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  width: 145px;
-  height: 145px;
-  top: -70px;
-  right: -50px;
-  border: 1px solid rgba(217, 164, 65, 0.25);
-  border-radius: 50%;
-}
-
-.parent-sidebar__support::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  width: 110px;
-  height: 110px;
-  top: -42px;
-  right: -32px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
 }
 
 .parent-sidebar__church {
   position: absolute;
-  z-index: -1;
-  right: 0;
-  bottom: 0;
-  width: 100px;
-  height: 90px;
-  opacity: 0.09;
+  z-index: -2;
+  inset: 0;
+
+  overflow: hidden;
   pointer-events: none;
 }
 
 .parent-sidebar__church img {
+  position: absolute;
+  inset: 0;
+
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: bottom right;
-  filter: brightness(0) invert(1);
+
+  object-fit: cover;
+  object-position: center bottom;
+
+  opacity: .55;
 }
 
-.parent-sidebar__support-content {
+.parent-sidebar__church::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    180deg,
+    #082d59 0%,
+    rgba(8, 45, 89, .75) 18%,
+    rgba(6, 38, 76, .28) 55%,
+    rgba(4, 28, 57, .12) 100%
+  );
+}
+
+.parent-sidebar__quote {
   position: relative;
-}
+  z-index: 1;
 
-.parent-sidebar__support-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 8px;
-  color: var(--ps-gold);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 
-.parent-sidebar__support-title {
-  color: var(--ps-white);
-  font-size: 14px;
-  font-weight: 700;
+  color: #e0e8f5;
+
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 400;
   line-height: 1.5;
+  letter-spacing: .1px;
 }
 
-.parent-sidebar__support-desc {
-  margin-top: 5px;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 11px;
-  line-height: 1.65;
-}
+/* SUPPORT BUTTON */
 
 .parent-sidebar__support-button {
   width: 100%;
-  min-height: 39px;
-  padding: 8px 11px;
+  min-height: 38px;
+  margin-top: 14px;
+  padding: 8px 10px;
 
   display: flex;
   align-items: center;
@@ -435,64 +409,68 @@ const SIDEBAR_CSS = `
 
   border: none;
   border-radius: 9px;
+
   background: var(--ps-gold);
   color: var(--ps-navy);
 
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
 
-  transition: background 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
 }
 
 .parent-sidebar__support-button:hover {
-  background: #E8BE66;
+  background: #ffda78;
   transform: translateY(-1px);
 }
 
-.parent-sidebar__support-button:active {
-  transform: translateY(0);
-}
-
 .parent-sidebar__support-button:focus-visible {
-  outline: 2px solid var(--ps-white);
+  outline: 2px solid #fff;
   outline-offset: 3px;
-}
-
-.parent-sidebar__support-button .anticon {
-  font-size: 14px;
 }
 
 /* SHORT SCREENS */
 
-@media (min-width: 769px) and (max-height: 760px) {
+@media (max-height: 760px) {
   .parent-sidebar__brand {
-    padding-top: 14px;
-    padding-bottom: 15px;
+    min-height: 95px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .parent-sidebar__logo {
+    width: 47px;
+    height: 47px;
+    flex-basis: 47px;
+  }
+
+  .parent-sidebar__brand-name {
+    font-size: 23px;
   }
 
   .parent-sidebar__user-wrap {
-    padding-bottom: 14px;
-  }
-
-  .parent-sidebar__menu .ant-menu-item {
-    height: 41px;
-    line-height: 41px;
-  }
-
-  .parent-sidebar__bottom {
-    padding-top: 8px;
     padding-bottom: 10px;
   }
 
-  .parent-sidebar__support {
-    padding: 12px;
-    gap: 9px;
+  .parent-sidebar__navigation {
+    padding-top: 5px;
   }
 
-  .parent-sidebar__support-desc {
-    line-height: 1.45;
+  .parent-sidebar__menu .ant-menu-item {
+    height: 39px;
+    line-height: 39px;
+    margin: 3px 0 !important;
+  }
+
+  .parent-sidebar__footer {
+    flex-basis: 190px;
+    padding-bottom: 18px;
+  }
+
+  .parent-sidebar__quote {
+    font-size: 17px;
   }
 }
 
@@ -500,25 +478,33 @@ const SIDEBAR_CSS = `
 
 @media (min-width: 769px) and (max-width: 1100px) {
   .parent-sidebar {
-    width: 244px;
-    flex-basis: 244px;
+    width: 235px;
+    flex-basis: 235px;
   }
 
   .parent-sidebar__brand {
-    padding-inline: 16px;
+    gap: 8px;
+    padding-right: 14px;
+    padding-left: 14px;
   }
 
   .parent-sidebar__brand-name {
-    font-size: 21px;
+    font-size: 23px;
   }
 
-  .parent-sidebar__user-wrap,
-  .parent-sidebar__bottom {
-    padding-inline: 10px;
+  .parent-sidebar__brand-subtitle {
+    font-size: 9px;
   }
 
-  .parent-sidebar__navigation {
-    padding-inline: 9px;
+  .parent-sidebar__menu .ant-menu-item {
+    padding-right: 10px !important;
+    padding-left: 12px !important;
+    font-size: 11px;
+  }
+
+  .parent-sidebar__footer {
+    padding-right: 18px;
+    padding-left: 18px;
   }
 }
 
@@ -528,48 +514,30 @@ const SIDEBAR_CSS = `
   .parent-sidebar {
     width: 100%;
     height: auto;
-    min-height: 100%;
+    min-height: 0;
     flex: 0 0 auto;
-    overflow: visible;
-    border-right: none;
   }
 
   .parent-sidebar__brand {
-    padding: 17px 16px;
+    min-height: 90px;
+    padding: 15px 20px;
   }
 
   .parent-sidebar__user-wrap {
-    padding: 0 14px 16px;
+    padding-bottom: 12px;
   }
 
   .parent-sidebar__navigation {
     flex: none;
-    overflow: visible;
-    padding: 0 12px 14px;
+    max-height: 50vh;
   }
 
-  .parent-sidebar__menu .ant-menu-item {
-    height: 46px;
-    line-height: 46px;
+  .parent-sidebar__footer {
+    flex-basis: 170px;
   }
 
-  .parent-sidebar__bottom {
-    padding: 12px 14px 16px;
-  }
-}
-
-@media (max-width: 420px) {
-  .parent-sidebar__brand-name {
-    font-size: 21px;
-  }
-
-  .parent-sidebar__user-wrap,
-  .parent-sidebar__bottom {
-    padding-inline: 10px;
-  }
-
-  .parent-sidebar__navigation {
-    padding-inline: 9px;
+  .parent-sidebar__quote {
+    font-size: 18px;
   }
 }
 
@@ -579,15 +547,21 @@ const SIDEBAR_CSS = `
   .parent-sidebar *::after {
     transition: none !important;
   }
-}
 `;
+
+// ========================================
+// COMPONENT
+// ========================================
 
 export default function ParentSidebar({
   user,
-  selectedKey = "/parent",
+  selectedKey,
   onMenuClick,
   onContactClick,
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const displayName =
     user?.name ||
     user?.full_name ||
@@ -597,42 +571,67 @@ export default function ParentSidebar({
 
   const avatarText = displayName.trim().charAt(0).toUpperCase() || "P";
 
+  const currentPath = location.pathname.replace(/\/+$/, "") || "/";
+
+  const routeSelectedKey =
+    MENU_ITEMS.find((item) => item.key === currentPath)?.key ||
+    (currentPath.startsWith("/parent/children/")
+      ? "/parent/students"
+      : currentPath === "/parent/profile"
+        ? ""
+        : "");
+
+  const activeKey = selectedKey ?? routeSelectedKey;
+
+  const handleMenuClick = (info) => {
+    const { key } = info;
+
+    if (key === "/parent/support" && onContactClick) {
+      onContactClick(info);
+      return;
+    }
+
+    if (key !== currentPath) {
+      navigate(key);
+    }
+
+    onMenuClick?.(info);
+  };
+
   return (
     <>
       <style>{SIDEBAR_CSS}</style>
 
       <aside className="parent-sidebar">
         {/* BRAND */}
+
         <div className="parent-sidebar__brand">
           <div className="parent-sidebar__logo">
             <img
-              src={SIDEBAR_IMAGES.logo}
+              src={logoxn}
               alt="FaithEdu"
               onError={(event) => {
                 event.currentTarget.style.display = "none";
-
-                const fallback = event.currentTarget.nextElementSibling;
-
-                if (fallback) {
-                  fallback.style.display = "flex";
-                }
               }}
             />
-
-            <span className="parent-sidebar__logo-fallback">FE</span>
           </div>
 
           <div className="parent-sidebar__brand-text">
-            <div className="parent-sidebar__brand-name">FaithEdu</div>
+            <div className="parent-sidebar__brand-name">
+              Faith<span>Edu</span>
+            </div>
 
-            <div className="parent-sidebar__brand-subtitle">Cổng phụ huynh</div>
+            <div className="parent-sidebar__brand-subtitle">
+              Nền tảng giáo lý số
+            </div>
           </div>
         </div>
 
-        {/* USER */}
+        {/* USER CARD */}
+
         <div className="parent-sidebar__user-wrap">
           <div className="parent-sidebar__user-card">
-            <Avatar size={42} className="parent-sidebar__avatar">
+            <Avatar size={40} className="parent-sidebar__avatar">
               {avatarText}
             </Avatar>
 
@@ -648,57 +647,39 @@ export default function ParentSidebar({
         </div>
 
         {/* NAVIGATION */}
-        <nav className="parent-sidebar__navigation">
+
+        <nav className="parent-sidebar__navigation" aria-label="Menu phụ huynh">
           <div className="parent-sidebar__section-title">
             Không gian gia đình
           </div>
 
           <Menu
             mode="inline"
-            selectedKeys={[selectedKey]}
+            selectedKeys={activeKey ? [activeKey] : []}
             items={MENU_ITEMS}
-            onClick={onMenuClick}
+            onClick={handleMenuClick}
             className="parent-sidebar__menu"
           />
         </nav>
 
-        {/* SUPPORT */}
-        <div className="parent-sidebar__bottom">
-          <div className="parent-sidebar__support">
-            <div className="parent-sidebar__church">
-              <img
-                src={SIDEBAR_IMAGES.church}
-                alt=""
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-            </div>
+        {/* CHURCH FOOTER */}
 
-            <div className="parent-sidebar__support-content">
-              <div className="parent-sidebar__support-label">
-                <span>✦</span>
-                FaithEdu đồng hành
-              </div>
+        <div className="parent-sidebar__footer">
+          <div className="parent-sidebar__church">
+            <img
+              src={churchSidebar}
+              alt=""
+              aria-hidden="true"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
 
-              <div className="parent-sidebar__support-title">
-                Đồng hành cùng gia đình
-              </div>
-
-              <div className="parent-sidebar__support-desc">
-                Cùng giáo xứ nuôi dưỡng đức tin nơi các em.
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="parent-sidebar__support-button"
-              onClick={onContactClick}
-            >
-              <CustomerServiceOutlined />
-              <span>Liên hệ giáo xứ</span>
-              <RightOutlined />
-            </button>
+          <div className="parent-sidebar__quote">
+            <span>“Đồng hành</span>
+            <span>cùng con trong</span>
+            <span>hành trình đức tin”</span>
           </div>
         </div>
       </aside>

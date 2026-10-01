@@ -43,14 +43,22 @@ import {
 import qr_img from "../../../assets/images/qr_img.JPG";
 import qr_zalo from "../../../assets/images/qr_zalo.JPG";
 
-import PageHeroHeader from "../../../components/common/PageHeroHeader";
 import AppButton from "../../../components/common/AppButton";
 
 import licenseApi from "../../../api/licenseApi";
 
 import "./licensePage.css";
 
-const PACKAGE_AMOUNT = 299000;
+/* =========================================================
+   PACKAGE
+========================================================= */
+
+const YEARLY_PACKAGE_AMOUNT = 599000;
+const LIFETIME_PACKAGE_AMOUNT = 2599000;
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 const formatMoney = (value) => {
   return new Intl.NumberFormat("vi-VN").format(Number(value || 0));
@@ -103,6 +111,10 @@ const getStatusConfig = (status) => {
   }
 };
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 const LicensePage = () => {
   const [form] = Form.useForm();
 
@@ -114,6 +126,10 @@ const LicensePage = () => {
 
   const [paymentFile, setPaymentFile] = useState(null);
   const [paymentPreview, setPaymentPreview] = useState("");
+
+  /* =======================================================
+     LOAD DATA
+  ======================================================= */
 
   const loadData = useCallback(async () => {
     try {
@@ -138,6 +154,8 @@ const LicensePage = () => {
             ? registrationResponse.data
             : [],
         );
+      } else {
+        setRegistrations([]);
       }
     } catch (error) {
       console.error("LOAD LICENSE PAGE ERROR:", error);
@@ -156,6 +174,10 @@ const LicensePage = () => {
     loadData();
   }, [loadData]);
 
+  /* =======================================================
+     CLEAN PREVIEW URL
+  ======================================================= */
+
   useEffect(() => {
     return () => {
       if (paymentPreview) {
@@ -164,24 +186,42 @@ const LicensePage = () => {
     };
   }, [paymentPreview]);
 
+  /* =======================================================
+     DATA
+  ======================================================= */
+
   const latestRegistration = registrations[0] || null;
 
   const hasPendingRegistration = useMemo(() => {
     return registrations.some((item) => item.status === "pending");
   }, [registrations]);
 
-  const packageInfo = config?.package || {
-    name: "FaithEdu - Giáo xứ",
-    amount: PACKAGE_AMOUNT,
-  };
-
   const church = config?.church || {};
   const payment = config?.payment || {};
   const support = config?.support || {};
 
+  /*
+   * Có thể lấy từ backend nếu backend đã cập nhật.
+   * Nếu backend chưa cập nhật thì fallback 599k / 2599k.
+   */
+
+  const yearlyAmount =
+    Number(config?.package?.yearly_amount) || YEARLY_PACKAGE_AMOUNT;
+
+  const lifetimeAmount =
+    Number(config?.package?.lifetime_amount) || LIFETIME_PACKAGE_AMOUNT;
+
+  const yearlyPackageName = config?.package?.yearly_name || "FaithEdu 1 năm";
+
+  const lifetimePackageName =
+    config?.package?.lifetime_name || "FaithEdu Vĩnh viễn";
+
   const transferContent =
-    config?.transfer_content ||
-    `DANG KY FAITHEDU - GIAO XU ${church?.name || ""}`;
+    config?.transfer_content || `FAITHEDU 1 NAM - ${church?.name || ""}`;
+
+  /* =======================================================
+     COPY
+  ======================================================= */
 
   const copyText = async (text, successMessage) => {
     if (!text) return;
@@ -192,9 +232,14 @@ const LicensePage = () => {
       message.success(successMessage || "Đã sao chép");
     } catch (error) {
       console.error("COPY ERROR:", error);
+
       message.error("Không thể sao chép");
     }
   };
+
+  /* =======================================================
+     UPLOAD PAYMENT
+  ======================================================= */
 
   const handleBeforeUpload = (file) => {
     const isImage = ["image/jpeg", "image/png", "image/webp"].includes(
@@ -203,6 +248,7 @@ const LicensePage = () => {
 
     if (!isImage) {
       message.error("Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP");
+
       return Upload.LIST_IGNORE;
     }
 
@@ -210,6 +256,7 @@ const LicensePage = () => {
 
     if (!isUnder5MB) {
       message.error("Ảnh chuyển khoản không được vượt quá 5MB");
+
       return Upload.LIST_IGNORE;
     }
 
@@ -225,6 +272,10 @@ const LicensePage = () => {
     return false;
   };
 
+  /* =======================================================
+     REMOVE PAYMENT IMAGE
+  ======================================================= */
+
   const handleRemovePaymentImage = () => {
     if (paymentPreview) {
       URL.revokeObjectURL(paymentPreview);
@@ -234,14 +285,20 @@ const LicensePage = () => {
     setPaymentPreview("");
   };
 
+  /* =======================================================
+     SUBMIT
+  ======================================================= */
+
   const handleSubmit = async (values) => {
     if (hasPendingRegistration) {
       message.warning("Giáo xứ đang có yêu cầu đăng ký chờ xử lý");
+
       return;
     }
 
     if (!paymentFile) {
       message.error("Vui lòng tải ảnh xác nhận chuyển khoản");
+
       return;
     }
 
@@ -251,9 +308,23 @@ const LicensePage = () => {
       const formData = new FormData();
 
       formData.append("name", values.name?.trim() || "");
+
       formData.append("phone", values.phone?.trim() || "");
+
       formData.append("email", values.email?.trim() || "");
+
       formData.append("payment_image", paymentFile);
+
+      /*
+       * Xác định rõ đây là gói 1 năm.
+       *
+       * Backend nếu chưa nhận package_type
+       * thì có thể bỏ qua field này.
+       */
+
+      formData.append("package_type", "yearly");
+
+      formData.append("package_amount", String(yearlyAmount));
 
       const response = await licenseApi.createRegistration(formData);
 
@@ -261,9 +332,10 @@ const LicensePage = () => {
         throw new Error(response?.message || "Không thể gửi đăng ký");
       }
 
-      message.success("Đã gửi đăng ký FaithEdu thành công");
+      message.success("Đã gửi đăng ký FaithEdu 1 năm thành công");
 
       form.resetFields();
+
       handleRemovePaymentImage();
 
       await loadData();
@@ -279,6 +351,10 @@ const LicensePage = () => {
       setSubmitting(false);
     }
   };
+
+  /* =======================================================
+     DELETE PENDING
+  ======================================================= */
 
   const handleDeletePending = (registration) => {
     Modal.confirm({
@@ -309,6 +385,10 @@ const LicensePage = () => {
     });
   };
 
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
   if (loading) {
     return (
       <div className="license-page-loading">
@@ -317,7 +397,16 @@ const LicensePage = () => {
             <SafetyCertificateOutlined />
           </div>
 
-          <Spin indicator={<LoadingOutlined style={{ fontSize: 28 }} spin />} />
+          <Spin
+            indicator={
+              <LoadingOutlined
+                style={{
+                  fontSize: 28,
+                }}
+                spin
+              />
+            }
+          />
 
           <strong>Đang tải thông tin FaithEdu</strong>
 
@@ -327,18 +416,16 @@ const LicensePage = () => {
     );
   }
 
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
     <div className="license-page">
-      <PageHeroHeader
-        title="Gói FaithEdu"
-        subtitle="Đăng ký và kích hoạt hệ thống quản lý giáo lý cho giáo xứ"
-        icon={<SafetyCertificateOutlined />}
-      />
-
       <div className="license-page-container">
-        {/* =====================================================
+        {/* ===================================================
             STATUS
-        ====================================================== */}
+        ==================================================== */}
 
         {latestRegistration?.status === "pending" && (
           <Alert
@@ -391,74 +478,168 @@ const LicensePage = () => {
           />
         )}
 
-        {/* =====================================================
-            PACKAGE HERO
-        ====================================================== */}
+        {/* ===================================================
+            PACKAGE SELECTION
+        ==================================================== */}
 
-        <section className="license-package-hero">
-          <div className="license-package-decoration decoration-one" />
-          <div className="license-package-decoration decoration-two" />
+        <section className="license-package-selection">
+          <div className="license-package-selection-header">
+            <span className="license-section-label">GÓI DỊCH VỤ FAITHEDU</span>
 
-          <div className="license-package-left">
-            <div className="license-package-badge">
-              <SafetyCertificateOutlined />
-              GÓI DỊCH VỤ CHO GIÁO XỨ
-            </div>
-
-            <h1>{packageInfo.name}</h1>
+            <h1>Chọn gói phù hợp với giáo xứ</h1>
 
             <p>
-              Nền tảng số hỗ trợ giáo xứ quản lý lớp giáo lý, học viên, điểm
-              danh, kết quả học tập và báo cáo tập trung.
+              FaithEdu cung cấp giải pháp quản lý giáo lý tập trung, thuận tiện
+              cho giáo xứ và giáo lý viên.
             </p>
-
-            <div className="license-package-price-large">
-              <strong>{formatMoney(packageInfo.amount)}</strong>
-
-              <span>đ</span>
-            </div>
-
-            <div className="license-package-note">
-              <CheckCircleFilled />
-              Kích hoạt gói dịch vụ cho giáo xứ
-            </div>
           </div>
 
-          <div className="license-package-right">
-            <div className="license-package-icon-large">
-              <ShopOutlined />
-            </div>
+          <Row gutter={[20, 20]}>
+            {/* =============================================
+                YEARLY
+            ============================================== */}
 
-            <div className="license-package-mini-card">
-              <CheckOutlined />
-              <span>Quản lý lớp học</span>
-            </div>
+            <Col xs={24} md={12}>
+              <div className="license-package-option yearly">
+                <div className="license-package-option-badge">GÓI 1 NĂM</div>
 
-            <div className="license-package-mini-card">
-              <CheckOutlined />
-              <span>Quản lý học viên</span>
-            </div>
+                <div className="license-package-option-icon">
+                  <SafetyCertificateOutlined />
+                </div>
 
-            <div className="license-package-mini-card">
-              <CheckOutlined />
-              <span>Điểm danh & kết quả</span>
-            </div>
+                <h2>{yearlyPackageName}</h2>
 
-            <div className="license-package-mini-card">
-              <CheckOutlined />
-              <span>Báo cáo giáo lý</span>
-            </div>
-          </div>
+                <p>Sử dụng đầy đủ hệ thống FaithEdu trong thời hạn 1 năm.</p>
+
+                <div className="license-package-option-price">
+                  <strong>{formatMoney(yearlyAmount)}</strong>
+
+                  <span>đ / năm</span>
+                </div>
+
+                <div className="license-package-features">
+                  <div>
+                    <CheckOutlined />
+                    Quản lý lớp giáo lý
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Quản lý học sinh
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Điểm danh & kết quả
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Báo cáo giáo lý
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Hỗ trợ sử dụng
+                  </div>
+                </div>
+
+                <div className="license-package-option-note">
+                  <CheckCircleFilled />
+
+                  <span>Đăng ký trực tiếp trên hệ thống</span>
+                </div>
+              </div>
+            </Col>
+
+            {/* =============================================
+                LIFETIME
+            ============================================== */}
+
+            <Col xs={24} md={12}>
+              <div className="license-package-option lifetime">
+                <div className="license-package-option-badge">
+                  GÓI VĨNH VIỄN
+                </div>
+
+                <div className="license-package-option-icon">
+                  <SafetyCertificateOutlined />
+                </div>
+
+                <h2>{lifetimePackageName}</h2>
+
+                <p>Sử dụng FaithEdu lâu dài cho giáo xứ với một lần đăng ký.</p>
+
+                <div className="license-package-option-price">
+                  <strong>{formatMoney(lifetimeAmount)}</strong>
+
+                  <span>đ</span>
+                </div>
+
+                <div className="license-package-features">
+                  <div>
+                    <CheckOutlined />
+                    Không giới hạn thời gian sử dụng
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Quản lý lớp giáo lý
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Quản lý học sinh
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Điểm danh & kết quả
+                  </div>
+
+                  <div>
+                    <CheckOutlined />
+                    Báo cáo giáo lý
+                  </div>
+                </div>
+
+                <div className="license-package-contact">
+                  <CustomerServiceOutlined />
+
+                  <div>
+                    <strong>Đăng ký gói vĩnh viễn</strong>
+
+                    <span>
+                      Vui lòng quét QR Zalo để liên hệ trực tiếp với Admin
+                      FaithEdu.
+                    </span>
+                  </div>
+                </div>
+
+                {support.zalo_group_url && (
+                  <AppButton
+                    href={support.zalo_group_url}
+                    target="_blank"
+                    variant="secondary"
+                    icon={<SendOutlined />}
+                    block
+                  >
+                    Liên hệ Admin qua Zalo
+                  </AppButton>
+                )}
+              </div>
+            </Col>
+          </Row>
         </section>
 
-        {/* =====================================================
+        {/* ===================================================
             MAIN CONTENT
-        ====================================================== */}
+        ==================================================== */}
 
         <Row gutter={[24, 24]} className="license-main-grid">
-          {/* ===================================================
-              LEFT
-          ==================================================== */}
+          {/* =================================================
+              LEFT FORM
+          ================================================== */}
 
           <Col xs={24} lg={14}>
             <Card bordered={false} className="license-form-card">
@@ -469,7 +650,7 @@ const LicensePage = () => {
 
                 <div>
                   <span className="license-section-label">
-                    ĐĂNG KÝ GÓI DỊCH VỤ
+                    ĐĂNG KÝ GÓI 1 NĂM
                   </span>
 
                   <h2>Thông tin đăng ký</h2>
@@ -486,12 +667,29 @@ const LicensePage = () => {
 
                   <div>
                     <span>GIÁO XỨ</span>
+
                     <strong>{church.name}</strong>
                   </div>
                 </div>
               )}
 
               <Divider />
+
+              <Alert
+                className="license-yearly-notice"
+                type="info"
+                showIcon
+                icon={<SafetyCertificateOutlined />}
+                message="Đăng ký gói FaithEdu 1 năm"
+                description={
+                  <span>
+                    Phí sử dụng là{" "}
+                    <strong>{formatMoney(yearlyAmount)}đ/năm</strong>. Gói vĩnh
+                    viễn <strong>{formatMoney(lifetimeAmount)}đ</strong> vui
+                    lòng quét QR Zalo để liên hệ trực tiếp với Admin FaithEdu.
+                  </span>
+                }
+              />
 
               <Form
                 form={form}
@@ -500,6 +698,10 @@ const LicensePage = () => {
                 onFinish={handleSubmit}
                 disabled={hasPendingRegistration || submitting}
               >
+                {/* =========================================
+                    NAME
+                ========================================== */}
+
                 <Row gutter={16}>
                   <Col xs={24}>
                     <Form.Item
@@ -555,7 +757,9 @@ const LicensePage = () => {
                   </Col>
                 </Row>
 
-                {/* TRANSFER CONTENT */}
+                {/* =========================================
+                    TRANSFER CONTENT
+                ========================================== */}
 
                 <div className="license-transfer-box">
                   <div className="license-transfer-header">
@@ -565,7 +769,7 @@ const LicensePage = () => {
                       <strong>Sử dụng chính xác nội dung này</strong>
                     </div>
 
-                    <Tag color="blue">TỰ ĐỘNG</Tag>
+                    <Tag color="blue">GÓI 1 NĂM</Tag>
                   </div>
 
                   <div className="license-transfer-code">
@@ -588,7 +792,9 @@ const LicensePage = () => {
                   </small>
                 </div>
 
-                {/* UPLOAD */}
+                {/* =========================================
+                    UPLOAD
+                ========================================== */}
 
                 <Form.Item
                   label="Ảnh xác nhận chuyển khoản"
@@ -651,7 +857,9 @@ const LicensePage = () => {
                   )}
                 </Form.Item>
 
-                {/* NOTE */}
+                {/* =========================================
+                    NOTE
+                ========================================== */}
 
                 <div className="license-submit-note">
                   <InfoCircleOutlined />
@@ -662,6 +870,10 @@ const LicensePage = () => {
                   </span>
                 </div>
 
+                {/* =========================================
+                    SUBMIT
+                ========================================== */}
+
                 <Button
                   htmlType="submit"
                   type="primary"
@@ -671,15 +883,19 @@ const LicensePage = () => {
                   icon={!submitting && <SendOutlined />}
                   className="license-submit-button"
                 >
-                  {submitting ? "Đang gửi đăng ký..." : "Gửi đăng ký FaithEdu"}
+                  {submitting
+                    ? "Đang gửi đăng ký..."
+                    : `Gửi đăng ký FaithEdu 1 năm - ${formatMoney(
+                        yearlyAmount,
+                      )}đ`}
                 </Button>
               </Form>
             </Card>
           </Col>
 
-          {/* ===================================================
+          {/* =================================================
               RIGHT PAYMENT
-          ==================================================== */}
+          ================================================== */}
 
           <Col xs={24} lg={10}>
             <Card bordered={false} className="license-payment-card">
@@ -689,7 +905,9 @@ const LicensePage = () => {
                 </div>
 
                 <div>
-                  <span className="license-section-label">THANH TOÁN</span>
+                  <span className="license-section-label">
+                    THANH TOÁN GÓI 1 NĂM
+                  </span>
 
                   <h2>Thông tin chuyển khoản</h2>
 
@@ -699,7 +917,9 @@ const LicensePage = () => {
 
               <Divider />
 
-              {/* QR */}
+              {/* =============================================
+                  QR
+              ============================================== */}
 
               <div className="license-payment-qr-wrapper">
                 <div className="license-payment-qr">
@@ -708,6 +928,7 @@ const LicensePage = () => {
                   ) : (
                     <div className="license-payment-qr-empty">
                       <QrcodeOutlined />
+
                       <span>Chưa cấu hình QR thanh toán</span>
                     </div>
                   )}
@@ -719,15 +940,19 @@ const LicensePage = () => {
                 </div>
               </div>
 
-              {/* PRICE */}
+              {/* =============================================
+                  PRICE
+              ============================================== */}
 
               <div className="license-payment-amount">
-                <span>Số tiền thanh toán</span>
+                <span>Phí gói FaithEdu 1 năm</span>
 
-                <strong>{formatMoney(packageInfo.amount)}đ</strong>
+                <strong>{formatMoney(yearlyAmount)}đ</strong>
               </div>
 
-              {/* BANK */}
+              {/* =============================================
+                  BANK
+              ============================================== */}
 
               <div className="license-bank-info">
                 <div className="license-bank-row">
@@ -768,7 +993,9 @@ const LicensePage = () => {
                 </div>
               </div>
 
-              {/* CONTENT */}
+              {/* =============================================
+                  TRANSFER CONTENT
+              ============================================== */}
 
               <div className="license-payment-content">
                 <span>Nội dung chuyển khoản</span>
@@ -801,11 +1028,15 @@ const LicensePage = () => {
           </Col>
         </Row>
 
-        {/* =====================================================
+        {/* ===================================================
             SUPPORT
-        ====================================================== */}
+        ==================================================== */}
 
         <Row gutter={[24, 24]} className="license-support-grid">
+          {/* ===============================================
+              SUPPORT
+          ================================================ */}
+
           <Col xs={24} md={14}>
             <Card bordered={false} className="license-support-banner">
               <div className="license-support-content">
@@ -838,20 +1069,35 @@ const LicensePage = () => {
             </Card>
           </Col>
 
+          {/* ===============================================
+              ZALO
+          ================================================ */}
+
           <Col xs={24} md={10}>
             <Card bordered={false} className="license-zalo-card">
               <div className="license-zalo-content">
                 <div>
-                  <span>NHÓM ZALO FAITHEDU</span>
+                  <div className="license-zalo-badge">
+                    <CustomerServiceOutlined />
+                    TƯ VẤN GÓI VĨNH VIỄN
+                  </div>
 
-                  <h3>Hỗ trợ & cập nhật</h3>
+                  <h3>Liên hệ Admin FaithEdu</h3>
 
-                  <p>Quét mã QR để tham gia nhóm.</p>
+                  <p>
+                    Gói vĩnh viễn{" "}
+                    <strong>{formatMoney(lifetimeAmount)}đ</strong>. Quét mã QR
+                    để liên hệ trực tiếp với Admin.
+                  </p>
                 </div>
 
                 <div className="license-zalo-qr-box">
                   {support.zalo_qr_url ? (
-                    <Image src={qr_zalo} preview alt="QR nhóm Zalo FaithEdu" />
+                    <Image
+                      src={qr_zalo}
+                      preview
+                      alt="QR liên hệ Admin FaithEdu"
+                    />
                   ) : (
                     <QrcodeOutlined />
                   )}
@@ -861,9 +1107,42 @@ const LicensePage = () => {
           </Col>
         </Row>
 
-        {/* =====================================================
+        {/* ===================================================
+            LIFETIME CTA
+        ==================================================== */}
+
+        <div className="license-lifetime-contact">
+          <div className="license-lifetime-contact-icon">
+            <CustomerServiceOutlined />
+          </div>
+
+          <div className="license-lifetime-contact-content">
+            <span>MUỐN SỬ DỤNG FAITHEDU VĨNH VIỄN?</span>
+
+            <h2>Gói vĩnh viễn {formatMoney(lifetimeAmount)}đ</h2>
+
+            <p>
+              Không cần đăng ký qua biểu mẫu. Vui lòng quét QR Zalo bên trên để
+              liên hệ trực tiếp với Admin FaithEdu và được hướng dẫn thanh toán,
+              kích hoạt.
+            </p>
+          </div>
+
+          {support.zalo_group_url && (
+            <AppButton
+              href={support.zalo_group_url}
+              target="_blank"
+              variant="secondary"
+              icon={<SendOutlined />}
+            >
+              Liên hệ Admin
+            </AppButton>
+          )}
+        </div>
+
+        {/* ===================================================
             HISTORY
-        ====================================================== */}
+        ==================================================== */}
 
         <Card bordered={false} className="license-history-card">
           <div className="license-history-header">
@@ -923,7 +1202,9 @@ const LicensePage = () => {
                     <div className="license-history-main">
                       <div className="license-history-title">
                         <div>
-                          <strong>{registration.package_name}</strong>
+                          <strong>
+                            {registration.package_name || yearlyPackageName}
+                          </strong>
 
                           <span>{formatDateTime(registration.created_at)}</span>
                         </div>
@@ -990,9 +1271,9 @@ const LicensePage = () => {
           )}
         </Card>
 
-        {/* =====================================================
+        {/* ===================================================
             FOOTER
-        ====================================================== */}
+        ==================================================== */}
 
         <div className="license-footer-note">
           <SafetyCertificateOutlined />

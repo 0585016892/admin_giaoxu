@@ -1,55 +1,64 @@
-.parent-sidebar {
-  width: 240px;
-  height: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  border-right: 1px solid #e8edf3;
-  overflow: hidden;
-  font-family: Inter, "Segoe UI", sans-serif;
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
+
+.parent-sidebar,
+.parent-sidebar * {
   box-sizing: border-box;
 }
 
-/* BRAND */
+.parent-sidebar {
+  --sidebar-navy: #06264c;
+  --sidebar-navy-light: #0b3565;
+  --sidebar-gold: #f1c453;
+  --sidebar-white: #f5f8ff;
+  --sidebar-muted: #d0d9e8;
+
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 255px;
+
+  width: 255px;
+  height: 100vh;
+  min-height: 550px;
+
+  overflow: hidden;
+  color: var(--sidebar-white);
+  background: linear-gradient(180deg, #06264c 0%, #082d59 58%, #06264c 100%);
+
+  font-family: "Be Vietnam Pro", sans-serif;
+}
+
+/* ===== LOGO ===== */
 
 .parent-sidebar__brand {
-  height: 76px;
-  padding: 0 20px;
+  position: relative;
+  z-index: 2;
+
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid #edf0f5;
+  gap: 11px;
+
+  min-height: 124px;
+  padding: 23px 27px 20px;
   flex-shrink: 0;
 }
 
 .parent-sidebar__logo {
-  width: 44px;
-  height: 44px;
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  width: 55px;
+  height: 55px;
   flex-shrink: 0;
 }
 
 .parent-sidebar__logo img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-.parent-sidebar__logo-fallback {
-  display: none;
-  width: 42px;
-  height: 42px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  color: #ffffff;
-  background: linear-gradient(135deg, #173b5e, #285e86);
-  font-size: 15px;
-  font-weight: 800;
 }
 
 .parent-sidebar__brand-text {
@@ -57,260 +66,318 @@
 }
 
 .parent-sidebar__brand-name {
-  color: #173b5e;
-  font-size: 20px;
-  line-height: 1.2;
-  font-weight: 800;
-  letter-spacing: -0.6px;
+  color: #ffffff;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -1px;
+  white-space: nowrap;
+}
+
+.parent-sidebar__brand-name span {
+  color: var(--sidebar-gold);
 }
 
 .parent-sidebar__brand-subtitle {
   margin-top: 3px;
-  color: #526782;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-/* USER */
-
-.parent-sidebar__user-wrap {
-  padding: 18px 12px 14px;
-  flex-shrink: 0;
-}
-
-.parent-sidebar__user-card {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 12px;
-  border: 1px solid #e7edf4;
-  border-radius: 15px;
-  background: linear-gradient(135deg, #f8fafc, #f1f6fc);
-  overflow: hidden;
-}
-
-.parent-sidebar__avatar {
-  flex-shrink: 0;
-  background: #173b5e;
-  color: #ffffff;
-  font-weight: 700;
-}
-
-.parent-sidebar__user-info {
-  min-width: 0;
-  flex: 1;
-}
-
-.parent-sidebar__user-name {
-  display: block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: #172b45 !important;
-  font-size: 12px;
-}
-
-.parent-sidebar__user-role {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 6px;
-  color: #718096;
+  color: #d5dfef;
   font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
-.parent-sidebar__status-dot {
-  width: 7px;
-  height: 7px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: #22c55e;
-}
-
-/* NAVIGATION */
+/* ===== MENU ===== */
 
 .parent-sidebar__navigation {
+  position: relative;
+  z-index: 2;
+
   flex: 1;
   min-height: 0;
+  padding: 12px 12px 8px;
+
+  overflow-x: hidden;
   overflow-y: auto;
-  padding: 5px 10px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #38577b transparent;
 }
 
-.parent-sidebar__section-title {
-  padding: 7px 12px 10px;
-  color: #97a4b5;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
-
-.parent-sidebar__menu {
-  border-inline-end: none !important;
+.parent-sidebar__menu.ant-menu {
+  width: 100%;
+  color: var(--sidebar-muted);
   background: transparent !important;
+  border-inline-end: none !important;
+  font-family: inherit;
 }
 
-.parent-sidebar__menu .ant-menu-item {
+.parent-sidebar__menu.ant-menu-inline {
+  border-inline-end: none !important;
+}
+
+/* Từng dòng menu */
+
+.parent-sidebar__menu.ant-menu-inline .ant-menu-item {
+  position: relative;
+
   display: flex;
   align-items: center;
   gap: 12px;
+
+  width: 100%;
   height: 46px;
   line-height: 46px;
-  margin: 3px 0 !important;
-  padding-inline: 16px !important;
-  width: 100%;
-  border-radius: 9px;
-  color: #52647e;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+
+  margin: 4px 0 !important;
+  padding-inline: 20px !important;
+
+  border-radius: 10px;
+  color: var(--sidebar-muted);
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
+
+/* Icon */
 
 .parent-sidebar__menu .ant-menu-item .anticon {
-  color: #627a9c;
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 20px;
+  flex-shrink: 0;
+
+  color: #dbe6f6;
+  font-size: 20px;
+
+  transition: color 0.2s ease;
 }
 
-.parent-sidebar__menu .ant-menu-item:hover {
-  color: #173b5e !important;
-  background: #f3f7fc !important;
+/* Chữ menu */
+
+.parent-sidebar__menu .ant-menu-title-content {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.parent-sidebar__menu .ant-menu-item:hover .anticon {
-  color: #173b5e;
-}
-
-.parent-sidebar__menu .ant-menu-item-selected {
-  color: #173b5e !important;
-  background: #e6f0ff !important;
-  font-weight: 700;
-}
-
-.parent-sidebar__menu .ant-menu-item-selected .anticon {
-  color: #173b5e !important;
-}
+/* Bỏ gạch mặc định của Ant Design */
 
 .parent-sidebar__menu .ant-menu-item::after {
   display: none !important;
 }
 
-/* BOTTOM */
+/* Hover */
 
-.parent-sidebar__bottom {
-  position: relative;
-  flex-shrink: 0;
-  padding: 0 10px 12px;
-  margin-top: auto;
+.parent-sidebar__menu .ant-menu-item:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.09) !important;
 }
 
-.parent-sidebar__church {
-  width: 100%;
-  height: 120px;
-  margin-bottom: -2px;
+.parent-sidebar__menu .ant-menu-item:hover .anticon {
+  color: #ffffff;
+}
+
+/* Mục đang được chọn: nền vàng */
+
+.parent-sidebar__menu .ant-menu-item-selected,
+.parent-sidebar__menu .ant-menu-item-selected:hover {
+  color: #102746 !important;
+  background: linear-gradient(100deg, #f5d16f 0%, #eebd4d 100%) !important;
+
+  font-weight: 600;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.08);
+}
+
+.parent-sidebar__menu .ant-menu-item-selected .anticon,
+.parent-sidebar__menu .ant-menu-item-selected:hover .anticon {
+  color: #102746 !important;
+}
+
+/* Focus bàn phím */
+
+.parent-sidebar__menu .ant-menu-item:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -3px;
+}
+
+/* ===== FOOTER: NHÀ THỜ + CÂU TRÍCH DẪN ===== */
+
+.parent-sidebar__footer {
+  position: relative;
+  z-index: 0;
+  flex-shrink: 0;
+
+  height: 300px;
+  overflow: hidden;
+
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  padding: 0 22px 28px;
+}
+
+/* Ảnh trang trí phía dưới */
+
+.parent-sidebar__church {
+  position: absolute;
+  z-index: -1;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 100%;
+
+  pointer-events: none;
   overflow: hidden;
 }
 
+.parent-sidebar__church::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    180deg,
+    #082d59 0%,
+    rgba(8, 45, 89, 0.5) 35%,
+    rgba(4, 29, 59, 0.1) 100%
+  );
+}
+
 .parent-sidebar__church img {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+
   width: 100%;
   height: 100%;
-  object-fit: contain;
+
+  object-fit: cover;
   object-position: center bottom;
+
+  opacity: 0.48;
+  filter: saturate(0.7);
 }
 
-.parent-sidebar__support {
+/* Câu trích dẫn */
+
+.parent-sidebar__quote {
   position: relative;
   z-index: 1;
-  padding: 13px;
-  border: 1px solid #e7edf5;
-  border-radius: 13px;
-  background: linear-gradient(145deg, #f8fbff, #eef5ff);
-  box-shadow: 0 4px 14px rgba(23, 59, 94, 0.04);
+
+  color: #e0e8f6;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.1px;
+
+  text-align: left;
 }
 
-.parent-sidebar__support-heading {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.parent-sidebar__support-icon {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: #e2efff;
-  color: #1768cf;
-  font-size: 18px;
-}
-
-.parent-sidebar__support-title {
-  color: #173b5e;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.parent-sidebar__support-desc {
-  margin-top: 4px;
-  color: #718096;
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-.parent-sidebar__support-button {
-  width: 100%;
-  min-height: 37px;
-  margin-top: 12px;
-  padding: 8px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: none;
-  border-radius: 8px;
-  background: #173b8c;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.parent-sidebar__support-button:hover {
-  background: #2454a5;
-}
-
-/* SCROLLBAR */
-
-.parent-sidebar__navigation::-webkit-scrollbar {
-  width: 4px;
-}
-
-.parent-sidebar__navigation::-webkit-scrollbar-thumb {
-  background: #dce5ef;
-  border-radius: 8px;
-}
-
-/* RESPONSIVE */
+/* ===== MÀN HÌNH THẤP ===== */
 
 @media (max-height: 760px) {
-  .parent-sidebar__church {
-    height: 65px;
+  .parent-sidebar__brand {
+    min-height: 100px;
+    padding-top: 15px;
+    padding-bottom: 15px;
   }
 
-  .parent-sidebar__user-wrap {
-    padding-top: 12px;
-    padding-bottom: 8px;
+  .parent-sidebar__logo {
+    width: 48px;
+    height: 48px;
   }
 
-  .parent-sidebar__menu .ant-menu-item {
+  .parent-sidebar__brand-name {
+    font-size: 24px;
+  }
+
+  .parent-sidebar__navigation {
+    padding-top: 6px;
+  }
+
+  .parent-sidebar__menu.ant-menu-inline .ant-menu-item {
     height: 40px;
     line-height: 40px;
-    margin: 2px 0 !important;
+    margin: 3px 0 !important;
+  }
+
+  .parent-sidebar__footer {
+    height: 220px;
+    padding-bottom: 20px;
+  }
+
+  .parent-sidebar__quote {
+    font-size: 18px;
+  }
+}
+
+/* ===== TABLET ===== */
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  .parent-sidebar {
+    flex-basis: 235px;
+    width: 235px;
+  }
+
+  .parent-sidebar__brand {
+    gap: 8px;
+    padding-inline: 17px;
+  }
+
+  .parent-sidebar__brand-name {
+    font-size: 24px;
+  }
+
+  .parent-sidebar__menu.ant-menu-inline .ant-menu-item {
+    padding-inline: 14px !important;
+    font-size: 13px;
+  }
+}
+
+/* ===== MOBILE ===== */
+
+@media (max-width: 768px) {
+  .parent-sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+  }
+
+  .parent-sidebar__brand {
+    min-height: 90px;
+    padding: 15px 20px;
+  }
+
+  .parent-sidebar__navigation {
+    flex: none;
+    max-height: 55vh;
+    padding: 4px 12px 12px;
+  }
+
+  .parent-sidebar__footer {
+    height: 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parent-sidebar *,
+  .parent-sidebar *::before,
+  .parent-sidebar *::after {
+    transition: none !important;
   }
 }

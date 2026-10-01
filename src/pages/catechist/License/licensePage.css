@@ -1194,3 +1194,301 @@
     gap: 8px;
   }
 }
+/* =========================================================
+   PACKAGE SELECTION
+========================================================= */
+
+.license-package-selection {
+  margin-bottom: 24px;
+}
+
+.license-package-selection-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.license-package-selection-header h1 {
+  margin: 8px 0;
+  color: #173b5e;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.license-package-selection-header p {
+  max-width: 680px;
+  margin: 0 auto;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+/* =========================================================
+   PACKAGE CARD
+========================================================= */
+
+.license-package-option {
+  position: relative;
+  height: 100%;
+  padding: 30px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(23, 59, 94, 0.07);
+}
+
+.license-package-option.yearly {
+  border-top: 4px solid #173b5e;
+}
+
+.license-package-option.lifetime {
+  border-top: 4px solid #d9a441;
+}
+
+.license-package-option-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  color: #173b5e;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.license-package-option.lifetime .license-package-option-badge {
+  color: #9a711c;
+  background: #fff8e8;
+}
+
+.license-package-option-icon {
+  width: 52px;
+  height: 52px;
+  margin: 20px 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #173b5e;
+  background: #f8fafc;
+  border-radius: 14px;
+  font-size: 25px;
+}
+
+.license-package-option.lifetime .license-package-option-icon {
+  color: #b88620;
+  background: #fffaf0;
+}
+
+.license-package-option h2 {
+  margin: 0 0 8px;
+  color: #173b5e;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.license-package-option > p {
+  min-height: 48px;
+  margin: 0 0 20px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.license-package-option-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.license-package-option-price strong {
+  color: #173b5e;
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.license-package-option.lifetime .license-package-option-price strong {
+  color: #b88620;
+}
+
+.license-package-option-price span {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.license-package-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.license-package-features div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.license-package-features svg {
+  color: #16a34a;
+}
+
+.license-package-option-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  color: #475569;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.license-package-option-note svg {
+  color: #16a34a;
+}
+
+/* =========================================================
+   LIFETIME CONTACT
+========================================================= */
+
+.license-package-contact {
+  display: flex;
+  gap: 12px;
+  padding: 15px;
+  margin-bottom: 16px;
+  background: #fffaf0;
+  border: 1px solid #f1dfb2;
+  border-radius: 12px;
+}
+
+.license-package-contact > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #b88620;
+  font-size: 20px;
+}
+
+.license-package-contact div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.license-package-contact strong {
+  color: #173b5e;
+  font-size: 14px;
+}
+
+.license-package-contact span {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   YEARLY NOTICE
+========================================================= */
+
+.license-yearly-notice {
+  margin-bottom: 20px;
+}
+
+/* =========================================================
+   ZALO
+========================================================= */
+
+.license-zalo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  color: #b88620;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   LIFETIME CTA
+========================================================= */
+
+.license-lifetime-contact {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #fffaf0 0%, #ffffff 100%);
+  border: 1px solid #ead9ad;
+  border-radius: 18px;
+}
+
+.license-lifetime-contact-icon {
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b88620;
+  background: #fff4d8;
+  border-radius: 15px;
+  font-size: 24px;
+}
+
+.license-lifetime-contact-content {
+  flex: 1;
+}
+
+.license-lifetime-contact-content > span {
+  color: #b88620;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.license-lifetime-contact-content h2 {
+  margin: 4px 0;
+  color: #173b5e;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.license-lifetime-contact-content p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 767px) {
+  .license-package-selection-header h1 {
+    font-size: 23px;
+  }
+
+  .license-package-option {
+    padding: 22px;
+  }
+
+  .license-package-option-price strong {
+    font-size: 30px;
+  }
+
+  .license-lifetime-contact {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .license-lifetime-contact .ant-btn,
+  .license-lifetime-contact button {
+    width: 100%;
+  }
+}

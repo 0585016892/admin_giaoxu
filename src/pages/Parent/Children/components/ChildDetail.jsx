@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   Alert,
-  Avatar,
   Button,
   Card,
   Col,
@@ -19,6 +18,7 @@ import {
 
 import {
   ArrowLeftOutlined,
+  BellOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -28,6 +28,7 @@ import {
   IdcardOutlined,
   ManOutlined,
   PhoneOutlined,
+  ReadOutlined,
   RiseOutlined,
   SafetyCertificateOutlined,
   ScheduleOutlined,
@@ -69,22 +70,6 @@ const formatTime = (value) => {
   }
 
   return value;
-};
-
-const getInitials = (name = "") => {
-  const parts = String(name).trim().split(/\s+/).filter(Boolean);
-
-  if (!parts.length) {
-    return "?";
-  }
-
-  if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
-  }
-
-  return (
-    parts[parts.length - 2].charAt(0) + parts[parts.length - 1].charAt(0)
-  ).toUpperCase();
 };
 
 const getGenderText = (gender) => {
@@ -447,29 +432,164 @@ export default function ChildDetail() {
     const style = document.createElement("style");
     style.id = styleId;
     style.textContent = `
-      .parent-child-detail-page { color: #173B5E; }
-      .parent-child-detail-container { box-sizing: border-box; }
-      .parent-child-detail-page .ant-card { transition: box-shadow .2s ease, transform .2s ease; }
-      .parent-child-detail-page .ant-card:not(.ant-card-small):hover { box-shadow: 0 8px 28px rgba(23,59,94,.07); }
-      .parent-child-detail-page .ant-card-head { border-bottom-color: #EEF2F6; }
-      .parent-child-detail-page .ant-card-head-title { color: #173B5E; font-weight: 700; }
-      .parent-child-detail-page .ant-btn-primary { background: #173B5E; box-shadow: 0 4px 10px rgba(23,59,94,.12); }
-      .parent-child-detail-page .ant-btn-primary:hover { background: #244F78 !important; }
+      .parent-child-detail-page {
+        color: #14264a;
+        background: linear-gradient(180deg, #f0f7ff 0%, #f7faff 55%, #f8fafc 100%);
+        min-height: 100%;
+        font-family: Inter, "Be Vietnam Pro", "Segoe UI", sans-serif;
+      }
+      .parent-child-detail-container {
+        box-sizing: border-box;
+        max-width: 1680px !important;
+        margin: 0 auto !important;
+        padding: 12px 22px 28px !important;
+      }
+      .parent-child-detail-page .ant-card {
+        border: 1px solid rgba(221, 232, 246, .95) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 5px 20px rgba(28, 68, 120, .045) !important;
+        transition: transform .2s ease, box-shadow .2s ease;
+      }
+      .parent-child-detail-page .ant-card:not(.ant-card-small):hover {
+        box-shadow: 0 9px 25px rgba(28, 68, 120, .08) !important;
+      }
+      .parent-child-detail-page .ant-card-head {
+        border-bottom-color: #edf2f9 !important;
+        color: #14264a;
+      }
+      .parent-child-detail-page .ant-card-head-title {
+        color: #14264a !important;
+        font-weight: 800 !important;
+      }
+      .parent-child-detail-page .ant-btn-primary {
+        background: #1769e8 !important;
+        border-color: #1769e8 !important;
+        border-radius: 9px !important;
+        box-shadow: 0 4px 10px rgba(23, 105, 232, .15);
+      }
+      .parent-child-detail-page .ant-btn-primary:hover {
+        background: #0f55c6 !important;
+        border-color: #0f55c6 !important;
+      }
+      .parent-child-detail-page .ant-btn:not(.ant-btn-primary) {
+        border-radius: 9px;
+      }
       .parent-child-detail-page .ant-select-selector,
-      .parent-child-detail-page input[type=month] { border-radius: 9px !important; }
-      .parent-child-detail-page .ant-tag { border-radius: 7px; padding-inline: 9px; }
-      .parent-child-detail-page button:focus-visible { outline: 3px solid rgba(217,164,65,.55); outline-offset: 2px; }
+      .parent-child-detail-page input[type=month] {
+        border-radius: 9px !important;
+      }
+      .parent-child-detail-page .ant-tag {
+        border-radius: 7px;
+        padding-inline: 9px;
+        font-weight: 600;
+      }
+      .parent-child-detail-page .ant-statistic-title {
+        color: #687b9a !important;
+        font-size: 12px !important;
+        font-weight: 650;
+      }
+      .parent-child-detail-page .ant-statistic-content {
+        color: #14264a;
+        font-weight: 800;
+      }
+      .parent-child-detail-page .ant-statistic-content-prefix {
+        margin-right: 9px;
+      }
+      .parent-child-detail-page .ant-empty {
+        padding: 14px 0;
+      }
+      .parent-child-detail-page .ant-card-body {
+        min-width: 0;
+      }
+      .parent-child-detail-page .ant-alert {
+        border-radius: 14px;
+      }
+      .parent-child-detail-page button:focus-visible {
+        outline: 3px solid rgba(217,164,65,.55);
+        outline-offset: 2px;
+      }
+      .parent-child-detail-hero {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #dceaf9;
+        background:
+          radial-gradient(ellipse at 84% 20%, rgba(255,255,255,.88) 0, rgba(255,255,255,0) 31%),
+          linear-gradient(105deg, #ffffff 0%, #eef7ff 48%, #d9edff 100%);
+      }
+      .parent-child-detail-hero::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 34%;
+        height: 100%;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(232,245,255,0), rgba(255,255,255,.24));
+      }
+      .child-detail-avatar-placeholder {
+        display: flex;
+        flex: 0 0 126px;
+        width: 126px;
+        height: 126px;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 5px solid rgba(255,255,255,.95);
+        border-radius: 50%;
+        background: #f5f8fc;
+        box-shadow: 0 5px 18px rgba(26, 67, 115, .12);
+      }
+      .child-detail-avatar-placeholder img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .child-detail-avatar-empty {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f7f9fc, #e9f0f8);
+      }
+      .parent-child-detail-tabs {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: rgba(255,255,255,.96);
+        backdrop-filter: blur(10px);
+      }
+      .parent-child-detail-tabs button {
+        position: relative;
+        justify-content: center;
+        min-height: 48px;
+        border-radius: 10px !important;
+        transition: color .18s ease, background .18s ease;
+      }
+      .parent-child-detail-tabs button:hover {
+        background: #f1f6ff !important;
+        color: #1769e8 !important;
+      }
+      .parent-child-detail-tabs button[aria-current="page"] {
+        color: #1769e8 !important;
+        background: #eef5ff !important;
+      }
+      .parent-child-detail-page .ant-progress-bg {
+        border-radius: 99px;
+      }
+      @media (max-width: 1100px) {
+        .parent-child-detail-container { padding-left: 16px !important; padding-right: 16px !important; }
+      }
       @media (max-width: 768px) {
-        .parent-child-detail-container { padding-left: 14px !important; padding-right: 14px !important; }
-        .parent-child-detail-page { padding-top: 14px !important; }
+        .parent-child-detail-container { padding: 10px 12px 22px !important; }
+        .parent-child-detail-page { padding-top: 8px !important; }
         .parent-child-detail-page .ant-card-body { padding: 16px; }
         .parent-child-detail-page .ant-card-head { padding-inline: 16px; }
         .parent-child-detail-page .ant-card-head-title { white-space: normal; }
+        .child-detail-avatar-placeholder { flex-basis: 88px; width: 88px; height: 88px; }
       }
       @media (max-width: 560px) {
         .parent-child-detail-page .ant-statistic-title { font-size: 12px; }
         .parent-child-detail-page .ant-statistic-content { font-size: 23px; }
         .parent-child-detail-page .ant-space { max-width: 100%; }
+        .parent-child-detail-container { padding-inline: 10px !important; }
       }
     `;
     document.head.appendChild(style);
@@ -841,6 +961,7 @@ export default function ChildDetail() {
 
     return null;
   }, [child]);
+  console.log(child);
 
   /**
    * =======================================================
@@ -1095,15 +1216,22 @@ export default function ChildDetail() {
             HERO
         ================================================= */}
 
-        <Card bordered={false} style={styles.heroCard}>
+        <Card
+          bordered={false}
+          className="parent-child-detail-hero"
+          style={styles.heroCard}
+        >
           <div style={styles.hero}>
-            <Avatar
-              size={96}
-              src={child.avatar || undefined}
-              style={styles.avatar}
+            <div
+              className="child-detail-avatar-placeholder"
+              aria-label="Ảnh đại diện học sinh"
             >
-              {getInitials(child.name)}
-            </Avatar>
+              {child.avatar ? (
+                <img src={child.avatar} alt="" />
+              ) : (
+                <div className="child-detail-avatar-empty" />
+              )}
+            </div>
 
             <div style={styles.heroInfo}>
               <div style={styles.heroTitleRow}>
@@ -1169,7 +1297,7 @@ export default function ChildDetail() {
             padding: 8,
           }}
         >
-          <div style={styles.tabs}>
+          <div className="parent-child-detail-tabs" style={styles.tabs}>
             {[
               {
                 key: "overview",
@@ -1187,14 +1315,24 @@ export default function ChildDetail() {
                 icon: <RiseOutlined />,
               },
               {
+                key: "lessons",
+                label: "Bài học",
+                icon: <ReadOutlined />,
+              },
+              {
                 key: "schedule",
                 label: "Lịch học",
                 icon: <ScheduleOutlined />,
               },
               {
                 key: "certificates",
-                label: "Chứng nhận",
+                label: "Chứng chỉ",
                 icon: <SafetyCertificateOutlined />,
+              },
+              {
+                key: "notifications",
+                label: "Thông báo",
+                icon: <BellOutlined />,
               },
             ].map((tab) => (
               <button
@@ -1279,6 +1417,16 @@ export default function ChildDetail() {
         )}
 
         {/* =================================================
+            LESSONS PLACEHOLDER
+        ================================================= */}
+
+        {activeTab === "lessons" && (
+          <Card bordered={false} style={{ marginTop: 16, borderRadius: 16 }}>
+            <Empty description="Khu vực bài học — sẽ bổ sung dữ liệu sau" />
+          </Card>
+        )}
+
+        {/* =================================================
             CERTIFICATES
         ================================================= */}
 
@@ -1289,6 +1437,16 @@ export default function ChildDetail() {
             onReload={loadCertificates}
             messageApi={messageApi}
           />
+        )}
+
+        {/* =================================================
+            NOTIFICATIONS PLACEHOLDER
+        ================================================= */}
+
+        {activeTab === "notifications" && (
+          <Card bordered={false} style={{ marginTop: 16, borderRadius: 16 }}>
+            <Empty description="Khu vực thông báo — sẽ bổ sung dữ liệu sau" />
+          </Card>
         )}
       </div>
     </div>

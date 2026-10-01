@@ -78,10 +78,12 @@ const DefaultCertificateTemplate = ({
   // =========================================================
   // DATA
   // =========================================================
+  console.log("churchData:::", churchData);
 
   const churchName = churchData?.name || churchData?.church_name || "Giáo xứ";
 
   const dioceseName = churchData?.address;
+  const deaneryName = churchData?.deanery?.name;
 
   const pastorName =
     churchData?.pastor_name || churchData?.pastorName || "Đang cập nhật";
@@ -898,7 +900,7 @@ const DefaultCertificateTemplate = ({
 
             <h3 className="cert-main-title-subpro">
               Linh Mục Giáo xứ {churchName}
-              {dioceseName ? ` Giáo phận ${dioceseName}` : ""}
+              {deaneryName ? ` Giáo hạt ${deaneryName}` : ""}
             </h3>
           </div>
 
