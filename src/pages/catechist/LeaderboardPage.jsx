@@ -175,11 +175,9 @@ const LeaderboardGame = () => {
     try {
       setLoading(true);
       const response = await getLeaderboard();
-      console.log(response);
 
       if (response?.success) {
         const data = normalizeLeaderboardData(response);
-        console.log(data);
 
         setStudents(data);
         setLeaderboardMode("all");

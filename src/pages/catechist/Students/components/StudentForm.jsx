@@ -486,11 +486,10 @@ const StudentForm = ({
 
       <Row gutter={16}>
         <Col xs={24} md={12}>
-          <Form.Item label="Mã học sinh" name="code">
-            <Input placeholder="Tự động tạo" disabled />
+          <Form.Item label="Tên thánh hiện tại" name="saint_name">
+            <Input placeholder="Tên thánh" />
           </Form.Item>
-        </Col>
-
+        </Col>{" "}
         <Col xs={24} md={12}>
           <Form.Item
             label="Họ và tên"
@@ -505,7 +504,6 @@ const StudentForm = ({
             <Input placeholder="Nhập họ và tên học sinh" />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={8}>
           <Form.Item label="Giới tính" name="gender">
             <Select
@@ -524,7 +522,6 @@ const StudentForm = ({
             />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={8}>
           <Form.Item label="Ngày sinh" name="date_of_birth">
             <DatePicker
@@ -536,25 +533,21 @@ const StudentForm = ({
             />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={8}>
           <Form.Item label="Nơi sinh" name="birth_place">
             <Input placeholder="Nhập nơi sinh" />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={8}>
           <Form.Item label="Quốc tịch" name="nationality">
             <Input placeholder="Việt Nam" />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={8}>
           <Form.Item label="Số điện thoại" name="phone" rules={[phoneRule]}>
             <Input placeholder="09xxxxxxxx" />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={8}>
           <Form.Item
             label="Email"
@@ -569,7 +562,6 @@ const StudentForm = ({
             <Input placeholder="example@email.com" />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={12}>
           <Form.Item label="Lớp giáo lý" name="class_id">
             <Select
@@ -584,13 +576,11 @@ const StudentForm = ({
             />
           </Form.Item>
         </Col>
-
         <Col xs={24} md={12}>
           <Form.Item label="Giáo xứ / Giáo họ" name="parish">
             <Input placeholder="Nhập giáo xứ / giáo họ" />
           </Form.Item>
         </Col>
-
         <Col xs={24}>
           <Form.Item label="Địa chỉ" name="address">
             <TextArea rows={2} placeholder="Nhập địa chỉ" />
@@ -769,10 +759,6 @@ const StudentForm = ({
           </Form.Item>
         </Col>
       </Row>
-
-      <Form.Item label="Tên thánh hiện tại" name="saint_name">
-        <Input placeholder="Tên thánh" />
-      </Form.Item>
     </>
   );
 

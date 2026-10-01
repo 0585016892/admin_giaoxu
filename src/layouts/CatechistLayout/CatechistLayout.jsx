@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 
 import CatechistSidebar from "./CatechistSidebar";
 import CatechistHeader from "./CatechistHeader";
+import AppointmentModal from "../../pages/catechist/CatechistManagement/components/AppointmentModal";
 
 const { Content, Footer } = Layout;
 const { Text } = Typography;
@@ -120,15 +121,18 @@ export default function CatechistLayout() {
         </Layout>
 
         {/* =====================================================
+            THƯ BỔ NHIỆM
+            Global cho toàn bộ khu vực GLV
+        ===================================================== */}
+
+        <AppointmentModal />
+
+        {/* =====================================================
             GLOBAL STYLE
         ===================================================== */}
 
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap');
-
-          /* =====================================================
-             DESIGN TOKENS
-          ===================================================== */
 
           :root {
             --faith-navy: #173B5E;
@@ -154,10 +158,6 @@ export default function CatechistLayout() {
             --faith-radius-md: 12px;
             --faith-radius-lg: 16px;
           }
-
-          /* =====================================================
-             RESET
-          ===================================================== */
 
           *,
           *::before,
@@ -209,10 +209,6 @@ export default function CatechistLayout() {
             font-family: inherit;
           }
 
-          /* =====================================================
-             ROOT
-          ===================================================== */
-
           .faith-layout-root {
             width: 100%;
             min-height: 100vh;
@@ -220,19 +216,6 @@ export default function CatechistLayout() {
 
             background: var(--faith-background) !important;
           }
-
-          /* =====================================================
-             MAIN LAYOUT
-          ===================================================== */
-          .faith-footer-cross {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  color: var(--faith-gold);
-
-  font-size: 10px;
-}
 
           .faith-layout-main {
             min-width: 0 !important;
@@ -246,10 +229,6 @@ export default function CatechistLayout() {
 
             background: var(--faith-background) !important;
           }
-
-          /* =====================================================
-             HEADER
-          ===================================================== */
 
           .faith-header-container {
             position: sticky;
@@ -274,10 +253,6 @@ export default function CatechistLayout() {
             -webkit-backdrop-filter: blur(10px);
           }
 
-          /* =====================================================
-             CONTENT
-          ===================================================== */
-
           .faith-layout-content {
             flex: 1 1 auto;
 
@@ -300,10 +275,6 @@ export default function CatechistLayout() {
             margin: 0 auto;
             padding: 0;
           }
-
-          /* =====================================================
-             FOOTER
-          ===================================================== */
 
           .faith-layout-footer {
             width: 100%;
@@ -391,10 +362,6 @@ export default function CatechistLayout() {
             font-size: 10px;
           }
 
-          /* =====================================================
-             ANT DESIGN FIX
-          ===================================================== */
-
           .faith-layout-root .ant-layout {
             min-width: 0;
           }
@@ -409,10 +376,6 @@ export default function CatechistLayout() {
               'Quicksand',
               sans-serif;
           }
-
-          /* =====================================================
-             SCROLLBAR
-          ===================================================== */
 
           .faith-layout-root ::-webkit-scrollbar {
             width: 7px;
@@ -432,10 +395,6 @@ export default function CatechistLayout() {
             background: #AEBBC7;
           }
 
-          /* =====================================================
-             LARGE TABLET
-          ===================================================== */
-
           @media (max-width: 1200px) {
             .faith-layout-content {
               padding:
@@ -448,10 +407,6 @@ export default function CatechistLayout() {
               max-width: 100%;
             }
           }
-
-          /* =====================================================
-             TABLET
-          ===================================================== */
 
           @media (max-width: 1024px) {
             .faith-header-container {
@@ -469,10 +424,6 @@ export default function CatechistLayout() {
             }
           }
 
-          /* =====================================================
-             MOBILE
-          ===================================================== */
-
           @media (max-width: 767px) {
             .faith-layout-root {
               min-height: 100dvh;
@@ -482,8 +433,6 @@ export default function CatechistLayout() {
               width: 100%;
               min-height: 100dvh;
             }
-
-            /* HEADER */
 
             .faith-header-container {
               position: sticky;
@@ -505,8 +454,6 @@ export default function CatechistLayout() {
                 );
             }
 
-            /* CONTENT */
-
             .faith-layout-content {
               width: 100%;
 
@@ -522,8 +469,6 @@ export default function CatechistLayout() {
               width: 100%;
               padding: 0;
             }
-
-            /* FOOTER */
 
             .faith-layout-footer {
               padding:
@@ -557,10 +502,6 @@ export default function CatechistLayout() {
               font-size: 9px;
             }
           }
-
-          /* =====================================================
-             SMALL MOBILE
-          ===================================================== */
 
           @media (max-width: 480px) {
             .faith-header-container {
@@ -597,10 +538,6 @@ export default function CatechistLayout() {
             }
           }
 
-          /* =====================================================
-             VERY SMALL MOBILE
-          ===================================================== */
-
           @media (max-width: 360px) {
             .faith-layout-content {
               padding-left: 4px;
@@ -615,10 +552,6 @@ export default function CatechistLayout() {
               gap: 7px;
             }
           }
-
-          /* =====================================================
-             MOBILE DRAWER
-          ===================================================== */
 
           @media (max-width: 767px) {
             .mobile-sidebar-drawer {
@@ -640,19 +573,11 @@ export default function CatechistLayout() {
             }
           }
 
-          /* =====================================================
-             DESKTOP
-          ===================================================== */
-
           @media (min-width: 768px) {
             .mobile-sidebar-drawer {
               display: none;
             }
           }
-
-          /* =====================================================
-             REDUCED MOTION
-          ===================================================== */
 
           @media (prefers-reduced-motion: reduce) {
             .faith-footer {

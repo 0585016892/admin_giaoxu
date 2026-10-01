@@ -50,20 +50,20 @@ import {
 } from "@ant-design/icons";
 
 // Common components
-import AppButton from "../../components/common/AppButton";
-import AppFormModal from "../../components/common/AppFormModal";
-import AppDetailModal from "../../components/common/AppDetailModal";
-import PageHeroHeader from "../../components/common/PageHeroHeader";
-import StatCard from "../../components/common/StatCard";
-import AppSearchInput from "../../components/common/SearchInput";
+import AppButton from "../../../components/common/AppButton";
+import AppFormModal from "../../../components/common/AppFormModal";
+import AppDetailModal from "../../../components/common/AppDetailModal";
+import PageHeroHeader from "../../../components/common/PageHeroHeader";
+import StatCard from "../../../components/common/StatCard";
+import AppSearchInput from "../../../components/common/SearchInput";
 
 // API
-import catechistApi from "../../api/catechistApi";
-import classApi from "../../api/classApi";
-import { resetAdminPassword, toggleAdmin } from "../../api/adminApi";
+import catechistApi from "../../../api/catechistApi";
+import classApi from "../../../api/classApi";
+import { resetAdminPassword, toggleAdmin } from "../../../api/adminApi";
 import dayjs from "dayjs";
 
-import avataImg from "../../assets/images/imgGLV.png";
+import avataImg from "../../../assets/images/imgGLV.png";
 
 const { Text } = Typography;
 
@@ -448,7 +448,6 @@ export default function CatechistManagement() {
       setDetailCatechist(record);
 
       const response = await catechistApi.getById(record.id);
-      console.log(response);
 
       const data = response?.data?.data || response?.data;
 

@@ -407,8 +407,6 @@ const StudentExportModal = ({ open, onCancel, selectedStudentIds = [] }) => {
 
       onCancel?.();
     } catch (error) {
-      console.error("EXPORT STUDENTS ERROR:", error);
-
       let errorMessage =
         error?.response?.data?.message || "Không thể xuất danh sách học sinh";
 
@@ -422,9 +420,7 @@ const StudentExportModal = ({ open, onCancel, selectedStudentIds = [] }) => {
             errorMessage = json.message;
           }
         }
-      } catch (parseError) {
-        console.error("Không thể đọc lỗi export:", parseError);
-      }
+      } catch (parseError) {}
 
       message.error(errorMessage);
     } finally {

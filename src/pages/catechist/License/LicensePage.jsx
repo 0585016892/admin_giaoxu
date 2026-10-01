@@ -158,8 +158,6 @@ const LicensePage = () => {
         setRegistrations([]);
       }
     } catch (error) {
-      console.error("LOAD LICENSE PAGE ERROR:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.message ||
@@ -231,8 +229,6 @@ const LicensePage = () => {
 
       message.success(successMessage || "Đã sao chép");
     } catch (error) {
-      console.error("COPY ERROR:", error);
-
       message.error("Không thể sao chép");
     }
   };
@@ -340,8 +336,6 @@ const LicensePage = () => {
 
       await loadData();
     } catch (error) {
-      console.error("SUBMIT LICENSE REGISTRATION ERROR:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.message ||

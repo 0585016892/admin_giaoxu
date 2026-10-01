@@ -105,8 +105,6 @@ const ResourceViewerPage = () => {
 
       setResource(data);
     } catch (error) {
-      console.error("Load resource error:", error);
-
       setResource(null);
 
       messageApi.error(
@@ -208,8 +206,6 @@ const ResourceViewerPage = () => {
         messageApi.info("Trình duyệt không hỗ trợ chế độ toàn màn hình");
       }
     } catch (error) {
-      console.error("Enter fullscreen error:", error);
-
       messageApi.error("Không thể mở chế độ toàn màn hình");
     }
   };
@@ -225,9 +221,7 @@ const ResourceViewerPage = () => {
       } else if (document.msExitFullscreen) {
         document.msExitFullscreen();
       }
-    } catch (error) {
-      console.error("Exit fullscreen error:", error);
-    }
+    } catch (error) {}
   };
 
   const toggleFullscreen = () => {

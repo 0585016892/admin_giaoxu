@@ -10,10 +10,18 @@ const studentApi = {
     }),
 
   // =========================================================
-  // LẤY LỚP CỦA HỌC SINH
+  // LẤY DANH SÁCH HỌC SINH THEO LỚP
   // =========================================================
   getStudentClass: (id) => axiosClient.get(`/students/classes/${id}/students`),
-  getStudentsByTeacher: () => axiosClient.get(`/students/student-class`),
+
+  // Alias rõ nghĩa hơn
+  getStudentsByClass: (classId) =>
+    axiosClient.get(`/students/classes/${classId}/students`),
+
+  // =========================================================
+  // LẤY HỌC SINH CỦA GIÁO LÝ VIÊN
+  // =========================================================
+  getStudentsByTeacher: () => axiosClient.get("/students/student-class"),
 
   // =========================================================
   // CHI TIẾT HỌC SINH
@@ -31,15 +39,28 @@ const studentApi = {
   update: (id, data) => axiosClient.put(`/students/${id}`, data),
 
   // =========================================================
+  // CẬP NHẬT HÀNG LOẠT HỌC SINH TRONG LỚP
+  // =========================================================
+  bulkUpdateByClass: (classId, students) =>
+    axiosClient.put(`/students/${classId}/bulk-update`, {
+      students,
+    }),
+
+  // =========================================================
   // XÓA HỌC SINH
   // =========================================================
   delete: (id) => axiosClient.delete(`/students/${id}`),
+
+  // =========================================================
+  // XÓA HÀNG LOẠT
+  // =========================================================
   deleteBulk: (studentIds) =>
     axiosClient.delete("/students/bulk", {
       data: {
         student_ids: studentIds,
       },
     }),
+
   // =========================================================
   // IMPORT HỌC SINH TỪ EXCEL
   // =========================================================
@@ -58,6 +79,9 @@ const studentApi = {
     });
   },
 
+  // =========================================================
+  // EXPORT EXCEL
+  // =========================================================
   exportExcel: async ({ studentIds, fields }) => {
     const response = await axiosClient.post(
       "/students/export-excel",

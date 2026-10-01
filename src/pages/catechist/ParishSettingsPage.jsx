@@ -302,14 +302,10 @@ const ParishSettingsPage = () => {
     try {
       const res = await fetchArchdioceses();
 
-      console.log("ARCHDIOCESES:", res);
-
       const data = res?.data || [];
 
       setArchdioceses(data);
     } catch (error) {
-      console.error("LOAD ARCHDIOCESES ERROR:", error);
-
       message.error(
         error?.response?.data?.message ||
           "Không thể tải danh sách Tổng Giáo phận!",
@@ -342,7 +338,6 @@ const ParishSettingsPage = () => {
 
         return;
       }
-      console.log("CHURCHES:::", data);
 
       const parentDioceseId =
         data?.diocese?.parent_diocese_id || data?.parent_diocese_id || null;
@@ -358,9 +353,7 @@ const ParishSettingsPage = () => {
           const dioceseRes = await fetchDiocesesByParent(parentDioceseId);
 
           setDioceses(dioceseRes?.data || []);
-        } catch (error) {
-          console.error("LOAD DIOCESES BY PARENT ERROR:", error);
-        }
+        } catch (error) {}
       }
 
       if (data.diocese_id) {
@@ -370,9 +363,7 @@ const ParishSettingsPage = () => {
           );
 
           setDeaneries(deaneryRes?.data || []);
-        } catch (error) {
-          console.error("LOAD DEANERIES ERROR:", error);
-        }
+        } catch (error) {}
       }
 
       form.setFieldsValue({
@@ -453,12 +444,8 @@ const ParishSettingsPage = () => {
       try {
         const res = await fetchDiocesesByParent(parentDioceseId);
 
-        console.log("DIOCESES BY PARENT:", res);
-
         setDioceses(res?.data || []);
       } catch (error) {
-        console.error("LOAD DIOCESES ERROR:", error);
-
         message.error(
           error?.response?.data?.message ||
             "Không thể tải danh sách Giáo phận!",
@@ -489,12 +476,8 @@ const ParishSettingsPage = () => {
       try {
         const res = await fetchDeaneriesByDiocese(dioceseId);
 
-        console.log("DEANERIES BY DIOCESE:", res);
-
         setDeaneries(res?.data || []);
       } catch (error) {
-        console.error("LOAD DEANERIES ERROR:", error);
-
         message.error(
           error?.response?.data?.message || "Không thể tải danh sách Giáo hạt!",
         );

@@ -16,8 +16,6 @@ const getAuthUser = () => {
 
     return JSON.parse(userString);
   } catch (error) {
-    console.error("GET AUTH USER ERROR:", error);
-
     return null;
   }
 };
@@ -31,8 +29,6 @@ const SocketProvider = ({ children }) => {
     const user = getAuthUser();
 
     if (!user) {
-      console.warn("⚠️ Socket: Chưa có thông tin user");
-
       return;
     }
 
@@ -45,12 +41,6 @@ const SocketProvider = ({ children }) => {
     // ========================================================
 
     if (!userId || !churchId) {
-      console.warn("⚠️ Socket: Thiếu userId hoặc churchId", {
-        userId,
-        churchId,
-        user,
-      });
-
       return;
     }
 
@@ -59,11 +49,6 @@ const SocketProvider = ({ children }) => {
     // ========================================================
 
     const joinChurchRoom = () => {
-      console.log("🔔 JOIN USER SOCKET:", {
-        userId,
-        churchId,
-      });
-
       socket.emit("join:user", {
         userId,
         churchId,

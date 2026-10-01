@@ -1,0 +1,1110 @@
+/* =========================================================
+   FAITHEDU - APPOINTMENT CERTIFICATE
+   Navy Blue | Gold | Cream
+   Responsive - Fit viewport
+========================================================= */
+
+.fe-appointment-modal {
+  width: min(660px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px);
+  margin: 0 auto;
+}
+
+.fe-appointment-modal .ant-modal-content {
+  position: relative;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 22px;
+  background: linear-gradient(
+    135deg,
+    #e6b94f,
+    #fff3bd 20%,
+    #d7a437 50%,
+    #fff0b0 80%,
+    #c18b22
+  );
+  box-shadow: 0 20px 55px rgba(8, 31, 63, 0.28);
+  scrollbar-width: thin;
+  scrollbar-color: #d8b45d #fff8e8;
+}
+
+.fe-appointment-modal .ant-modal-body {
+  padding: 0;
+}
+
+/* =========================================================
+   KHUNG THIá»†P
+========================================================= */
+
+.fe-appointment-card {
+  --fe-navy: #123b70;
+  --fe-navy-dark: #092951;
+  --fe-blue: #1762b3;
+  --fe-gold: #d8a32d;
+  --fe-cream: #fffdf6;
+  --fe-muted: #718096;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 18px 30px 16px;
+  border: 2px solid #fff4c9;
+  border-radius: 17px;
+  color: var(--fe-navy);
+  background-color: #fffdf7;
+  background-image:
+    radial-gradient(
+      circle at 50% 15%,
+      rgba(255, 226, 146, 0.2),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(41, 125, 204, 0.08),
+      transparent 28%
+    ),
+    var(--fe-appointment-bg, none);
+  background-position: center;
+  background-size: cover;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.fe-appointment-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: rgba(255, 253, 246, 0.68);
+  content: "";
+  pointer-events: none;
+}
+
+.fe-appointment-card::after {
+  position: absolute;
+  z-index: -1;
+  inset: 7px;
+  border: 1px solid rgba(205, 158, 45, 0.45);
+  border-radius: 11px;
+  content: "";
+  pointer-events: none;
+}
+
+/* =========================================================
+   TRANG TRĂ GĂ“C THIá»†P
+========================================================= */
+
+.fe-card-corner {
+  position: absolute;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  border-color: #d7aa43;
+  border-style: solid;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.fe-corner-tl {
+  top: 13px;
+  left: 13px;
+  border-width: 2px 0 0 2px;
+  border-radius: 6px 0 0;
+}
+
+.fe-corner-tr {
+  top: 13px;
+  right: 13px;
+  border-width: 2px 2px 0 0;
+  border-radius: 0 6px 0 0;
+}
+
+.fe-corner-bl {
+  bottom: 13px;
+  left: 13px;
+  border-width: 0 0 2px 2px;
+  border-radius: 0 0 0 6px;
+}
+
+.fe-corner-br {
+  right: 13px;
+  bottom: 13px;
+  border-width: 0 2px 2px 0;
+  border-radius: 0 0 6px;
+}
+
+.fe-card-decoration {
+  position: absolute;
+  z-index: -1;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(45, 121, 194, 0.055);
+  pointer-events: none;
+}
+
+.fe-decoration-left {
+  bottom: -80px;
+  left: -65px;
+}
+
+.fe-decoration-right {
+  top: 230px;
+  right: -90px;
+  width: 180px;
+  height: 180px;
+  background: rgba(226, 179, 65, 0.07);
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+.fe-appointment-celebration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #d9a441;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  animation: feCelebration 0.8s ease-out both;
+}
+
+.fe-appointment-celebration span {
+  font-size: 18px;
+  animation: feSparkle 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes feCelebration {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes feSparkle {
+  from {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+.fe-appointment-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fe-appointment-ribbon {
+  display: flex;
+  min-width: 220px;
+  min-height: 35px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 0 auto 12px;
+  padding: 7px 22px;
+  border: 1px solid #e9c96f;
+  border-radius: 5px 5px 12px 12px;
+  color: #fff;
+  background: linear-gradient(110deg, #0b2c55, #1859a0 50%, #0b2c55);
+  box-shadow:
+    0 3px 0 #e6c267,
+    0 6px 12px rgba(18, 59, 112, 0.12);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+
+.fe-ribbon-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.fe-ribbon-icon {
+  color: #f5ce67;
+  font-size: 20px;
+}
+
+/* Huy hiá»‡u */
+
+.fe-appointment-medallion {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 7px;
+  padding: 5px;
+  place-items: center;
+  border: 2px solid #f4d981;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff5cc, #e4b749, #fff2b8);
+  box-shadow:
+    0 0 0 4px rgba(230, 188, 74, 0.12),
+    0 5px 14px rgba(26, 57, 91, 0.1);
+}
+
+.fe-medallion-inner {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  color: white;
+  background: linear-gradient(145deg, #2874c2, #10427e 60%, #082b56);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+}
+
+.fe-medallion-avatar {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Khi cĂ³ áº£nh, khĂ´ng hiá»ƒn thá»‹ chá»¯ vĂ  vÆ°Æ¡ng miá»‡n bĂªn dÆ°á»›i áº£nh */
+.fe-medallion-inner:has(.fe-medallion-avatar) .fe-medallion-crown,
+.fe-medallion-inner:has(.fe-medallion-avatar) > span {
+  display: none;
+}
+
+.fe-medallion-inner > span {
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+}
+
+.fe-medallion-crown {
+  color: #ffda76;
+  font-size: 13px;
+}
+
+.fe-medallion-rays {
+  display: flex;
+  height: 7px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.fe-medallion-rays span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d7a32d;
+}
+
+.fe-medallion-rays span:nth-child(2),
+.fe-medallion-rays span:nth-child(4) {
+  width: 3px;
+  height: 7px;
+  border-radius: 3px;
+  transform: rotate(35deg);
+}
+
+.fe-medallion-rays span:nth-child(3) {
+  width: 6px;
+  height: 6px;
+}
+
+.fe-appointment-eyebrow {
+  display: flex;
+  min-height: 29px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 5px 15px;
+  border: 1px solid #f1df9b;
+  border-radius: 30px;
+  color: #98660b;
+  background: linear-gradient(90deg, #fff8dc, #ffefbd);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+}
+
+.fe-appointment-eyebrow .anticon {
+  font-size: 14px;
+}
+
+.fe-appointment-subtitle {
+  display: block;
+  margin-top: 5px;
+  color: #78869b;
+  font-size: 12px;
+}
+
+/* =========================================================
+   NGÆ¯á»œI ÄÆ¯á»¢C Bá»” NHIá»†M
+========================================================= */
+
+.fe-appointment-main {
+  position: relative;
+  z-index: 2;
+  margin-top: 11px;
+}
+
+.fe-appointment-recipient {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fe-recipient-role {
+  margin-bottom: 2px;
+  color: #8b96a7;
+  font-size: 13px;
+}
+
+.fe-recipient-name.ant-typography {
+  max-width: 100%;
+  margin: 0;
+  color: var(--fe-navy);
+  font-size: clamp(19px, 2.5vw, 27px);
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.fe-recipient-class {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+  padding: 5px 13px;
+  border: 1px solid #dce8f8;
+  border-radius: 30px;
+  color: #17549b;
+  background: linear-gradient(110deg, #edf6ff, #e1efff);
+  box-shadow: 0 3px 8px rgba(18, 59, 112, 0.05);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fe-recipient-class > .anticon {
+  font-size: 14px;
+}
+
+.fe-class-code {
+  margin-inline-end: 0;
+  border-color: #e5bf5b;
+  border-radius: 5px;
+  color: #8a5a00;
+  background: #fff9e7;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   áº¢NH NHĂ‚N Váº¬T
+========================================================= */
+
+.fe-appointment-mascot {
+  position: absolute;
+  z-index: 1;
+  bottom: 55px;
+  display: flex;
+  width: 100px;
+  height: 190px;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.fe-appointment-mascot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+.fe-mascot-left {
+  left: -18px;
+}
+
+.fe-mascot-right {
+  right: -18px;
+}
+
+.fe-mascot-placeholder {
+  display: none;
+}
+
+/* =========================================================
+   Báº¢NG THĂ”NG TIN PHĂ‚N CĂ”NG
+========================================================= */
+
+.fe-appointment-info {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 0;
+  margin: 15px 0 0;
+  padding: 7px 16px;
+  border: 1px solid #f0dfb5;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 4px 15px rgba(19, 57, 100, 0.04),
+    inset 0 0 0 3px rgba(255, 250, 233, 0.65);
+}
+
+.fe-appointment-info-row {
+  display: grid;
+  grid-template-columns: 32px minmax(90px, 0.8fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 5px 0;
+}
+
+.fe-appointment-info-row + .fe-appointment-info-row {
+  border-top: 1px solid #edf0f4;
+}
+
+.fe-info-icon {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d8e6f7;
+  border-radius: 9px;
+  color: #14559b;
+  background: #eff6ff;
+  font-size: 15px;
+}
+
+.fe-info-label {
+  color: #7b8799;
+  font-size: 12px;
+}
+
+.fe-info-value {
+  color: var(--fe-navy);
+  font-size: 13px;
+  font-weight: 750;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   GHI CHĂ
+========================================================= */
+
+.fe-appointment-notes {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dbe8f7;
+  border-radius: 10px;
+  color: #285783;
+  background: #f1f7ff;
+}
+
+.fe-appointment-notes > .anticon {
+  flex-shrink: 0;
+  margin-top: 3px;
+  font-size: 16px;
+}
+
+.fe-appointment-notes .ant-typography {
+  color: #234b75;
+}
+
+.fe-appointment-notes p {
+  margin: 4px 0 0;
+  color: #63758a;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   Lá»œI CHĂC
+========================================================= */
+
+.fe-appointment-blessing {
+  max-width: 440px;
+  margin: 11px auto 0;
+  text-align: center;
+}
+
+.fe-blessing-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #c49529;
+}
+
+.fe-blessing-divider span {
+  width: 42px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d5ad51);
+}
+
+.fe-blessing-divider span:last-child {
+  transform: rotate(180deg);
+}
+
+.fe-blessing-divider .anticon {
+  font-size: 15px;
+}
+
+.fe-appointment-blessing p {
+  margin: 6px 0 0;
+  color: #68788e;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.fe-appointment-footer {
+  position: relative;
+  z-index: 3;
+  margin-top: 12px;
+}
+
+.fe-appointment-alert.ant-alert {
+  padding: 9px 12px;
+  border: 1px solid #c8def8;
+  border-radius: 9px;
+  background: linear-gradient(100deg, #eff6ff, #e5f0ff);
+}
+
+.fe-appointment-alert .ant-alert-icon {
+  color: #1759a0;
+}
+
+.fe-appointment-alert .ant-alert-message {
+  color: #315779;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.fe-appointment-footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.fe-appointment-counter {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: #8a95a4;
+  font-size: 12px;
+}
+
+.fe-appointment-counter .anticon {
+  color: #c49a37;
+  font-size: 15px;
+}
+
+.fe-appointment-confirm.ant-btn {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 20px;
+  border: 1px solid #d8b45d;
+  border-radius: 10px;
+  color: #fff;
+  background: linear-gradient(110deg, #0c2d56, #1858a0 55%, #0b2d58);
+  box-shadow:
+    0 3px 0 #d8b45d,
+    0 5px 12px rgba(16, 57, 103, 0.13);
+  font-size: 13px;
+  font-weight: 750;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fe-appointment-confirm.ant-btn:hover {
+  border-color: #e5c56f !important;
+  color: #fff !important;
+  background: linear-gradient(110deg, #174c86, #226cb8 55%, #123d70) !important;
+  box-shadow:
+    0 3px 0 #d8b45d,
+    0 8px 15px rgba(16, 57, 103, 0.18);
+  transform: translateY(-1px);
+}
+
+.fe-appointment-confirm.ant-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #d8b45d;
+}
+
+.fe-appointment-confirm.ant-btn .anticon {
+  font-size: 16px;
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.fe-appointment-loading .ant-modal-content {
+  border-radius: 16px;
+}
+
+.fe-loading-content {
+  display: flex;
+  min-height: 110px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+/* =========================================================
+   LAPTOP CĂ“ CHIá»€U CAO THáº¤P
+========================================================= */
+
+@media (max-height: 760px) {
+  .fe-appointment-card {
+    padding: 12px 26px 11px;
+  }
+
+  .fe-appointment-ribbon {
+    min-height: 31px;
+    margin-bottom: 8px;
+    padding: 5px 18px;
+    font-size: 11px;
+  }
+
+  .fe-ribbon-logo {
+    width: 19px;
+    height: 19px;
+  }
+
+  .fe-appointment-medallion {
+    width: 62px;
+    height: 62px;
+    margin-bottom: 4px;
+    padding: 4px;
+  }
+
+  .fe-medallion-inner > span {
+    font-size: 21px;
+  }
+
+  .fe-medallion-crown {
+    font-size: 11px;
+  }
+  .fe-medallion-rays {
+    height: 5px;
+    margin-bottom: 4px;
+  }
+
+  .fe-appointment-eyebrow {
+    min-height: 25px;
+    padding: 4px 12px;
+    font-size: 10px;
+  }
+
+  .fe-appointment-subtitle {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+
+  .fe-appointment-main {
+    margin-top: 7px;
+  }
+
+  .fe-recipient-role {
+    font-size: 12px;
+  }
+
+  .fe-recipient-name.ant-typography {
+    font-size: clamp(18px, 2.2vw, 23px);
+  }
+
+  .fe-recipient-class {
+    min-height: 27px;
+    margin-top: 4px;
+    padding: 3px 10px;
+  }
+
+  .fe-appointment-info {
+    margin-top: 8px;
+    padding: 4px 13px;
+  }
+
+  .fe-appointment-info-row {
+    min-height: 35px;
+    padding: 3px 0;
+  }
+
+  .fe-info-icon {
+    width: 27px;
+    height: 27px;
+    font-size: 13px;
+  }
+
+  .fe-appointment-blessing {
+    margin-top: 6px;
+  }
+
+  .fe-appointment-blessing p {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .fe-appointment-footer {
+    margin-top: 7px;
+  }
+
+  .fe-appointment-alert.ant-alert {
+    padding: 6px 10px;
+  }
+
+  .fe-appointment-footer-bottom {
+    margin-top: 7px;
+  }
+
+  .fe-appointment-confirm.ant-btn {
+    min-height: 36px;
+  }
+
+  .fe-appointment-mascot {
+    height: 150px;
+    width: 82px;
+    bottom: 45px;
+  }
+}
+
+/* =========================================================
+   MĂ€N HĂŒNH Ráº¤T THáº¤P
+========================================================= */
+
+@media (max-height: 600px) {
+  .fe-appointment-modal .ant-modal-content {
+    max-height: calc(100vh - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .fe-appointment-card {
+    padding: 9px 20px;
+  }
+
+  .fe-appointment-ribbon {
+    min-height: 27px;
+    margin-bottom: 6px;
+    padding: 4px 15px;
+  }
+
+  .fe-appointment-medallion {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 3px;
+    padding: 3px;
+  }
+
+  .fe-medallion-inner > span {
+    font-size: 17px;
+  }
+
+  .fe-medallion-crown {
+    font-size: 9px;
+  }
+
+  .fe-medallion-rays {
+    display: none;
+  }
+
+  .fe-appointment-subtitle {
+    display: none;
+  }
+
+  .fe-appointment-main {
+    margin-top: 5px;
+  }
+
+  .fe-appointment-info {
+    margin-top: 6px;
+    padding: 3px 10px;
+  }
+
+  .fe-appointment-info-row {
+    min-height: 31px;
+    padding: 2px 0;
+  }
+
+  .fe-appointment-blessing {
+    margin-top: 5px;
+  }
+
+  .fe-appointment-blessing p {
+    font-size: 10px;
+  }
+
+  .fe-appointment-footer {
+    margin-top: 5px;
+  }
+
+  .fe-appointment-alert.ant-alert {
+    padding: 5px 9px;
+  }
+
+  .fe-appointment-footer-bottom {
+    margin-top: 5px;
+  }
+
+  .fe-appointment-confirm.ant-btn {
+    min-height: 33px;
+  }
+
+  .fe-appointment-mascot {
+    display: none;
+  }
+}
+
+/* =========================================================
+   TABLET VĂ€ ÄIá»†N THOáº I
+========================================================= */
+
+@media (max-width: 640px) {
+  .fe-appointment-modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px);
+  }
+
+  .fe-appointment-modal .ant-modal-content {
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 4px;
+    border-radius: 17px;
+  }
+
+  .fe-appointment-card {
+    padding: 16px 12px 13px;
+    border-radius: 13px;
+  }
+
+  .fe-appointment-card::after {
+    inset: 5px;
+    border-radius: 9px;
+  }
+
+  .fe-appointment-ribbon {
+    min-width: 190px;
+    min-height: 31px;
+    margin-bottom: 10px;
+    padding: 5px 14px;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .fe-appointment-medallion {
+    width: 65px;
+    height: 65px;
+  }
+
+  .fe-medallion-inner > span {
+    font-size: 22px;
+  }
+
+  .fe-appointment-eyebrow {
+    min-height: 27px;
+    padding: 5px 11px;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+
+  .fe-appointment-subtitle {
+    font-size: 11px;
+  }
+
+  .fe-appointment-main {
+    margin-top: 9px;
+  }
+
+  .fe-recipient-name.ant-typography {
+    font-size: 21px;
+  }
+
+  .fe-recipient-class {
+    gap: 5px;
+    margin-top: 6px;
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  .fe-appointment-mascot {
+    display: none;
+  }
+
+  .fe-appointment-info {
+    margin-top: 12px;
+    padding: 5px 9px;
+    border-radius: 12px;
+  }
+
+  .fe-appointment-info-row {
+    grid-template-columns: 29px minmax(68px, 0.8fr) minmax(0, 1.2fr);
+    gap: 7px;
+    min-height: 41px;
+    padding: 4px 0;
+  }
+
+  .fe-info-icon {
+    width: 27px;
+    height: 27px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .fe-info-label {
+    font-size: 11px;
+  }
+
+  .fe-info-value {
+    font-size: 11px;
+  }
+
+  .fe-appointment-notes {
+    margin-top: 8px;
+    padding: 9px;
+  }
+
+  .fe-appointment-blessing {
+    margin-top: 10px;
+  }
+
+  .fe-appointment-blessing p {
+    font-size: 11px;
+  }
+
+  .fe-appointment-footer {
+    margin-top: 10px;
+  }
+
+  .fe-appointment-alert.ant-alert {
+    padding: 8px 9px;
+  }
+
+  .fe-appointment-alert .ant-alert-message {
+    font-size: 11px;
+  }
+
+  .fe-appointment-footer-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    margin-top: 10px;
+  }
+
+  .fe-appointment-counter {
+    justify-content: center;
+  }
+
+  .fe-appointment-confirm.ant-btn {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+}
+
+/* =========================================================
+   ÄIá»†N THOáº I NHá»
+========================================================= */
+
+@media (max-width: 360px) {
+  .fe-appointment-card {
+    padding: 13px 9px 11px;
+  }
+
+  .fe-appointment-ribbon {
+    min-width: 175px;
+    font-size: 9px;
+  }
+
+  .fe-recipient-name.ant-typography {
+    font-size: 18px;
+  }
+
+  .fe-appointment-info {
+    padding: 4px 7px;
+  }
+
+  .fe-appointment-info-row {
+    grid-template-columns: 25px minmax(58px, 0.75fr) minmax(0, 1.25fr);
+    gap: 5px;
+    min-height: 37px;
+  }
+
+  .fe-info-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .fe-info-label,
+  .fe-info-value {
+    font-size: 10px;
+  }
+
+  .fe-appointment-confirm.ant-btn {
+    font-size: 11px;
+  }
+}
+
+/* =========================================================
+   GIáº¢M CHUYá»‚N Äá»˜NG
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .fe-appointment-confirm.ant-btn {
+    transition: none;
+  }
+}

@@ -78,11 +78,10 @@ const DefaultCertificateTemplate = ({
   // =========================================================
   // DATA
   // =========================================================
-  console.log("churchData:::", churchData);
 
   const churchName = churchData?.name || churchData?.church_name || "Giáo xứ";
 
-  const dioceseName = churchData?.address;
+  const dioceseName = churchData?.diocese?.name;
   const deaneryName = churchData?.deanery?.name;
 
   const pastorName =
@@ -899,7 +898,7 @@ const DefaultCertificateTemplate = ({
             <h1 className="cert-main-title-pro">{certificateTitle}</h1>
 
             <h3 className="cert-main-title-subpro">
-              Linh Mục Giáo xứ {churchName}
+              Linh Mục Giáo xứ {churchName} -
               {deaneryName ? ` Giáo hạt ${deaneryName}` : ""}
             </h3>
           </div>

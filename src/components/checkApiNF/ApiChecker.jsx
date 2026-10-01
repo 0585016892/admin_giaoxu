@@ -17,7 +17,6 @@ function ApiChecker({ children }) {
 
         setStatus("success");
       } catch (error) {
-        console.error("API không khả dụng:", error);
         setStatus("error");
       }
     };

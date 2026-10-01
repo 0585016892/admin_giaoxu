@@ -87,8 +87,6 @@ const GradingRulePage = () => {
           message.success("Đã tải lại quy tắc tính điểm.");
         }
       } catch (error) {
-        console.error("loadGradingRule:", error);
-
         message.error(
           getErrorMessage(error, "Không thể tải quy tắc tính điểm."),
         );
@@ -157,8 +155,6 @@ const GradingRulePage = () => {
         showLoading: false,
       });
     } catch (error) {
-      console.error("saveGradingRule:", error);
-
       message.error(getErrorMessage(error, "Không thể lưu quy tắc tính điểm."));
     } finally {
       setSaving(false);
@@ -186,8 +182,6 @@ const GradingRulePage = () => {
 
       formRef.current?.reset?.();
     } catch (error) {
-      console.error("deleteGradingRule:", error);
-
       message.error(getErrorMessage(error, "Không thể xóa quy tắc tính điểm."));
     } finally {
       setSaving(false);
@@ -286,8 +280,6 @@ const GradingRulePage = () => {
           : "Đã thêm thành phần điểm.",
       );
     } catch (error) {
-      console.error("submitRuleItem:", error);
-
       message.error(getErrorMessage(error, "Không thể xử lý thành phần điểm."));
     } finally {
       setItemSaving(false);

@@ -267,8 +267,6 @@ const FaithEduRegister = () => {
         replace: true,
       });
     } catch (err) {
-      console.error("REGISTER ERROR:", err);
-
       setLoadingProgress(100);
 
       const apiMessage =

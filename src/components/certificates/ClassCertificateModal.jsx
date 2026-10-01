@@ -229,8 +229,6 @@ const ClassCertificateModal = ({
 
       setClasses(list.map(normalizeClass));
     } catch (error) {
-      console.error("Load classes error:", error);
-
       message.error("Không thể tải danh sách lớp.");
     } finally {
       setLoading(false);
@@ -347,8 +345,6 @@ const ClassCertificateModal = ({
 
       setStudents(normalizedStudents);
     } catch (error) {
-      console.error("Load students error:", error);
-
       message.error("Không thể tải học sinh của lớp.");
 
       setStudents([]);

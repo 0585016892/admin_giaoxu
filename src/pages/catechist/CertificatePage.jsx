@@ -157,7 +157,14 @@ const cloneDesign = () => ({
 });
 
 const removePrefix = (value, prefixes = []) => {
-  if (!value) return "";
+  if (value == null) {
+    return "";
+  }
+
+  // Nếu truyền object thì lấy name
+  if (typeof value === "object") {
+    value = value?.name || "";
+  }
 
   let result = String(value).trim();
 
@@ -397,7 +404,6 @@ const CertificatePage = () => {
   const [certData, setCertData] = useState({
     ...DEFAULT_CERT_DATA,
   });
-  console.log("setCertData", certData);
 
   const [certificateDesign, setCertificateDesign] = useState(cloneDesign());
 
@@ -450,14 +456,13 @@ const CertificatePage = () => {
 
     const loadChurchData = async () => {
       if (!churchId) {
-        console.warn("CertificatePage: Không tìm thấy churchId.");
         return;
       }
 
       try {
         const response = await getChurchId(churchId);
 
-        const rawData = response?.data ?? response;
+        const rawData = response;
 
         const data = rawData?.church ?? rawData ?? {};
 
@@ -466,8 +471,6 @@ const CertificatePage = () => {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error("Load church data error:", error);
-
           message.error("Không thể tải thông tin giáo xứ.");
         }
       }
@@ -480,13 +483,9 @@ const CertificatePage = () => {
     };
   }, [churchId, getChurchId]);
 
-  /* =======================================================
-     CHURCH DISPLAY
-  ======================================================= */
-
-  /* =======================================================
+  /* =========================================================
    CHURCH DISPLAY
-======================================================= */
+========================================================= */
 
   const parish = useMemo(
     () =>
@@ -495,12 +494,24 @@ const CertificatePage = () => {
     [churchData?.name, certificateInfoOverrides.parish],
   );
 
-  const diocese = useMemo(
-    () =>
-      certificateInfoOverrides.diocese ??
-      removePrefix(churchData?.diocese, ["Giáo phận"]),
-    [churchData?.diocese, certificateInfoOverrides.diocese],
-  );
+  const diocese = useMemo(() => {
+    // Ưu tiên nội dung người dùng chỉnh trong Settings
+    if (certificateInfoOverrides.diocese != null) {
+      return certificateInfoOverrides.diocese;
+    }
+
+    // BE trả object => lấy name
+    if (churchData?.diocese && typeof churchData.diocese === "object") {
+      return removePrefix(churchData.diocese.name, ["Giáo phận"]);
+    }
+
+    // Trường hợp API cũ trả string
+    if (typeof churchData?.diocese === "string") {
+      return removePrefix(churchData.diocese, ["Giáo phận"]);
+    }
+
+    return "";
+  }, [churchData?.diocese, certificateInfoOverrides.diocese]);
 
   const pastorName = useMemo(
     () => certificateInfoOverrides.pastorName ?? churchData?.pastor_name ?? "",
@@ -510,8 +521,19 @@ const CertificatePage = () => {
   const displayChurchData = useMemo(
     () => ({
       ...churchData,
+
       name: parish || churchData?.name || "",
-      diocese: diocese || churchData?.diocese || "",
+
+      // Giữ diocese dưới dạng OBJECT để CertificatePreview
+      // có thể dùng churchData.diocese.name
+      diocese:
+        churchData?.diocese && typeof churchData.diocese === "object"
+          ? {
+              ...churchData.diocese,
+              name: diocese || churchData.diocese.name || "",
+            }
+          : diocese || churchData?.diocese || "",
+
       pastor_name: pastorName,
     }),
     [churchData, parish, diocese, pastorName],
@@ -705,8 +727,6 @@ const CertificatePage = () => {
 
       message.success("Đã xuất chứng chỉ PDF.");
     } catch (error) {
-      console.error("Export certificate error:", error);
-
       message.error(error?.message || "Không thể xuất chứng chỉ.");
     } finally {
       setExporting(false);
@@ -891,8 +911,6 @@ const CertificatePage = () => {
 
         message.success(`Đã tạo ZIP ${students.length} chứng chỉ.`);
       } catch (error) {
-        console.error("Batch export error:", error);
-
         message.error(error?.message || "Không thể tạo file ZIP chứng chỉ.");
       } finally {
         setBatchCertificateData(null);
@@ -1040,8 +1058,6 @@ const CertificatePage = () => {
 
       return false;
     } catch (error) {
-      console.error("Import Excel error:", error);
-
       message.error("Không thể đọc file Excel.");
 
       return false;
@@ -1231,9 +1247,20 @@ const CertificatePage = () => {
 
             setCertificateInfoOverrides((prev) => ({
               ...prev,
-              parish: updated.parish,
-              diocese: updated.diocese,
-              pastorName: updated.pastorName,
+              parish:
+                typeof updated.parish === "object"
+                  ? updated.parish?.name || ""
+                  : updated.parish || "",
+
+              diocese:
+                typeof updated.diocese === "object"
+                  ? updated.diocese?.name || ""
+                  : updated.diocese || "",
+
+              pastorName:
+                typeof updated.pastorName === "object"
+                  ? updated.pastorName?.name || ""
+                  : updated.pastorName || "",
             }));
           }}
         />

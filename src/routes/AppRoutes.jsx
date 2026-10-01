@@ -25,7 +25,7 @@ import ProtectedRoute, { RoleGuard } from "../components/ProtectedRoute";
 // CATECHIST
 // ============================================================
 
-import CatechistManagement from "../pages/catechist/CatechistManagement";
+import CatechistManagement from "../pages/catechist/CatechistManagement/CatechistManagement";
 import CatechistDashboard from "../pages/catechist/Dashboard/CatechistDashboard";
 import ClassManagementDashboard from "../pages/catechist/Class/ClassManagement";
 import StudentManagement from "../pages/catechist/Students/StudentManagement";
@@ -34,7 +34,7 @@ import ResultsPage from "../pages/catechist/ResultsPage/ResultsPage";
 import LeaderboardPage from "../pages/catechist/LeaderboardPage";
 import ProfilePageCate from "../pages/catechist/ProfilePageCate";
 import ParishSettingsPage from "../pages/catechist/ParishSettingsPage";
-import AttendancePage from "../pages/catechist/AttendancePage";
+import AttendancePage from "../pages/catechist/Attendance/AttendancePage";
 import TeacherClassesPage from "../pages/catechist/TeacherClassesPage";
 import MyStudentsPage from "../pages/catechist/Students/MyStudentsPage";
 import SendNotificationPage from "../pages/catechist/SendNotificationPage";
@@ -49,7 +49,7 @@ import GradingRulePage from "../pages/catechist/GradingRule/GradingRulePage";
 import QuestionPlayPage from "../pages/catechist/QuestionPlayPage";
 import LicensePage from "../pages/catechist/License/LicensePage";
 import QuestionPage from "../pages/catechist/QuestionPage";
-
+import StudentBulkEditPage from "../pages/catechist/Students/StudentBulkEditPage";
 // ============================================================
 // PARENTS
 // ============================================================
@@ -194,6 +194,10 @@ export default function AppRoutes() {
             <Route
               path="/catechist/student-class"
               element={<MyStudentsPage />}
+            />
+            <Route
+              path="/catechist/students/bulk-edit/:classId"
+              element={<StudentBulkEditPage />}
             />
 
             {/* ================= GAMES ================= */}

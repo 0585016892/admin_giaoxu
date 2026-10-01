@@ -234,7 +234,7 @@ const StudentResultModal = ({
     },
 
     {
-      title: "Ghi chú",
+      title: "Học Kì",
       dataIndex: "note",
       ellipsis: true,
 

@@ -119,8 +119,6 @@ export default function CatechistDashboard() {
 
       setSchedules(data);
     } catch (err) {
-      console.error("GET WEEKLY SCHEDULE ERROR:", err);
-
       message.error(err?.response?.data?.message || "Không thể tải lịch học");
 
       setSchedules([]);
@@ -141,7 +139,6 @@ export default function CatechistDashboard() {
 
       setDailyVerse(response?.data?.data || null);
     } catch (err) {
-      console.error("GET DAILY VERSE ERROR:", err);
     } finally {
       setVerseLoading(false);
     }
@@ -172,9 +169,7 @@ export default function CatechistDashboard() {
         if (res?.success && !res.hasFeedback) {
           setFeedbackOpen(true);
         }
-      } catch (error) {
-        console.error("CHECK USER FEEDBACK ERROR:", error);
-      }
+      } catch (error) {}
     };
 
     checkUserFeedback();
@@ -335,61 +330,131 @@ export default function CatechistDashboard() {
           </Col>
 
           <Col xs={24} sm={12} lg={6}>
-            <DashboardStatCard
-              title="FaithEdu"
-              value={
-                license?.license?.is_trial
-                  ? `${license.license.days_remaining} ngày`
-                  : license?.license?.is_active
-                    ? "Đã kích hoạt"
-                    : license?.license?.is_expired
-                      ? "Đã hết hạn"
-                      : "Chưa kích hoạt"
+            {(() => {
+              const currentLicense = license?.license;
+
+              const type =
+                currentLicense?.type || currentLicense?.license_type || null;
+
+              const isTrial =
+                type === "trial" || currentLicense?.is_trial === true;
+
+              const isYearly = type === "yearly";
+
+              const isLifetime =
+                type === "lifetime" || currentLicense?.is_lifetime === true;
+
+              const isExpired =
+                !isLifetime && currentLicense?.is_expired === true;
+
+              // const isActive = currentLicense?.is_active === true && !isExpired;
+
+              // // =====================================================
+              // // TÊN GÓI
+              // // =====================================================
+
+              // const packageName = isLifetime
+              //   ? "Vĩnh viễn"
+              //   : isYearly
+              //     ? "1 năm"
+              //     : isTrial
+              //       ? "Dùng thử"
+              //       : "Chưa kích hoạt";
+
+              // =====================================================
+              // VALUE
+              // =====================================================
+
+              let value = "Chưa kích hoạt";
+
+              if (isLifetime) {
+                value = "Vĩnh viễn";
+              } else if (isYearly) {
+                value =
+                  currentLicense?.days_remaining != null
+                    ? `${currentLicense.days_remaining} ngày`
+                    : "1 năm";
+              } else if (isTrial) {
+                value =
+                  currentLicense?.days_remaining != null
+                    ? `${currentLicense.days_remaining} ngày`
+                    : "Dùng thử";
+              } else if (isExpired) {
+                value = "Đã hết hạn";
               }
-              subText={
-                license?.license?.is_trial
-                  ? `Dùng thử đến ${new Date(
-                      license.trial_expires_at,
+
+              // =====================================================
+              // SUB TEXT
+              // =====================================================
+
+              let subText = "Chưa kích hoạt FaithEdu";
+
+              if (isLifetime) {
+                subText = "Sử dụng FaithEdu không giới hạn thời gian";
+              } else if (isYearly) {
+                subText = currentLicense?.license_expires_at
+                  ? `Hết hạn ${new Date(
+                      currentLicense.license_expires_at,
                     ).toLocaleDateString("vi-VN")}`
-                  : license?.license?.is_active
-                    ? "Đã kích hoạt FaithEdu"
-                    : license?.license?.is_expired
-                      ? "Gói FaithEdu đã hết hạn"
-                      : "Chưa kích hoạt FaithEdu"
+                  : "Gói FaithEdu 1 năm";
+              } else if (isTrial) {
+                subText = currentLicense?.trial_expires_at
+                  ? `Dùng thử đến ${new Date(
+                      currentLicense.trial_expires_at,
+                    ).toLocaleDateString("vi-VN")}`
+                  : "Gói dùng thử FaithEdu";
+              } else if (isExpired) {
+                subText = "Gói FaithEdu đã hết hạn";
               }
-              icon={IMAGE_ASSETS.achievements}
-              tag={
-                <Tag
-                  style={{
-                    border: "none",
-                    borderRadius: 8,
-                    background: license?.license?.is_trial
-                      ? "#FEF3C7"
-                      : license?.license?.is_active
-                        ? "#DCFCE7"
-                        : license?.license?.is_expired
-                          ? "#FEE2E2"
-                          : "#F1F5F9",
-                    color: license?.license?.is_trial
-                      ? "#B45309"
-                      : license?.license?.is_active
-                        ? "#15803D"
-                        : license?.license?.is_expired
-                          ? "#DC2626"
-                          : "#64748B",
-                    fontWeight: 700,
-                  }}
-                >
-                  {license?.license?.is_trial
-                    ? "Dùng thử"
-                    : license?.license?.is_active
-                      ? "Gói FaithEdu"
-                      : license?.license?.is_expired
-                        ? "Đã hết hạn"
-                        : "Chưa kích hoạt"}
-                </Tag>
+
+              // =====================================================
+              // TAG
+              // =====================================================
+
+              let tagText = "Chưa kích hoạt";
+              let tagBackground = "#F1F5F9";
+              let tagColor = "#64748B";
+
+              if (isLifetime) {
+                tagText = "Vĩnh viễn";
+                tagBackground = "#ECFDF5";
+                tagColor = "#059669";
+              } else if (isYearly) {
+                tagText = "Gói 1 năm";
+                tagBackground = "#EFF6FF";
+                tagColor = "#2563EB";
+              } else if (isTrial) {
+                tagText = "Dùng thử";
+                tagBackground = "#FEF3C7";
+                tagColor = "#B45309";
+              } else if (isExpired) {
+                tagText = "Đã hết hạn";
+                tagBackground = "#FEE2E2";
+                tagColor = "#DC2626";
               }
-            />
+
+              return (
+                <DashboardStatCard
+                  title="FaithEdu"
+                  value={value}
+                  subText={subText}
+                  icon={IMAGE_ASSETS.achievements}
+                  tag={
+                    <Tag
+                      style={{
+                        border: "none",
+                        borderRadius: 8,
+                        background: tagBackground,
+                        color: tagColor,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {tagText}
+                    </Tag>
+                  }
+                />
+              );
+            })()}
           </Col>
         </Row>
 

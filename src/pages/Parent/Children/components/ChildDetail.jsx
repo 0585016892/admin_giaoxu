@@ -961,7 +961,6 @@ export default function ChildDetail() {
 
     return null;
   }, [child]);
-  console.log(child);
 
   /**
    * =======================================================

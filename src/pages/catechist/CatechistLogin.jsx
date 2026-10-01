@@ -87,8 +87,6 @@ export default function Login() {
         remember: true,
       });
     } catch (error) {
-      console.warn("⚠️ REMEMBER LOGIN PARSE ERROR:", error);
-
       localStorage.removeItem("remember_me");
     }
   }, [form]);
@@ -201,8 +199,6 @@ export default function Login() {
       try {
         await login(res.data.token);
       } catch (loginError) {
-        console.error("❌ USER CONTEXT LOGIN ERROR:", loginError);
-
         clearInterval(progressTimer);
 
         setLoadingProgress(0);
@@ -264,8 +260,6 @@ export default function Login() {
         });
       }, 700);
     } catch (error) {
-      console.error("❌ LOGIN ERROR:", error);
-
       clearInterval(progressTimer);
 
       setLoadingProgress(0);

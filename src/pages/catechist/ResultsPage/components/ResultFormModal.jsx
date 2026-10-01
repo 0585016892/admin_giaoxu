@@ -1,15 +1,6 @@
 import React, { useEffect } from "react";
 
-import {
-  Col,
-  DatePicker,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Row,
-  Select,
-} from "antd";
+import { Col, DatePicker, Form, InputNumber, Modal, Row, Select } from "antd";
 
 import {
   CalculatorOutlined,
@@ -382,13 +373,29 @@ const ResultFormModal = ({
           {/* ===================================================
               NOTE
           =================================================== */}
-
-          <Form.Item label="Ghi chú" name="note" className="result-form-note">
-            <Input.TextArea
-              rows={3}
-              maxLength={500}
-              showCount
-              placeholder="Nhập ghi chú nếu có..."
+          <Form.Item
+            label="Học kỳ"
+            name="note"
+            className="result-form-note"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn học kỳ",
+              },
+            ]}
+          >
+            <Select
+              placeholder="Chọn học kỳ"
+              options={[
+                {
+                  value: "Học kỳ 1",
+                  label: "Học kỳ 1",
+                },
+                {
+                  value: "Học kỳ 2",
+                  label: "Học kỳ 2",
+                },
+              ]}
             />
           </Form.Item>
         </Form>

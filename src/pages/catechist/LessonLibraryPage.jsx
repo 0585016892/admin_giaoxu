@@ -495,8 +495,6 @@ const LessonLibraryPage = () => {
 
       setLessons(data);
     } catch (error) {
-      console.error("Load lessons error:", error);
-
       messageApi.error(
         error?.response?.data?.message || "Không thể tải danh sách bài học",
       );
@@ -516,9 +514,7 @@ const LessonLibraryPage = () => {
       const data = getArrayData(response?.data, ["types", "lessonTypes"]);
 
       setLessonTypes(data);
-    } catch (error) {
-      console.error("Load lesson types error:", error);
-    }
+    } catch (error) {}
   }, []);
 
   /* =======================================================
@@ -553,8 +549,6 @@ const LessonLibraryPage = () => {
         setResources(resourceData);
         setQuestions(questionData);
       } catch (error) {
-        console.error("Load lesson resources/questions error:", error);
-
         messageApi.error(
           error?.response?.data?.message || "Không thể tải dữ liệu bài học",
         );
@@ -978,8 +972,6 @@ const LessonLibraryPage = () => {
 
       await loadResources(selectedLesson.id);
     } catch (error) {
-      console.error("Upload resource error:", error);
-
       messageApi.error(
         error?.response?.data?.message || "Không thể thêm tài liệu",
       );
@@ -1000,8 +992,6 @@ const LessonLibraryPage = () => {
 
       await loadResources(selectedLesson.id);
     } catch (error) {
-      console.error("Delete resource error:", error);
-
       messageApi.error(
         error?.response?.data?.message || "Không thể xóa tài liệu",
       );

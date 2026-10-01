@@ -32,7 +32,6 @@ const decodeJWT = (token) => {
 
     return JSON.parse(json);
   } catch (error) {
-    console.error("Decode JWT error:", error);
     return null;
   }
 };
@@ -100,8 +99,6 @@ export function UserProvider({ children }) {
       try {
         const token = localStorage.getItem("token");
 
-        console.log("[AUTH] Restore token:", token ? "FOUND" : "NOT FOUND");
-
         // ----------------------------------------------------
         // Không có token
         // ----------------------------------------------------
@@ -117,8 +114,6 @@ export function UserProvider({ children }) {
         const payload = decodeJWT(token);
 
         if (!payload) {
-          console.warn("[AUTH] JWT không hợp lệ");
-
           localStorage.removeItem("token");
           localStorage.removeItem("user");
 
@@ -132,8 +127,6 @@ export function UserProvider({ children }) {
         // Check token hết hạn
         // ----------------------------------------------------
         if (isTokenExpired(payload)) {
-          console.warn("[AUTH] JWT đã hết hạn");
-
           localStorage.removeItem("token");
           localStorage.removeItem("user");
 
@@ -148,8 +141,6 @@ export function UserProvider({ children }) {
         // ----------------------------------------------------
         const restoredUser = buildUserFromPayload(payload, token);
 
-        console.log("[AUTH] Restore user:", restoredUser);
-
         setUser(restoredUser);
 
         // ----------------------------------------------------
@@ -159,8 +150,6 @@ export function UserProvider({ children }) {
 
         setAuthReady(true);
       } catch (error) {
-        console.error("[AUTH] Restore login error:", error);
-
         localStorage.removeItem("token");
         localStorage.removeItem("user");
 
@@ -216,12 +205,8 @@ export function UserProvider({ children }) {
 
       setAuthReady(true);
 
-      console.log("[AUTH] Login success:", loggedUser);
-
       return loggedUser;
     } catch (error) {
-      console.error("[AUTH] Login error:", error);
-
       throw error;
     }
   };
@@ -230,8 +215,6 @@ export function UserProvider({ children }) {
   // LOGOUT
   // ==========================================================
   const logout = () => {
-    console.log("[AUTH] Logout");
-
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("catechist_user");

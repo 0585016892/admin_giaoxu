@@ -5,11 +5,11 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { createRoot } from "react-dom/client";
 import {
   Avatar,
   Badge,
-  Button,
   Card,
   Col,
   Descriptions,
@@ -188,6 +188,7 @@ const getAvatarUrl = (avatar) => {
 ===================================================== */
 
 export default function StudentManagement() {
+  const navigate = useNavigate();
   /* ===================================================
      DATA
   =================================================== */
@@ -278,6 +279,8 @@ export default function StudentManagement() {
 
   //=============Excel=============
   const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  //===============UPDATE FULL CLASS=========
 
   const handleOpenQR = useCallback((student) => {
     if (!student?.qr_token) {
@@ -463,8 +466,6 @@ export default function StudentManagement() {
 
       message.success("Đã tải ảnh QR!");
     } catch (error) {
-      console.error("Lỗi tải QR:", error);
-
       message.error(error?.message || "Không thể tạo ảnh QR!");
     }
   };
@@ -612,11 +613,6 @@ export default function StudentManagement() {
 
           successCount++;
         } catch (error) {
-          console.error(
-            `Lỗi tạo QR học sinh ${student.name || student.id}:`,
-            error,
-          );
-
           skipCount++;
         }
       }
@@ -675,8 +671,6 @@ export default function StudentManagement() {
         message.success(`Đã tải ${successCount} mã QR!`);
       }
     } catch (error) {
-      console.error("Lỗi tải toàn bộ QR:", error);
-
       message.error(error?.message || "Có lỗi khi tạo mã QR!");
     } finally {
       setBulkQRDownloading(false);
@@ -1618,23 +1612,6 @@ export default function StudentManagement() {
       return;
     }
 
-    // Lấy các lớp hiện tại của học sinh
-    // const classIds = [
-    //   ...new Set(
-    //     selectedStudents
-    //       .map((student) => student.classId)
-    //       .filter((id) => id !== null && id !== undefined && id !== ""),
-    //   ),
-    // ];
-
-    // Không còn bắt buộc phải cùng lớp.
-    // Cho phép:
-    // - Học sinh chưa xếp lớp
-    // - Học sinh đang cùng một lớp
-    // - Học sinh đang ở nhiều lớp khác nhau
-    //
-    // Tất cả đều có thể chuyển sang một lớp mới.
-
     bulkChangeClassForm.resetFields();
 
     bulkChangeClassForm.setFieldsValue({
@@ -1667,11 +1644,6 @@ export default function StudentManagement() {
     const parsedNewClassId = Number(newClassId);
 
     if (!Number.isInteger(parsedNewClassId) || parsedNewClassId <= 0) {
-      console.error("❌ NEW CLASS ID INVALID:", {
-        newClassId,
-        parsedNewClassId,
-      });
-
       message.error("Lớp mới không hợp lệ!");
       return;
     }
@@ -1795,19 +1767,6 @@ export default function StudentManagement() {
         silent: true,
       });
     } catch (error) {
-      console.error("");
-      console.error(
-        "============================================================",
-      );
-      console.error("❌ BULK CHANGE CLASS ERROR");
-      console.error(
-        "============================================================",
-      );
-      console.error("ERROR:", error);
-      console.error("RESPONSE:", error?.response);
-      console.error("RESPONSE DATA:", error?.response?.data);
-      console.error("STATUS:", error?.response?.status);
-
       message.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||
@@ -2043,8 +2002,6 @@ export default function StudentManagement() {
         hide();
       }
     } catch (error) {
-      console.error("BULK DELETE ERROR:", error);
-
       message.error(
         error?.response?.data?.message ||
           error?.message ||
@@ -2149,21 +2106,21 @@ export default function StudentManagement() {
   const columns = useMemo(
     () => [
       {
-        title: "Học sinh",
+        title: "HỌC SINH",
         key: "student",
-        width: 300,
+        width: 220,
 
         render: (_, record) => (
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 12,
-              minWidth: 230,
+              gap: 8,
+              minWidth: 0,
             }}
           >
             <Avatar
-              size={44}
+              size={38}
               src={record.avatar}
               icon={<UserOutlined />}
               style={{
@@ -2186,20 +2143,23 @@ export default function StudentManagement() {
                 ellipsis
                 style={{
                   display: "block",
-                  maxWidth: 250,
+                  maxWidth: "100%",
                   cursor: "pointer",
                   color: COLORS.navy,
                 }}
                 onClick={() => handleOpenDetail(record)}
               >
-                {record.name}
+                {record.saint_name} {record.name}
               </Text>
 
               <Text
                 type="secondary"
                 style={{
-                  fontSize: 12,
+                  display: "block",
+                  fontSize: 11,
                   whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {record.code} •{" "}
@@ -2215,24 +2175,29 @@ export default function StudentManagement() {
       },
 
       {
-        title: "Ngày sinh",
+        title: "NGÀY SINH",
         dataIndex: "date_of_birth",
-        width: 120,
+        width: 95,
+        align: "center",
 
         render: (value) => formatDate(value),
       },
 
       {
-        title: "Lớp",
+        title: "LỚP",
         key: "class",
-        width: 140,
+        width: 125,
 
         render: (_, record) =>
           record.classId ? (
             <Tag
               icon={<BookOutlined />}
               style={{
-                borderRadius: 8,
+                margin: 0,
+                borderRadius: 6,
+                maxWidth: 110,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 background: COLORS.navyLight,
                 borderColor: COLORS.border,
@@ -2245,6 +2210,7 @@ export default function StudentManagement() {
             <Text
               type="secondary"
               style={{
+                fontSize: 12,
                 whiteSpace: "nowrap",
               }}
             >
@@ -2254,9 +2220,10 @@ export default function StudentManagement() {
       },
 
       {
-        title: "Trạng thái",
+        title: "TRẠNG THÁI",
         dataIndex: "status",
-        width: 140,
+        width: 110,
+        align: "center",
 
         render: (value) => renderStatus(value),
       },
@@ -2264,11 +2231,11 @@ export default function StudentManagement() {
       {
         title: "",
         key: "action",
-        width: 150,
+        width: 135,
         fixed: "right",
 
         render: (_, record) => (
-          <Space size={2}>
+          <Space size={1}>
             <Tooltip title="Xem QR">
               <AppButton
                 variant="secondary"
@@ -2322,10 +2289,8 @@ export default function StudentManagement() {
                       ) : (
                         <UnlockOutlined />
                       ),
-
                     label:
                       record.status === "active" ? "Khóa học sinh" : "Mở khóa",
-
                     onClick: () => handleToggleStatus(record),
                   },
 
@@ -2337,7 +2302,6 @@ export default function StudentManagement() {
                     key: "delete",
                     danger: true,
                     icon: <DeleteOutlined />,
-
                     label: (
                       <Popconfirm
                         title="Xóa học sinh?"
@@ -3374,8 +3338,18 @@ export default function StudentManagement() {
               FILTER
           ================================================= */}
 
-          <Row className="student-filter-row" gutter={[12, 12]} align="middle">
-            <Col xs={24} md={12} lg={9}>
+          <Row
+            className="student-filter-row"
+            gutter={[12, 12]}
+            align="middle"
+            style={{
+              margin: "5px 0",
+            }}
+          >
+            {/* =====================================================
+      TÌM KIẾM
+  ===================================================== */}
+            <Col xs={24} md={12} lg={8}>
               <AppSearchInput
                 value={searchText}
                 onChange={(value) => {
@@ -3386,7 +3360,10 @@ export default function StudentManagement() {
               />
             </Col>
 
-            <Col xs={24} md={6} lg={4}>
+            {/* =====================================================
+      SẮP XẾP
+  ===================================================== */}
+            <Col xs={24} md={6} lg={3}>
               <Select
                 className="student-filter-control"
                 size="large"
@@ -3409,9 +3386,12 @@ export default function StudentManagement() {
               />
             </Col>
 
+            {/* =====================================================
+      ĐẶT LẠI
+  ===================================================== */}
             <Col xs={24} md={6} lg={3}>
-              <Button
-                size="large"
+              <AppButton
+                size="small"
                 block
                 disabled={loading || saving || bulkDeleting}
                 onClick={resetFilters}
@@ -3420,7 +3400,31 @@ export default function StudentManagement() {
                 }}
               >
                 Đặt lại
-              </Button>
+              </AppButton>
+            </Col>
+
+            {/* =====================================================
+      SỬA DANH SÁCH LỚP
+  ===================================================== */}
+            <Col xs={24} md={12} lg={10}>
+              {activeClassTab !== "all" && (
+                <AppButton
+                  type="primary"
+                  size="small"
+                  block
+                  icon={<EditOutlined />}
+                  disabled={loading || saving || bulkDeleting}
+                  onClick={() => {
+                    navigate(`/catechist/students/bulk-edit/${activeClassTab}`);
+                  }}
+                  style={{
+                    borderRadius: 10,
+                    fontWeight: 600,
+                  }}
+                >
+                  Sửa danh theo sách lớp
+                </AppButton>
+              )}
             </Col>
           </Row>
 
@@ -3529,7 +3533,7 @@ export default function StudentManagement() {
               loading={loading}
               columns={columns}
               dataSource={paginatedStudents}
-              scrollX={1150}
+              scrollX={685}
               emptyText={
                 searchText || selectedStatus !== "all"
                   ? "Không tìm thấy học sinh phù hợp"
@@ -3538,10 +3542,8 @@ export default function StudentManagement() {
               rowSelection={{
                 selectedRowKeys,
 
-                // Giữ selection khi chuyển trang
                 preserveSelectedRowKeys: true,
 
-                // Chọn / bỏ chọn từng học sinh
                 onSelect: (record, selected) => {
                   setSelectedRowKeys((prev) => {
                     if (selected) {
@@ -3556,7 +3558,6 @@ export default function StudentManagement() {
                   });
                 },
 
-                // Chọn / bỏ chọn toàn bộ TRANG HIỆN TẠI
                 onSelectAll: (selected, selectedRows, changeRows) => {
                   const currentPageIds = changeRows.map((row) => row.id);
 
@@ -3569,7 +3570,6 @@ export default function StudentManagement() {
                   });
                 },
 
-                // Disable checkbox theo trạng thái
                 getCheckboxProps: (record) => ({
                   disabled:
                     actionLoading.delete === record.id ||

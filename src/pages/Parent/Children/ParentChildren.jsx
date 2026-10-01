@@ -541,8 +541,6 @@ const ParentChildren = () => {
 
       setChildren(normalizedChildren);
     } catch (err) {
-      console.error("Load parent children error:", err);
-
       setChildren([]);
 
       setError(

@@ -61,7 +61,8 @@ const MarriageCertificateTemplate = ({
 
   const churchName = churchData?.name || churchData?.church_name || "";
 
-  const dioceseName = churchData?.address || churchData?.diocese || "";
+  const dioceseName = churchData?.diocese?.name || "";
+  const deaneryName = churchData?.deanery?.name || "";
 
   const parishName =
     churchData?.parish_name || churchData?.parish || churchName || "";
@@ -72,8 +73,6 @@ const MarriageCertificateTemplate = ({
   // ============================================================
   // STUDENT DATA
   // ============================================================
-
-  console.log("certData:::", certData);
 
   const fullName = certData?.fullName || certData?.studentName || "HỌ VÀ TÊN";
 
@@ -252,7 +251,7 @@ const MarriageCertificateTemplate = ({
               fontFamily: headingFont,
             }}
           >
-            GIÁO HỘI CÔNG GIÁO
+            GIÁO PHẬN {cleanDiocese}
           </div>
 
           <div
@@ -262,7 +261,7 @@ const MarriageCertificateTemplate = ({
               fontFamily: bodyFont,
             }}
           >
-            {cleanDiocese ? `GIÁO PHẬN ${cleanDiocese}` : "GIÁO PHẬN"} -{" "}
+            {deaneryName ? `GIÁO HẠT ${deaneryName}` : "GIÁO HẠT"} -{" "}
             {cleanParish ? `GIÁO XỨ ${cleanParish}` : "GIÁO XỨ"}
           </div>
 

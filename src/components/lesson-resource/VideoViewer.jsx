@@ -187,7 +187,6 @@ const VideoViewer = ({
         video.pause();
       }
     } catch (error) {
-      console.error("Video play error:", error);
       setIsLoading(false);
     }
   }, [hasError]);
@@ -276,9 +275,7 @@ const VideoViewer = ({
       } else if (player.requestFullscreen) {
         await player.requestFullscreen();
       }
-    } catch (error) {
-      console.error("Fullscreen error:", error);
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {

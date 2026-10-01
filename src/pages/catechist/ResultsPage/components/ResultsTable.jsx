@@ -26,64 +26,65 @@ const ResultsTable = ({
   const roundingDigits = Number(rule?.rounding_digits ?? 1);
   const passScore = Number(rule?.pass_score ?? 5);
 
+  // =========================================================
+  // COLUMNS
+  // =========================================================
+
   const columns = useMemo(() => {
-    const resultColumns = [
-      // =====================================================
-      // STT
-      // =====================================================
+    const resultColumns = [];
 
-      {
-        title: "STT",
-        width: 64,
-        fixed: "left",
-        align: "center",
+    // =======================================================
+    // STT
+    // =======================================================
 
-        render: (_, __, index) => {
-          const number = (currentPage - 1) * pageSize + index + 1;
+    resultColumns.push({
+      title: "STT",
+      width: 52,
+      align: "center",
 
-          return (
-            <span className="results-index">
-              {String(number).padStart(2, "0")}
+      render: (_, __, index) => {
+        const number = (currentPage - 1) * pageSize + index + 1;
+
+        return (
+          <span className="results-index">
+            {String(number).padStart(2, "0")}
+          </span>
+        );
+      },
+    });
+
+    // =======================================================
+    // HỌC VIÊN
+    // =======================================================
+
+    resultColumns.push({
+      title: "Học viên",
+      key: "student",
+
+      render: (_, record) => (
+        <div className="results-student-cell">
+          <Avatar
+            size={34}
+            icon={<UserOutlined />}
+            className="results-student-avatar"
+          />
+
+          <div className="results-student-info">
+            <Text strong className="results-student-name">
+              {record.student_name || "Chưa cập nhật"}
+            </Text>
+
+            <span className="results-student-code">
+              {record.student_code || `HS #${record.student_id}`}
             </span>
-          );
-        },
-      },
-
-      // =====================================================
-      // HỌC VIÊN
-      // =====================================================
-
-      {
-        title: "Học viên",
-        key: "student",
-        width: 285,
-        fixed: "left",
-
-        render: (_, record) => (
-          <div className="results-student-cell">
-            <Avatar
-              size={42}
-              icon={<UserOutlined />}
-              className="results-student-avatar"
-            />
-
-            <div className="results-student-info">
-              <Text strong className="results-student-name">
-                {record.student_name || "Chưa cập nhật"}
-              </Text>
-
-              <span className="results-student-code">
-                {record.student_code || `HS #${record.student_id}`}
-              </span>
-            </div>
           </div>
-        ),
-      },
-    ];
+        </div>
+      ),
+    });
 
-    // =====================================================
+    // =======================================================
     // CÁC THÀNH PHẦN ĐIỂM
-    // =====================================================
+    // =======================================================
 
     (rule?.items || []).forEach((ruleItem) => {
       resultColumns.push({
@@ -97,7 +98,7 @@ const ResultsTable = ({
 
         key: `item-${ruleItem.id}`,
 
-        width: 135,
+        width: 95,
 
         align: "center",
 
@@ -138,14 +139,39 @@ const ResultsTable = ({
       });
     });
 
-    // =====================================================
-    // ĐIỂM TỔNG KẾT
-    // =====================================================
+    // =======================================================
+    // HỌC KỲ
+    // =======================================================
 
     resultColumns.push({
-      title: "Điểm tổng kết",
+      title: "Học kỳ",
+      key: "semester",
+      width: 105,
+      align: "center",
+
+      render: (_, record) => {
+        const semester = record.note || "—";
+
+        if (semester === "—") {
+          return <span className="results-semester-empty">—</span>;
+        }
+
+        return (
+          <Tag bordered={false} className="results-semester-tag">
+            {semester}
+          </Tag>
+        );
+      },
+    });
+
+    // =======================================================
+    // ĐIỂM TỔNG KẾT
+    // =======================================================
+
+    resultColumns.push({
+      title: "Tổng kết",
       key: "final-score",
-      width: 155,
+      width: 110,
       align: "center",
 
       sorter: (a, b) => Number(a.score ?? -1) - Number(b.score ?? -1),
@@ -181,18 +207,19 @@ const ResultsTable = ({
       },
     });
 
-    // =====================================================
+    // =======================================================
     // TIẾN ĐỘ
-    // =====================================================
+    // =======================================================
 
     resultColumns.push({
       title: "Tiến độ",
       key: "progress",
-      width: 160,
+      width: 120,
       align: "center",
 
       render: (_, record) => {
         const total = Number(record.totalItems ?? 0);
+
         const completed = Number(record.completedItems ?? 0);
 
         const percent =
@@ -224,14 +251,14 @@ const ResultsTable = ({
       },
     });
 
-    // =====================================================
+    // =======================================================
     // ACTION
-    // =====================================================
+    // =======================================================
 
     resultColumns.push({
       title: "",
       key: "action",
-      width: 68,
+      width: 52,
       fixed: "right",
       align: "center",
 
@@ -250,8 +277,16 @@ const ResultsTable = ({
     return resultColumns;
   }, [rule, currentPage, pageSize, onView, passScore, roundingDigits]);
 
+  // =========================================================
+  // TABLE WIDTH
+  // =========================================================
+
   const scrollWidth =
-    64 + 285 + (rule?.items?.length || 0) * 135 + 155 + 160 + 68;
+    52 + 220 + (rule?.items?.length || 0) * 95 + 105 + 110 + 120 + 52;
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <>
@@ -263,7 +298,7 @@ const ResultsTable = ({
           dataSource={data}
           loading={loading}
           pagination={false}
-          size="middle"
+          size="small"
           scrollX={scrollWidth}
           rowClassName={(record) => {
             if (
@@ -302,10 +337,14 @@ const ResultsTable = ({
         .results-table-wrapper {
           width: 100%;
           background: #ffffff;
+
           border: 1px solid #e2e8f0;
-          border-radius: 16px;
+          border-radius: 14px;
+
           overflow: hidden;
-          box-shadow: 0 4px 18px rgba(23, 59, 94, 0.035);
+
+          box-shadow:
+            0 4px 18px rgba(23, 59, 94, 0.035);
         }
 
         /* ===================================================
@@ -333,8 +372,9 @@ const ResultsTable = ({
           .ant-table-thead
           > tr
           > th {
-          height: 52px;
-          padding: 0 16px;
+          height: 46px;
+
+          padding: 0 10px;
 
           background: #fbfcfd !important;
 
@@ -342,10 +382,10 @@ const ResultsTable = ({
 
           border-bottom: 1px solid #e7ebef;
 
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
 
-          letter-spacing: 0.035em;
+          letter-spacing: 0.025em;
           text-transform: uppercase;
 
           white-space: nowrap;
@@ -370,8 +410,9 @@ const ResultsTable = ({
           .ant-table-tbody
           > tr
           > td {
-          height: 76px;
-          padding: 10px 16px;
+          height: 66px;
+
+          padding: 7px 10px;
 
           background: #ffffff;
 
@@ -400,7 +441,8 @@ const ResultsTable = ({
           .ant-table-tbody
           > tr.results-row-passed
           > td:first-child {
-          box-shadow: inset 2px 0 0 #5c9276;
+          box-shadow:
+            inset 2px 0 0 #5c9276;
         }
 
         /* ===================================================
@@ -431,22 +473,24 @@ const ResultsTable = ({
 
         .results-index {
           display: inline-flex;
+
           align-items: center;
           justify-content: center;
 
-          min-width: 28px;
-          height: 28px;
+          min-width: 26px;
+          height: 26px;
 
-          border-radius: 8px;
+          border-radius: 7px;
 
           background: #f5f7f9;
 
           color: #94a3b8;
 
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
 
-          font-variant-numeric: tabular-nums;
+          font-variant-numeric:
+            tabular-nums;
         }
 
         /* ===================================================
@@ -458,11 +502,15 @@ const ResultsTable = ({
 
           display: flex;
           align-items: center;
-          gap: 12px;
+
+          gap: 8px;
         }
 
         .results-student-avatar {
           flex: 0 0 auto;
+
+          width: 34px;
+          height: 34px;
 
           background: #eef3f7;
           color: #5d7387;
@@ -476,18 +524,20 @@ const ResultsTable = ({
           display: flex;
           flex-direction: column;
 
-          gap: 3px;
+          gap: 2px;
         }
 
         .results-student-name {
           display: block;
 
+          max-width: 155px;
+
           overflow: hidden;
 
           color: #1e293b !important;
 
-          font-size: 14px;
-          line-height: 1.35;
+          font-size: 12px;
+          line-height: 1.3;
 
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -498,8 +548,10 @@ const ResultsTable = ({
 
           color: #94a3b8;
 
-          font-size: 11px;
+          font-size: 9px;
           line-height: 1.2;
+
+          white-space: nowrap;
         }
 
         /* ===================================================
@@ -508,23 +560,26 @@ const ResultsTable = ({
 
         .results-score-column-title {
           display: inline-flex;
+
           flex-direction: column;
           align-items: center;
           justify-content: center;
 
-          gap: 2px;
+          gap: 1px;
 
-          max-width: 110px;
+          max-width: 85px;
         }
 
         .results-score-column-title span {
-          overflow: hidden;
+          display: block;
 
-          max-width: 110px;
+          max-width: 85px;
+
+          overflow: hidden;
 
           color: #667585;
 
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
 
           text-overflow: ellipsis;
@@ -534,7 +589,7 @@ const ResultsTable = ({
         .results-score-column-title small {
           color: #a0aab5;
 
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
 
           letter-spacing: 0;
@@ -547,34 +602,36 @@ const ResultsTable = ({
 
         .results-item-score {
           display: inline-flex;
+
           align-items: baseline;
           justify-content: center;
 
-          gap: 5px;
+          gap: 3px;
 
-          min-width: 70px;
+          min-width: 55px;
         }
 
         .results-item-score strong {
           color: #334155;
 
-          font-size: 15px;
+          font-size: 13px;
           font-weight: 700;
 
-          font-variant-numeric: tabular-nums;
+          font-variant-numeric:
+            tabular-nums;
         }
 
         .results-item-score span {
           color: #a0aab5;
 
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 500;
         }
 
         .results-score-empty {
           color: #c2cbd4;
 
-          font-size: 17px;
+          font-size: 15px;
           font-weight: 500;
         }
 
@@ -584,10 +641,40 @@ const ResultsTable = ({
 
         .results-score-tooltip {
           display: flex;
+
           flex-direction: column;
+
           gap: 4px;
 
-          font-size: 12px;
+          font-size: 11px;
+        }
+
+        /* ===================================================
+           SEMESTER
+        =================================================== */
+
+        .results-semester-tag {
+          margin: 0;
+
+          padding: 4px 7px;
+
+          border: 0 !important;
+          border-radius: 7px;
+
+          background: #f3f6f8 !important;
+
+          color: #64748b !important;
+
+          font-size: 9px;
+          font-weight: 600;
+
+          white-space: nowrap;
+        }
+
+        .results-semester-empty {
+          color: #c2cbd4;
+
+          font-size: 14px;
         }
 
         /* ===================================================
@@ -595,30 +682,34 @@ const ResultsTable = ({
         =================================================== */
 
         .results-final-score {
-          min-width: 80px;
+          min-width: 65px;
 
           display: inline-flex;
+
           flex-direction: column;
           align-items: center;
 
-          gap: 3px;
+          gap: 2px;
         }
 
         .results-final-score strong {
-          font-size: 19px;
+          font-size: 16px;
           line-height: 1.1;
+
           font-weight: 700;
 
-          font-variant-numeric: tabular-nums;
+          font-variant-numeric:
+            tabular-nums;
         }
 
         .results-final-score span {
           display: inline-flex;
+
           align-items: center;
 
-          gap: 4px;
+          gap: 3px;
 
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
         }
 
@@ -641,17 +732,19 @@ const ResultsTable = ({
         .results-pending-tag {
           margin: 0;
 
-          padding: 5px 9px;
+          padding: 4px 6px;
 
           border: 0 !important;
-          border-radius: 8px;
+          border-radius: 7px;
 
           background: #f4f6f8 !important;
 
           color: #8a97a6 !important;
 
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 600;
+
+          white-space: nowrap;
         }
 
         /* ===================================================
@@ -659,49 +752,56 @@ const ResultsTable = ({
         =================================================== */
 
         .results-progress {
-          width: 125px;
+          width: 100px;
+
           margin: 0 auto;
         }
 
         .results-progress-top {
-          margin-bottom: 5px;
+          margin-bottom: 3px;
 
           display: flex;
+
           align-items: center;
           justify-content: space-between;
 
-          gap: 8px;
+          gap: 5px;
         }
 
         .results-progress-top span {
           color: #8a97a6;
 
-          font-size: 10px;
+          font-size: 8px;
         }
 
         .results-progress-top strong {
           color: #64748b;
 
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 700;
 
-          font-variant-numeric: tabular-nums;
+          font-variant-numeric:
+            tabular-nums;
         }
 
         .results-progress-main {
           display: flex;
+
           align-items: center;
-          gap: 8px;
+
+          gap: 5px;
         }
 
         .results-progress-main .ant-progress {
           flex: 1;
+
           margin: 0;
         }
 
         .results-progress-main
           .ant-progress-inner {
           background: #e8edf2;
+
           border-radius: 20px;
         }
 
@@ -711,15 +811,17 @@ const ResultsTable = ({
         }
 
         .results-progress-main > span {
-          min-width: 28px;
+          min-width: 23px;
 
           color: #64748b;
 
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 600;
 
           text-align: right;
-          font-variant-numeric: tabular-nums;
+
+          font-variant-numeric:
+            tabular-nums;
         }
 
         /* ===================================================
@@ -751,9 +853,10 @@ const ResultsTable = ({
         =================================================== */
 
         .results-empty {
-          min-height: 220px;
+          min-height: 200px;
 
           display: flex;
+
           flex-direction: column;
           align-items: center;
           justify-content: center;
@@ -762,34 +865,35 @@ const ResultsTable = ({
         }
 
         .results-empty-icon {
-          width: 44px;
-          height: 44px;
+          width: 42px;
+          height: 42px;
 
-          margin-bottom: 5px;
+          margin-bottom: 4px;
 
           display: flex;
+
           align-items: center;
           justify-content: center;
 
-          border-radius: 12px;
+          border-radius: 11px;
 
           background: #f4f6f8;
 
           color: #a6b0ba;
 
-          font-size: 18px;
+          font-size: 17px;
         }
 
         .results-empty strong {
           color: #475569;
 
-          font-size: 13px;
+          font-size: 12px;
         }
 
         .results-empty span {
           color: #94a3b8;
 
-          font-size: 12px;
+          font-size: 11px;
         }
 
         /* ===================================================
@@ -798,7 +902,41 @@ const ResultsTable = ({
 
         .results-table
           .ant-spin-container {
-          min-height: 120px;
+          min-height: 110px;
+        }
+
+        /* ===================================================
+           DESKTOP
+        =================================================== */
+
+        @media (min-width: 1200px) {
+          .results-table
+            .ant-table-thead
+            > tr
+            > th {
+            padding: 0 8px;
+          }
+
+          .results-table
+            .ant-table-tbody
+            > tr
+            > td {
+            padding: 6px 8px;
+          }
+        }
+
+        /* ===================================================
+           TABLET
+        =================================================== */
+
+        @media (max-width: 1100px) {
+          .results-student-name {
+            max-width: 130px;
+          }
+
+          .results-progress {
+            width: 90px;
+          }
         }
 
         /* ===================================================
@@ -807,55 +945,68 @@ const ResultsTable = ({
 
         @media (max-width: 768px) {
           .results-table-wrapper {
-            border-radius: 14px;
+            border-radius: 12px;
           }
 
           .results-table
             .ant-table-thead
             > tr
             > th {
-            height: 48px;
-            padding: 0 12px;
+            height: 44px;
+
+            padding: 0 7px;
+
+            font-size: 9px;
           }
 
           .results-table
             .ant-table-tbody
             > tr
             > td {
-            height: 70px;
-            padding: 9px 12px;
+            height: 62px;
+
+            padding: 6px 7px;
           }
 
           .results-student-avatar {
-            width: 38px;
-            height: 38px;
+            width: 32px;
+            height: 32px;
           }
 
           .results-student-name {
-            max-width: 180px;
-            font-size: 13px;
+            max-width: 120px;
+
+            font-size: 11px;
           }
 
           .results-student-code {
-            font-size: 10px;
+            font-size: 8px;
           }
 
           .results-item-score strong {
-            font-size: 14px;
+            font-size: 12px;
           }
 
           .results-final-score strong {
-            font-size: 18px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .results-student-name {
-            max-width: 145px;
+            font-size: 15px;
           }
 
           .results-progress {
-            width: 115px;
+            width: 85px;
+          }
+        }
+
+        /* ===================================================
+           SMALL MOBILE
+        =================================================== */
+
+        @media (max-width: 480px) {
+          .results-student-name {
+            max-width: 105px;
+          }
+
+          .results-progress {
+            width: 80px;
           }
         }
       `}</style>

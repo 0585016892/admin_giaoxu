@@ -9,8 +9,6 @@ export const useSchedule = () => {
     setLoading(true);
     try {
       const res = await fn(...args);
-      console.log(res);
-
       return res.data;
     } catch (err) {
       const msg = err?.response?.data?.message || "Lỗi hệ thống";

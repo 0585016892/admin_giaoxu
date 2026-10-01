@@ -47,13 +47,13 @@ import {
 
 import dayjs from "dayjs";
 
-import PageHeroHeader from "../../components/common/PageHeroHeader";
+import PageHeroHeader from "../../../components/common/PageHeroHeader";
 import QRCodeScanner from "./QRCodeScanner";
-import StatCard from "../../components/common/StatCard";
-import AppSearchInput from "../../components/common/SearchInput";
-import AppButton from "../../components/common/AppButton";
-import attendanceApi from "../../api/attendanceApi";
-import classApi from "../../api/classApi";
+import StatCard from "../../../components/common/StatCard";
+import AppSearchInput from "../../../components/common/SearchInput";
+import AppButton from "../../../components/common/AppButton";
+import attendanceApi from "../../../api/attendanceApi";
+import classApi from "../../../api/classApi";
 
 const { Text, Title } = Typography;
 
@@ -179,13 +179,34 @@ const getApiBody = (response) => {
     return {};
   }
 
-  return response?.data || response;
+  /*
+   * Axios thường trả:
+   *
+   * {
+   *   data: {
+   *      ...
+   *   }
+   * }
+   *
+   * Nhưng một số api wrapper có thể trả trực tiếp body.
+   */
+  return response?.data ?? response;
 };
 
 const normalizeClasses = (response) => {
   const body = getApiBody(response);
 
-  const list = body?.data || body?.classes || (Array.isArray(body) ? body : []);
+  let list = [];
+
+  if (Array.isArray(body)) {
+    list = body;
+  } else if (Array.isArray(body?.data)) {
+    list = body.data;
+  } else if (Array.isArray(body?.classes)) {
+    list = body.classes;
+  } else if (Array.isArray(body?.data?.classes)) {
+    list = body.data.classes;
+  }
 
   return list.map((item) => ({
     ...item,
@@ -197,8 +218,38 @@ const normalizeClasses = (response) => {
   }));
 };
 
-const getStudentsFromResponse = (response) => {
+/* =========================================================
+   ATTENDANCE RESPONSE
+========================================================= */
+
+const getAttendanceResponseData = (response) => {
   const body = getApiBody(response);
+
+  /*
+   * Hỗ trợ các dạng:
+   *
+   * {
+   *   data: [...]
+   * }
+   *
+   * hoặc:
+   *
+   * {
+   *   data: {
+   *      students: [...]
+   *   }
+   * }
+   *
+   * hoặc:
+   *
+   * {
+   *   students: [...]
+   * }
+   */
+
+  if (Array.isArray(body)) {
+    return body;
+  }
 
   if (Array.isArray(body?.data)) {
     return body.data;
@@ -208,8 +259,8 @@ const getStudentsFromResponse = (response) => {
     return body.students;
   }
 
-  if (Array.isArray(body)) {
-    return body;
+  if (Array.isArray(body?.data?.students)) {
+    return body.data.students;
   }
 
   return [];
@@ -218,7 +269,8 @@ const getStudentsFromResponse = (response) => {
 const getPaginationFromResponse = (response) => {
   const body = getApiBody(response);
 
-  const pg = body?.pagination || response?.pagination || {};
+  const pg =
+    body?.pagination ?? body?.data?.pagination ?? response?.pagination ?? {};
 
   return {
     page: Number(pg?.page) || 1,
@@ -232,9 +284,7 @@ const getPaginationFromResponse = (response) => {
 };
 
 const getStatisticsFromResponse = (response) => {
-  const body = response;
-
-  const stats = body?.statistics || body?.stats || {};
+  const stats = response?.statistics ?? {};
 
   return {
     total: Number(stats?.total) || 0,
@@ -247,7 +297,11 @@ const getStatisticsFromResponse = (response) => {
 
     excused: Number(stats?.excused) || 0,
 
-    not_attended: Number(stats?.not_attended) || Number(stats?.notMarked) || 0,
+    not_attended:
+      Number(stats?.not_attended) ||
+      Number(stats?.notMarked) ||
+      Number(stats?.not_attended_count) ||
+      0,
 
     attendance_rate: Number(stats?.attendance_rate) || Number(stats?.rate) || 0,
   };
@@ -350,11 +404,15 @@ const AttendancePage = () => {
   ======================================================= */
 
   const selectedClass = useMemo(() => {
+    if (attendanceType === "mass") {
+      return null;
+    }
+
     return classes.find((item) => Number(item.id) === Number(selectedClassId));
-  }, [classes, selectedClassId]);
+  }, [classes, selectedClassId, attendanceType]);
 
   /* =======================================================
-     ATTENDANCE TYPE
+     ATTENDANCE TYPE CONFIG
   ======================================================= */
 
   const currentTypeConfig = useMemo(() => {
@@ -364,7 +422,6 @@ const AttendancePage = () => {
   /* =======================================================
      LOAD CLASSES
   ======================================================= */
-
   const loadClasses = useCallback(async () => {
     try {
       setLoadingClasses(true);
@@ -380,29 +437,36 @@ const AttendancePage = () => {
       const list = normalizeClasses(response);
 
       setClasses(list);
-
-      if (list.length > 0 && !selectedClassId) {
-        setSelectedClassId(list[0].id);
-      }
     } catch (error) {
-      message.error("Không thể tải danh sách lớp");
+      message.error(
+        error?.response?.data?.message || "Không thể tải danh sách lớp",
+      );
     } finally {
       setLoadingClasses(false);
     }
-  }, [role, selectedClassId]);
-
+  }, [role]);
   /* =======================================================
      LOAD ATTENDANCE
   ======================================================= */
 
   const loadAttendance = useCallback(async () => {
-    if (!selectedClassId || !attendanceType) {
+    /*
+     * Chưa chọn loại điểm danh
+     */
+    if (!attendanceType) {
       setStudents([]);
-
       setStatistics(DEFAULT_STATISTICS);
-
       setPagination(DEFAULT_PAGINATION);
+      return;
+    }
 
+    /*
+     * Học Giáo lý bắt buộc class_id
+     */
+    if (attendanceType === "catechism" && !selectedClassId) {
+      setStudents([]);
+      setStatistics(DEFAULT_STATISTICS);
+      setPagination(DEFAULT_PAGINATION);
       return;
     }
 
@@ -411,34 +475,54 @@ const AttendancePage = () => {
     try {
       setLoadingAttendance(true);
 
-      const response = await attendanceApi.getAttendance({
-        class_id: selectedClassId,
-
+      /*
+       * Payload cơ bản
+       */
+      const payload = {
         date: dateString,
-
         attendance_type: attendanceType,
-
         page,
-
         limit: pageSize,
-
         search: search.trim(),
-
         status: statusFilter,
-      });
+      };
+
+      /*
+       * CHỈ HỌC GIÁO LÝ mới gửi class_id.
+       *
+       * THÁNH LỄ:
+       * Không gửi class_id.
+       */
+      if (attendanceType === "catechism") {
+        payload.class_id = Number(selectedClassId);
+      }
+
+      const response = await attendanceApi.getAttendance(payload);
 
       if (requestId !== requestIdRef.current) {
         return;
       }
 
-      setStudents(getStudentsFromResponse(response));
+      const nextStudents = getAttendanceResponseData(response);
 
-      setPagination(getPaginationFromResponse(response));
+      const nextPagination = getPaginationFromResponse(response);
 
-      setStatistics(getStatisticsFromResponse(response));
+      const nextStatistics = getStatisticsFromResponse(response);
+
+      setStudents(nextStudents);
+
+      setPagination(nextPagination);
+
+      setStatistics(nextStatistics);
     } catch (error) {
       if (requestId === requestIdRef.current) {
-        message.error("Không thể tải danh sách điểm danh");
+        const responseData = error?.response?.data;
+
+        message.error(
+          responseData?.message ||
+            responseData?.error ||
+            "Không thể tải danh sách điểm danh",
+        );
       }
     } finally {
       if (requestId === requestIdRef.current) {
@@ -456,30 +540,46 @@ const AttendancePage = () => {
   ]);
 
   /* =======================================================
-     EFFECT
+     INITIAL LOAD CLASSES
   ======================================================= */
 
   useEffect(() => {
     loadClasses();
   }, [loadClasses]);
 
+  /* =======================================================
+     LOAD ATTENDANCE
+  ======================================================= */
+
   useEffect(() => {
     loadAttendance();
   }, [loadAttendance]);
 
+  /* =======================================================
+     SEARCH DEBOUNCE
+  ======================================================= */
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      setSearch(searchInput.trim());
+      const nextSearch = searchInput.trim();
 
-      setPage(1);
+      if (nextSearch !== search) {
+        setSearch(nextSearch);
+        setPage(1);
+      }
     }, 400);
 
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchInput, search]);
+
+  /* =======================================================
+     RESET PAGE
+  ======================================================= */
 
   useEffect(() => {
     setPage(1);
-
     setIsQrOpen(false);
   }, [selectedClassId, dateString, attendanceType, statusFilter]);
 
@@ -507,11 +607,23 @@ const AttendancePage = () => {
     async (student, status) => {
       if (isLocked) {
         message.warning("Ngày này đã khóa, không thể thay đổi điểm danh.");
-
         return;
       }
 
-      if (!student?.id) {
+      if (!attendanceType) {
+        message.warning("Vui lòng chọn loại điểm danh.");
+        return;
+      }
+
+      if (attendanceType === "catechism" && !selectedClassId) {
+        message.warning("Vui lòng chọn lớp.");
+        return;
+      }
+
+      const studentId = student?.student_id ?? student?.id;
+
+      if (!studentId) {
+        message.warning("Không xác định được học sinh.");
         return;
       }
 
@@ -519,9 +631,8 @@ const AttendancePage = () => {
         student.attendance_status ?? student.status,
       );
 
-      if (["present", "late", "absent", "excused"].includes(currentStatus)) {
-        message.info("Học sinh này đã được điểm danh.");
-
+      if (currentStatus === status) {
+        message.info("Trạng thái hiện tại đã là trạng thái này.");
         return;
       }
 
@@ -530,19 +641,17 @@ const AttendancePage = () => {
 
         const checkInTime =
           status === "present" || status === "late"
-            ? dayjs().format("HH:mm:ss")
+            ? student.check_in_time || dayjs().format("HH:mm:ss")
             : null;
 
-        await attendanceApi.saveBulkAttendance({
-          class_id: selectedClassId,
-
+        const payload = {
           date: dateString,
 
           attendance_type: attendanceType,
 
           students: [
             {
-              student_id: student.id,
+              student_id: Number(studentId),
 
               status,
 
@@ -551,9 +660,23 @@ const AttendancePage = () => {
               note: null,
             },
           ],
-        });
+        };
 
-        message.success(`Đã điểm danh ${currentTypeConfig.shortLabel}`);
+        /*
+         * Giáo lý -> gửi class_id
+         * Thánh lễ -> KHÔNG gửi class_id
+         */
+        if (attendanceType === "catechism") {
+          payload.class_id = Number(selectedClassId);
+        }
+
+        await attendanceApi.saveBulkAttendance(payload);
+
+        const statusLabel = STATUS_CONFIG[status]?.label || status;
+
+        message.success(
+          `Đã cập nhật ${currentTypeConfig.shortLabel}: ${statusLabel}`,
+        );
 
         await loadAttendance();
       } catch (error) {
@@ -562,9 +685,16 @@ const AttendancePage = () => {
         const body = error?.response?.data;
 
         if (statusCode === 409 || body?.code === "ALREADY_ATTENDED") {
-          message.warning("Học sinh này đã được điểm danh trước đó.");
+          message.warning(
+            body?.message ||
+              "Bản ghi điểm danh đã tồn tại và không thể cập nhật.",
+          );
         } else {
-          message.error(body?.message || "Không thể cập nhật điểm danh");
+          message.error(
+            body?.message ||
+              body?.error ||
+              "Không thể cập nhật trạng thái điểm danh",
+          );
         }
       } finally {
         setSaving(false);
@@ -572,16 +702,16 @@ const AttendancePage = () => {
     },
     [
       isLocked,
+      attendanceType,
       selectedClassId,
       dateString,
-      attendanceType,
       currentTypeConfig,
       loadAttendance,
     ],
   );
 
   /* =======================================================
-     QR
+     QR SUCCESS
   ======================================================= */
 
   const handleQRSuccess = useCallback(
@@ -593,8 +723,20 @@ const AttendancePage = () => {
     [loadAttendance],
   );
 
+  /* =======================================================
+     FINISH QR ATTENDANCE
+  ======================================================= */
+
   const handleFinishQRAttendance = useCallback(async () => {
-    if (!selectedClassId) {
+    if (!attendanceType) {
+      setIsQrOpen(false);
+      return;
+    }
+
+    /*
+     * Giáo lý cần class
+     */
+    if (attendanceType === "catechism" && !selectedClassId) {
       setIsQrOpen(false);
       return;
     }
@@ -607,13 +749,22 @@ const AttendancePage = () => {
     try {
       setSaving(true);
 
-      await attendanceApi.finishAttendance({
-        class_id: selectedClassId,
-
+      const payload = {
         attendance_date: dateString,
 
         attendance_type: attendanceType,
-      });
+      };
+
+      /*
+       * Giáo lý -> gửi class_id
+       *
+       * Thánh lễ -> backend tự xác định lớp
+       */
+      if (attendanceType === "catechism") {
+        payload.class_id = Number(selectedClassId);
+      }
+
+      await attendanceApi.finishAttendance(payload);
 
       setIsQrOpen(false);
 
@@ -638,14 +789,21 @@ const AttendancePage = () => {
     loadAttendance,
   ]);
 
+  /* =======================================================
+     TOGGLE QR
+  ======================================================= */
+
   const handleToggleQR = useCallback(() => {
-    if (!selectedClassId) {
-      message.warning("Vui lòng chọn lớp trước.");
+    if (!attendanceType) {
+      message.warning("Vui lòng chọn loại điểm danh trước.");
       return;
     }
 
-    if (!attendanceType) {
-      message.warning("Vui lòng chọn loại điểm danh trước.");
+    /*
+     * Chỉ Giáo lý cần chọn lớp.
+     */
+    if (attendanceType === "catechism" && !selectedClassId) {
+      message.warning("Vui lòng chọn lớp trước.");
       return;
     }
 
@@ -673,7 +831,9 @@ const AttendancePage = () => {
   ======================================================= */
 
   const openHistory = useCallback(async (student) => {
-    if (!student?.id) {
+    const studentId = student?.student_id ?? student?.id;
+
+    if (!studentId) {
       return;
     }
 
@@ -684,19 +844,23 @@ const AttendancePage = () => {
     try {
       setHistoryLoading(true);
 
-      const response = await attendanceApi.getStudentHistory(student.id);
+      const response = await attendanceApi.getStudentHistory(studentId);
 
       const body = getApiBody(response);
 
       const list = Array.isArray(body?.data)
         ? body.data
-        : Array.isArray(body)
-          ? body
-          : [];
+        : Array.isArray(body?.history)
+          ? body.history
+          : Array.isArray(body)
+            ? body
+            : [];
 
       setHistoryData(list);
     } catch (error) {
-      message.error("Không thể tải lịch sử điểm danh");
+      message.error(
+        error?.response?.data?.message || "Không thể tải lịch sử điểm danh",
+      );
 
       setHistoryData([]);
     } finally {
@@ -726,7 +890,7 @@ const AttendancePage = () => {
       {
         title: "HỌC SINH",
         key: "student",
-        width: 280,
+        width: 220,
 
         render: (_, record) => {
           const avatar =
@@ -735,7 +899,7 @@ const AttendancePage = () => {
           return (
             <div className="student-cell">
               <Avatar
-                size={44}
+                size={36}
                 src={avatar}
                 icon={<UserOutlined />}
                 className="student-avatar"
@@ -758,7 +922,7 @@ const AttendancePage = () => {
       {
         title: "TRẠNG THÁI",
         key: "status",
-        width: 165,
+        width: 125,
         align: "center",
 
         render: (_, record) => {
@@ -778,9 +942,9 @@ const AttendancePage = () => {
       },
 
       {
-        title: "GIỜ VÀO",
+        title: "GIỜ",
         key: "check_in_time",
-        width: 110,
+        width: 70,
         align: "center",
 
         render: (_, record) => {
@@ -795,22 +959,22 @@ const AttendancePage = () => {
       {
         title: "ĐIỂM DANH",
         key: "actions",
-        width: 235,
+        width: 190,
         align: "center",
 
         render: (_, record) => {
           const current = record.currentStatus;
-
-          const disabled = isLocked || saving || current !== "not_attended";
+          const disabled = isLocked || saving;
 
           return (
             <div className="manual-attendance-actions">
               <Tooltip title="Có mặt">
                 <Button
                   className="manual-action-btn manual-present"
+                  size="small"
                   shape="circle"
                   icon={<CheckOutlined />}
-                  disabled={disabled}
+                  disabled={disabled || current === "present"}
                   onClick={() => updateAttendance(record, "present")}
                 />
               </Tooltip>
@@ -818,9 +982,10 @@ const AttendancePage = () => {
               <Tooltip title="Đi muộn">
                 <Button
                   className="manual-action-btn manual-late"
+                  size="small"
                   shape="circle"
                   icon={<ClockCircleOutlined />}
-                  disabled={disabled}
+                  disabled={disabled || current === "late"}
                   onClick={() => updateAttendance(record, "late")}
                 />
               </Tooltip>
@@ -828,9 +993,10 @@ const AttendancePage = () => {
               <Tooltip title="Vắng">
                 <Button
                   className="manual-action-btn manual-absent"
+                  size="small"
                   shape="circle"
                   icon={<CloseOutlined />}
-                  disabled={disabled}
+                  disabled={disabled || current === "absent"}
                   onClick={() => updateAttendance(record, "absent")}
                 />
               </Tooltip>
@@ -838,9 +1004,10 @@ const AttendancePage = () => {
               <Tooltip title="Có phép">
                 <Button
                   className="manual-action-btn manual-excused"
+                  size="small"
                   shape="circle"
                   icon={<ExclamationCircleOutlined />}
-                  disabled={disabled}
+                  disabled={disabled || current === "excused"}
                   onClick={() => updateAttendance(record, "excused")}
                 />
               </Tooltip>
@@ -848,6 +1015,7 @@ const AttendancePage = () => {
               <Tooltip title="Xem lịch sử">
                 <Button
                   className="manual-action-btn manual-history"
+                  size="small"
                   shape="circle"
                   icon={<HistoryOutlined />}
                   onClick={() => openHistory(record)}
@@ -1001,7 +1169,7 @@ const AttendancePage = () => {
                 Bộ lọc điểm danh
               </Title>
 
-              <Text type="secondary">Chọn lớp, ngày và loại điểm danh</Text>
+              <Text type="secondary">Chọn ngày và loại điểm danh</Text>
             </div>
 
             <div className="filter-header-icon">
@@ -1010,6 +1178,10 @@ const AttendancePage = () => {
           </div>
 
           <div className="attendance-filter">
+            {/* =================================================
+                TYPE
+            ================================================= */}
+
             <div className="filter-item type-filter">
               <Text className="filter-label">
                 Loại điểm danh
@@ -1022,7 +1194,30 @@ const AttendancePage = () => {
                 className="attendance-type-select"
                 allowClear
                 onChange={(value) => {
-                  setAttendanceType(value || null);
+                  const nextType = value || null;
+
+                  /*
+                   * Mass:
+                   * Không sử dụng class_id.
+                   */
+                  if (nextType === "mass") {
+                    setSelectedClassId(null);
+                  }
+
+                  /*
+                   * Giáo lý:
+                   * nếu chưa có lớp thì lấy
+                   * lớp đầu tiên.
+                   */
+                  if (
+                    nextType === "catechism" &&
+                    !selectedClassId &&
+                    classes.length > 0
+                  ) {
+                    setSelectedClassId(classes[0].id);
+                  }
+
+                  setAttendanceType(nextType);
 
                   setPage(1);
 
@@ -1060,26 +1255,40 @@ const AttendancePage = () => {
               />
             </div>
 
-            <div className="filter-item class-filter">
-              <Text className="filter-label">Lớp học</Text>
+            {/* =================================================
+                CLASS - CHỈ GIÁO LÝ
+            ================================================= */}
 
-              <Select
-                value={selectedClassId}
-                loading={loadingClasses}
-                placeholder="Chọn lớp"
-                className="attendance-select"
-                onChange={(value) => {
-                  setSelectedClassId(value);
+            {attendanceType === "catechism" && (
+              <div className="filter-item class-filter">
+                <Text className="filter-label">
+                  Lớp học
+                  <span className="required">*</span>
+                </Text>
 
-                  setPage(1);
-                }}
-                options={classes.map((item) => ({
-                  value: item.id,
+                <Select
+                  value={selectedClassId}
+                  loading={loadingClasses}
+                  placeholder="Chọn lớp"
+                  className="attendance-select"
+                  onChange={(value) => {
+                    setSelectedClassId(value);
 
-                  label: item.name,
-                }))}
-              />
-            </div>
+                    setPage(1);
+
+                    setIsQrOpen(false);
+                  }}
+                  options={classes.map((item) => ({
+                    value: item.id,
+                    label: item.name,
+                  }))}
+                />
+              </div>
+            )}
+
+            {/* =================================================
+                DATE
+            ================================================= */}
 
             <div className="filter-item date-filter">
               <Text className="filter-label">Ngày điểm danh</Text>
@@ -1102,8 +1311,13 @@ const AttendancePage = () => {
               />
             </div>
 
+            {/* =================================================
+                SEARCH
+            ================================================= */}
+
             <div className="filter-item search-filter">
               <Text className="filter-label">Tìm học sinh</Text>
+
               <AppSearchInput
                 value={searchInput}
                 onChange={(value) => {
@@ -1112,6 +1326,10 @@ const AttendancePage = () => {
                 placeholder="Tên hoặc mã học viên..."
               />
             </div>
+
+            {/* =================================================
+                STATUS
+            ================================================= */}
 
             <div className="filter-item status-filter">
               <Text className="filter-label">Trạng thái</Text>
@@ -1179,11 +1397,15 @@ const AttendancePage = () => {
             <div className="type-banner-meta">
               <span className="banner-class">
                 <TeamOutlined />
-                {selectedClass?.name || "Chưa chọn lớp"}
+
+                {attendanceType === "mass"
+                  ? "Hệ thống tự xác định lớp"
+                  : selectedClass?.name || "Chưa chọn lớp"}
               </span>
 
               <span className="banner-date">
                 <CalendarOutlined />
+
                 {dayjs(dateString).format("DD/MM/YYYY")}
               </span>
             </div>
@@ -1222,12 +1444,14 @@ const AttendancePage = () => {
         <Row gutter={[16, 16]} className="attendance-stat-row">
           <Col xs={12} sm={8} lg={4}>
             <StatCard
-              title="Tổng "
+              title="Tổng"
               value={total}
               loading={loadingAttendance}
               icon={<TeamOutlined />}
               iconColor={COLORS.navy}
-              description="Học sinh trong lớp"
+              description={
+                attendanceType === "mass" ? "Học sinh" : "Học sinh trong lớp"
+              }
             />
           </Col>
 
@@ -1311,7 +1535,9 @@ const AttendancePage = () => {
                     </Title>
 
                     <Text type="secondary">
-                      {selectedClass?.name || "Chưa chọn lớp"}
+                      {attendanceType === "mass"
+                        ? "Hệ thống tự xác định lớp"
+                        : selectedClass?.name || "Chưa chọn lớp"}
 
                       {" • "}
 
@@ -1358,11 +1584,12 @@ const AttendancePage = () => {
 
               <div className="attendance-table-wrap">
                 <Table
-                  rowKey={(record) => record.id ?? record.id}
+                  rowKey={(record) => record.id ?? record.student_id}
                   columns={columns}
                   dataSource={tableData}
                   loading={loadingAttendance}
                   pagination={false}
+                  size="small"
                   locale={{
                     emptyText: (
                       <Empty
@@ -1372,7 +1599,7 @@ const AttendancePage = () => {
                     ),
                   }}
                   scroll={{
-                    x: 900,
+                    x: 605,
                   }}
                 />
               </div>
@@ -1440,10 +1667,16 @@ const AttendancePage = () => {
                   </div>
 
                   <div className="qr-class-info">
-                    <span className="qr-class-label">Lớp đang điểm danh</span>
+                    <span className="qr-class-label">
+                      {attendanceType === "mass"
+                        ? "Lớp điểm danh"
+                        : "Lớp đang điểm danh"}
+                    </span>
 
                     <strong className="qr-class-name">
-                      {selectedClass?.name || "Chưa chọn lớp"}
+                      {attendanceType === "mass"
+                        ? "Tự động xác định lớp"
+                        : selectedClass?.name || "Chưa chọn lớp"}
                     </strong>
                   </div>
                 </div>
@@ -1464,7 +1697,9 @@ const AttendancePage = () => {
               >
                 <QRCodeScanner
                   open={isQrOpen}
-                  classId={selectedClassId}
+                  classId={
+                    attendanceType === "catechism" ? selectedClassId : null
+                  }
                   attendanceType={attendanceType}
                   onSuccess={handleQRSuccess}
                   onFinishAttendance={handleFinishQRAttendance}
@@ -1491,7 +1726,11 @@ const AttendancePage = () => {
                 icon={isQrOpen ? <StopOutlined /> : <CameraOutlined />}
                 className={`qr-main-button ${isQrOpen ? "qr-stop-button" : ""}`}
                 loading={saving && isQrOpen}
-                disabled={!selectedClassId || !attendanceType || isLocked}
+                disabled={
+                  !attendanceType ||
+                  isLocked ||
+                  (attendanceType === "catechism" && !selectedClassId)
+                }
                 onClick={handleToggleQR}
               >
                 {isQrOpen ? "Kết thúc điểm danh" : "Bật camera điểm danh"}
@@ -1622,10 +1861,6 @@ const AttendancePage = () => {
 
       <style>{`
 
-        /* =====================================================
-           GLOBAL
-        ===================================================== */
-
         .attendance-page {
           min-height: 100%;
           padding: 0 0 40px;
@@ -1637,96 +1872,65 @@ const AttendancePage = () => {
           margin-left: 3px;
         }
 
-
-        /* =====================================================
-           FILTER CARD
-        ===================================================== */
-
         .attendance-filter-card {
           margin-top: 20px;
-
           border: 1px solid ${COLORS.border} !important;
-
           border-radius: 18px !important;
-
           background: ${COLORS.white};
-
-          box-shadow:
-            0 8px 24px
-            rgba(23, 59, 94, 0.05);
+          box-shadow: 0 8px 24px rgba(23, 59, 94, 0.05);
         }
 
         .filter-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-
           margin-bottom: 18px;
-
           padding-bottom: 16px;
-
-          border-bottom:
-            1px solid ${COLORS.border};
+          border-bottom: 1px solid ${COLORS.border};
         }
 
         .filter-title {
           margin: 0 0 3px !important;
-
           color: ${COLORS.navy} !important;
-
           font-weight: 800 !important;
         }
 
         .filter-header-icon {
           width: 40px;
           height: 40px;
-
           display: flex;
           align-items: center;
           justify-content: center;
-
           border-radius: 11px;
-
           color: ${COLORS.navy};
-
           background: ${COLORS.navyLight};
-
           font-size: 17px;
         }
 
         .attendance-filter {
           display: grid;
-
           grid-template-columns:
             1.15fr
             1.15fr
             0.95fr
             1.5fr
             0.9fr;
-
           gap: 14px;
-
           align-items: end;
         }
 
         .filter-item {
           display: flex;
           flex-direction: column;
-
           gap: 7px;
-
           min-width: 0;
         }
 
         .filter-label {
           font-size: 11px;
-
           font-weight: 800;
-
           color: ${COLORS.textSecondary};
-
           text-transform: uppercase;
-
           letter-spacing: 0.35px;
         }
 
@@ -1744,12 +1948,8 @@ const AttendancePage = () => {
         .attendance-date,
         .attendance-search {
           min-height: 42px !important;
-
           border-radius: 10px !important;
-
-          border-color:
-            ${COLORS.border} !important;
-
+          border-color: ${COLORS.border} !important;
           box-shadow: none !important;
         }
 
@@ -1758,192 +1958,126 @@ const AttendancePage = () => {
         .attendance-status-filter:hover .ant-select-selector,
         .attendance-search:hover,
         .attendance-date:hover {
-          border-color:
-            ${COLORS.navy} !important;
+          border-color: ${COLORS.navy} !important;
         }
 
-        .attendance-select.ant-select-focused
-          .ant-select-selector,
-        .attendance-type-select.ant-select-focused
-          .ant-select-selector,
-        .attendance-status-filter.ant-select-focused
-          .ant-select-selector {
-          border-color:
-            ${COLORS.navy} !important;
-
-          box-shadow:
-            0 0 0 2px
-            rgba(23, 59, 94, 0.08) !important;
+        .attendance-select.ant-select-focused .ant-select-selector,
+        .attendance-type-select.ant-select-focused .ant-select-selector,
+        .attendance-status-filter.ant-select-focused .ant-select-selector {
+          border-color: ${COLORS.navy} !important;
+          box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.08) !important;
         }
 
         .attendance-search:focus,
         .attendance-date:focus {
-          border-color:
-            ${COLORS.navy} !important;
-
-          box-shadow:
-            0 0 0 2px
-            rgba(23, 59, 94, 0.08) !important;
+          border-color: ${COLORS.navy} !important;
+          box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.08) !important;
         }
 
         .type-option {
           display: flex;
-
           align-items: center;
-
           gap: 8px;
         }
 
         .type-option-icon {
           width: 25px;
           height: 25px;
-
           display: inline-flex;
-
           align-items: center;
           justify-content: center;
-
           border-radius: 7px;
-
           font-size: 12px;
         }
 
         .type-option-icon.catechism {
           color: ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight};
+          background: ${COLORS.navyLight};
         }
 
         .type-option-icon.mass {
           color: #7045a5;
-
           background: #f2ecfb;
         }
 
-
-        /* =====================================================
-           TYPE BANNER
-        ===================================================== */
-
         .attendance-type-banner {
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
           gap: 20px;
-
           margin-top: 16px;
-
           padding: 15px 18px;
-
           border-radius: 15px;
-
-          border: 1px solid
-            ${COLORS.border};
-
-          background:
-            ${COLORS.white};
-
-          box-shadow:
-            0 5px 16px
-            rgba(23, 59, 94, 0.035);
+          border: 1px solid ${COLORS.border};
+          background: ${COLORS.white};
+          box-shadow: 0 5px 16px rgba(23, 59, 94, 0.035);
         }
 
         .attendance-type-banner.catechism {
-          border-left:
-            4px solid ${COLORS.navy};
+          border-left: 4px solid ${COLORS.navy};
         }
 
         .attendance-type-banner.mass {
-          border-left:
-            4px solid ${COLORS.gold};
+          border-left: 4px solid ${COLORS.gold};
         }
 
         .type-banner-left {
           display: flex;
-
           align-items: center;
-
           gap: 12px;
-
           min-width: 0;
         }
 
         .type-banner-icon {
           width: 42px;
           height: 42px;
-
           flex-shrink: 0;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           border-radius: 11px;
-
           font-size: 18px;
         }
 
-        .attendance-type-banner.catechism
-          .type-banner-icon {
+        .attendance-type-banner.catechism .type-banner-icon {
           color: ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight};
+          background: ${COLORS.navyLight};
         }
 
-        .attendance-type-banner.mass
-          .type-banner-icon {
+        .attendance-type-banner.mass .type-banner-icon {
           color: ${COLORS.warning};
-
-          background:
-            ${COLORS.goldLight};
+          background: ${COLORS.goldLight};
         }
 
         .type-banner-content {
           display: flex;
-
           flex-direction: column;
-
           gap: 3px;
         }
 
         .type-banner-content strong {
           color: ${COLORS.navy};
-
           font-size: 14px;
         }
 
         .type-banner-content span {
           color: ${COLORS.textSecondary};
-
           font-size: 11px;
         }
 
         .type-banner-meta {
           display: flex;
-
           align-items: center;
-
           gap: 18px;
-
           color: ${COLORS.textSecondary};
-
           font-size: 12px;
-
           white-space: nowrap;
         }
 
         .banner-class,
         .banner-date {
           display: inline-flex;
-
           align-items: center;
-
           gap: 6px;
         }
 
@@ -1952,30 +2086,14 @@ const AttendancePage = () => {
           color: ${COLORS.gold};
         }
 
-
-        /* =====================================================
-           ALERT
-        ===================================================== */
-
         .attendance-lock-alert {
           margin-top: 16px;
-
           border-radius: 13px;
         }
-
-
-        /* =====================================================
-           STAT
-        ===================================================== */
 
         .attendance-stat-row {
           margin-top: 18px;
         }
-
-
-        /* =====================================================
-           MAIN CARDS
-        ===================================================== */
 
         .attendance-main-row {
           margin-top: 18px;
@@ -1984,97 +2102,54 @@ const AttendancePage = () => {
         .student-list-card,
         .qr-panel-card {
           height: 100%;
-
           border-radius: 18px !important;
-
-          border:
-            1px solid
-            ${COLORS.border} !important;
-
-          background:
-            ${COLORS.white} !important;
-
-          box-shadow:
-            0 8px 26px
-            rgba(23, 59, 94, 0.05) !important;
+          border: 1px solid ${COLORS.border} !important;
+          background: ${COLORS.white} !important;
+          box-shadow: 0 8px 26px rgba(23, 59, 94, 0.05) !important;
         }
-
-
-        /* =====================================================
-           STUDENT HEADER
-        ===================================================== */
 
         .student-list-header {
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
           gap: 15px;
-
           padding: 20px;
-
-          border-bottom:
-            1px solid
-            ${COLORS.border};
+          border-bottom: 1px solid ${COLORS.border};
         }
 
         .student-list-heading {
           display: flex;
-
           align-items: center;
-
           gap: 12px;
         }
 
         .section-heading-icon {
           width: 42px;
           height: 42px;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           border-radius: 11px;
-
           color: ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight};
-
+          background: ${COLORS.navyLight};
           font-size: 18px;
         }
 
         .section-title {
-          margin:
-            0 0 3px !important;
-
-          color:
-            ${COLORS.navy} !important;
-
+          margin: 0 0 3px !important;
+          color: ${COLORS.navy} !important;
           font-size: 17px !important;
-
           font-weight: 800 !important;
         }
 
         .total-student-tag {
           display: flex;
-
           align-items: baseline;
-
           gap: 4px;
-
           padding: 7px 12px;
-
           border-radius: 9px;
-
           color: ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight};
-
+          background: ${COLORS.navyLight};
           white-space: nowrap;
         }
 
@@ -2084,429 +2159,238 @@ const AttendancePage = () => {
 
         .total-student-tag span {
           font-size: 10px;
-
           font-weight: 600;
         }
 
-
-        /* =====================================================
-           TOOLBAR
-        ===================================================== */
-
         .table-toolbar {
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
           gap: 15px;
-
-          padding:
-            10px 20px;
-
-          background:
-            #FAFBFC;
-
-          border-bottom:
-            1px solid
-            ${COLORS.border};
+          padding: 10px 20px;
+          background: #FAFBFC;
+          border-bottom: 1px solid ${COLORS.border};
         }
 
         .table-toolbar-left {
           display: flex;
-
           align-items: center;
-
           gap: 7px;
-
-          color:
-            ${COLORS.muted};
-
+          color: ${COLORS.muted};
           font-size: 10px;
         }
 
         .toolbar-dot {
           width: 6px;
           height: 6px;
-
           border-radius: 50%;
-
-          background:
-            ${COLORS.gold};
+          background: ${COLORS.gold};
         }
 
         .toolbar-legend {
           display: flex;
-
           align-items: center;
-
           gap: 12px;
-
           font-size: 10px;
-
-          color:
-            ${COLORS.textSecondary};
+          color: ${COLORS.textSecondary};
         }
 
         .toolbar-legend span {
           display: flex;
-
           align-items: center;
-
           gap: 4px;
         }
 
         .legend-dot {
           width: 6px;
           height: 6px;
-
           border-radius: 50%;
         }
 
         .legend-dot.present {
-          background:
-            ${COLORS.success};
+          background: ${COLORS.success};
         }
 
         .legend-dot.late {
-          background:
-            ${COLORS.gold};
+          background: ${COLORS.gold};
         }
 
         .legend-dot.absent {
-          background:
-            ${COLORS.danger};
+          background: ${COLORS.danger};
         }
-
-
-        /* =====================================================
-           TABLE
-        ===================================================== */
 
         .attendance-table-wrap {
           overflow-x: auto;
         }
 
-        .attendance-table-wrap
-          .ant-table {
+        .attendance-table-wrap .ant-table {
           font-size: 13px;
         }
 
-        .attendance-table-wrap
-          .ant-table-thead
-          > tr
-          > th {
+        .attendance-table-wrap .ant-table-thead > tr > th {
           height: 46px;
-
-          padding:
-            10px 16px;
-
-          color:
-            ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight} !important;
-
-          border-bottom:
-            1px solid
-            ${COLORS.border};
-
+          padding: 10px 16px;
+          color: ${COLORS.navy};
+          background: ${COLORS.navyLight} !important;
+          border-bottom: 1px solid ${COLORS.border};
           font-size: 10px;
-
           font-weight: 800;
-
-          letter-spacing:
-            0.3px;
+          letter-spacing: 0.3px;
         }
 
-        .attendance-table-wrap
-          .ant-table-tbody
-          > tr
-          > td {
-          padding:
-            12px 16px;
-
-          border-bottom:
-            1px solid
-            #EEF2F5;
+        .attendance-table-wrap .ant-table-tbody > tr > td {
+          padding: 12px 16px;
+          border-bottom: 1px solid #EEF2F5;
         }
 
-        .attendance-table-wrap
-          .ant-table-tbody
-          > tr:hover
-          > td {
-          background:
-            #F8FAFC !important;
+        .attendance-table-wrap .ant-table-tbody > tr:hover > td {
+          background: #F8FAFC !important;
         }
-
-
-        /* =====================================================
-           STUDENT
-        ===================================================== */
 
         .student-cell {
           display: flex;
-
           align-items: center;
-
           gap: 11px;
         }
 
         .student-avatar {
           flex-shrink: 0;
-
-          border:
-            2px solid
-            ${COLORS.navyLight};
+          border: 2px solid ${COLORS.navyLight};
         }
 
         .student-info {
           display: flex;
-
           flex-direction: column;
-
           gap: 2px;
-
           min-width: 0;
         }
 
         .student-name {
-          color:
-            ${COLORS.text};
-
+          color: ${COLORS.text};
           font-size: 13px;
         }
 
         .student-code {
-          color:
-            ${COLORS.muted};
-
+          color: ${COLORS.muted};
           font-size: 10px;
         }
 
         .attendance-status-tag {
           min-width: 105px;
-
-          padding:
-            4px 8px;
-
+          padding: 4px 8px;
           border-radius: 7px;
-
           font-size: 10px;
-
           font-weight: 700;
         }
 
-
-        /* =====================================================
-           MANUAL ACTION
-        ===================================================== */
-
         .manual-attendance-actions {
           display: flex;
-
           align-items: center;
-
           justify-content: center;
-
           gap: 7px;
-
           white-space: nowrap;
         }
 
         .manual-action-btn {
           width: 32px !important;
           height: 32px !important;
-
           min-width: 32px !important;
-
           display: inline-flex !important;
-
           align-items: center;
           justify-content: center;
-
           padding: 0 !important;
-
           border-radius: 9px !important;
-
-          border:
-            1px solid
-            ${COLORS.border} !important;
-
-          background:
-            ${COLORS.white} !important;
-
+          border: 1px solid ${COLORS.border} !important;
+          background: ${COLORS.white} !important;
           box-shadow: none !important;
-
-          transition:
-            all 0.18s ease;
+          transition: all 0.18s ease;
         }
 
         .manual-action-btn:hover:not(:disabled) {
-          transform:
-            translateY(-2px);
-
-          box-shadow:
-            0 5px 12px
-            rgba(23, 59, 94, 0.12) !important;
+          transform: translateY(-2px);
+          box-shadow: 0 5px 12px rgba(23, 59, 94, 0.12) !important;
         }
 
         .manual-present {
-          color:
-            ${COLORS.success} !important;
-
-          border-color:
-            #B9DEC9 !important;
-
-          background:
-            ${COLORS.successBg} !important;
+          color: ${COLORS.success} !important;
+          border-color: #B9DEC9 !important;
+          background: ${COLORS.successBg} !important;
         }
 
         .manual-present:hover:not(:disabled) {
-          color:
-            ${COLORS.white} !important;
-
-          background:
-            ${COLORS.success} !important;
-
-          border-color:
-            ${COLORS.success} !important;
+          color: ${COLORS.white} !important;
+          background: ${COLORS.success} !important;
+          border-color: ${COLORS.success} !important;
         }
 
         .manual-late {
-          color:
-            ${COLORS.warning} !important;
-
-          border-color:
-            #E9D18D !important;
-
-          background:
-            ${COLORS.goldLight} !important;
+          color: ${COLORS.warning} !important;
+          border-color: #E9D18D !important;
+          background: ${COLORS.goldLight} !important;
         }
 
         .manual-late:hover:not(:disabled) {
-          color:
-            ${COLORS.white} !important;
-
-          background:
-            ${COLORS.gold} !important;
-
-          border-color:
-            ${COLORS.gold} !important;
+          color: ${COLORS.white} !important;
+          background: ${COLORS.gold} !important;
+          border-color: ${COLORS.gold} !important;
         }
 
         .manual-absent {
-          color:
-            ${COLORS.danger} !important;
-
-          border-color:
-            #E9C4C0 !important;
-
-          background:
-            ${COLORS.dangerBg} !important;
+          color: ${COLORS.danger} !important;
+          border-color: #E9C4C0 !important;
+          background: ${COLORS.dangerBg} !important;
         }
 
         .manual-absent:hover:not(:disabled) {
-          color:
-            ${COLORS.white} !important;
-
-          background:
-            ${COLORS.danger} !important;
-
-          border-color:
-            ${COLORS.danger} !important;
+          color: ${COLORS.white} !important;
+          background: ${COLORS.danger} !important;
+          border-color: ${COLORS.danger} !important;
         }
 
         .manual-excused {
-          color:
-            #7052B4 !important;
-
-          border-color:
-            #D8CDEF !important;
-
-          background:
-            #F4F0FB !important;
+          color: #7052B4 !important;
+          border-color: #D8CDEF !important;
+          background: #F4F0FB !important;
         }
 
         .manual-excused:hover:not(:disabled) {
-          color:
-            ${COLORS.white} !important;
-
-          background:
-            #7052B4 !important;
-
-          border-color:
-            #7052B4 !important;
+          color: ${COLORS.white} !important;
+          background: #7052B4 !important;
+          border-color: #7052B4 !important;
         }
 
         .manual-history {
-          color:
-            ${COLORS.navy} !important;
-
-          border-color:
-            #C9D7E3 !important;
-
-          background:
-            ${COLORS.navyLight} !important;
+          color: ${COLORS.navy} !important;
+          border-color: #C9D7E3 !important;
+          background: ${COLORS.navyLight} !important;
         }
 
         .manual-history:hover:not(:disabled) {
-          color:
-            ${COLORS.white} !important;
-
-          background:
-            ${COLORS.navy} !important;
-
-          border-color:
-            ${COLORS.navy} !important;
+          color: ${COLORS.white} !important;
+          background: ${COLORS.navy} !important;
+          border-color: ${COLORS.navy} !important;
         }
 
         .manual-action-btn:disabled {
           opacity: 0.35 !important;
-
-          cursor:
-            not-allowed !important;
-
-          transform:
-            none !important;
+          cursor: not-allowed !important;
+          transform: none !important;
         }
-
-
-        /* =====================================================
-           PAGINATION
-        ===================================================== */
 
         .attendance-pagination {
           display: flex;
-
           justify-content: flex-end;
-
-          padding:
-            17px 20px;
-
-          border-top:
-            1px solid
-            ${COLORS.border};
+          padding: 17px 20px;
+          border-top: 1px solid ${COLORS.border};
         }
 
-        .attendance-pagination
-          .ant-pagination-item-active {
-          border-color:
-            ${COLORS.navy};
+        .attendance-pagination .ant-pagination-item-active {
+          border-color: ${COLORS.navy};
         }
 
-        .attendance-pagination
-          .ant-pagination-item-active
-          a {
-          color:
-            ${COLORS.navy};
+        .attendance-pagination .ant-pagination-item-active a {
+          color: ${COLORS.navy};
         }
-
-
-        /* =====================================================
-           QR PANEL
-        ===================================================== */
 
         .qr-panel-card {
           overflow: hidden;
@@ -2514,765 +2398,426 @@ const AttendancePage = () => {
 
         .qr-modern-header {
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
           gap: 12px;
-
-          padding:
-            20px;
-
-          border-bottom:
-            1px solid
-            ${COLORS.border};
+          padding: 20px;
+          border-bottom: 1px solid ${COLORS.border};
         }
 
         .qr-modern-title {
           display: flex;
-
           align-items: center;
-
           gap: 11px;
         }
 
         .qr-modern-icon {
           width: 44px;
           height: 44px;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           border-radius: 11px;
-
-          color:
-            ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight};
-
-          border:
-            1px solid
-            #D7E2EB;
-
+          color: ${COLORS.navy};
+          background: ${COLORS.navyLight};
+          border: 1px solid #D7E2EB;
           font-size: 20px;
         }
 
         .qr-modern-heading {
           display: flex;
-
           flex-direction: column;
-
           gap: 2px;
         }
 
         .qr-modern-title-text {
-          color:
-            ${COLORS.navy};
-
+          color: ${COLORS.navy};
           font-size: 16px;
-
           font-weight: 800;
         }
 
         .qr-modern-title-sub {
-          color:
-            ${COLORS.muted};
-
+          color: ${COLORS.muted};
           font-size: 10px;
         }
 
-
-        /* =====================================================
-           QR STATUS
-        ===================================================== */
-
         .qr-live-status {
           display: flex;
-
           align-items: center;
-
           gap: 6px;
-
-          padding:
-            5px 9px;
-
+          padding: 5px 9px;
           border-radius: 20px;
-
           font-size: 10px;
-
           font-weight: 700;
         }
 
         .qr-live-status.active {
-          color:
-            ${COLORS.success};
-
-          background:
-            ${COLORS.successBg};
+          color: ${COLORS.success};
+          background: ${COLORS.successBg};
         }
 
         .qr-live-status.inactive {
-          color:
-            ${COLORS.gray};
-
-          background:
-            ${COLORS.grayBg};
+          color: ${COLORS.gray};
+          background: ${COLORS.grayBg};
         }
 
         .qr-live-dot {
           width: 6px;
           height: 6px;
-
           border-radius: 50%;
-
-          background:
-            currentColor;
+          background: currentColor;
         }
 
-        .qr-live-status.active
-          .qr-live-dot {
-          animation:
-            qrPulse 1.5s infinite;
+        .qr-live-status.active .qr-live-dot {
+          animation: qrPulse 1.5s infinite;
         }
 
         @keyframes qrPulse {
           0% {
-            box-shadow:
-              0 0 0 0
-              rgba(
-                46,
-                125,
-                91,
-                0.3
-              );
+            box-shadow: 0 0 0 0 rgba(46, 125, 91, 0.3);
           }
 
           70% {
-            box-shadow:
-              0 0 0 6px
-              rgba(
-                46,
-                125,
-                91,
-                0
-              );
+            box-shadow: 0 0 0 6px rgba(46, 125, 91, 0);
           }
 
           100% {
-            box-shadow:
-              0 0 0 0
-              rgba(
-                46,
-                125,
-                91,
-                0
-              );
+            box-shadow: 0 0 0 0 rgba(46, 125, 91, 0);
           }
         }
 
-
-        /* =====================================================
-           QR CLASS
-        ===================================================== */
-
         .qr-class-card {
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
           gap: 10px;
-
-          margin:
-            16px;
-
-          padding:
-            12px;
-
+          margin: 16px;
+          padding: 12px;
           border-radius: 12px;
-
-          background:
-            ${COLORS.navyLight};
-
-          border:
-            1px solid
-            #DDE7EF;
+          background: ${COLORS.navyLight};
+          border: 1px solid #DDE7EF;
         }
 
         .qr-class-left {
           display: flex;
-
           align-items: center;
-
           gap: 10px;
-
           min-width: 0;
         }
 
         .qr-class-icon {
           width: 36px;
           height: 36px;
-
           flex-shrink: 0;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           border-radius: 9px;
-
-          color:
-            ${COLORS.navy};
-
-          background:
-            ${COLORS.white};
-
+          color: ${COLORS.navy};
+          background: ${COLORS.white};
           font-size: 15px;
         }
 
         .qr-class-info {
           display: flex;
-
           flex-direction: column;
-
           min-width: 0;
-
           gap: 2px;
         }
 
         .qr-class-label {
-          color:
-            ${COLORS.muted};
-
+          color: ${COLORS.muted};
           font-size: 9px;
         }
 
         .qr-class-name {
           max-width: 180px;
-
           overflow: hidden;
-
           text-overflow: ellipsis;
-
           white-space: nowrap;
-
-          color:
-            ${COLORS.navy};
-
+          color: ${COLORS.navy};
           font-size: 13px;
         }
 
         .qr-modern-type-tag {
           flex-shrink: 0;
-
           margin: 0 !important;
-
           border: none !important;
-
           border-radius: 7px !important;
-
-          color:
-            ${COLORS.navy} !important;
-
-          background:
-            ${COLORS.white} !important;
-
+          color: ${COLORS.navy} !important;
+          background: ${COLORS.white} !important;
           font-size: 9px;
-
           font-weight: 700;
         }
 
-
-        /* =====================================================
-           QR DATE
-        ===================================================== */
-
         .qr-date-info {
           display: flex;
-
           align-items: center;
-
           justify-content: center;
-
           gap: 6px;
-
-          margin:
-            0 16px 13px;
-
-          color:
-            ${COLORS.textSecondary};
-
+          margin: 0 16px 13px;
+          color: ${COLORS.textSecondary};
           font-size: 11px;
         }
 
         .qr-date-info .anticon {
-          color:
-            ${COLORS.gold};
+          color: ${COLORS.gold};
         }
-
-
-        /* =====================================================
-           QR SCANNER
-        ===================================================== */
 
         .qr-scanner-box {
           position: relative;
-
           min-height: 260px;
-
-          margin:
-            0 16px 14px;
-
+          margin: 0 16px 14px;
           overflow: hidden;
-
           border-radius: 15px;
-
-          background:
-            ${COLORS.background};
-
-          border:
-            1px dashed
-            #C9D6E0;
+          background: ${COLORS.background};
+          border: 1px dashed #C9D6E0;
         }
 
         .qr-scanner-box.scanner-active {
-          border:
-            1px solid
-            ${COLORS.navy};
-
-          box-shadow:
-            inset 0 0 0 1px
-            rgba(
-              23,
-              59,
-              94,
-              0.06
-            );
+          border: 1px solid ${COLORS.navy};
+          box-shadow: inset 0 0 0 1px rgba(23, 59, 94, 0.06);
         }
-
-
-        /* =====================================================
-           QR PLACEHOLDER
-        ===================================================== */
 
         .qr-scanner-placeholder {
           position: absolute;
-
           inset: 0;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           flex-direction: column;
-
           gap: 7px;
-
           text-align: center;
         }
 
         .qr-placeholder-icon {
           width: 60px;
           height: 60px;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           margin-bottom: 4px;
-
           border-radius: 16px;
-
-          color:
-            ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight};
-
-          border:
-            1px solid
-            #D4E0E9;
-
+          color: ${COLORS.navy};
+          background: ${COLORS.navyLight};
+          border: 1px solid #D4E0E9;
           font-size: 28px;
         }
 
         .qr-scanner-placeholder strong {
-          color:
-            ${COLORS.navy};
-
+          color: ${COLORS.navy};
           font-size: 13px;
         }
 
         .qr-scanner-placeholder span {
           max-width: 230px;
-
-          color:
-            ${COLORS.muted};
-
+          color: ${COLORS.muted};
           font-size: 10px;
-
           line-height: 1.5;
         }
 
-
-        /* =====================================================
-           QR BUTTON
-        ===================================================== */
-
         .qr-main-button {
           height: 44px !important;
-
-          width:
-            calc(100% - 32px) !important;
-
-          margin:
-            0 16px;
-
+          width: calc(100% - 32px) !important;
+          margin: 0 16px;
           border-radius: 10px !important;
-
           font-weight: 700;
-
-          box-shadow:
-            0 6px 15px
-            rgba(
-              23,
-              59,
-              94,
-              0.14
-            );
+          box-shadow: 0 6px 15px rgba(23, 59, 94, 0.14);
         }
 
         .qr-main-button.ant-btn-primary {
-          border-color:
-            ${COLORS.navy} !important;
-
-          background:
-            ${COLORS.navy} !important;
+          border-color: ${COLORS.navy} !important;
+          background: ${COLORS.navy} !important;
         }
 
         .qr-main-button.ant-btn-primary:hover {
-          border-color:
-            ${COLORS.navyHover} !important;
-
-          background:
-            ${COLORS.navyHover} !important;
+          border-color: ${COLORS.navyHover} !important;
+          background: ${COLORS.navyHover} !important;
         }
 
         .qr-stop-button {
           box-shadow: none !important;
         }
 
-
-        /* =====================================================
-           QR NOTE
-        ===================================================== */
-
         .qr-attendance-note {
           display: flex;
-
           align-items: flex-start;
-
           gap: 9px;
-
-          margin:
-            14px 16px;
-
-          padding:
-            11px 12px;
-
+          margin: 14px 16px;
+          padding: 11px 12px;
           border-radius: 10px;
-
-          background:
-            ${COLORS.goldLight};
-
-          border:
-            1px solid
-            #EBDCA8;
+          background: ${COLORS.goldLight};
+          border: 1px solid #EBDCA8;
         }
 
         .qr-note-icon {
           flex-shrink: 0;
-
-          color:
-            ${COLORS.warning};
-
+          color: ${COLORS.warning};
           font-size: 14px;
         }
 
         .qr-note-content {
           display: flex;
-
           flex-direction: column;
-
           gap: 2px;
         }
 
         .qr-note-content strong {
-          color:
-            #805F1C;
-
+          color: #805F1C;
           font-size: 10px;
         }
 
         .qr-note-content span {
-          color:
-            #92773D;
-
+          color: #92773D;
           font-size: 9px;
-
           line-height: 1.5;
         }
 
-
-        /* =====================================================
-           QR GUIDE
-        ===================================================== */
-
         .qr-guide {
-          padding:
-            15px 16px 17px;
-
-          border-top:
-            1px solid
-            ${COLORS.border};
+          padding: 15px 16px 17px;
+          border-top: 1px solid ${COLORS.border};
         }
 
         .qr-guide-title {
           margin-bottom: 9px;
-
-          color:
-            ${COLORS.navy};
-
+          color: ${COLORS.navy};
           font-size: 10px;
-
           font-weight: 800;
         }
 
         .qr-guide-list {
           display: grid;
-
-          grid-template-columns:
-            repeat(4, 1fr);
-
+          grid-template-columns: repeat(4, 1fr);
           gap: 7px;
         }
 
         .qr-guide-item {
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           flex-direction: column;
-
           gap: 5px;
-
-          padding:
-            8px 3px;
-
+          padding: 8px 3px;
           border-radius: 8px;
-
-          background:
-            ${COLORS.background};
-
-          color:
-            ${COLORS.textSecondary};
-
+          background: ${COLORS.background};
+          color: ${COLORS.textSecondary};
           font-size: 9px;
-
           font-weight: 600;
         }
 
         .qr-guide-icon {
           width: 25px;
           height: 25px;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           border-radius: 7px;
-
           font-size: 11px;
         }
 
         .qr-guide-icon.present {
-          color:
-            ${COLORS.success};
-
-          background:
-            ${COLORS.successBg};
+          color: ${COLORS.success};
+          background: ${COLORS.successBg};
         }
 
         .qr-guide-icon.late {
-          color:
-            ${COLORS.warning};
-
-          background:
-            ${COLORS.warningBg};
+          color: ${COLORS.warning};
+          background: ${COLORS.warningBg};
         }
 
         .qr-guide-icon.absent {
-          color:
-            ${COLORS.danger};
-
-          background:
-            ${COLORS.dangerBg};
+          color: ${COLORS.danger};
+          background: ${COLORS.dangerBg};
         }
 
         .qr-guide-icon.excused {
-          color:
-            #7052B4;
-
-          background:
-            #F1EEFA;
+          color: #7052B4;
+          background: #F1EEFA;
         }
-
-
-        /* =====================================================
-           HISTORY MODAL
-        ===================================================== */
 
         .history-modal-title {
           display: flex;
-
           align-items: center;
-
           gap: 10px;
         }
 
         .history-modal-icon {
           width: 38px;
           height: 38px;
-
           display: flex;
-
           align-items: center;
           justify-content: center;
-
           border-radius: 10px;
-
-          color:
-            ${COLORS.navy};
-
-          background:
-            ${COLORS.navyLight};
+          color: ${COLORS.navy};
+          background: ${COLORS.navyLight};
         }
 
         .history-modal-title > div:last-child {
           display: flex;
-
           flex-direction: column;
-
           gap: 2px;
         }
 
         .history-modal-title strong {
-          color:
-            ${COLORS.navy};
-
+          color: ${COLORS.navy};
           font-size: 15px;
         }
 
         .history-modal-title span {
-          color:
-            ${COLORS.muted};
-
+          color: ${COLORS.muted};
           font-size: 10px;
-
           font-weight: 400;
         }
 
         .history-student {
           display: flex;
-
           align-items: center;
-
           gap: 12px;
-
           margin-bottom: 18px;
-
           padding: 13px;
-
           border-radius: 12px;
-
-          background:
-            ${COLORS.navyLight};
-
-          border:
-            1px solid
-            #DCE6EE;
+          background: ${COLORS.navyLight};
+          border: 1px solid #DCE6EE;
         }
 
         .history-student-info {
           display: flex;
-
           flex-direction: column;
-
           gap: 3px;
         }
 
         .history-student-info .ant-typography:first-child {
-          color:
-            ${COLORS.navy};
+          color: ${COLORS.navy};
         }
 
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-
         @media (max-width: 1200px) {
-
           .attendance-filter {
-            grid-template-columns:
-              repeat(3, 1fr);
+            grid-template-columns: repeat(3, 1fr);
           }
 
           .search-filter {
-            grid-column:
-              span 2;
+            grid-column: span 2;
           }
-
         }
 
         @media (max-width: 767px) {
-
           .attendance-filter {
-            grid-template-columns:
-              1fr;
+            grid-template-columns: 1fr;
           }
 
           .search-filter {
-            grid-column:
-              auto;
+            grid-column: auto;
           }
 
           .attendance-type-banner {
-            align-items:
-              flex-start;
-
-            flex-direction:
-              column;
+            align-items: flex-start;
+            flex-direction: column;
           }
 
           .type-banner-meta {
             width: 100%;
-
             padding-top: 10px;
-
-            border-top:
-              1px solid
-              ${COLORS.border};
+            border-top: 1px solid ${COLORS.border};
           }
 
           .student-list-header {
@@ -3280,16 +2825,12 @@ const AttendancePage = () => {
           }
 
           .student-list-heading {
-            align-items:
-              flex-start;
+            align-items: flex-start;
           }
 
           .table-toolbar {
-            align-items:
-              flex-start;
-
-            flex-direction:
-              column;
+            align-items: flex-start;
+            flex-direction: column;
           }
 
           .toolbar-legend {
@@ -3297,29 +2838,19 @@ const AttendancePage = () => {
           }
 
           .attendance-pagination {
-            justify-content:
-              center;
-
-            overflow-x:
-              auto;
+            justify-content: center;
+            overflow-x: auto;
           }
 
           .manual-attendance-actions {
-            min-width:
-              205px;
-
+            min-width: 205px;
             gap: 5px;
           }
 
           .manual-action-btn {
-            width:
-              30px !important;
-
-            height:
-              30px !important;
-
-            min-width:
-              30px !important;
+            width: 30px !important;
+            height: 30px !important;
+            min-width: 30px !important;
           }
 
           .qr-modern-header {
@@ -3331,15 +2862,12 @@ const AttendancePage = () => {
           }
 
           .qr-scanner-box {
-            min-height:
-              230px;
+            min-height: 230px;
           }
 
           .qr-guide-list {
-            grid-template-columns:
-              repeat(2, 1fr);
+            grid-template-columns: repeat(2, 1fr);
           }
-
         }
 
       `}</style>

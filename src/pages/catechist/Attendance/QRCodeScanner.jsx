@@ -15,7 +15,7 @@ import {
 
 import { Scanner } from "@yudiel/react-qr-scanner";
 
-import { scanQRCode } from "../../api/attendanceApi";
+import { scanQRCode } from "../../../api/attendanceApi";
 
 /* =========================================================
    COLORS
@@ -64,18 +64,59 @@ const DISPLAY_TIME = {
 const DUPLICATE_SCAN_TIME = 2500;
 
 /* =========================================================
+   HELPER
+========================================================= */
+
+const normalizeAttendanceType = (value) => {
+  const type = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (type === "mass") {
+    return "mass";
+  }
+
+  if (type === "catechism") {
+    return "catechism";
+  }
+
+  return null;
+};
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
 const QRCodeScanner = ({
   open,
+
+  /*
+   * catechism:
+   *   classId bắt buộc
+   *
+   * mass:
+   *   classId KHÔNG bắt buộc
+   *   backend tự lấy lớp của giáo lý viên
+   */
   classId,
+
   attendanceType = "catechism",
+
   onSuccess,
+
   onFinishAttendance,
 }) => {
+  /* =======================================================
+     STATE
+  ======================================================= */
+
   const [processing, setProcessing] = useState(false);
+
   const [scanMessage, setScanMessage] = useState(null);
+
+  /* =======================================================
+     REFS
+  ======================================================= */
 
   const processingRef = useRef(false);
 
@@ -89,12 +130,23 @@ const QRCodeScanner = ({
   const mountedRef = useRef(false);
 
   /* =======================================================
+     NORMALIZED TYPE
+  ======================================================= */
+
+  const normalizedAttendanceType = normalizeAttendanceType(attendanceType);
+
+  const isMass = normalizedAttendanceType === "mass";
+
+  const isCatechism = normalizedAttendanceType === "catechism";
+
+  /* =======================================================
      CLEAR TIMEOUT
   ======================================================= */
 
   const clearMessageTimeout = useCallback(() => {
     if (messageTimeoutRef.current) {
       clearTimeout(messageTimeoutRef.current);
+
       messageTimeoutRef.current = null;
     }
   }, []);
@@ -109,6 +161,7 @@ const QRCodeScanner = ({
     processingRef.current = false;
 
     setProcessing(false);
+
     setScanMessage(null);
 
     lastScanRef.current = {
@@ -182,6 +235,7 @@ const QRCodeScanner = ({
         setScanMessage(null);
 
         processingRef.current = false;
+
         setProcessing(false);
 
         messageTimeoutRef.current = null;
@@ -196,9 +250,25 @@ const QRCodeScanner = ({
 
   const handleScan = useCallback(
     async (detectedCodes) => {
-      if (!open || processingRef.current) {
+      /* =====================================================
+         CAMERA CLOSED
+      ===================================================== */
+
+      if (!open) {
         return;
       }
+
+      /* =====================================================
+         ĐANG XỬ LÝ
+      ===================================================== */
+
+      if (processingRef.current) {
+        return;
+      }
+
+      /* =====================================================
+         CHECK DETECTED CODE
+      ===================================================== */
 
       if (!Array.isArray(detectedCodes) || detectedCodes.length === 0) {
         return;
@@ -216,19 +286,22 @@ const QRCodeScanner = ({
         return;
       }
 
-      /* =================================================
-         CHECK CLASS
-      ================================================= */
+      /* =====================================================
+         VALIDATE ATTENDANCE TYPE
+      ===================================================== */
 
-      if (!classId) {
+      if (!normalizedAttendanceType) {
         processingRef.current = true;
 
         showMessage(
           {
             type: "error",
-            title: "Chưa chọn lớp",
-            message: "Vui lòng chọn lớp học trước khi bắt đầu quét mã.",
+
+            title: "Loại điểm danh không hợp lệ",
+
+            message: "Vui lòng chọn Giáo lý hoặc Thánh lễ trước khi quét.",
           },
+
           DISPLAY_TIME.error,
         );
 
@@ -237,9 +310,43 @@ const QRCodeScanner = ({
         return;
       }
 
-      /* =================================================
-         DUPLICATE
-      ================================================= */
+      /* =====================================================
+         CATECHISM
+         
+         Giáo lý bắt buộc phải có lớp.
+      ===================================================== */
+
+      if (isCatechism && !classId) {
+        processingRef.current = true;
+
+        showMessage(
+          {
+            type: "error",
+
+            title: "Chưa chọn lớp",
+
+            message: "Vui lòng chọn lớp học trước khi bắt đầu quét mã.",
+          },
+
+          DISPLAY_TIME.error,
+        );
+
+        vibrate([150, 100, 150]);
+
+        return;
+      }
+
+      /*
+       * MASS
+       *
+       * KHÔNG kiểm tra classId.
+       *
+       * Backend tự lấy lớp từ teacherId.
+       */
+
+      /* =====================================================
+         DUPLICATE SCAN
+      ===================================================== */
 
       const now = Date.now();
 
@@ -256,61 +363,62 @@ const QRCodeScanner = ({
         time: now,
       };
 
+      /* =====================================================
+         LOCK
+      ===================================================== */
+
       processingRef.current = true;
 
       setProcessing(true);
 
       clearMessageTimeout();
+
       setScanMessage(null);
 
-      /* =================================================
-         API
-      ================================================= */
-      const normalizedAttendanceType = String(attendanceType || "")
-        .trim()
-        .toLowerCase();
+      /* =====================================================
+         BUILD PAYLOAD
+      ===================================================== */
 
-      if (!["catechism", "mass"].includes(normalizedAttendanceType)) {
-        processingRef.current = true;
+      const payload = {
+        qr_token: qrToken,
 
-        showMessage(
-          {
-            type: "error",
-            title: "Loại điểm danh không hợp lệ",
-            message: "Vui lòng chọn Giáo lý hoặc Thánh lễ trước khi quét.",
-          },
-          DISPLAY_TIME.error,
-        );
+        attendance_type: normalizedAttendanceType,
+      };
 
-        vibrate([150, 100, 150]);
-
-        return;
+      /*
+       * CHỈ gửi class_id với giáo lý.
+       *
+       * Thánh lễ:
+       *   không gửi class_id
+       */
+      if (isCatechism) {
+        payload.class_id = Number(classId);
       }
 
+      /* =====================================================
+         API
+      ===================================================== */
+
       try {
-        const response = await scanQRCode({
-          qr_token: qrToken,
-          class_id: Number(classId),
-          attendance_type: normalizedAttendanceType,
-        });
+        const response = await scanQRCode(payload);
 
         const data = response?.data || response;
 
-        /* ===============================================
+        /* ===================================================
            PARENT SUCCESS
-        =============================================== */
+        =================================================== */
 
         if (typeof onSuccess === "function") {
           try {
             await onSuccess(data);
-          } catch {
-            // Ignore parent error
+          } catch (parentError) {
+            console.warn("[QR ATTENDANCE] onSuccess error:", parentError);
           }
         }
 
-        /* ===============================================
-           SUCCESS
-        =============================================== */
+        /* ===================================================
+           SUCCESS MESSAGE
+        =================================================== */
 
         showMessage(
           {
@@ -318,7 +426,11 @@ const QRCodeScanner = ({
 
             title: "Điểm danh thành công!",
 
-            message: data?.message || "Đã ghi nhận học sinh vào lớp.",
+            message:
+              data?.message ||
+              (isMass
+                ? "Đã ghi nhận tham dự Thánh lễ."
+                : "Đã ghi nhận học sinh vào lớp."),
 
             student: data?.student || null,
 
@@ -326,18 +438,21 @@ const QRCodeScanner = ({
 
             attendance: data?.attendance || null,
           },
+
           DISPLAY_TIME.success,
         );
 
         vibrate(100);
       } catch (error) {
+        console.error("[QR ATTENDANCE] error:", error);
+
         const status = error?.response?.status;
 
         const data = error?.response?.data || {};
 
-        /* ===============================================
+        /* ===================================================
            ALREADY ATTENDED
-        =============================================== */
+        =================================================== */
 
         if (status === 409 || data?.code === "ALREADY_ATTENDED") {
           showMessage(
@@ -355,6 +470,7 @@ const QRCodeScanner = ({
 
               attendance: data?.attendance || null,
             },
+
             DISPLAY_TIME.warning,
           );
 
@@ -363,9 +479,66 @@ const QRCodeScanner = ({
           return;
         }
 
-        /* ===============================================
-           NOT IN CLASS
-        =============================================== */
+        /* ===================================================
+           TEACHER CLASS NOT FOUND
+           
+           Chủ yếu dành cho MASS.
+        =================================================== */
+
+        if (
+          data?.code === "TEACHER_CLASS_NOT_FOUND" ||
+          data?.code === "CLASS_NOT_FOUND_FOR_TEACHER"
+        ) {
+          showMessage(
+            {
+              type: "error",
+
+              title: "Chưa xác định được lớp",
+
+              message:
+                data?.message ||
+                "Tài khoản giáo lý viên chưa được gán lớp để điểm danh.",
+
+              student: data?.student || null,
+            },
+
+            DISPLAY_TIME.error,
+          );
+
+          vibrate([150, 100, 150]);
+
+          return;
+        }
+
+        /* ===================================================
+           MULTIPLE TEACHER CLASSES
+        =================================================== */
+
+        if (data?.code === "MULTIPLE_CLASSES_FOR_TEACHER") {
+          showMessage(
+            {
+              type: "error",
+
+              title: "Có nhiều lớp được gán",
+
+              message:
+                data?.message ||
+                "Giáo lý viên đang được gán nhiều lớp. Vui lòng kiểm tra lại phân công.",
+
+              student: data?.student || null,
+            },
+
+            DISPLAY_TIME.error,
+          );
+
+          vibrate([150, 100, 150]);
+
+          return;
+        }
+
+        /* ===================================================
+           STUDENT NOT IN CLASS
+        =================================================== */
 
         if (
           data?.code === "STUDENT_NOT_IN_CLASS" ||
@@ -384,6 +557,7 @@ const QRCodeScanner = ({
 
               class: data?.class || null,
             },
+
             DISPLAY_TIME.error,
           );
 
@@ -392,9 +566,9 @@ const QRCodeScanner = ({
           return;
         }
 
-        /* ===============================================
+        /* ===================================================
            INVALID QR
-        =============================================== */
+        =================================================== */
 
         if (data?.code === "INVALID_QR" || data?.code === "INVALID_QR_TOKEN") {
           showMessage(
@@ -403,9 +577,9 @@ const QRCodeScanner = ({
 
               title: "Mã QR không hợp lệ",
 
-              message:
-                data?.message || "Mã không đúng hoặc đã hết hạn sử dụng.",
+              message: data?.message || "Mã QR không đúng hoặc không hợp lệ.",
             },
+
             DISPLAY_TIME.error,
           );
 
@@ -414,9 +588,9 @@ const QRCodeScanner = ({
           return;
         }
 
-        /* ===============================================
+        /* ===================================================
            STUDENT NOT FOUND
-        =============================================== */
+        =================================================== */
 
         if (status === 404 || data?.code === "STUDENT_NOT_FOUND") {
           showMessage(
@@ -425,10 +599,11 @@ const QRCodeScanner = ({
 
               title: "Không tìm thấy học sinh",
 
-              message: data?.message || "Không tra cứu được dữ liệu học viên.",
+              message: data?.message || "Không tra cứu được học sinh từ mã QR.",
 
               student: data?.student || null,
             },
+
             DISPLAY_TIME.error,
           );
 
@@ -437,9 +612,9 @@ const QRCodeScanner = ({
           return;
         }
 
-        /* ===============================================
+        /* ===================================================
            GENERAL ERROR
-        =============================================== */
+        =================================================== */
 
         showMessage(
           {
@@ -455,7 +630,10 @@ const QRCodeScanner = ({
             student: data?.student || null,
 
             class: data?.class || null,
+
+            attendance: data?.attendance || null,
           },
+
           DISPLAY_TIME.error,
         );
 
@@ -465,7 +643,9 @@ const QRCodeScanner = ({
     [
       open,
       classId,
-      attendanceType,
+      normalizedAttendanceType,
+      isMass,
+      isCatechism,
       onSuccess,
       showMessage,
       clearMessageTimeout,
@@ -606,7 +786,6 @@ const QRCodeScanner = ({
 
         /* =====================================================
            VIEW FINDER
-           KHÔNG CÓ Ô VUÔNG ĐỎ
         ===================================================== */
 
         .scanner-viewfinder {
@@ -633,10 +812,8 @@ const QRCodeScanner = ({
           width: 250px;
           height: 250px;
 
-          /* Không nền */
           background: transparent;
 
-          /* Không viền */
           border: none;
 
           border-radius: 0;
@@ -650,7 +827,6 @@ const QRCodeScanner = ({
 
         /* =====================================================
            GOLD CORNERS
-           CHỈ GIỮ 4 GÓC VÀNG
         ===================================================== */
 
         .scanner-corner {
@@ -659,55 +835,45 @@ const QRCodeScanner = ({
           width: 32px;
           height: 32px;
 
-
           border-style: solid;
 
           margin: 0;
-
         }
 
         .scanner-corner-tl {
           top: 0;
           left: 0;
 
-          border-width:
-            4px 0 0 4px;
+          border-width: 4px 0 0 4px;
 
-          border-radius:
-            8px 0 0 0;
+          border-radius: 8px 0 0 0;
         }
 
         .scanner-corner-tr {
           top: 0;
           right: 0;
 
-          border-width:
-            4px 4px 0 0;
+          border-width: 4px 4px 0 0;
 
-          border-radius:
-            0 8px 0 0;
+          border-radius: 0 8px 0 0;
         }
 
         .scanner-corner-bl {
           bottom: 0;
           left: 0;
 
-          border-width:
-            0 0 4px 4px;
+          border-width: 0 0 4px 4px;
 
-          border-radius:
-            0 0 0 8px;
+          border-radius: 0 0 0 8px;
         }
 
         .scanner-corner-br {
           bottom: 0;
           right: 0;
 
-          border-width:
-            0 4px 4px 0;
+          border-width: 0 4px 4px 0;
 
-          border-radius:
-            0 0 8px 0;
+          border-radius: 0 0 8px 0;
         }
 
 
@@ -763,8 +929,7 @@ const QRCodeScanner = ({
         .scanner-hint {
           margin-top: 20px;
 
-          padding:
-            9px 16px;
+          padding: 9px 16px;
 
           display: flex;
 
@@ -814,11 +979,9 @@ const QRCodeScanner = ({
 
           gap: 7px;
 
-          padding:
-            6px 12px;
+          padding: 6px 12px;
 
-          color:
-            ${COLORS.white};
+          color: ${COLORS.white};
 
           background:
             rgba(23, 59, 94, 0.94);
@@ -853,7 +1016,6 @@ const QRCodeScanner = ({
 
         /* =====================================================
            PROCESSING
-           KHÔNG BLUR
         ===================================================== */
 
         .scanner-processing-overlay {
@@ -908,7 +1070,6 @@ const QRCodeScanner = ({
 
         /* =====================================================
            RESULT OVERLAY
-           Chỉ xuất hiện khi đã có kết quả
         ===================================================== */
 
         .scanner-overlay {
@@ -985,11 +1146,9 @@ const QRCodeScanner = ({
         ===================================================== */
 
         .scanner-student-box {
-          margin:
-            16px 0;
+          margin: 16px 0;
 
-          padding:
-            12px 15px;
+          padding: 12px 15px;
 
           background:
             rgba(0, 0, 0, 0.16);
@@ -1021,8 +1180,7 @@ const QRCodeScanner = ({
 
           margin-top: 7px;
 
-          padding:
-            4px 9px;
+          padding: 4px 9px;
 
           color:
             ${COLORS.white};
@@ -1049,8 +1207,7 @@ const QRCodeScanner = ({
 
           gap: 6px;
 
-          margin:
-            0 0 11px;
+          margin: 0 0 11px;
 
           color:
             rgba(255, 255, 255, 0.92);
@@ -1072,8 +1229,7 @@ const QRCodeScanner = ({
 
           gap: 6px;
 
-          padding:
-            5px 12px;
+          padding: 5px 12px;
 
           margin-bottom: 8px;
 
@@ -1100,8 +1256,7 @@ const QRCodeScanner = ({
         ===================================================== */
 
         .scanner-result-msg {
-          margin:
-            5px 0 0;
+          margin: 5px 0 0;
 
           color:
             rgba(255, 255, 255, 0.9);
@@ -1127,15 +1282,13 @@ const QRCodeScanner = ({
 
           gap: 4px;
 
-          padding:
-            11px 17px;
+          padding: 11px 17px;
 
           background:
             ${COLORS.white};
 
           border-top:
-            1px solid
-            ${COLORS.border};
+            1px solid ${COLORS.border};
         }
 
         .scanner-footer-top {
@@ -1231,18 +1384,15 @@ const QRCodeScanner = ({
             top: 10px;
             left: 10px;
 
-            padding:
-              5px 9px;
+            padding: 5px 9px;
 
             font-size: 10px;
           }
 
           .scanner-card {
-            max-width:
-              320px;
+            max-width: 320px;
 
-            padding:
-              20px;
+            padding: 20px;
           }
 
           .scanner-card-title {
@@ -1289,7 +1439,12 @@ const QRCodeScanner = ({
 
           <div className="scanner-viewfinder">
             <div className="scanner-frame-box">
-              {/* 4 GÓC VÀNG - KHÔNG CÓ Ô ĐỎ */}
+              {/* 4 GÓC VÀNG */}
+
+              <div className="scanner-corner scanner-corner-tl" />
+              <div className="scanner-corner scanner-corner-tr" />
+              <div className="scanner-corner scanner-corner-bl" />
+              <div className="scanner-corner scanner-corner-br" />
 
               {!processing && !scanMessage && <div className="scanner-laser" />}
             </div>
@@ -1298,7 +1453,11 @@ const QRCodeScanner = ({
               <div className="scanner-hint">
                 <ScanOutlined />
 
-                <span>Đưa mã QR học sinh vào giữa khung hình</span>
+                <span>
+                  {isMass
+                    ? "Đưa mã QR học sinh vào giữa khung hình"
+                    : "Đưa mã QR học sinh vào giữa khung hình"}
+                </span>
               </div>
             )}
           </div>
@@ -1310,7 +1469,7 @@ const QRCodeScanner = ({
           <div className="scanner-live-badge">
             <span className="scanner-live-dot" />
 
-            <span>Đang quét trực tiếp</span>
+            <span>{isMass ? "Đang quét Thánh lễ" : "Đang quét trực tiếp"}</span>
           </div>
 
           {/* ===============================================
@@ -1334,7 +1493,9 @@ const QRCodeScanner = ({
               </div>
 
               <span className="scanner-processing-text">
-                Đang xử lý thông tin học viên...
+                {isMass
+                  ? "Đang xác nhận tham dự Thánh lễ..."
+                  : "Đang xử lý thông tin học viên..."}
               </span>
             </div>
           )}
@@ -1355,7 +1516,9 @@ const QRCodeScanner = ({
 
                 <h3 className="scanner-card-title">{scanMessage.title}</h3>
 
-                {/* STUDENT */}
+                {/* =====================================
+                    STUDENT
+                ===================================== */}
 
                 {scanMessage.student?.name && (
                   <div className="scanner-student-box">
@@ -1373,7 +1536,9 @@ const QRCodeScanner = ({
                   </div>
                 )}
 
-                {/* CLASS */}
+                {/* =====================================
+                    CLASS
+                ===================================== */}
 
                 {scanMessage.class?.name && (
                   <p className="scanner-class-info">
@@ -1383,7 +1548,9 @@ const QRCodeScanner = ({
                   </p>
                 )}
 
-                {/* TIME */}
+                {/* =====================================
+                    TIME
+                ===================================== */}
 
                 {scanMessage.attendance?.check_in_time && (
                   <div className="scanner-time-badge">
@@ -1399,7 +1566,9 @@ const QRCodeScanner = ({
                   </div>
                 )}
 
-                {/* MESSAGE */}
+                {/* =====================================
+                    MESSAGE
+                ===================================== */}
 
                 {scanMessage.message && (
                   <p className="scanner-result-msg">{scanMessage.message}</p>
@@ -1434,7 +1603,9 @@ const QRCodeScanner = ({
                   ? "Đang xác nhận mã..."
                   : scanMessage
                     ? "Đang hiển thị kết quả..."
-                    : "Sẵn sàng nhận diện mã tiếp theo"}
+                    : isMass
+                      ? "Sẵn sàng nhận diện mã tiếp theo"
+                      : "Sẵn sàng nhận diện mã tiếp theo"}
               </span>
             </div>
           </div>

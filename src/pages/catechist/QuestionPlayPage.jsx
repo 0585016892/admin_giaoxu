@@ -96,7 +96,6 @@ const QuestionPlayPage = () => {
       setLoading(true);
 
       const response = await getQuizByLesson(lessonId);
-      console.log("getQuizByLesson:::", response);
 
       const data = response?.data;
 
@@ -114,8 +113,6 @@ const QuestionPlayPage = () => {
 
       setResult(null);
     } catch (error) {
-      console.error("LOAD QUIZ ERROR:", error);
-
       messageApi.error(
         error?.response?.data?.message ||
           error?.message ||
@@ -264,8 +261,6 @@ const QuestionPlayPage = () => {
         behavior: "smooth",
       });
     } catch (error) {
-      console.error("SUBMIT QUIZ ERROR:", error);
-
       messageApi.error(
         error?.response?.data?.message || error?.message || "Không thể nộp bài",
       );

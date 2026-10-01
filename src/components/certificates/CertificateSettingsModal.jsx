@@ -85,7 +85,6 @@ const CertificateSettingsPanel = ({
       ...(design || {}),
     });
   }, [design]);
-  console.log(certData);
 
   // ============================================================
   // ĐỒNG BỘ DỮ LIỆU CHỨNG CHỈ TỪ COMPONENT CHA
@@ -110,7 +109,6 @@ const CertificateSettingsPanel = ({
     diocese,
     pastorName,
   ]);
-  console.log("certDataForm:::", certDataForm);
 
   // ============================================================
   // CẬP NHẬT THIẾT KẾ
@@ -174,12 +172,6 @@ const CertificateSettingsPanel = ({
       ...certDataForm,
       [field]: value,
     };
-
-    console.log("CERT DATA CHANGE:", {
-      field,
-      value,
-      next,
-    });
 
     setCertDataForm(next);
 
@@ -664,8 +656,6 @@ const CertificateSettingsPanel = ({
                         }
                         onChange={(date) => {
                           const value = date ? date.format("DD/MM/YYYY") : "";
-
-                          console.log("ISSUED DATE CHANGE:", value);
 
                           onIssuedDateChange?.(value);
                         }}

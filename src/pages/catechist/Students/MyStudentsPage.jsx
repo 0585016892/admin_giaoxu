@@ -11,6 +11,7 @@ import {
   message,
   Descriptions,
   Divider,
+  Tooltip,
 } from "antd";
 
 import {
@@ -59,7 +60,6 @@ const MyStudentsPage = () => {
       setLoading(true);
 
       const response = await studentApi.getStudentsByTeacher();
-      console.log(response);
 
       const data = response?.data;
 
@@ -220,69 +220,147 @@ const MyStudentsPage = () => {
   // =====================================================
   const columns = [
     {
-      title: "Học sinh",
+      title: "HỌC SINH",
       dataIndex: "name",
       key: "name",
-      width: 250,
-      fixed: "left",
+      width: 215,
+
       render: (text, record, index) => (
         <div className="student-table-cell">
           <Avatar
-            size={40}
-            src={`${process.env.REACT_APP_API_URL}${record.avatar}`}
+            size={36}
+            src={
+              record.avatar
+                ? `${process.env.REACT_APP_API_URL}${record.avatar}`
+                : undefined
+            }
             style={{
               background: getAvatarColor(index),
               color: "#FFFFFF",
               fontWeight: 700,
-              fontSize: 14,
+              fontSize: 13,
               border: "2px solid #FFFFFF",
-              boxShadow: "0 2px 6px rgba(23, 59, 94, 0.15)",
+              boxShadow: "0 2px 6px rgba(23, 59, 94, 0.12)",
               flexShrink: 0,
             }}
           >
             {(text || "?").charAt(0)?.toUpperCase()}
           </Avatar>
-          <div className="student-table-info">
-            <Text strong className="student-table-name">
+
+          <div
+            className="student-table-info"
+            style={{
+              minWidth: 0,
+              flex: 1,
+            }}
+          >
+            <Text
+              strong
+              className="student-table-name"
+              ellipsis
+              style={{
+                display: "block",
+                maxWidth: "100%",
+              }}
+            >
               {record.saint_name ? `${record.saint_name} ` : ""}
               {text || "Chưa cập nhật"}
             </Text>
+
             {record.code && (
-              <Text className="student-table-code">{record.code}</Text>
+              <Text
+                className="student-table-code"
+                style={{
+                  display: "block",
+                  fontSize: 11,
+                }}
+              >
+                {record.code}
+              </Text>
             )}
           </div>
         </div>
       ),
     },
+
     {
-      title: "Lớp học",
+      title: "LỚP",
       dataIndex: "class_name",
       key: "class_name",
-      width: 220,
+      width: 150,
+
       render: (className, record) => (
-        <div className="class-table-cell">
-          <BookOutlined style={{ color: accentGold, flexShrink: 0 }} />
-          <Text className="class-name">{className || "Chưa xếp lớp"}</Text>
+        <div
+          className="class-table-cell"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            minWidth: 0,
+          }}
+        >
+          <BookOutlined
+            style={{
+              color: accentGold,
+              flexShrink: 0,
+              fontSize: 14,
+            }}
+          />
+
+          <Text
+            className="class-name"
+            ellipsis
+            style={{
+              minWidth: 0,
+              maxWidth: 90,
+            }}
+          >
+            {className || "Chưa xếp lớp"}
+          </Text>
+
           {record.class_code && (
-            <Tag className="class-code-tag">{record.class_code}</Tag>
+            <Tag
+              className="class-code-tag"
+              style={{
+                margin: 0,
+                flexShrink: 0,
+                fontSize: 11,
+                paddingInline: 5,
+              }}
+            >
+              {record.class_code}
+            </Tag>
           )}
         </div>
       ),
     },
+
     {
-      title: "Giới tính",
+      title: "GIỚI TÍNH",
       dataIndex: "gender",
       key: "gender",
-      width: 130,
+      width: 95,
+      align: "center",
+
       render: (gender) => {
         const isMale = gender?.toLowerCase() === "nam" || gender === "male";
+
         return (
-          <div className="gender-cell">
+          <div
+            className="gender-cell"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 5,
+            }}
+          >
             {isMale ? (
               <ManOutlined style={{ color: "#2563EB" }} />
             ) : (
               <WomanOutlined style={{ color: "#DB2777" }} />
             )}
+
             <Text className="table-secondary-text">
               {isMale ? "Nam" : "Nữ"}
             </Text>
@@ -290,43 +368,65 @@ const MyStudentsPage = () => {
         );
       },
     },
+
     {
-      title: "Số điện thoại",
+      title: "ĐIỆN THOẠI",
       dataIndex: "phone",
       key: "phone",
-      width: 160,
+      width: 125,
+
       render: (phone) => (
-        <Text className="table-secondary-text">{renderValue(phone)}</Text>
+        <Text
+          className="table-secondary-text"
+          style={{
+            fontSize: 13,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {renderValue(phone)}
+        </Text>
       ),
     },
+
     {
-      title: "Trạng thái",
+      title: "TRẠNG THÁI",
       dataIndex: "class_student_status",
       key: "status",
-      width: 140,
+      width: 105,
+      align: "center",
+
       render: (status) => (
         <Tag
           color={status === "studying" ? "success" : "default"}
           className="status-tag"
+          style={{
+            margin: 0,
+            fontSize: 11,
+            borderRadius: 6,
+            paddingInline: 7,
+          }}
         >
           {status === "studying" ? "Đang học" : renderValue(status)}
         </Tag>
       ),
     },
+
     {
-      title: "Thao tác",
+      title: "",
       key: "action",
-      width: 110,
+      width: 95,
       fixed: "right",
+      align: "center",
+
       render: (_, record) => (
-        <AppButton
-          variant="secondary"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => handleViewDetail(record)}
-        >
-          Chi tiết
-        </AppButton>
+        <Tooltip title="Xem chi tiết">
+          <AppButton
+            variant="secondary"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          />
+        </Tooltip>
       ),
     },
   ];
@@ -430,8 +530,8 @@ const MyStudentsPage = () => {
           columns={columns}
           rowKey="id"
           loading={loading}
-          size="middle"
-          scrollX={1010}
+          size="small"
+          scrollX={785}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
