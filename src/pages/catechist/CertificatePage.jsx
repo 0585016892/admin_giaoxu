@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 
-import { Card, Col, ConfigProvider, message, Row } from "antd";
+import { Card, Col, ConfigProvider, Row } from "antd";
 
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -23,6 +23,7 @@ import CertificateTypeSelector from "../../components/certificates/CertificateTy
 import CertificateSettingsModal from "../../components/certificates/CertificateSettingsModal";
 import CertificateGuideModal from "../../components/certificates/CertificateGuideModal";
 import ClassCertificateModal from "../../components/certificates/ClassCertificateModal";
+import { useNotification } from "../../components/notification";
 
 import {
   DEFAULT_CERTIFICATE_DESIGN,
@@ -358,6 +359,8 @@ const normalizeExcelDate = (value) => {
 ========================================================= */
 
 const CertificatePage = () => {
+  const notify = useNotification();
+
   const { user } = useUser();
   const { getChurchId } = useChurch();
 
@@ -471,7 +474,7 @@ const CertificatePage = () => {
         }
       } catch (error) {
         if (!cancelled) {
-          message.error("Không thể tải thông tin giáo xứ.");
+          notify.error("Không thể tải thông tin giáo xứ.");
         }
       }
     };
@@ -481,7 +484,7 @@ const CertificatePage = () => {
     return () => {
       cancelled = true;
     };
-  }, [churchId, getChurchId]);
+  }, [churchId, getChurchId, notify]);
 
   /* =========================================================
    CHURCH DISPLAY
@@ -580,8 +583,8 @@ const CertificatePage = () => {
   const resetDesign = useCallback(() => {
     setCertificateDesign(cloneDesign());
 
-    message.success("Đã khôi phục thiết kế mặc định.");
-  }, []);
+    notify.success("Đã khôi phục thiết kế mặc định.");
+  }, [notify]);
 
   /* =======================================================
      RESET PAGE
@@ -598,8 +601,8 @@ const CertificatePage = () => {
 
     setBatchCertificateData(null);
 
-    message.success("Đã khôi phục chứng chỉ và thiết kế mặc định.");
-  }, []);
+    notify.success("Đã khôi phục chứng chỉ và thiết kế mặc định.");
+  }, [notify]);
 
   /* =======================================================
      PREVIEW STUDENT
@@ -703,7 +706,7 @@ const CertificatePage = () => {
 
   const handleExportPdf = useCallback(async () => {
     if (!certificatePreviewRef.current) {
-      message.error("Không tìm thấy vùng chứng chỉ.");
+      notify.error("Không tìm thấy vùng chứng chỉ.");
 
       return;
     }
@@ -725,13 +728,13 @@ const CertificatePage = () => {
         download: true,
       });
 
-      message.success("Đã xuất chứng chỉ PDF.");
+      notify.success("Đã xuất chứng chỉ PDF.");
     } catch (error) {
-      message.error(error?.message || "Không thể xuất chứng chỉ.");
+      notify.error(error?.message || "Không thể xuất chứng chỉ.");
     } finally {
       setExporting(false);
     }
-  }, [certData.fullName, certType, createPdfFromElement]);
+  }, [certData.fullName, certType, createPdfFromElement, notify]);
 
   /* =======================================================
      BATCH EXPORT
@@ -740,7 +743,7 @@ const CertificatePage = () => {
   const handleBatchExport = useCallback(
     async (students) => {
       if (!Array.isArray(students) || students.length === 0) {
-        message.warning("Chưa có học sinh để cấp chứng chỉ.");
+        notify.warning("Chưa có học sinh để cấp chứng chỉ.");
 
         return;
       }
@@ -909,9 +912,9 @@ const CertificatePage = () => {
 
         setExportProgress(100);
 
-        message.success(`Đã tạo ZIP ${students.length} chứng chỉ.`);
+        notify.success(`Đã tạo ZIP ${students.length} chứng chỉ.`);
       } catch (error) {
-        message.error(error?.message || "Không thể tạo file ZIP chứng chỉ.");
+        notify.error(error?.message || "Không thể tạo file ZIP chứng chỉ.");
       } finally {
         setBatchCertificateData(null);
 
@@ -920,149 +923,152 @@ const CertificatePage = () => {
         setExportProgress(0);
       }
     },
-    [batchExporting, certData, certType, createPdfFromElement],
+    [batchExporting, certData, certType, createPdfFromElement, notify],
   );
 
   /* =======================================================
      EXCEL IMPORT
   ======================================================= */
 
-  const handleImportExcel = useCallback(async ({ file }) => {
-    if (!file) {
-      return false;
-    }
-
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-
-      const workbook = XLSX.read(arrayBuffer, {
-        type: "array",
-        cellDates: false,
-      });
-
-      const sheetName = workbook.SheetNames?.[0];
-
-      if (!sheetName) {
-        message.error("File Excel không có sheet.");
-
+  const handleImportExcel = useCallback(
+    async ({ file }) => {
+      if (!file) {
         return false;
       }
 
-      const sheet = workbook.Sheets[sheetName];
+      try {
+        const arrayBuffer = await file.arrayBuffer();
 
-      const rows = XLSX.utils.sheet_to_json(sheet, {
-        defval: "",
-        raw: true,
-      });
+        const workbook = XLSX.read(arrayBuffer, {
+          type: "array",
+          cellDates: false,
+        });
 
-      if (!rows.length) {
-        message.warning("File Excel không có dữ liệu.");
+        const sheetName = workbook.SheetNames?.[0];
+
+        if (!sheetName) {
+          notify.error("File Excel không có sheet.");
+
+          return false;
+        }
+
+        const sheet = workbook.Sheets[sheetName];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, {
+          defval: "",
+          raw: true,
+        });
+
+        if (!rows.length) {
+          notify.warning("File Excel không có dữ liệu.");
+
+          return false;
+        }
+
+        const students = rows
+          .map((item, index) => {
+            const code = getExcelValue(item, [
+              "Mã học sinh",
+              "Mã HS",
+              "Code",
+              "code",
+            ]);
+
+            const fullName = getExcelValue(item, [
+              "Họ và tên",
+              "Họ tên",
+              "Tên học sinh",
+              "fullName",
+              "full_name",
+            ]);
+
+            const godName = getExcelValue(item, [
+              "Tên Thánh",
+              "Tên thánh",
+              "godName",
+              "god_name",
+            ]);
+
+            const dob = getExcelValue(item, ["Ngày sinh", "DOB", "dob"]);
+
+            const course = getExcelValue(item, ["Niên khóa", "course"]);
+
+            const schoolYear = getExcelValue(item, ["Năm học", "schoolYear"]);
+
+            const className = getExcelValue(item, ["Lớp", "className"]);
+
+            const classCode = getExcelValue(item, ["Mã lớp", "classCode"]);
+
+            /*
+             * Rank Excel KHÔNG dùng làm rank cuối.
+             */
+            const excelRank = getExcelValue(item, [
+              "Xếp loại",
+              "Xep loai",
+              "rank",
+            ]);
+
+            return {
+              _key: `${code || "student"}-${index}`,
+
+              code: String(code || "").trim(),
+
+              fullName: String(fullName || "").trim(),
+
+              godName: String(godName || "").trim(),
+
+              dob: normalizeExcelDate(dob),
+
+              rank: "",
+
+              originalRank: String(excelRank || "").trim(),
+
+              course: String(course || "").trim(),
+
+              schoolYear: String(schoolYear || "").trim(),
+
+              className: String(className || "").trim(),
+
+              classCode: String(classCode || "").trim(),
+            };
+          })
+          .filter((student) => student.fullName || student.code);
+
+        if (!students.length) {
+          notify.warning("Không tìm thấy học sinh hợp lệ trong file Excel.");
+
+          return false;
+        }
+
+        /*
+         * Excel hiện là một nguồn dữ liệu riêng.
+         *
+         * ClassCertificateModal cần hỗ trợ prop
+         * excelStudents để hiển thị danh sách này.
+         */
+        setExcelStudents(students);
+
+        setClassModalOpen(true);
+
+        const hasRank = students.some((student) => student.originalRank);
+
+        if (hasRank) {
+          notify.info(
+            "Xếp loại trong Excel chỉ là dữ liệu tham khảo. Vui lòng chọn lại xếp loại trên danh sách cấp chứng chỉ.",
+          );
+        } else {
+          notify.success(`Đã đọc ${students.length} học sinh từ Excel.`);
+        }
+
+        return false;
+      } catch (error) {
+        notify.error("Không thể đọc file Excel.");
 
         return false;
       }
-
-      const students = rows
-        .map((item, index) => {
-          const code = getExcelValue(item, [
-            "Mã học sinh",
-            "Mã HS",
-            "Code",
-            "code",
-          ]);
-
-          const fullName = getExcelValue(item, [
-            "Họ và tên",
-            "Họ tên",
-            "Tên học sinh",
-            "fullName",
-            "full_name",
-          ]);
-
-          const godName = getExcelValue(item, [
-            "Tên Thánh",
-            "Tên thánh",
-            "godName",
-            "god_name",
-          ]);
-
-          const dob = getExcelValue(item, ["Ngày sinh", "DOB", "dob"]);
-
-          const course = getExcelValue(item, ["Niên khóa", "course"]);
-
-          const schoolYear = getExcelValue(item, ["Năm học", "schoolYear"]);
-
-          const className = getExcelValue(item, ["Lớp", "className"]);
-
-          const classCode = getExcelValue(item, ["Mã lớp", "classCode"]);
-
-          /*
-           * Rank Excel KHÔNG dùng làm rank cuối.
-           */
-          const excelRank = getExcelValue(item, [
-            "Xếp loại",
-            "Xep loai",
-            "rank",
-          ]);
-
-          return {
-            _key: `${code || "student"}-${index}`,
-
-            code: String(code || "").trim(),
-
-            fullName: String(fullName || "").trim(),
-
-            godName: String(godName || "").trim(),
-
-            dob: normalizeExcelDate(dob),
-
-            rank: "",
-
-            originalRank: String(excelRank || "").trim(),
-
-            course: String(course || "").trim(),
-
-            schoolYear: String(schoolYear || "").trim(),
-
-            className: String(className || "").trim(),
-
-            classCode: String(classCode || "").trim(),
-          };
-        })
-        .filter((student) => student.fullName || student.code);
-
-      if (!students.length) {
-        message.warning("Không tìm thấy học sinh hợp lệ trong file Excel.");
-
-        return false;
-      }
-
-      /*
-       * Excel hiện là một nguồn dữ liệu riêng.
-       *
-       * ClassCertificateModal cần hỗ trợ prop
-       * excelStudents để hiển thị danh sách này.
-       */
-      setExcelStudents(students);
-
-      setClassModalOpen(true);
-
-      const hasRank = students.some((student) => student.originalRank);
-
-      if (hasRank) {
-        message.info(
-          "Xếp loại trong Excel chỉ là dữ liệu tham khảo. Vui lòng chọn lại xếp loại trên danh sách cấp chứng chỉ.",
-        );
-      } else {
-        message.success(`Đã đọc ${students.length} học sinh từ Excel.`);
-      }
-
-      return false;
-    } catch (error) {
-      message.error("Không thể đọc file Excel.");
-
-      return false;
-    }
-  }, []);
+    },
+    [notify],
+  );
 
   /* =======================================================
      EXCEL STUDENTS

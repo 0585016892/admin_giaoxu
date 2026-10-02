@@ -10,7 +10,6 @@ import {
   Card,
   Space,
   Upload,
-  message,
   Tabs,
   Spin,
   Typography,
@@ -43,6 +42,7 @@ import PageHeroHeader from "../../components/common/PageHeroHeader";
 import AppButton from "../../components/common/AppButton";
 import { useUser } from "../../context/UserContext";
 import { useChurch } from "../../hooks/useChurch";
+import { useNotification } from "../../components/notification";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -226,6 +226,8 @@ const SummaryItem = ({ icon, label, value }) => {
 ========================================================= */
 
 const ParishSettingsPage = () => {
+  const notify = useNotification();
+
   const { user } = useUser();
 
   const isCatechist = ["admin_catechist", "catechist"].includes(user?.role);
@@ -306,18 +308,18 @@ const ParishSettingsPage = () => {
 
       setArchdioceses(data);
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           "Không thể tải danh sách Tổng Giáo phận!",
       );
     } finally {
       setLoadingArchdioceses(false);
     }
-  }, [fetchArchdioceses]);
+  }, [fetchArchdioceses, notify]);
 
   const fetchParishInfo = useCallback(async () => {
     if (!churchId) {
-      message.warning(
+      notify.warning(
         "Không tìm thấy thông tin Giáo xứ của tài khoản hiện tại!",
       );
 
@@ -334,7 +336,7 @@ const ParishSettingsPage = () => {
       const data = rawData?.church ?? rawData;
 
       if (!data) {
-        message.error("Không nhận được dữ liệu giáo xứ!");
+        notify.error("Không nhận được dữ liệu giáo xứ!");
 
         return;
       }
@@ -399,7 +401,7 @@ const ParishSettingsPage = () => {
 
       setSelectedFile(null);
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Lỗi khi tải thông tin giáo xứ!",
       );
     } finally {
@@ -411,6 +413,7 @@ const ParishSettingsPage = () => {
     form,
     fetchDiocesesByParent,
     fetchDeaneriesByDiocese,
+    notify,
   ]);
 
   useEffect(() => {
@@ -446,7 +449,7 @@ const ParishSettingsPage = () => {
 
         setDioceses(res?.data || []);
       } catch (error) {
-        message.error(
+        notify.error(
           error?.response?.data?.message ||
             "Không thể tải danh sách Giáo phận!",
         );
@@ -454,7 +457,7 @@ const ParishSettingsPage = () => {
         setLoadingDioceses(false);
       }
     },
-    [fetchDiocesesByParent, form],
+    [fetchDiocesesByParent, form, notify],
   );
   // =======================================================
   // CHỌN GIÁO PHẬN
@@ -478,14 +481,14 @@ const ParishSettingsPage = () => {
 
         setDeaneries(res?.data || []);
       } catch (error) {
-        message.error(
+        notify.error(
           error?.response?.data?.message || "Không thể tải danh sách Giáo hạt!",
         );
       } finally {
         setLoadingDeaneries(false);
       }
     },
-    [fetchDeaneriesByDiocese, form],
+    [fetchDeaneriesByDiocese, form, notify],
   );
   /* =======================================================
      SAVE
@@ -493,13 +496,13 @@ const ParishSettingsPage = () => {
 
   const handleSave = async (values) => {
     if (!isCatechist) {
-      message.warning("Bạn không có quyền chỉnh sửa thông tin giáo xứ!");
+      notify.warning("Bạn không có quyền chỉnh sửa thông tin giáo xứ!");
 
       return;
     }
 
     if (!churchId) {
-      message.error("Không tìm thấy ID giáo xứ để cập nhật!");
+      notify.error("Không tìm thấy ID giáo xứ để cập nhật!");
 
       return;
     }
@@ -532,11 +535,11 @@ const ParishSettingsPage = () => {
         await editChurch(churchId, payload);
       }
 
-      message.success("Cập nhật thông tin giáo xứ thành công!");
+      notify.success("Cập nhật thông tin giáo xứ thành công!");
 
       await fetchParishInfo();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           "Có lỗi xảy ra khi lưu thông tin giáo xứ!",
       );
@@ -551,13 +554,13 @@ const ParishSettingsPage = () => {
 
   const handleBeforeUpload = (file) => {
     if (!file.type?.startsWith("image/")) {
-      message.error("Vui lòng chọn file hình ảnh!");
+      notify.error("Vui lòng chọn file hình ảnh!");
 
       return Upload.LIST_IGNORE;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      message.error("Ảnh không được vượt quá 5MB!");
+      notify.error("Ảnh không được vượt quá 5MB!");
 
       return Upload.LIST_IGNORE;
     }
@@ -568,7 +571,7 @@ const ParishSettingsPage = () => {
 
     setImageUrl(previewUrl);
 
-    message.success("Đã chọn ảnh mới. Bấm 'Lưu Thay Đổi' để hoàn tất!");
+    notify.success("Đã chọn ảnh mới. Bấm 'Lưu Thay Đổi' để hoàn tất!");
 
     return false;
   };

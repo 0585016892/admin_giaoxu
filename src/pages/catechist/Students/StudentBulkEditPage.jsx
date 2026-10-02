@@ -19,7 +19,6 @@ import {
   Tag,
   Tooltip,
   Typography,
-  message,
 } from "antd";
 
 import {
@@ -39,6 +38,7 @@ import studentApi from "../../../api/studentApi";
 import AppButton from "../../../components/common/AppButton";
 import UnsavedChangesModal from "../../../components/common/UnsavedChangesModal";
 import useUnsavedChangesGuard from "../../../hooks/useUnsavedChangesGuard";
+import { useNotification } from "../../../components/notification";
 
 import {
   getStudentDraft,
@@ -267,6 +267,8 @@ function EditableDateCell({ value, onChange, width = 112 }) {
 ========================================================= */
 
 export default function StudentBulkEditPage() {
+  const notify = useNotification();
+
   const navigate = useNavigate();
   const { classId } = useParams();
 
@@ -336,7 +338,7 @@ export default function StudentBulkEditPage() {
   const loadStudents = useCallback(
     async ({ preserveDraft = false } = {}) => {
       if (!classId) {
-        message.error("Không xác định được lớp học");
+        notify.error("Không xác định được lớp học");
 
         setLoading(false);
 
@@ -393,7 +395,7 @@ export default function StudentBulkEditPage() {
             setDraftExists(restored.changedIds.size > 0);
 
             if (restored.changedIds.size > 0) {
-              message.success(
+              notify.success(
                 `Đã khôi phục bản nháp của ${restored.changedIds.size} học sinh`,
               );
 
@@ -435,7 +437,7 @@ export default function StudentBulkEditPage() {
           return false;
         }
 
-        message.error(
+        notify.error(
           error?.response?.data?.message ||
             error?.message ||
             "Không thể lấy danh sách học sinh",
@@ -450,7 +452,7 @@ export default function StudentBulkEditPage() {
         }
       }
     },
-    [classId],
+    [classId, notify],
   );
 
   /* =========================================================
@@ -579,7 +581,7 @@ export default function StudentBulkEditPage() {
      * Không có thay đổi.
      */
     if (changedIds.size === 0) {
-      message.info("Chưa có thay đổi nào cần lưu");
+      notify.info("Chưa có thay đổi nào cần lưu");
 
       return true;
     }
@@ -618,7 +620,7 @@ export default function StudentBulkEditPage() {
       const errors = Array.isArray(response.errors) ? response.errors : [];
 
       if (errors.length > 0) {
-        message.warning(
+        notify.warning(
           `Đã lưu một phần. Có ${errors.length} học sinh cập nhật lỗi.`,
         );
 
@@ -647,7 +649,7 @@ export default function StudentBulkEditPage() {
        */
       setChangedIds(new Set());
 
-      message.success(`Đã lưu ${changedStudents.length} học sinh`);
+      notify.success(`Đã lưu ${changedStudents.length} học sinh`);
 
       /**
        * Reload server.
@@ -666,7 +668,7 @@ export default function StudentBulkEditPage() {
 
       return true;
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Lưu dữ liệu thất bại",
@@ -676,7 +678,7 @@ export default function StudentBulkEditPage() {
     } finally {
       setSaving(false);
     }
-  }, [changedIds, students, classId, loadStudents]);
+  }, [changedIds, students, classId, loadStudents, notify]);
 
   /* =========================================================
      UNSAVED CHANGES GUARD
@@ -709,13 +711,16 @@ export default function StudentBulkEditPage() {
      OPEN QR
   ========================================================= */
 
-  const handleOpenQR = useCallback((student) => {
-    /**
-     * Thay bằng modal QR hiện tại
-     * nếu dự án đã có.
-     */
-    message.info(`Mã học sinh: ${student.code || "-"}`);
-  }, []);
+  const handleOpenQR = useCallback(
+    (student) => {
+      /**
+       * Thay bằng modal QR hiện tại
+       * nếu dự án đã có.
+       */
+      notify.info(`Mã học sinh: ${student.code || "-"}`);
+    },
+    [notify],
+  );
 
   /* =========================================================
      DISCARD DRAFT
@@ -764,10 +769,10 @@ export default function StudentBulkEditPage() {
           preserveDraft: false,
         });
 
-        message.success("Đã bỏ bản nháp");
+        notify.success("Đã bỏ bản nháp");
       },
     });
-  }, [classId, changedCount, loadStudents]);
+  }, [classId, changedCount, loadStudents, notify]);
 
   /* =========================================================
      RELOAD

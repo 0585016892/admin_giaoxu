@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import { message, Spin } from "antd";
+import { Spin } from "antd";
 
 import resultApi from "../../../api/resultApi";
 
@@ -10,6 +10,7 @@ import GradingRuleForm from "./components/GradingRuleForm";
 import GradingRuleItems from "./components/GradingRuleItems";
 import GradingRuleItemModal from "./components/GradingRuleItemModal";
 import GradingRulePreview from "./components/GradingRulePreview";
+import { useNotification } from "../../../components/notification";
 
 import {
   normalizeRule,
@@ -42,6 +43,8 @@ const getErrorMessage = (
 // ============================================================
 
 const GradingRulePage = () => {
+  const notify = useNotification();
+
   const [rule, setRule] = useState(null);
   const [items, setItems] = useState([]);
 
@@ -84,10 +87,10 @@ const GradingRulePage = () => {
         setItems(normalized.items || []);
 
         if (showMessage) {
-          message.success("Đã tải lại quy tắc tính điểm.");
+          notify.success("Đã tải lại quy tắc tính điểm.");
         }
       } catch (error) {
-        message.error(
+        notify.error(
           getErrorMessage(error, "Không thể tải quy tắc tính điểm."),
         );
       } finally {
@@ -95,7 +98,7 @@ const GradingRulePage = () => {
         setRefreshing(false);
       }
     },
-    [],
+    [notify],
   );
 
   useEffect(() => {
@@ -127,12 +130,12 @@ const GradingRulePage = () => {
     const validationErrors = validateRuleItems(normalizedItems);
 
     if (validationErrors.length) {
-      message.error(validationErrors[0]);
+      notify.error(validationErrors[0]);
       return;
     }
 
     if (hasDuplicateItemCodes(normalizedItems)) {
-      message.error("Mã thành phần điểm không được trùng nhau.");
+      notify.error("Mã thành phần điểm không được trùng nhau.");
       return;
     }
 
@@ -144,18 +147,18 @@ const GradingRulePage = () => {
       if (rule?.id) {
         await resultApi.updateGradingRule(rule.id, payload);
 
-        message.success("Đã cập nhật quy tắc tính điểm.");
+        notify.success("Đã cập nhật quy tắc tính điểm.");
       } else {
         await resultApi.createGradingRule(payload);
 
-        message.success("Đã tạo quy tắc tính điểm.");
+        notify.success("Đã tạo quy tắc tính điểm.");
       }
 
       await loadRule({
         showLoading: false,
       });
     } catch (error) {
-      message.error(getErrorMessage(error, "Không thể lưu quy tắc tính điểm."));
+      notify.error(getErrorMessage(error, "Không thể lưu quy tắc tính điểm."));
     } finally {
       setSaving(false);
     }
@@ -175,14 +178,14 @@ const GradingRulePage = () => {
 
       await resultApi.deleteGradingRule(rule.id);
 
-      message.success("Đã xóa quy tắc tính điểm.");
+      notify.success("Đã xóa quy tắc tính điểm.");
 
       setRule(null);
       setItems([]);
 
       formRef.current?.reset?.();
     } catch (error) {
-      message.error(getErrorMessage(error, "Không thể xóa quy tắc tính điểm."));
+      notify.error(getErrorMessage(error, "Không thể xóa quy tắc tính điểm."));
     } finally {
       setSaving(false);
     }
@@ -254,7 +257,7 @@ const GradingRulePage = () => {
         const validationErrors = validateRuleItems(nextItems);
 
         if (validationErrors.length) {
-          message.error(validationErrors[0]);
+          notify.error(validationErrors[0]);
           return;
         }
       }
@@ -274,13 +277,13 @@ const GradingRulePage = () => {
       setItemModalOpen(false);
       setEditingItem(null);
 
-      message.success(
+      notify.success(
         editingItem
           ? "Đã cập nhật thành phần điểm."
           : "Đã thêm thành phần điểm.",
       );
     } catch (error) {
-      message.error(getErrorMessage(error, "Không thể xử lý thành phần điểm."));
+      notify.error(getErrorMessage(error, "Không thể xử lý thành phần điểm."));
     } finally {
       setItemSaving(false);
     }
@@ -307,7 +310,7 @@ const GradingRulePage = () => {
       ),
     );
 
-    message.success("Đã xóa thành phần điểm.");
+    notify.success("Đã xóa thành phần điểm.");
   };
 
   const handleItemsChange = (nextItems) => {

@@ -12,7 +12,6 @@ import {
   Row,
   Col,
   Pagination,
-  message,
   Dropdown,
   Tooltip,
   Form,
@@ -56,6 +55,7 @@ import AppDetailModal from "../../../components/common/AppDetailModal";
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
 import StatCard from "../../../components/common/StatCard";
 import AppSearchInput from "../../../components/common/SearchInput";
+import { useNotification } from "../../../components/notification";
 
 // API
 import catechistApi from "../../../api/catechistApi";
@@ -122,6 +122,7 @@ const STATUS_OPTIONS = [
 ========================================================= */
 
 export default function CatechistManagement() {
+  const notify = useNotification();
   /* =======================================================
      STATE
   ======================================================= */
@@ -258,7 +259,7 @@ export default function CatechistManagement() {
 
         setCatechists(list.map(formatCatechist));
       } else {
-        message.error("Không thể tải danh sách Giáo lý viên!");
+        notify.error("Không thể tải danh sách Giáo lý viên!");
       }
 
       /* ---------------- CLASS ---------------- */
@@ -279,11 +280,11 @@ export default function CatechistManagement() {
         );
       }
     } catch (error) {
-      message.error("Có lỗi xảy ra khi tải dữ liệu!");
+      notify.error("Có lỗi xảy ra khi tải dữ liệu!");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     fetchData();
@@ -416,11 +417,11 @@ export default function CatechistManagement() {
       if (editingCatechist) {
         await catechistApi.update(editingCatechist.id, payload);
 
-        message.success("Cập nhật Giáo lý viên thành công!");
+        notify.success("Cập nhật Giáo lý viên thành công!");
       } else {
         await catechistApi.create(payload);
 
-        message.success("Thêm Giáo lý viên mới thành công!");
+        notify.success("Thêm Giáo lý viên mới thành công!");
       }
 
       setIsFormModalOpen(false);
@@ -429,7 +430,7 @@ export default function CatechistManagement() {
 
       await fetchData();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Đã xảy ra lỗi khi lưu thông tin!",
       );
     } finally {
@@ -455,7 +456,7 @@ export default function CatechistManagement() {
         setDetailCatechist(formatCatechist(data));
       }
     } catch (error) {
-      message.warning("Không thể tải thêm thông tin chi tiết.");
+      notify.error("Không thể tải thêm thông tin chi tiết.");
     }
   };
 
@@ -467,11 +468,11 @@ export default function CatechistManagement() {
     try {
       await catechistApi.delete(id);
 
-      message.success("Xóa Giáo lý viên thành công!");
+      notify.success("Xóa Giáo lý viên thành công!");
 
       await fetchData();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể xóa Giáo lý viên!",
       );
     }
@@ -532,7 +533,7 @@ export default function CatechistManagement() {
 
       await catechistApi.assignClass(payload);
 
-      message.success("Phân công lớp thành công!");
+      notify.success("Phân công lớp thành công!");
 
       setIsAssignModalOpen(false);
 
@@ -540,7 +541,7 @@ export default function CatechistManagement() {
 
       await fetchData();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể phân công lớp!",
       );
     } finally {
@@ -576,7 +577,7 @@ export default function CatechistManagement() {
 
       await resetAdminPassword(resetUser.id, values.newPassword);
 
-      message.success(`Đã cấp lại mật khẩu mới cho ${resetUser.full_name}`);
+      notify.success(`Đã cấp lại mật khẩu mới cho ${resetUser.full_name}`);
 
       closeResetPassword();
     } catch (error) {
@@ -584,7 +585,7 @@ export default function CatechistManagement() {
         return;
       }
 
-      message.error(error?.response?.data?.message || "Đổi mật khẩu thất bại!");
+      notify.error(error?.response?.data?.message || "Đổi mật khẩu thất bại!");
     } finally {
       setLoading(false);
     }
@@ -593,7 +594,7 @@ export default function CatechistManagement() {
   const handleToggleAdmin = (record) => {
     const isActive = Boolean(record.status);
 
-    Modal.confirm({
+    notify.confirm({
       title: isActive === true ? "Khóa tài khoản?" : "Mở khóa tài khoản?",
 
       content:
@@ -605,20 +606,18 @@ export default function CatechistManagement() {
               record.name || record.full_name || "này"
             }"?`,
 
-      okText: isActive === true ? "Khóa tài khoản" : "Mở khóa",
+      confirmText: isActive === true ? "Khóa tài khoản" : "Mở khóa",
       cancelText: "Hủy",
 
-      okButtonProps: {
-        danger: isActive,
-      },
+      danger: true,
 
       centered: true,
 
-      onOk: async () => {
+      onConfirm: async () => {
         try {
           await toggleAdmin(record.id);
 
-          message.success(
+          notify.success(
             isActive === "active"
               ? "Đã khóa tài khoản"
               : "Đã mở khóa tài khoản",
@@ -626,7 +625,7 @@ export default function CatechistManagement() {
 
           fetchData();
         } catch (error) {
-          message.error(
+          notify.error(
             error?.response?.data?.message ||
               "Không thể thay đổi trạng thái tài khoản",
           );

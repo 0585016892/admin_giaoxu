@@ -1,16 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  Alert,
-  Card,
-  Empty,
-  Progress,
-  Radio,
-  Result,
-  Spin,
-  Tag,
-  message,
-} from "antd";
+import { Alert, Card, Empty, Progress, Radio, Result, Spin, Tag } from "antd";
 
 import {
   ArrowLeftOutlined,
@@ -25,7 +15,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 
 import AppButton from "../../components/common/AppButton";
-
+import { useNotification } from "../../components/notification";
 import { getQuizByLesson, submitQuiz } from "../../api/questionApi";
 
 import "../../assets/css/QuestionPlayPage.css";
@@ -58,11 +48,11 @@ const ANSWERS = [
 // =========================================================
 
 const QuestionPlayPage = () => {
+  const notify = useNotification();
+
   const navigate = useNavigate();
 
   const { lessonId } = useParams();
-
-  const [messageApi, contextHolder] = message.useMessage();
 
   // -------------------------------------------------------
   // STATE
@@ -113,7 +103,7 @@ const QuestionPlayPage = () => {
 
       setResult(null);
     } catch (error) {
-      messageApi.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể tải câu hỏi",
@@ -123,7 +113,7 @@ const QuestionPlayPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [lessonId, messageApi]);
+  }, [lessonId, notify]);
 
   useEffect(() => {
     loadQuiz();
@@ -195,7 +185,7 @@ const QuestionPlayPage = () => {
     }
 
     if (!currentAnswer) {
-      messageApi.warning("Vui lòng chọn một đáp án trước khi tiếp tục");
+      notify.warning("Vui lòng chọn một đáp án trước khi tiếp tục");
 
       return;
     }
@@ -225,7 +215,7 @@ const QuestionPlayPage = () => {
     const unanswered = questions.filter((question) => !answers[question.id]);
 
     if (unanswered.length > 0) {
-      messageApi.warning(`Còn ${unanswered.length} câu chưa trả lời`);
+      notify.warning(`Còn ${unanswered.length} câu chưa trả lời`);
 
       const firstUnansweredIndex = questions.findIndex(
         (question) => !answers[question.id],
@@ -261,7 +251,7 @@ const QuestionPlayPage = () => {
         behavior: "smooth",
       });
     } catch (error) {
-      messageApi.error(
+      notify.error(
         error?.response?.data?.message || error?.message || "Không thể nộp bài",
       );
     } finally {
@@ -301,8 +291,6 @@ const QuestionPlayPage = () => {
   if (loading) {
     return (
       <div className="question-play-page">
-        {contextHolder}
-
         <div className="qp-loading">
           <Spin size="large" />
 
@@ -319,8 +307,6 @@ const QuestionPlayPage = () => {
   if (!questions.length) {
     return (
       <div className="question-play-page">
-        {contextHolder}
-
         <div className="qp-page-inner">
           <div className="qp-topbar">
             <AppButton icon={<ArrowLeftOutlined />} onClick={handleBack}>
@@ -356,8 +342,6 @@ const QuestionPlayPage = () => {
 
     return (
       <div className="question-play-page">
-        {contextHolder}
-
         <div className="qp-page-inner">
           {/* HEADER */}
           <div className="qp-topbar">
@@ -510,8 +494,6 @@ const QuestionPlayPage = () => {
 
   return (
     <div className="question-play-page">
-      {contextHolder}
-
       <div className="qp-page-inner">
         {/* =================================================
             HEADER

@@ -143,6 +143,7 @@ const ResultsOverview = ({ statistics, rule, loading = false }) => {
           {rule && (
             <AppButton
               type="default"
+              size="small"
               icon={<CalculatorOutlined />}
               onClick={() => setFormulaModalOpen(true)}
             >

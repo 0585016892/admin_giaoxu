@@ -12,7 +12,6 @@ import {
   Space,
   Tag,
   Divider,
-  message,
   ConfigProvider,
   Descriptions,
   DatePicker,
@@ -38,7 +37,7 @@ import PageHeroHeader from "../../components/common/PageHeroHeader";
 import AppButton from "../../components/common/AppButton";
 import { useUser } from "../../context/UserContext";
 import { getAdminById, updateAdmin, changePassword } from "../../api/adminApi";
-
+import { useNotification } from "../../components/notification";
 const { Title, Text } = Typography;
 
 // =====================================================
@@ -211,6 +210,8 @@ const ProfileSkeleton = () => (
 // =====================================================
 
 export default function ProfilePageCate() {
+  const notify = useNotification();
+
   const { user } = useUser();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -289,11 +290,11 @@ export default function ProfilePageCate() {
         setFileList([]);
       }
     } catch (error) {
-      message.error("Không thể tải thông tin hồ sơ cá nhân!");
+      notify.error("Không thể tải thông tin hồ sơ cá nhân!");
     } finally {
       setLoading(false);
     }
-  }, [user?.id, profileForm]);
+  }, [user?.id, profileForm, notify]);
 
   useEffect(() => {
     fetchProfile();
@@ -346,12 +347,12 @@ export default function ProfilePageCate() {
       }
 
       const res = await updateAdmin(user.id, formData);
-      message.success(
+      notify.success(
         res.data?.message || "Cập nhật thông tin cá nhân thành công! ✨",
       );
       fetchProfile();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Cập nhật thông tin thất bại!",
       );
     } finally {
@@ -370,10 +371,10 @@ export default function ProfilePageCate() {
         newPassword: values.newPassword,
       });
 
-      message.success("Đổi mật khẩu thành công! 🔐");
+      notify.success("Đổi mật khẩu thành công! 🔐");
       passwordForm.resetFields();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại!",
       );

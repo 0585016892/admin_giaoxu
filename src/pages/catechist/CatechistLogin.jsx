@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Form, Input, Button, message, ConfigProvider, Checkbox } from "antd";
+import { Form, Input, Button, ConfigProvider, Checkbox } from "antd";
 
 import {
   UserOutlined,
@@ -20,6 +20,7 @@ import LoadingLogo from "../../components/LoadingLogo";
 
 import background from "../../assets/images/login-background.png";
 import logobackground from "../../assets/images/logo-giao-ly.png.png";
+import { useNotification } from "../../components/notification";
 
 /* =========================================================
    HÌNH ẢNH
@@ -58,6 +59,8 @@ const colors = {
 ========================================================= */
 
 export default function Login() {
+  const notify = useNotification();
+
   const navigate = useNavigate();
 
   const { login } = useUser();
@@ -150,7 +153,7 @@ export default function Login() {
 
         setLoading(false);
 
-        message.error(
+        notify.error(
           "Đăng nhập thất bại: Hệ thống phản hồi thiếu token xác thực.",
         );
 
@@ -170,7 +173,7 @@ export default function Login() {
 
         setLoading(false);
 
-        message.error(
+        notify.error(
           "Đăng nhập thất bại: Không nhận được thông tin tài khoản.",
         );
 
@@ -205,7 +208,7 @@ export default function Login() {
 
         setLoading(false);
 
-        message.error("Không thể khởi tạo phiên làm việc.");
+        notify.error("Không thể khởi tạo phiên làm việc.");
 
         return;
       }
@@ -229,9 +232,9 @@ export default function Login() {
       ===================================================== */
 
       if (role === "parent") {
-        message.success("Đăng nhập thành công. Chào mừng phụ huynh!");
+        notify.success("Đăng nhập thành công. Chào mừng phụ huynh!");
       } else {
-        message.success("Chào mừng Huynh Trưởng trở lại!");
+        notify.success("Chào mừng Huynh Trưởng trở lại!");
       }
 
       /* =====================================================
@@ -277,7 +280,7 @@ export default function Login() {
       ===================================================== */
 
       if (status === 403) {
-        message.error(
+        notify.error(
           error?.response?.data?.message ||
             "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
         );
@@ -294,7 +297,7 @@ export default function Login() {
         error?.message ||
         "Thông tin tài khoản hoặc mật khẩu không chính xác.";
 
-      message.error(msg);
+      notify.error(msg);
     }
   };
 

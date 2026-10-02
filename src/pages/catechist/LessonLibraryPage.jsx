@@ -14,7 +14,6 @@ import {
   Tag,
   Tooltip,
   Upload,
-  message,
 } from "antd";
 
 import {
@@ -58,6 +57,7 @@ import "../../assets/css/LessonLibraryPage.css";
 
 import AppFormModal from "../../components/common/AppFormModal";
 import AppButton from "../../components/common/AppButton";
+import { useNotification } from "../../components/notification";
 
 /* =========================================================
    CONSTANTS
@@ -426,8 +426,7 @@ const isResourceActive = (resource) => {
 
 const LessonLibraryPage = () => {
   const navigate = useNavigate();
-
-  const [messageApi, contextHolder] = message.useMessage();
+  const notify = useNotification();
 
   /* =======================================================
      STATE
@@ -495,13 +494,13 @@ const LessonLibraryPage = () => {
 
       setLessons(data);
     } catch (error) {
-      messageApi.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải danh sách bài học",
       );
     } finally {
       setLoading(false);
     }
-  }, [selectedType, messageApi]);
+  }, [selectedType, notify]);
 
   /* =======================================================
      LOAD TYPES
@@ -549,7 +548,7 @@ const LessonLibraryPage = () => {
         setResources(resourceData);
         setQuestions(questionData);
       } catch (error) {
-        messageApi.error(
+        notify.error(
           error?.response?.data?.message || "Không thể tải dữ liệu bài học",
         );
 
@@ -560,7 +559,7 @@ const LessonLibraryPage = () => {
         setQuestionLoading(false);
       }
     },
-    [messageApi],
+    [notify],
   );
 
   /* =======================================================
@@ -730,14 +729,14 @@ const LessonLibraryPage = () => {
 
   const openResourceViewer = (resource) => {
     if (!resource?.id) {
-      messageApi.warning("Không xác định được tài liệu");
+      notify.warning("Không xác định được tài liệu");
       return;
     }
 
     const url = getResourceUrl(resource);
 
     if (resource.resource_type !== "link" && !url) {
-      messageApi.info("Tài liệu chưa có file");
+      notify.info("Tài liệu chưa có file");
       return;
     }
 
@@ -750,7 +749,7 @@ const LessonLibraryPage = () => {
 
   const openUploadModal = () => {
     if (!selectedLesson) {
-      messageApi.info("Vui lòng mở một bài học trước");
+      notify.info("Vui lòng mở một bài học trước");
       return;
     }
 
@@ -809,7 +808,7 @@ const LessonLibraryPage = () => {
      * Đang dùng link
      */
     if (externalUrl) {
-      messageApi.info(
+      notify.info(
         "Bạn đang sử dụng đường link. Hãy xóa đường link nếu muốn tải file.",
       );
 
@@ -820,7 +819,7 @@ const LessonLibraryPage = () => {
      * Kiểm tra dung lượng
      */
     if (Number(file?.size || 0) > MAX_FILE_SIZE) {
-      messageApi.error("File không được vượt quá 100MB");
+      notify.error("File không được vượt quá 100MB");
 
       return Upload.LIST_IGNORE;
     }
@@ -869,7 +868,7 @@ const LessonLibraryPage = () => {
     ===================================================== */
 
     if (!title) {
-      messageApi.warning("Vui lòng nhập tên tài liệu");
+      notify.warning("Vui lòng nhập tên tài liệu");
       return;
     }
 
@@ -878,7 +877,7 @@ const LessonLibraryPage = () => {
     ===================================================== */
 
     if (!selectedFile && !externalUrl) {
-      messageApi.warning("Vui lòng chọn file hoặc nhập đường link");
+      notify.warning("Vui lòng chọn file hoặc nhập đường link");
       return;
     }
 
@@ -887,7 +886,7 @@ const LessonLibraryPage = () => {
     ===================================================== */
 
     if (selectedFile && externalUrl) {
-      messageApi.warning("Vui lòng chỉ chọn file hoặc nhập đường link");
+      notify.warning("Vui lòng chỉ chọn file hoặc nhập đường link");
       return;
     }
 
@@ -896,7 +895,7 @@ const LessonLibraryPage = () => {
     ===================================================== */
 
     if (externalUrl && !isHttpUrl(externalUrl)) {
-      messageApi.error(
+      notify.error(
         "Đường link không hợp lệ. Vui lòng sử dụng http:// hoặc https://",
       );
       return;
@@ -958,7 +957,7 @@ const LessonLibraryPage = () => {
 
       await uploadLessonResource(selectedLesson.id, formData);
 
-      messageApi.success(
+      notify.success(
         externalUrl
           ? "Đã thêm đường link thành công"
           : "Tải tài liệu thành công",
@@ -972,9 +971,7 @@ const LessonLibraryPage = () => {
 
       await loadResources(selectedLesson.id);
     } catch (error) {
-      messageApi.error(
-        error?.response?.data?.message || "Không thể thêm tài liệu",
-      );
+      notify.error(error?.response?.data?.message || "Không thể thêm tài liệu");
     } finally {
       setUploading(false);
     }
@@ -988,13 +985,11 @@ const LessonLibraryPage = () => {
     try {
       await deleteLessonResource(resource.id);
 
-      messageApi.success("Đã xóa tài liệu");
+      notify.success("Đã xóa tài liệu");
 
       await loadResources(selectedLesson.id);
     } catch (error) {
-      messageApi.error(
-        error?.response?.data?.message || "Không thể xóa tài liệu",
-      );
+      notify.error(error?.response?.data?.message || "Không thể xóa tài liệu");
     }
   };
 
@@ -1014,7 +1009,7 @@ const LessonLibraryPage = () => {
     const url = getResourceUrl(resource);
 
     if (!url) {
-      messageApi.info("Tài liệu chưa có file");
+      notify.info("Tài liệu chưa có file");
       return;
     }
 
@@ -1096,7 +1091,7 @@ const LessonLibraryPage = () => {
           onClick={() => {
             setMenuLessonId(null);
 
-            messageApi.info("Chức năng chỉnh sửa sẽ được bổ sung.");
+            notify.info("Chức năng chỉnh sửa sẽ được bổ sung.");
           }}
         >
           <BookOutlined />
@@ -1108,7 +1103,7 @@ const LessonLibraryPage = () => {
           onClick={() => {
             setMenuLessonId(null);
 
-            messageApi.info("Chức năng sao chép sẽ được bổ sung.");
+            notify.info("Chức năng sao chép sẽ được bổ sung.");
           }}
         >
           <BookOutlined />
@@ -1123,7 +1118,7 @@ const LessonLibraryPage = () => {
           onClick={() => {
             setMenuLessonId(null);
 
-            messageApi.info("Chức năng xóa sẽ được bổ sung.");
+            notify.info("Chức năng xóa sẽ được bổ sung.");
           }}
         >
           <DeleteOutlined />
@@ -1430,8 +1425,6 @@ const LessonLibraryPage = () => {
 
   return (
     <>
-      {contextHolder}
-
       <div className="lesson-library-page">
         {/* =================================================
             LIBRARY HEADER
@@ -1518,7 +1511,7 @@ const LessonLibraryPage = () => {
                 icon={<UploadOutlined />}
                 size="small"
                 onClick={() =>
-                  messageApi.info("Vui lòng mở một bài học để thêm tài liệu.")
+                  notify.info("Vui lòng mở một bài học để thêm tài liệu.")
                 }
               >
                 Thêm tài liệu

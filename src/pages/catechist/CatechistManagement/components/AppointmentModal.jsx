@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Alert, Button, Modal, Tag, Typography, message } from "antd";
+import React, { useEffect, useState, useCallback } from "react";
+import { Alert, Button, Modal, Tag, Typography } from "antd";
 import confetti from "canvas-confetti";
 import {
   BookOutlined,
@@ -11,6 +11,7 @@ import {
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import { useNotification } from "../../../../components/notification";
 
 import catechistApi from "../../../../api/catechistApi";
 import "./AppointmentModal.css";
@@ -30,13 +31,15 @@ const FAITHEDU_ASSETS = {
 };
 
 const AppointmentModal = () => {
+  const notify = useNotification();
+
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Tải danh sách thư bổ nhiệm
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -46,18 +49,16 @@ const AppointmentModal = () => {
       setAppointments(Array.isArray(data) ? data : []);
       setCurrentIndex(0);
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải thư bổ nhiệm.",
       );
     } finally {
       setLoading(false);
     }
-  };
-
+  }, [notify]);
   useEffect(() => {
     loadAppointments();
-  }, []);
-
+  }, [loadAppointments]);
   const currentAppointment = appointments[currentIndex];
 
   const fullName = [
@@ -164,7 +165,7 @@ const AppointmentModal = () => {
 
       await catechistApi.readAppointment(appointmentId);
 
-      message.success("Đã xác nhận nhận thư bổ nhiệm.");
+      notify.success("Đã xác nhận nhận thư bổ nhiệm.");
 
       setAppointments((previous) =>
         previous.filter((item) => item.id !== appointmentId),
@@ -172,7 +173,7 @@ const AppointmentModal = () => {
 
       setCurrentIndex(0);
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể xác nhận thư bổ nhiệm.",
       );
     } finally {

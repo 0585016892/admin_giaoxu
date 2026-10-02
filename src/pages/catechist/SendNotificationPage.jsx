@@ -13,7 +13,6 @@ import {
   Tabs,
   Tag,
   Typography,
-  message,
 } from "antd";
 
 import {
@@ -36,7 +35,7 @@ import { useNavigate } from "react-router-dom";
 import notificationApi from "../../api/notificationApi";
 import AppButton from "../../components/common/AppButton";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
-
+import { useNotification } from "../../components/notification";
 import { useUser } from "../../context/UserContext";
 
 const { Title } = Typography;
@@ -152,6 +151,8 @@ const PRIORITY_OPTIONS = [
 ============================================================ */
 
 const SendNotificationPage = () => {
+  const notify = useNotification();
+
   const navigate = useNavigate();
 
   /* ============================================================
@@ -282,7 +283,7 @@ const SendNotificationPage = () => {
      */
 
     if (values.send_email && !isAdminCatechist) {
-      message.error(
+      notify.error(
         "Chỉ Quản trị viên Giáo lý mới có quyền gửi thông báo qua Email!",
       );
 
@@ -363,7 +364,7 @@ const SendNotificationPage = () => {
           : "Gửi thông báo thành công!";
       }
 
-      message.success({
+      notify.success({
         content: successContent,
 
         duration: 5,
@@ -379,7 +380,7 @@ const SendNotificationPage = () => {
 
       setActiveTab("1");
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể gửi thông báo. Vui lòng thử lại!",
@@ -400,7 +401,7 @@ const SendNotificationPage = () => {
 
     setActiveTab("1");
 
-    message.info("Đã làm sạch toàn bộ nội dung");
+    notify.info("Đã làm sạch toàn bộ nội dung");
   };
 
   /* ============================================================
@@ -409,7 +410,7 @@ const SendNotificationPage = () => {
 
   const handleEmailChange = (checked) => {
     if (checked && !isAdminCatechist) {
-      message.warning("Chỉ Quản trị viên Giáo lý mới có quyền gửi Email!");
+      notify.warning("Chỉ Quản trị viên Giáo lý mới có quyền gửi Email!");
 
       form.setFieldValue("send_email", false);
 

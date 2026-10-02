@@ -1,13 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Button,
-  Checkbox,
-  Divider,
-  Modal,
-  Space,
-  Typography,
-  message,
-} from "antd";
+import { Button, Checkbox, Divider, Modal, Space, Typography } from "antd";
 import {
   DownloadOutlined,
   FileExcelOutlined,
@@ -19,6 +11,7 @@ import {
 } from "@ant-design/icons";
 
 import studentApi from "../../../../api/studentApi";
+import { useNotification } from "../../../../components/notification";
 
 const { Text } = Typography;
 
@@ -262,6 +255,7 @@ const getDefaultFields = () => {
  */
 
 const StudentExportModal = ({ open, onCancel, selectedStudentIds = [] }) => {
+  const notify = useNotification();
   const [selectedFields, setSelectedFields] = useState(getDefaultFields());
 
   const [exporting, setExporting] = useState(false);
@@ -352,12 +346,12 @@ const StudentExportModal = ({ open, onCancel, selectedStudentIds = [] }) => {
 
   const handleExport = async () => {
     if (!selectedStudentIds.length) {
-      message.warning("Vui lòng chọn học sinh");
+      notify.warning("Vui lòng chọn học sinh");
       return;
     }
 
     if (!selectedFields.length) {
-      message.warning("Vui lòng chọn ít nhất một thông tin");
+      notify.warning("Vui lòng chọn ít nhất một thông tin");
       return;
     }
 
@@ -403,7 +397,7 @@ const StudentExportModal = ({ open, onCancel, selectedStudentIds = [] }) => {
 
       window.URL.revokeObjectURL(url);
 
-      message.success(`Đã xuất ${selectedStudentIds.length} học sinh`);
+      notify.success(`Đã xuất ${selectedStudentIds.length} học sinh`);
 
       onCancel?.();
     } catch (error) {
@@ -422,7 +416,7 @@ const StudentExportModal = ({ open, onCancel, selectedStudentIds = [] }) => {
         }
       } catch (parseError) {}
 
-      message.error(errorMessage);
+      notify.error(errorMessage);
     } finally {
       setExporting(false);
     }

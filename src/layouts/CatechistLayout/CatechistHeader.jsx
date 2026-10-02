@@ -11,7 +11,6 @@ import {
   Tag,
   Badge,
   Spin,
-  message,
 } from "antd";
 
 import {
@@ -37,6 +36,7 @@ import { useUser } from "../../context/UserContext";
 import HelpModalCate from "../../components/HelpModalCate";
 import notificationApi from "../../api/notificationApi";
 import logoWeb from "../../assets/images/logoXn.png";
+import { useNotification } from "../../components/notification";
 
 const { Header } = Layout;
 
@@ -116,6 +116,7 @@ const getNotificationList = (res) => {
 ========================================================= */
 
 export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
+  const notify = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -298,11 +299,11 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
 
       setNotifications(list);
     } catch (error) {
-      message.error("Lỗi khi lấy thông báo");
+      notify.error("Lỗi khi lấy thông báo");
     } finally {
       setNotificationLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, notify]);
 
   /* =========================================================
      UNREAD COUNT
@@ -589,7 +590,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
         }
       }
     } catch (error) {
-      message.error("Lỗi cập nhật thông báo");
+      notify.error("Lỗi cập nhật thông báo");
     }
   };
 
@@ -609,7 +610,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
         })),
       );
     } catch (error) {
-      message.error("Đã xảy ra lỗi");
+      notify.error("Đã xảy ra lỗi");
     }
   };
 
@@ -1034,7 +1035,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
 
       <style>{`
 
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap');
 
         /* =====================================================
            DESIGN SYSTEM

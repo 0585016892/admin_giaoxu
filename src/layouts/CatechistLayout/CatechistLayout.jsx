@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Layout, Typography, ConfigProvider } from "antd";
+import React, { useState, useEffect } from "react";
+import { Layout, Typography, ConfigProvider, theme as antdTheme } from "antd";
 import { Outlet } from "react-router-dom";
 
 import CatechistSidebar from "./CatechistSidebar";
@@ -12,30 +12,47 @@ const { Text } = Typography;
 export default function CatechistLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [dark, setDark] = useState(() => {
+    return localStorage.getItem("faithEduTheme") === "dark";
+  });
 
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      dark ? "dark" : "light",
+    );
+
+    localStorage.setItem("faithEduTheme", dark ? "dark" : "light");
+  }, [dark]);
   return (
     <ConfigProvider
       theme={{
+        algorithm: dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+
         token: {
-          colorPrimary: "#173B5E",
-          colorInfo: "#173B5E",
+          colorPrimary: dark ? "#D9A441" : "#173B5E",
+          colorInfo: dark ? "#D9A441" : "#173B5E",
+
+          colorSuccess: dark ? "#54C596" : "#2E7D5B",
+          colorWarning: dark ? "#F0BB57" : "#B7791F",
+          colorError: dark ? "#FF7777" : "#C0392B",
+
+          colorLink: dark ? "#8CBFFF" : "#173B5E",
+
+          colorBgBase: dark ? "#0B1422" : "#FFFFFF",
+          colorTextBase: dark ? "#E6EDF6" : "#173B5E",
+          colorBorder: dark ? "#293B52" : "#E2E8F0",
 
           borderRadius: 12,
 
           fontFamily:
             "'Be Vietnam Pro', 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-
-          colorText: "#172B3A",
-          colorTextSecondary: "#667789",
-
-          colorBgBase: "#F6F8FB",
-          colorBorder: "#E4EAF0",
         },
 
         components: {
           Layout: {
-            bodyBg: "#F6F8FB",
-            headerBg: "transparent",
+            bodyBg: dark ? "#0B1422" : "#F6F8FB",
+            headerBg: dark ? "#142338" : "transparent",
             footerBg: "transparent",
             siderBg: "#173B5E",
           },
@@ -47,6 +64,7 @@ export default function CatechistLayout() {
 
           Button: {
             borderRadius: 10,
+            primaryShadow: "none",
           },
 
           Menu: {
@@ -59,6 +77,34 @@ export default function CatechistLayout() {
 
           Card: {
             borderRadiusLG: 14,
+            colorBgContainer: dark ? "#142338" : "#FFFFFF",
+            colorBorderSecondary: dark ? "#293B52" : "#E2E8F0",
+          },
+
+          Table: {
+            headerBg: dark ? "#1B304A" : "#F7F9FC",
+            headerColor: dark ? "#E6EDF6" : "#173B5E",
+            rowHoverBg: dark ? "#1B304A" : "#EEF3F7",
+            borderColor: dark ? "#293B52" : "#E2E8F0",
+            colorBgContainer: dark ? "#142338" : "#FFFFFF",
+          },
+
+          Modal: {
+            contentBg: dark ? "#142338" : "#FFFFFF",
+            headerBg: dark ? "#142338" : "#FFFFFF",
+            footerBg: dark ? "#142338" : "#FFFFFF",
+          },
+
+          Dropdown: {
+            colorBgElevated: dark ? "#142338" : "#FFFFFF",
+          },
+
+          Select: {
+            colorBgContainer: dark ? "#142338" : "#FFFFFF",
+          },
+
+          Input: {
+            colorBgContainer: dark ? "#0F1D30" : "#FFFFFF",
           },
         },
       }}
@@ -88,6 +134,8 @@ export default function CatechistLayout() {
             <CatechistHeader
               mobileOpen={mobileOpen}
               setMobileOpen={setMobileOpen}
+              dark={dark}
+              setDark={setDark}
             />
           </div>
 
@@ -158,7 +206,51 @@ export default function CatechistLayout() {
             --faith-radius-md: 12px;
             --faith-radius-lg: 16px;
           }
+/* =========================
+   DARK MODE - FAITHEDU
+========================= */
 
+:root {
+  color-scheme: light;
+
+  --faith-background: #F6F8FB;
+  --faith-surface: #FFFFFF;
+  --faith-heading: #172B3A;
+  --faith-text: #526273;
+  --faith-muted: #8A97A6;
+  --faith-border: #E4EAF0;
+
+  --faith-header-glass: linear-gradient(
+    to bottom,
+    rgba(246, 248, 251, 0.98),
+    rgba(246, 248, 251, 0.88),
+    rgba(246, 248, 251, 0)
+  );
+
+  --faith-footer-surface: rgba(255, 255, 255, 0.82);
+  --faith-scrollbar: #CBD5DF;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --faith-background: #0B1422;
+  --faith-surface: #142338;
+  --faith-heading: #E6EDF6;
+  --faith-text: #C1CDDA;
+  --faith-muted: #8FA2B8;
+  --faith-border: #293B52;
+
+  --faith-header-glass: linear-gradient(
+    to bottom,
+    rgba(11, 20, 34, 0.98),
+    rgba(11, 20, 34, 0.88),
+    rgba(11, 20, 34, 0)
+  );
+
+  --faith-footer-surface: rgba(20, 35, 56, 0.92);
+  --faith-scrollbar: #40536A;
+}
           *,
           *::before,
           *::after {
@@ -241,16 +333,9 @@ export default function CatechistLayout() {
 
             padding: 10px 16px 0;
 
-            background:
-              linear-gradient(
-                to bottom,
-                rgba(246, 248, 251, 0.98),
-                rgba(246, 248, 251, 0.88),
-                rgba(246, 248, 251, 0)
-              );
-
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+           background: var(--faith-header-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
           }
 
           .faith-layout-content {
@@ -445,13 +530,7 @@ export default function CatechistLayout() {
                 7px
                 0;
 
-              background:
-                linear-gradient(
-                  to bottom,
-                  rgba(246, 248, 251, 0.98),
-                  rgba(246, 248, 251, 0.90),
-                  rgba(246, 248, 251, 0)
-                );
+           background: var(--faith-header-glass);
             }
 
             .faith-layout-content {
@@ -583,7 +662,37 @@ export default function CatechistLayout() {
             .faith-footer {
               transition: none !important;
             }
+
           }
+            /* Footer */
+.faith-footer {
+  background: var(--faith-footer-surface);
+  border-color: var(--faith-border);
+  color: var(--faith-muted);
+}
+
+.faith-footer-brand {
+  color: var(--faith-heading);
+}
+
+.faith-footer-divider {
+  background: var(--faith-border);
+}
+
+/* Scrollbar */
+:root[data-theme="dark"] .faith-layout-root::-webkit-scrollbar-thumb,
+:root[data-theme="dark"] .faith-layout-root ::-webkit-scrollbar-thumb {
+  background: var(--faith-scrollbar);
+}
+
+/* Nền và chữ toàn bộ Layout */
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .faith-layout-root,
+:root[data-theme="dark"] .faith-layout-main,
+:root[data-theme="dark"] .faith-layout-content {
+  background-color: var(--faith-background) !important;
+  color: var(--faith-heading);
+}
         `}</style>
       </Layout>
     </ConfigProvider>

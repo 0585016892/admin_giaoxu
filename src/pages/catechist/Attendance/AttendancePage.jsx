@@ -23,7 +23,6 @@ import {
   Tag,
   Tooltip,
   Typography,
-  message,
 } from "antd";
 
 import {
@@ -43,9 +42,11 @@ import {
   TeamOutlined,
   BookOutlined,
   HeartOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
+import { useNotification } from "../../../components/notification";
 
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
 import QRCodeScanner from "./QRCodeScanner";
@@ -329,6 +330,8 @@ const getAttendanceTypeConfig = (type) => {
 ========================================================= */
 
 const AttendancePage = () => {
+  const notify = useNotification();
+
   /* =======================================================
      STATE
   ======================================================= */
@@ -438,13 +441,13 @@ const AttendancePage = () => {
 
       setClasses(list);
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải danh sách lớp",
       );
     } finally {
       setLoadingClasses(false);
     }
-  }, [role]);
+  }, [role, notify]);
   /* =======================================================
      LOAD ATTENDANCE
   ======================================================= */
@@ -518,7 +521,7 @@ const AttendancePage = () => {
       if (requestId === requestIdRef.current) {
         const responseData = error?.response?.data;
 
-        message.error(
+        notify.error(
           responseData?.message ||
             responseData?.error ||
             "Không thể tải danh sách điểm danh",
@@ -537,6 +540,7 @@ const AttendancePage = () => {
     pageSize,
     search,
     statusFilter,
+    notify,
   ]);
 
   /* =======================================================
@@ -606,24 +610,24 @@ const AttendancePage = () => {
   const updateAttendance = useCallback(
     async (student, status) => {
       if (isLocked) {
-        message.warning("Ngày này đã khóa, không thể thay đổi điểm danh.");
+        notify.warning("Ngày này đã khóa, không thể thay đổi điểm danh.");
         return;
       }
 
       if (!attendanceType) {
-        message.warning("Vui lòng chọn loại điểm danh.");
+        notify.warning("Vui lòng chọn loại điểm danh.");
         return;
       }
 
       if (attendanceType === "catechism" && !selectedClassId) {
-        message.warning("Vui lòng chọn lớp.");
+        notify.warning("Vui lòng chọn lớp.");
         return;
       }
 
       const studentId = student?.student_id ?? student?.id;
 
       if (!studentId) {
-        message.warning("Không xác định được học sinh.");
+        notify.warning("Không xác định được học sinh.");
         return;
       }
 
@@ -632,7 +636,7 @@ const AttendancePage = () => {
       );
 
       if (currentStatus === status) {
-        message.info("Trạng thái hiện tại đã là trạng thái này.");
+        notify.info("Trạng thái hiện tại đã là trạng thái này.");
         return;
       }
 
@@ -674,7 +678,7 @@ const AttendancePage = () => {
 
         const statusLabel = STATUS_CONFIG[status]?.label || status;
 
-        message.success(
+        notify.success(
           `Đã cập nhật ${currentTypeConfig.shortLabel}: ${statusLabel}`,
         );
 
@@ -685,12 +689,12 @@ const AttendancePage = () => {
         const body = error?.response?.data;
 
         if (statusCode === 409 || body?.code === "ALREADY_ATTENDED") {
-          message.warning(
+          notify.warning(
             body?.message ||
               "Bản ghi điểm danh đã tồn tại và không thể cập nhật.",
           );
         } else {
-          message.error(
+          notify.error(
             body?.message ||
               body?.error ||
               "Không thể cập nhật trạng thái điểm danh",
@@ -707,6 +711,7 @@ const AttendancePage = () => {
       dateString,
       currentTypeConfig,
       loadAttendance,
+      notify,
     ],
   );
 
@@ -768,13 +773,13 @@ const AttendancePage = () => {
 
       setIsQrOpen(false);
 
-      message.success(
+      notify.success(
         `Đã kết thúc điểm danh ${currentTypeConfig.shortLabel}. Các học sinh chưa được ghi nhận đã chuyển sang Vắng.`,
       );
 
       await loadAttendance();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể kết thúc điểm danh",
       );
     } finally {
@@ -787,6 +792,7 @@ const AttendancePage = () => {
     isLocked,
     currentTypeConfig,
     loadAttendance,
+    notify,
   ]);
 
   /* =======================================================
@@ -795,7 +801,7 @@ const AttendancePage = () => {
 
   const handleToggleQR = useCallback(() => {
     if (!attendanceType) {
-      message.warning("Vui lòng chọn loại điểm danh trước.");
+      notify.warning("Vui lòng chọn loại điểm danh trước.");
       return;
     }
 
@@ -803,12 +809,12 @@ const AttendancePage = () => {
      * Chỉ Giáo lý cần chọn lớp.
      */
     if (attendanceType === "catechism" && !selectedClassId) {
-      message.warning("Vui lòng chọn lớp trước.");
+      notify.warning("Vui lòng chọn lớp trước.");
       return;
     }
 
     if (isLocked) {
-      message.warning("Ngày này đã khóa điểm danh.");
+      notify.warning("Ngày này đã khóa điểm danh.");
       return;
     }
 
@@ -822,51 +828,183 @@ const AttendancePage = () => {
     selectedClassId,
     attendanceType,
     isLocked,
+    notify,
     isQrOpen,
     handleFinishQRAttendance,
   ]);
+  /* =======================================================
+   EXPORT EXCEL
+======================================================= */
 
+  const handleExportExcel = useCallback(async () => {
+    if (!attendanceType) {
+      notify.warning("Vui lòng chọn loại điểm danh.");
+      return;
+    }
+
+    if (!dateString) {
+      notify.warning("Vui lòng chọn ngày điểm danh.");
+      return;
+    }
+
+    if (attendanceType === "catechism" && !selectedClassId) {
+      notify.warning("Vui lòng chọn lớp.");
+      return;
+    }
+
+    try {
+      notify.loading({
+        content: "Đang xuất file Excel...",
+        key: "export-attendance",
+        duration: 0,
+      });
+
+      const payload = {
+        date: dateString,
+        attendance_type: attendanceType,
+        search: search.trim(),
+        status: statusFilter,
+      };
+
+      if (attendanceType === "catechism") {
+        payload.class_id = Number(selectedClassId);
+      }
+
+      const response = await attendanceApi.exportExcel(payload);
+
+      const data = response?.data;
+
+      if (!data) {
+        throw new Error("Backend không trả dữ liệu file.");
+      }
+
+      // Axios responseType blob: lỗi JSON cũng có thể nằm trong Blob
+      const contentType = response.headers?.["content-type"] || "";
+
+      if (
+        contentType.includes("application/json") ||
+        data.type === "application/json"
+      ) {
+        const errorText =
+          data instanceof Blob ? await data.text() : String(data);
+
+        let errorMessage = "Backend trả về lỗi khi xuất Excel.";
+
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const blob =
+        data instanceof Blob
+          ? data
+          : new Blob([data], {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+
+      if (blob.size === 0) {
+        throw new Error("File Excel nhận được đang rỗng.");
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `diem-danh-${attendanceType}-${dateString}.xlsx`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+
+      notify.success({
+        content: "Xuất Excel thành công.",
+        key: "export-attendance",
+      });
+    } catch (error) {
+      let errorMessage =
+        error?.message ||
+        error?.response?.data?.message ||
+        "Không thể xuất file Excel.";
+
+      const errorData = error?.response?.data;
+
+      if (errorData instanceof Blob) {
+        try {
+          const text = await errorData.text();
+          const json = JSON.parse(text);
+          errorMessage = json.message || errorMessage;
+        } catch {
+          // Không phải JSON thì giữ nguyên lỗi hiện tại
+        }
+      }
+
+      notify.error({
+        content: errorMessage,
+        key: "export-attendance",
+        duration: 5,
+      });
+    }
+  }, [
+    attendanceType,
+    selectedClassId,
+    dateString,
+    search,
+    statusFilter,
+    notify,
+  ]);
   /* =======================================================
      HISTORY
   ======================================================= */
 
-  const openHistory = useCallback(async (student) => {
-    const studentId = student?.student_id ?? student?.id;
+  const openHistory = useCallback(
+    async (student) => {
+      const studentId = student?.student_id ?? student?.id;
 
-    if (!studentId) {
-      return;
-    }
+      if (!studentId) {
+        return;
+      }
 
-    setHistoryStudent(student);
+      setHistoryStudent(student);
 
-    setHistoryOpen(true);
+      setHistoryOpen(true);
 
-    try {
-      setHistoryLoading(true);
+      try {
+        setHistoryLoading(true);
 
-      const response = await attendanceApi.getStudentHistory(studentId);
+        const response = await attendanceApi.getStudentHistory(studentId);
 
-      const body = getApiBody(response);
+        const body = getApiBody(response);
 
-      const list = Array.isArray(body?.data)
-        ? body.data
-        : Array.isArray(body?.history)
-          ? body.history
-          : Array.isArray(body)
-            ? body
-            : [];
+        const list = Array.isArray(body?.data)
+          ? body.data
+          : Array.isArray(body?.history)
+            ? body.history
+            : Array.isArray(body)
+              ? body
+              : [];
 
-      setHistoryData(list);
-    } catch (error) {
-      message.error(
-        error?.response?.data?.message || "Không thể tải lịch sử điểm danh",
-      );
+        setHistoryData(list);
+      } catch (error) {
+        notify.error(
+          error?.response?.data?.message || "Không thể tải lịch sử điểm danh",
+        );
 
-      setHistoryData([]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, []);
+        setHistoryData([]);
+      } finally {
+        setHistoryLoading(false);
+      }
+    },
+    [notify],
+  );
 
   /* =======================================================
      STATISTICS
@@ -1549,7 +1687,14 @@ const AttendancePage = () => {
                     </Text>
                   </div>
                 </div>
-
+                <AppButton
+                  icon={<FileExcelOutlined />}
+                  size="small"
+                  onClick={handleExportExcel}
+                  disabled={!attendanceType}
+                >
+                  Xuất Excel
+                </AppButton>
                 <div className="total-student-tag">
                   <strong>{pagination.total || 0}</strong>
 

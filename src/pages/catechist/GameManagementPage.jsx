@@ -17,7 +17,6 @@ import {
   Tabs,
   Tag,
   Typography,
-  message,
 } from "antd";
 
 import { css } from "@emotion/css";
@@ -47,6 +46,7 @@ import GameBuilder from "../../components/games/GameBuilder";
 import GamePlayer from "../../components/games/player/GamePlayer";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import AppSearchInput from "../../components/common/SearchInput";
+import { useNotification } from "../../components/notification";
 
 import { useUser } from "../../context/UserContext";
 
@@ -512,6 +512,8 @@ const GameEmpty = ({ onCreate }) => {
 ========================================================= */
 
 const GameManagementPage = ({ teacherId }) => {
+  const notify = useNotification();
+
   const { user } = useUser();
 
   const [games, setGames] = useState([]);
@@ -605,14 +607,14 @@ const GameManagementPage = ({ teacherId }) => {
       if (result?.success) {
         setGames(Array.isArray(result.data) ? result.data : []);
       } else {
-        message.error(result?.message || "Không thể tải danh sách game");
+        notify.error(result?.message || "Không thể tải danh sách game");
       }
     } catch (error) {
-      message.error(error?.message || "Không thể tải danh sách game");
+      notify.error(error?.message || "Không thể tải danh sách game");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     loadGames();
@@ -651,7 +653,7 @@ const GameManagementPage = ({ teacherId }) => {
   const handleDelete = useCallback(
     (game) => {
       if (!game?.id) {
-        message.error("Không tìm thấy ID game");
+        notify.error("Không tìm thấy ID game");
         return;
       }
 
@@ -694,16 +696,16 @@ const GameManagementPage = ({ teacherId }) => {
           try {
             await deleteGame(game.id);
 
-            message.success("Xóa game thành công.");
+            notify.success("Xóa game thành công.");
 
             await loadGames();
           } catch (error) {
-            message.error(error?.message || "Không thể xóa game");
+            notify.error(error?.message || "Không thể xóa game");
           }
         },
       });
     },
-    [loadGames],
+    [loadGames, notify],
   );
 
   /* =========================================================
@@ -713,7 +715,7 @@ const GameManagementPage = ({ teacherId }) => {
   const handlePlayGame = useCallback(
     async (game) => {
       if (!game?.id) {
-        message.error("Không tìm thấy trò chơi");
+        notify.error("Không tìm thấy trò chơi");
         return;
       }
 
@@ -744,12 +746,12 @@ const GameManagementPage = ({ teacherId }) => {
 
         setPlayingGame(loadedGame);
       } catch (error) {
-        message.error(error?.message || "Không thể mở game");
+        notify.error(error?.message || "Không thể mở game");
       } finally {
         setPlayerLoading(false);
       }
     },
-    [getGameAccess],
+    [getGameAccess, notify],
   );
 
   /* =========================================================

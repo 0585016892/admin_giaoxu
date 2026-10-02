@@ -1,23 +1,28 @@
 import { useState, useCallback } from "react";
 import * as api from "../api/scheduleApi";
-import { message } from "antd";
+import { useNotification } from "./notification";
 
 export const useSchedule = () => {
+  const notify = useNotification();
+
   const [loading, setLoading] = useState(false);
 
-  const handle = useCallback(async (fn, ...args) => {
-    setLoading(true);
-    try {
-      const res = await fn(...args);
-      return res.data;
-    } catch (err) {
-      const msg = err?.response?.data?.message || "Lỗi hệ thống";
-      message.error(msg);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const handle = useCallback(
+    async (fn, ...args) => {
+      setLoading(true);
+      try {
+        const res = await fn(...args);
+        return res.data;
+      } catch (err) {
+        const msg = err?.response?.data?.message || "Lỗi hệ thống";
+        notify.error(msg);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [notify],
+  );
 
   const fetchWeek = useCallback(
     (params) => handle(api.getWeekSchedule, params),

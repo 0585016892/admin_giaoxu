@@ -1,16 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  Alert,
-  Card,
-  Empty,
-  Pagination,
-  Select,
-  Spin,
-  Tabs,
-  Tag,
-  message,
-} from "antd";
+import { Alert, Card, Empty, Pagination, Select, Spin, Tabs, Tag } from "antd";
 
 import {
   BookOutlined,
@@ -18,6 +8,7 @@ import {
   CheckCircleOutlined,
   TrophyOutlined,
   UserOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons";
 
 import classApi from "../../../api/classApi";
@@ -31,6 +22,7 @@ import ResultsTable from "./components/ResultsTable";
 import StudentResultModal from "./components/StudentResultModal";
 import ResultFormModal from "./components/ResultFormModal";
 import Leaderboard from "./components/Leaderboard";
+import { useNotification } from "../../../components/notification";
 
 import {
   extractList,
@@ -42,6 +34,7 @@ import {
 } from "../../../utils/resultsUtils";
 
 import "./resultsPage.css";
+import AppButton from "../../../components/common/AppButton";
 
 /* ============================================================
    RESPONSE HELPERS
@@ -72,6 +65,8 @@ const unwrap = (response) => {
 ============================================================ */
 
 const ResultsPage = () => {
+  const notify = useNotification();
+
   /* ==========================================================
      DATA
   ========================================================== */
@@ -92,7 +87,7 @@ const ResultsPage = () => {
   const [ruleLoading, setRuleLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-
+  const [exporting, setExporting] = useState(false);
   /* ==========================================================
      CLASS
   ========================================================== */
@@ -149,7 +144,7 @@ const ResultsPage = () => {
     } catch (error) {
       setGradingRule(null);
 
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải quy tắc tính điểm",
       );
 
@@ -157,7 +152,7 @@ const ResultsPage = () => {
     } finally {
       setRuleLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   /* ==========================================================
      LOAD CLASSES
@@ -185,7 +180,7 @@ const ResultsPage = () => {
     } catch (error) {
       setClasses([]);
 
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải danh sách lớp",
       );
 
@@ -193,85 +188,91 @@ const ResultsPage = () => {
     } finally {
       setClassLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   /* ==========================================================
      LOAD STUDENTS
   ========================================================== */
 
-  const loadStudents = useCallback(async (classId) => {
-    if (!classId) {
-      setStudents([]);
-      return [];
-    }
+  const loadStudents = useCallback(
+    async (classId) => {
+      if (!classId) {
+        setStudents([]);
+        return [];
+      }
 
-    try {
-      setStudentLoading(true);
+      try {
+        setStudentLoading(true);
 
-      const response = await studentApi.getAll({
-        class_id: classId,
-      });
+        const response = await studentApi.getAll({
+          class_id: classId,
+        });
 
-      const data = unwrap(response);
-      const list = extractList(data);
+        const data = unwrap(response);
+        const list = extractList(data);
 
-      setStudents(list);
+        setStudents(list);
 
-      return list;
-    } catch (error) {
-      setStudents([]);
+        return list;
+      } catch (error) {
+        setStudents([]);
 
-      message.error(
-        error?.response?.data?.message || "Không thể tải danh sách học viên",
-      );
+        notify.error(
+          error?.response?.data?.message || "Không thể tải danh sách học viên",
+        );
 
-      return [];
-    } finally {
-      setStudentLoading(false);
-    }
-  }, []);
+        return [];
+      } finally {
+        setStudentLoading(false);
+      }
+    },
+    [notify],
+  );
 
   /* ==========================================================
      LOAD RESULTS
   ========================================================== */
 
-  const loadResults = useCallback(async (classId) => {
-    if (!classId) {
-      setResults([]);
-      return [];
-    }
-
-    try {
-      setResultLoading(true);
-
-      const response = await resultApi.getResultsByClass(classId);
-      const data = unwrap(response);
-
-      if (data?.success === false) {
+  const loadResults = useCallback(
+    async (classId) => {
+      if (!classId) {
         setResults([]);
-
-        message.error(data?.message || "Không thể tải bảng điểm");
-
         return [];
       }
 
-      const list = normalizeResults(extractList(data));
+      try {
+        setResultLoading(true);
 
-      setResults(list);
+        const response = await resultApi.getResultsByClass(classId);
+        const data = unwrap(response);
 
-      return list;
-    } catch (error) {
-      setResults([]);
+        if (data?.success === false) {
+          setResults([]);
 
-      message.error(
-        error?.response?.data?.message || "Không thể tải bảng điểm",
-      );
+          notify.error(data?.message || "Không thể tải bảng điểm");
 
-      return [];
-    } finally {
-      setResultLoading(false);
-    }
-  }, []);
+          return [];
+        }
+
+        const list = normalizeResults(extractList(data));
+
+        setResults(list);
+
+        return list;
+      } catch (error) {
+        setResults([]);
+
+        notify.error(
+          error?.response?.data?.message || "Không thể tải bảng điểm",
+        );
+
+        return [];
+      } finally {
+        setResultLoading(false);
+      }
+    },
+    [notify],
+  );
 
   /* ==========================================================
      INITIAL LOAD
@@ -494,23 +495,23 @@ const ResultsPage = () => {
 
   const handleCreate = useCallback(() => {
     if (!selectedClassId) {
-      message.warning("Vui lòng chọn lớp trước");
+      notify.warning("Vui lòng chọn lớp trước");
       return;
     }
 
     if (!students.length) {
-      message.warning("Lớp chưa có học viên");
+      notify.warning("Lớp chưa có học viên");
       return;
     }
 
     if (!gradingRule || !gradingRule.items?.length) {
-      message.warning("Giáo xứ chưa cấu hình quy tắc tính điểm");
+      notify.warning("Giáo xứ chưa cấu hình quy tắc tính điểm");
       return;
     }
 
     setEditingResult(null);
     setFormOpen(true);
-  }, [selectedClassId, students, gradingRule]);
+  }, [selectedClassId, students, gradingRule, notify]);
 
   /* ==========================================================
      EDIT
@@ -552,7 +553,7 @@ const ResultsPage = () => {
         throw new Error(data?.message || "Không thể lưu điểm");
       }
 
-      message.success(
+      notify.success(
         editingResult ? "Cập nhật điểm thành công" : "Nhập điểm thành công",
       );
 
@@ -567,7 +568,7 @@ const ResultsPage = () => {
         });
       }
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể lưu điểm",
@@ -597,7 +598,7 @@ const ResultsPage = () => {
         throw new Error(data?.message || "Không thể xóa điểm");
       }
 
-      message.success("Đã xóa kết quả");
+      notify.success("Đã xóa kết quả");
 
       await loadResults(selectedClassId);
 
@@ -611,7 +612,7 @@ const ResultsPage = () => {
         setDetailResults(list);
       }
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể xóa điểm",
@@ -620,7 +621,48 @@ const ResultsPage = () => {
       setDeletingId(null);
     }
   };
+  /* ============================================================
+   EXPORT EXCEL
+============================================================ */
 
+  const handleExportExcel = useCallback(async () => {
+    if (!selectedClassId) {
+      notify.warning("Vui lòng chọn lớp trước khi xuất Excel");
+      return;
+    }
+
+    try {
+      setExporting(true);
+
+      const response = await resultApi.exportResultsExcel(selectedClassId);
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `Bang_diem_${selectedClass?.name || selectedClassId}.xlsx`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      notify.success("Xuất bảng điểm Excel thành công");
+    } catch (error) {
+      console.error("[ResultsPage] Export Excel error:", error);
+
+      notify.error(
+        error?.response?.data?.message || "Không thể xuất bảng điểm Excel",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }, [selectedClassId, selectedClass, notify]);
   /* ==========================================================
      CLOSE FORM
   ========================================================== */
@@ -810,6 +852,16 @@ const ResultsPage = () => {
                     Chưa cấu hình
                   </Tag>
                 )}
+                <AppButton
+                  icon={<FileExcelOutlined />}
+                  loading={exporting}
+                  disabled={!selectedClassId}
+                  size="small"
+                  onClick={handleExportExcel}
+                  className="results-export-button"
+                >
+                  Xuất Excel
+                </AppButton>
               </div>
             </div>
 

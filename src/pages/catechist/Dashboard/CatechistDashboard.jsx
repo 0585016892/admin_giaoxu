@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Row, Col, Typography, Tag, message, ConfigProvider, Flex } from "antd";
+import { Row, Col, Typography, Tag, Flex } from "antd";
 import { RiseOutlined } from "@ant-design/icons";
 
 import { getDashboardCate, getMyLicense } from "../../../api/dashboardApi";
@@ -23,6 +23,7 @@ import DashboardSkeleton from "./component/DashboardSkeleton";
 import AttendanceOverview from "./component/AttendanceOverview";
 import WeeklySchedule from "./component/WeeklySchedule";
 import DailyVerseCard from "./component/DailyVerseCard";
+import { useNotification } from "../../../components/notification";
 
 const { Title, Text } = Typography;
 
@@ -34,6 +35,8 @@ const IMAGE_ASSETS = {
 };
 
 export default function CatechistDashboard() {
+  const notify = useNotification();
+
   const { user } = useUser();
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -65,13 +68,13 @@ export default function CatechistDashboard() {
 
       setDashboard(data);
     } catch (err) {
-      message.error(
+      notify.error(
         err?.response?.data?.message || "Không thể tải dữ liệu dashboard",
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   // =====================================================
   // LICENSE
@@ -85,11 +88,11 @@ export default function CatechistDashboard() {
         setLicense(data);
       }
     } catch (err) {
-      message.error(
+      notify.error(
         err?.response?.data?.message || "Không thể tải thông tin license",
       );
     }
-  }, []);
+  }, [notify]);
 
   // =====================================================
   // SCHEDULE
@@ -119,13 +122,13 @@ export default function CatechistDashboard() {
 
       setSchedules(data);
     } catch (err) {
-      message.error(err?.response?.data?.message || "Không thể tải lịch học");
+      notify.error(err?.response?.data?.message || "Không thể tải lịch học");
 
       setSchedules([]);
     } finally {
       setScheduleLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   // =====================================================
   // DAILY VERSE
@@ -216,15 +219,7 @@ export default function CatechistDashboard() {
   // =====================================================
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: "#2563EB",
-          fontFamily: "'Be Vietnam Pro', sans-serif",
-          borderRadius: 16,
-        },
-      }}
-    >
+    <>
       <Flex
         vertical
         gap={24}
@@ -237,10 +232,10 @@ export default function CatechistDashboard() {
         <div>
           <Title
             level={3}
+            className="faith-dashboard-title"
             style={{
               margin: 0,
               fontWeight: 800,
-              color: "#1F2937",
             }}
           >
             Bảng Điều Khiển Giáo Lý
@@ -268,15 +263,7 @@ export default function CatechistDashboard() {
               subText="học sinh được phân lớp"
               icon={IMAGE_ASSETS.students}
               tag={
-                <Tag
-                  style={{
-                    border: "none",
-                    borderRadius: 8,
-                    background: "#DCFCE7",
-                    color: "#15803D",
-                    fontWeight: 700,
-                  }}
-                >
+                <Tag className="faith-status-tag faith-status-success">
                   <RiseOutlined /> +{studentCompare}%
                 </Tag>
               }
@@ -290,15 +277,7 @@ export default function CatechistDashboard() {
               subText={`${activeClasses} lớp đang hoạt động`}
               icon={IMAGE_ASSETS.classes}
               tag={
-                <Tag
-                  style={{
-                    border: "none",
-                    borderRadius: 8,
-                    background: "#DCFCE7",
-                    color: "#15803D",
-                    fontWeight: 700,
-                  }}
-                >
+                <Tag className="faith-status-tag faith-status-success">
                   Đang hoạt động
                 </Tag>
               }
@@ -314,15 +293,7 @@ export default function CatechistDashboard() {
               }`}
               icon={IMAGE_ASSETS.lessons}
               tag={
-                <Tag
-                  style={{
-                    border: "none",
-                    borderRadius: 8,
-                    background: "#EFF6FF",
-                    color: "#2563EB",
-                    fontWeight: 700,
-                  }}
-                >
+                <Tag className="faith-status-tag faith-status-success">
                   Giáo xứ
                 </Tag>
               }
@@ -480,6 +451,6 @@ export default function CatechistDashboard() {
         open={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}
       />
-    </ConfigProvider>
+    </>
   );
 }

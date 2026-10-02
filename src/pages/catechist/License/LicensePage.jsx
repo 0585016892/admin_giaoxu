@@ -15,7 +15,6 @@ import {
   Spin,
   Tag,
   Upload,
-  message,
   Modal,
 } from "antd";
 
@@ -44,6 +43,7 @@ import qr_img from "../../../assets/images/qr_img.JPG";
 import qr_zalo from "../../../assets/images/qr_zalo.JPG";
 
 import AppButton from "../../../components/common/AppButton";
+import { useNotification } from "../../../components/notification";
 
 import licenseApi from "../../../api/licenseApi";
 
@@ -116,6 +116,8 @@ const getStatusConfig = (status) => {
 ========================================================= */
 
 const LicensePage = () => {
+  const notify = useNotification();
+
   const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,7 @@ const LicensePage = () => {
         setRegistrations([]);
       }
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể tải thông tin đăng ký",
@@ -166,7 +168,7 @@ const LicensePage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     loadData();
@@ -227,9 +229,9 @@ const LicensePage = () => {
     try {
       await navigator.clipboard.writeText(text);
 
-      message.success(successMessage || "Đã sao chép");
+      notify.success(successMessage || "Đã sao chép");
     } catch (error) {
-      message.error("Không thể sao chép");
+      notify.error("Không thể sao chép");
     }
   };
 
@@ -243,7 +245,7 @@ const LicensePage = () => {
     );
 
     if (!isImage) {
-      message.error("Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP");
+      notify.error("Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP");
 
       return Upload.LIST_IGNORE;
     }
@@ -251,7 +253,7 @@ const LicensePage = () => {
     const isUnder5MB = file.size / 1024 / 1024 <= 5;
 
     if (!isUnder5MB) {
-      message.error("Ảnh chuyển khoản không được vượt quá 5MB");
+      notify.error("Ảnh chuyển khoản không được vượt quá 5MB");
 
       return Upload.LIST_IGNORE;
     }
@@ -287,13 +289,13 @@ const LicensePage = () => {
 
   const handleSubmit = async (values) => {
     if (hasPendingRegistration) {
-      message.warning("Giáo xứ đang có yêu cầu đăng ký chờ xử lý");
+      notify.warning("Giáo xứ đang có yêu cầu đăng ký chờ xử lý");
 
       return;
     }
 
     if (!paymentFile) {
-      message.error("Vui lòng tải ảnh xác nhận chuyển khoản");
+      notify.error("Vui lòng tải ảnh xác nhận chuyển khoản");
 
       return;
     }
@@ -328,7 +330,7 @@ const LicensePage = () => {
         throw new Error(response?.message || "Không thể gửi đăng ký");
       }
 
-      message.success("Đã gửi đăng ký FaithEdu 1 năm thành công");
+      notify.success("Đã gửi đăng ký FaithEdu 1 năm thành công");
 
       form.resetFields();
 
@@ -336,7 +338,7 @@ const LicensePage = () => {
 
       await loadData();
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể gửi đăng ký",
@@ -365,11 +367,11 @@ const LicensePage = () => {
         try {
           await licenseApi.deleteRegistration(registration.id);
 
-          message.success("Đã xóa yêu cầu đăng ký");
+          notify.success("Đã xóa yêu cầu đăng ký");
 
           await loadData();
         } catch (error) {
-          message.error(
+          notify.error(
             error?.response?.data?.message ||
               error?.message ||
               "Không thể xóa yêu cầu",

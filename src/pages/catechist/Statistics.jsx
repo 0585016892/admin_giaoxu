@@ -49,7 +49,7 @@ import {
 
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
-
+import { useNotification } from "../../components/notification";
 import {
   getStatisticsOverview,
   getStudentStatistics,
@@ -393,6 +393,8 @@ const getStatusColor = (status) => {
 ============================================================ */
 
 const Statistics = () => {
+  const notify = useNotification();
+
   /* ----------------------------------------------------------
      FILTER
   ---------------------------------------------------------- */
@@ -497,11 +499,11 @@ const Statistics = () => {
         studentAttendanceRes?.data || studentAttendanceRes || null,
       );
     } catch (err) {
-      setError(err?.message || "Không thể tải dữ liệu thống kê.");
+      notify.error(err?.message || "Không thể tải dữ liệu thống kê.");
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, attendanceType, selectedClassId, dateRange]);
+  }, [selectedMonth, attendanceType, selectedClassId, dateRange, notify]);
   useEffect(() => {
     loadStatistics();
   }, [loadStatistics]);

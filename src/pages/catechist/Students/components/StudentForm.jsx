@@ -12,9 +12,9 @@ import {
   Row,
   Select,
   Tabs,
-  message,
 } from "antd";
 import AppButton from "../../../../components/common/AppButton";
+import { useNotification } from "../../../../components/notification";
 
 import {
   CameraOutlined,
@@ -41,6 +41,8 @@ const StudentForm = ({
   onFinish,
   initialValues = EMPTY_INITIAL_VALUES,
 }) => {
+  const notify = useNotification();
+
   const [activeTab, setActiveTab] = useState("basic");
 
   /*
@@ -156,7 +158,7 @@ const StudentForm = ({
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
-      message.error("Chỉ hỗ trợ ảnh JPG, JPEG, PNG hoặc WEBP");
+      notify.error("Chỉ hỗ trợ ảnh JPG, JPEG, PNG hoặc WEBP");
 
       event.target.value = "";
 
@@ -164,7 +166,7 @@ const StudentForm = ({
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      message.error("Ảnh không được vượt quá 5MB");
+      notify.error("Ảnh không được vượt quá 5MB");
 
       event.target.value = "";
 

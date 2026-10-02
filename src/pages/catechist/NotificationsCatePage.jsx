@@ -16,7 +16,6 @@ import {
   Tag,
   Tooltip,
   Typography,
-  message,
 } from "antd";
 
 import {
@@ -43,6 +42,7 @@ import {
 import AppButton from "../../components/common/AppButton";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
+import { useNotification } from "../../components/notification";
 
 import notificationApi from "../../api/notificationApi";
 import { useUser } from "../../context/UserContext";
@@ -350,6 +350,8 @@ const getInitial = (name = "") => {
 ========================================================= */
 
 const NotificationsCatePage = () => {
+  const notify = useNotification();
+
   const { user } = useUser();
 
   const userRole = String(user?.role || "").toLowerCase();
@@ -425,9 +427,9 @@ const NotificationsCatePage = () => {
         read: Number(data.read || data.read_count || 0),
       });
     } catch (error) {
-      message.error("Lỗi tải thống kê:", error);
+      notify.error("Lỗi tải thống kê:", error);
     }
-  }, []);
+  }, [notify]);
 
   /* =======================================================
      LOAD NOTIFICATIONS
@@ -478,13 +480,13 @@ const NotificationsCatePage = () => {
         setSelectedNotification(null);
       }
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải danh sách thông báo",
       );
     } finally {
       setLoading(false);
     }
-  }, [page, filter, typeFilter]);
+  }, [page, filter, typeFilter, notify]);
 
   /* =======================================================
      EFFECT
@@ -505,7 +507,7 @@ const NotificationsCatePage = () => {
   const handleRefresh = async () => {
     await Promise.all([loadNotifications(), loadStats()]);
 
-    message.success("Đã làm mới dữ liệu");
+    notify.success("Đã làm mới dữ liệu");
   };
 
   /* =======================================================
@@ -544,7 +546,7 @@ const NotificationsCatePage = () => {
         read: prev.read + 1,
       }));
     } catch (error) {
-      message.error(
+      notify.error(
         error?.response?.data?.message || "Không thể đánh dấu đã đọc",
       );
     }
@@ -568,7 +570,7 @@ const NotificationsCatePage = () => {
 
   const handleMarkAllRead = async () => {
     if (stats.unread === 0) {
-      message.info("Bạn không còn thông báo chưa đọc");
+      notify.info("Bạn không còn thông báo chưa đọc");
 
       return;
     }
@@ -604,9 +606,9 @@ const NotificationsCatePage = () => {
         unread: 0,
       }));
 
-      message.success("Đã đánh dấu tất cả là đã đọc");
+      notify.success("Đã đánh dấu tất cả là đã đọc");
     } catch (error) {
-      message.error(error?.response?.data?.message || "Thao tác thất bại");
+      notify.error(error?.response?.data?.message || "Thao tác thất bại");
     } finally {
       setActionLoading(false);
     }
@@ -660,9 +662,9 @@ const NotificationsCatePage = () => {
 
           setPaginationTotal((prev) => Math.max(0, prev - 1));
 
-          message.success("Đã xóa thông báo");
+          notify.success("Đã xóa thông báo");
         } catch (error) {
-          message.error(
+          notify.error(
             error?.response?.data?.message || "Không thể xóa thông báo",
           );
         } finally {
@@ -706,9 +708,9 @@ const NotificationsCatePage = () => {
 
           setPaginationTotal(0);
 
-          message.success("Đã xóa toàn bộ thông báo");
+          notify.success("Đã xóa toàn bộ thông báo");
         } catch (error) {
-          message.error(
+          notify.error(
             error?.response?.data?.message || "Lỗi khi xóa thông báo",
           );
         } finally {

@@ -244,8 +244,6 @@ export const getAttendance = async ({
     params.class_id = classId;
   }
 
-  console.log("[attendanceApi] getAttendance:", params);
-
   const response = await api.get("/attendance", {
     params,
   });
@@ -371,8 +369,6 @@ export const saveBulkAttendance = async ({
     body.class_id = classId;
   }
 
-  console.log("[attendanceApi] saveBulkAttendance:", body);
-
   const response = await api.post("/attendance/bulk", body);
 
   return response.data;
@@ -461,40 +457,10 @@ export const scanQRCode = async ({
     body.class_id = classId;
   }
 
-  console.log("[attendanceApi] scanQRCode:", {
-    ...body,
-    qr_token: "***",
-  });
-
   const response = await api.post("/attendance/scan-qr", body);
 
   return response.data;
 };
-
-/**
- * =========================================================
- * 4. KẾT THÚC BUỔI ĐIỂM DANH
- *
- * POST /attendance/finish
- *
- * catechism:
- * {
- *   class_id,
- *   attendance_date,
- *   attendance_type
- * }
- *
- * mass:
- * {
- *   attendance_date,
- *   attendance_type: "mass"
- * }
- *
- * Các học sinh chưa được điểm danh
- * sẽ tự động chuyển thành absent.
- *
- * =========================================================
- */
 
 export const finishAttendance = async ({
   class_id,
@@ -552,21 +518,10 @@ export const finishAttendance = async ({
     body.class_id = classId;
   }
 
-  console.log("[attendanceApi] finishAttendance:", body);
-
   const response = await api.post("/attendance/finish", body);
 
   return response.data;
 };
-
-/**
- * =========================================================
- * 5. CẬP NHẬT MỘT BẢN GHI ĐIỂM DANH
- *
- * PUT /attendance/:id
- *
- * =========================================================
- */
 
 export const updateAttendance = async (
   id,
@@ -591,15 +546,6 @@ export const updateAttendance = async (
   return response.data;
 };
 
-/**
- * =========================================================
- * 6. XÓA BẢN GHI ĐIỂM DANH
- *
- * DELETE /attendance/:id
- *
- * =========================================================
- */
-
 export const deleteAttendance = async (id) => {
   const attendanceId = Number(id);
 
@@ -611,15 +557,6 @@ export const deleteAttendance = async (id) => {
 
   return response.data;
 };
-
-/**
- * =========================================================
- * 7. LỊCH SỬ ĐIỂM DANH HỌC SINH
- *
- * GET /attendance/student/:studentId
- *
- * =========================================================
- */
 
 export const getStudentAttendance = async (
   studentId,
@@ -648,28 +585,9 @@ export const getStudentAttendance = async (
   return response.data;
 };
 
-/**
- * =========================================================
- * ALIAS
- *
- * =========================================================
- */
-
 export const getStudentHistory = async (studentId, options = {}) => {
   return getStudentAttendance(studentId, options);
 };
-
-/**
- * =========================================================
- * 8. THỐNG KÊ ĐIỂM DANH CỦA LỚP
- *
- * GET /attendance/statistics/:classId
- *
- * API này luôn cần class_id
- * vì đây là thống kê của một lớp cụ thể.
- *
- * =========================================================
- */
 
 export const getClassStatistics = async (
   classId,
@@ -698,11 +616,14 @@ export const getClassStatistics = async (
   return response.data;
 };
 
-/**
- * =========================================================
- * DEFAULT EXPORT
- * =========================================================
- */
+export const exportExcel = async (params = {}) => {
+  const response = await api.get("/attendance/export-excel", {
+    params,
+    responseType: "blob",
+  });
+
+  return response;
+};
 
 const attendanceApi = {
   ATTENDANCE_TYPES,
@@ -726,6 +647,7 @@ const attendanceApi = {
   getStudentHistory,
 
   getClassStatistics,
+  exportExcel,
 };
 
 export default attendanceApi;

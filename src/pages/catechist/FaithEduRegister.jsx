@@ -9,7 +9,6 @@ import {
   Row,
   Select,
   Typography,
-  message,
   Checkbox,
 } from "antd";
 
@@ -36,6 +35,7 @@ import { useNavigate } from "react-router-dom";
 
 import logoWeb from "../../assets/images/logoweb.png";
 import registerHero from "../../assets/images/register-background.jpg";
+import { useNotification } from "../../components/notification";
 
 // ============================================================
 // LOADING LOGO
@@ -143,6 +143,7 @@ const stagger = {
 
 const FaithEduRegister = () => {
   const [form] = Form.useForm();
+  const notify = useNotification();
 
   const navigate = useNavigate();
 
@@ -261,7 +262,7 @@ const FaithEduRegister = () => {
 
       setLoadingProgress(100);
 
-      message.success("Đăng ký FaithEdu thành công!");
+      notify.success("Đăng ký FaithEdu thành công!");
 
       navigate("/", {
         replace: true,
@@ -276,7 +277,7 @@ const FaithEduRegister = () => {
 
       setError(apiMessage);
 
-      message.error(apiMessage);
+      notify.error(apiMessage);
     } finally {
       setTimeout(() => {
         setLoading(false);

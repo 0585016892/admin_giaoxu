@@ -11,7 +11,6 @@ import {
   Space,
   Modal,
   Form,
-  message,
   Empty,
   Skeleton,
   Drawer,
@@ -45,6 +44,7 @@ import dayjs from "dayjs";
 
 import { useUser } from "../../../context/UserContext";
 import usePermission from "../../../hooks/usePermission";
+import { useNotification } from "../../../components/notification";
 
 import AppFormModal from "../../../components/common/AppFormModal";
 import ClassForm from "./components/ClassForm";
@@ -838,6 +838,8 @@ const SectionTitle = ({ icon, title, description, count }) => {
 ========================================================= */
 
 const ClassManagement = () => {
+  const notify = useNotification();
+
   const { user } = useUser();
 
   const churchId = user?.church_id;
@@ -874,39 +876,42 @@ const ClassManagement = () => {
      FETCH CLASSES
   ===================================================== */
 
-  const fetchClasses = useCallback(async (showMessage = false) => {
-    try {
-      setLoading(true);
+  const fetchClasses = useCallback(
+    async (showMessage = false) => {
+      try {
+        setLoading(true);
 
-      const response = await classApi.getAll();
+        const response = await classApi.getAll();
 
-      const data = normalizeListResponse(response);
+        const data = normalizeListResponse(response);
 
-      const normalizedData = data.map((item) => ({
-        ...item,
+        const normalizedData = data.map((item) => ({
+          ...item,
 
-        id: Number(item.id),
+          id: Number(item.id),
 
-        studentsCount: Number(item.studentsCount || 0),
+          studentsCount: Number(item.studentsCount || 0),
 
-        schedules: normalizeSchedules(item.schedules),
+          schedules: normalizeSchedules(item.schedules),
 
-        catechists: Array.isArray(item.catechists) ? item.catechists : [],
-      }));
+          catechists: Array.isArray(item.catechists) ? item.catechists : [],
+        }));
 
-      setClassesList(normalizedData);
+        setClassesList(normalizedData);
 
-      if (showMessage) {
-        message.success("Đã làm mới danh sách lớp học");
+        if (showMessage) {
+          notify.success("Đã làm mới danh sách lớp học");
+        }
+      } catch (error) {
+        notify.error(
+          error?.response?.data?.message || "Không thể tải danh sách lớp học",
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      message.error(
-        error?.response?.data?.message || "Không thể tải danh sách lớp học",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [notify],
+  );
 
   useEffect(() => {
     fetchClasses();
@@ -1095,7 +1100,7 @@ const ClassManagement = () => {
       }
 
       if (!churchId) {
-        message.error("Không xác định được giáo xứ của tài khoản");
+        notify.error("Không xác định được giáo xứ của tài khoản");
 
         return;
       }
@@ -1133,13 +1138,13 @@ const ClassManagement = () => {
 
         for (const schedule of schedules) {
           if (schedule.day_of_week < 1 || schedule.day_of_week > 7) {
-            message.error("Thứ trong tuần không hợp lệ");
+            notify.error("Thứ trong tuần không hợp lệ");
 
             return;
           }
 
           if (schedule.start_time >= schedule.end_time) {
-            message.error("Giờ kết thúc phải lớn hơn giờ bắt đầu");
+            notify.error("Giờ kết thúc phải lớn hơn giờ bắt đầu");
 
             return;
           }
@@ -1156,7 +1161,7 @@ const ClassManagement = () => {
         const uniqueKeys = new Set(scheduleKeys);
 
         if (uniqueKeys.size !== scheduleKeys.length) {
-          message.error("Lịch học bị trùng thứ và giờ bắt đầu");
+          notify.error("Lịch học bị trùng thứ và giờ bắt đầu");
 
           return;
         }
@@ -1199,9 +1204,9 @@ const ClassManagement = () => {
           const generatedCode = createdData?.code;
 
           if (generatedCode) {
-            message.success(`Tạo lớp thành công • Mã lớp: ${generatedCode}`);
+            notify.success(`Tạo lớp thành công • Mã lớp: ${generatedCode}`);
           } else {
-            message.success("Tạo lớp học thành công");
+            notify.success("Tạo lớp học thành công");
           }
         } else {
           /* ---------------------------------------------
@@ -1209,7 +1214,7 @@ const ClassManagement = () => {
           --------------------------------------------- */
           await classApi.update(editingClass.id, payload);
 
-          message.success("Cập nhật lớp học thành công");
+          notify.success("Cập nhật lớp học thành công");
         }
 
         setIsModalOpen(false);
@@ -1219,14 +1224,12 @@ const ClassManagement = () => {
 
         await fetchClasses();
       } catch (error) {
-        message.error(
-          error?.response?.data?.message || "Không thể lưu lớp học",
-        );
+        notify.error(error?.response?.data?.message || "Không thể lưu lớp học");
       } finally {
         setSaving(false);
       }
     },
-    [editingClass, fetchClasses, form, saving, churchId],
+    [editingClass, fetchClasses, form, saving, churchId, notify],
   );
 
   /* =====================================================
@@ -1239,7 +1242,7 @@ const ClassManagement = () => {
         return;
       }
 
-      Modal.confirm({
+      notify.confirm({
         title: "Xác nhận xóa lớp học",
 
         icon: (
@@ -1284,14 +1287,7 @@ const ClassManagement = () => {
         okText: "Xóa lớp",
         cancelText: "Hủy",
 
-        okButtonProps: {
-          danger: true,
-
-          style: {
-            borderRadius: 8,
-            fontWeight: 700,
-          },
-        },
+        danger: true,
 
         cancelButtonProps: {
           style: {
@@ -1299,17 +1295,17 @@ const ClassManagement = () => {
           },
         },
 
-        onOk: async () => {
+        onConfirm: async () => {
           try {
             setDeletingId(item.id);
 
             await classApi.remove(item.id);
 
-            message.success("Đã xóa lớp học thành công");
+            notify.success("Đã xóa lớp học thành công");
 
             await fetchClasses();
           } catch (error) {
-            message.error(
+            notify.error(
               error?.response?.data?.message || "Không thể xóa lớp học",
             );
           } finally {
@@ -1318,42 +1314,45 @@ const ClassManagement = () => {
         },
       });
     },
-    [deletingId, fetchClasses],
+    [deletingId, fetchClasses, notify],
   );
 
   /* =====================================================
      VIEW DETAIL
   ===================================================== */
 
-  const handleViewDetail = useCallback(async (item) => {
-    try {
-      setDetailOpen(true);
-      setDetailLoading(true);
-      setClassDetail(null);
+  const handleViewDetail = useCallback(
+    async (item) => {
+      try {
+        setDetailOpen(true);
+        setDetailLoading(true);
+        setClassDetail(null);
 
-      const response = await classApi.getById(item.id);
+        const response = await classApi.getById(item.id);
 
-      const detail = normalizeObjectResponse(response);
+        const detail = normalizeObjectResponse(response);
 
-      if (detail) {
-        detail.schedules = normalizeSchedules(detail.schedules);
+        if (detail) {
+          detail.schedules = normalizeSchedules(detail.schedules);
 
-        detail.catechists = Array.isArray(detail.catechists)
-          ? detail.catechists
-          : [];
+          detail.catechists = Array.isArray(detail.catechists)
+            ? detail.catechists
+            : [];
+        }
+
+        setClassDetail(detail);
+      } catch (error) {
+        notify.error(
+          error?.response?.data?.message || "Không thể tải thông tin lớp học",
+        );
+
+        setDetailOpen(false);
+      } finally {
+        setDetailLoading(false);
       }
-
-      setClassDetail(detail);
-    } catch (error) {
-      message.error(
-        error?.response?.data?.message || "Không thể tải thông tin lớp học",
-      );
-
-      setDetailOpen(false);
-    } finally {
-      setDetailLoading(false);
-    }
-  }, []);
+    },
+    [notify],
+  );
 
   /* =====================================================
      REMOVE CATECHIST
@@ -1366,13 +1365,13 @@ const ClassManagement = () => {
       const catechistId = catechist?.catechist_id ?? catechist?.id;
 
       if (!classId) {
-        message.error("Không xác định được lớp học");
+        notify.error("Không xác định được lớp học");
 
         return;
       }
 
       if (!catechistId) {
-        message.error("Không xác định được giáo lý viên");
+        notify.error("Không xác định được giáo lý viên");
 
         return;
       }
@@ -1452,7 +1451,7 @@ const ClassManagement = () => {
               class_id: Number(classId),
             });
 
-            message.success(`Đã xóa ${catechist.full_name} khỏi lớp`);
+            notify.success(`Đã xóa ${catechist.full_name} khỏi lớp`);
 
             const response = await classApi.getById(classId);
 
@@ -1472,7 +1471,7 @@ const ClassManagement = () => {
 
             await fetchClasses();
           } catch (error) {
-            message.error(
+            notify.error(
               error?.response?.data?.message ||
                 "Không thể xóa giáo lý viên khỏi lớp",
             );
@@ -1482,7 +1481,7 @@ const ClassManagement = () => {
         },
       });
     },
-    [classDetail, fetchClasses],
+    [classDetail, fetchClasses, notify],
   );
 
   /* =====================================================

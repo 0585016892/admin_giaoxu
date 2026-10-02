@@ -510,6 +510,14 @@ export const isPassedScore = (score, passScore = 5) => {
 
   return Number(score) >= Number(passScore);
 };
+// Xuất Excel bảng điểm theo lớp
+export const exportResultsExcel = async (classId) => {
+  const response = await axiosClient.get(`/results/export-excel/${classId}`, {
+    responseType: "blob",
+  });
+
+  return response;
+};
 
 /* ============================================================
  * DEFAULT EXPORT
@@ -542,6 +550,7 @@ const resultApi = {
   createResult,
   updateResult,
   deleteResult,
+  exportResultsExcel,
 
   // helpers
   getGradingRuleItems,

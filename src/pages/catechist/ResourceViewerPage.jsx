@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 
-import { Empty, Spin, Tag, Tooltip, Typography, message } from "antd";
+import { Empty, Spin, Tag, Tooltip, Typography } from "antd";
 
 import {
   ArrowLeftOutlined,
@@ -20,7 +20,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 
 import AppButton from "../../components/common/AppButton";
-
+import { useNotification } from "../../components/notification";
 import { getLessonResourceById } from "../../api/lessonApi";
 
 import PdfViewer from "../../components/lesson-resource/PdfViewer";
@@ -45,6 +45,8 @@ import ErrorPage from "./ErrorPage";
 const { Title, Text } = Typography;
 
 const ResourceViewerPage = () => {
+  const notify = useNotification();
+
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -54,7 +56,7 @@ const ResourceViewerPage = () => {
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [toolboxOpen, setToolboxOpen] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
+
   const [error, setError] = useState(null);
   const [students, setStudents] = useState([]);
 
@@ -107,7 +109,7 @@ const ResourceViewerPage = () => {
     } catch (error) {
       setResource(null);
 
-      messageApi.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể tải tài liệu",
@@ -115,7 +117,7 @@ const ResourceViewerPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, messageApi]);
+  }, [id, notify]);
 
   useEffect(() => {
     loadResource();
@@ -203,10 +205,10 @@ const ResourceViewerPage = () => {
       } else if (element.msRequestFullscreen) {
         element.msRequestFullscreen();
       } else {
-        messageApi.info("Trình duyệt không hỗ trợ chế độ toàn màn hình");
+        notify.info("Trình duyệt không hỗ trợ chế độ toàn màn hình");
       }
     } catch (error) {
-      messageApi.error("Không thể mở chế độ toàn màn hình");
+      notify.error("Không thể mở chế độ toàn màn hình");
     }
   };
 
@@ -246,7 +248,7 @@ const ResourceViewerPage = () => {
 
   const handleDownload = () => {
     if (!resourceUrl) {
-      messageApi.warning("Tài liệu chưa có đường dẫn tải xuống");
+      notify.warning("Tài liệu chưa có đường dẫn tải xuống");
 
       return;
     }
@@ -344,8 +346,6 @@ const ResourceViewerPage = () => {
   if (!resource) {
     return (
       <div className="rvp-empty-page">
-        {contextHolder}
-
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description="Không tìm thấy tài liệu"
@@ -379,8 +379,6 @@ const ResourceViewerPage = () => {
       ref={pageRef}
       className={`rvp-page ${isFullscreen ? "rvp-page-fullscreen" : ""}`}
     >
-      {contextHolder}
-
       {/* =====================================================
           HEADER
       ===================================================== */}

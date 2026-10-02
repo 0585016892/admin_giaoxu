@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Empty, Select, Tag, message } from "antd";
+import { Button, Empty, Select, Tag } from "antd";
 import {
   StarFilled,
   CrownFilled,
@@ -22,6 +22,7 @@ import l3 from "../../assets/images/l3.png";
 import jesusImg from "../../assets/images/jesusImg.png";
 import background from "../../assets/images/background.png";
 import bocau from "../../assets/images/bocau.png";
+import { useNotification } from "../../components/notification";
 
 const COLORS = {
   navy: "#173B5E",
@@ -124,6 +125,8 @@ const getClassName = (item) => {
 // =========================================================
 
 const LeaderboardGame = () => {
+  const notify = useNotification();
+
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [classesLoading, setClassesLoading] = useState(false);
@@ -158,7 +161,7 @@ const LeaderboardGame = () => {
       setClassesList(data);
     } catch (error) {
       setClassesList([]);
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể tải danh sách lớp học",
@@ -166,7 +169,7 @@ const LeaderboardGame = () => {
     } finally {
       setClassesLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   // =======================================================
   // LOAD GLOBAL LEADERBOARD
@@ -185,11 +188,11 @@ const LeaderboardGame = () => {
         setSelectedClassName("");
       } else {
         setStudents([]);
-        message.error(response?.message || "Không thể lấy bảng thành tích");
+        notify.error(response?.message || "Không thể lấy bảng thành tích");
       }
     } catch (error) {
       setStudents([]);
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           error?.message ||
           "Không thể kết nối máy chủ",
@@ -197,7 +200,7 @@ const LeaderboardGame = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   // =======================================================
   // LOAD CLASS LEADERBOARD
@@ -223,13 +226,13 @@ const LeaderboardGame = () => {
           setSelectedClassName(className);
         } else {
           setStudents([]);
-          message.error(
+          notify.error(
             response?.message || "Không thể lấy bảng xếp hạng của lớp",
           );
         }
       } catch (error) {
         setStudents([]);
-        message.error(
+        notify.error(
           error?.response?.data?.message ||
             error?.message ||
             "Không thể tải bảng xếp hạng lớp",
@@ -238,7 +241,7 @@ const LeaderboardGame = () => {
         setLoading(false);
       }
     },
-    [classesList],
+    [classesList, notify],
   );
 
   useEffect(() => {
@@ -294,7 +297,7 @@ const LeaderboardGame = () => {
         await Promise.all([fetchClasses(), loadGlobalLeaderboard()]);
       }
     } catch (error) {
-      message.error("Lỗi làm mới dữ liệu!");
+      notify.error("Lỗi làm mới dữ liệu!");
     }
   };
 

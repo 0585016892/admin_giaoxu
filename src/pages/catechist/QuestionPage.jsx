@@ -14,7 +14,6 @@ import {
   Tabs,
   Tag,
   Typography,
-  message,
 } from "antd";
 
 import {
@@ -33,6 +32,7 @@ import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
 import AppTable from "../../components/common/AppTable";
+import { useNotification } from "../../components/notification";
 
 import {
   getLessons,
@@ -156,7 +156,7 @@ const normalizePagination = (
 ========================================================= */
 
 const LessonQuestionPage = () => {
-  const [messageApi, contextHolder] = message.useMessage();
+  const notify = useNotification();
 
   /* =======================================================
      TAB
@@ -291,14 +291,14 @@ const LessonQuestionPage = () => {
           normalizePagination(response, safePage, safePageSize),
         );
       } catch (error) {
-        messageApi.error(
+        notify.error(
           error?.response?.data?.message || "Không thể tải danh sách bài học",
         );
       } finally {
         setLessonLoading(false);
       }
     },
-    [messageApi],
+    [notify],
   );
 
   /* =========================================================
@@ -333,14 +333,14 @@ const LessonQuestionPage = () => {
           normalizePagination(response, safePage, safePageSize),
         );
       } catch (error) {
-        messageApi.error(
+        notify.error(
           error?.response?.data?.message || "Không thể tải ngân hàng câu hỏi",
         );
       } finally {
         setQuestionLoading(false);
       }
     },
-    [messageApi],
+    [notify],
   );
 
   /* =========================================================
@@ -422,7 +422,7 @@ const LessonQuestionPage = () => {
 
       setLessonModalOpen(true);
     } catch (error) {
-      message.error("OPEN EDIT LESSON ERROR:", error);
+      notify.error("OPEN EDIT LESSON ERROR:", error);
     }
   };
 
@@ -443,19 +443,19 @@ const LessonQuestionPage = () => {
       };
 
       if (!payload.title) {
-        messageApi.error("Tiêu đề không được bỏ trống");
+        notify.error("Tiêu đề không được bỏ trống");
 
         return;
       }
 
       if (payload.title.length < 2) {
-        messageApi.error("Tên bài học phải có ít nhất 2 ký tự");
+        notify.error("Tên bài học phải có ít nhất 2 ký tự");
 
         return;
       }
 
       if (!payload.catechism_type) {
-        messageApi.error("Vui lòng chọn loại giáo lý");
+        notify.error("Vui lòng chọn loại giáo lý");
 
         return;
       }
@@ -465,11 +465,11 @@ const LessonQuestionPage = () => {
       if (editingLesson) {
         await updateLesson(editingLesson.id, payload);
 
-        messageApi.success("Đã cập nhật bài học");
+        notify.success("Đã cập nhật bài học");
       } else {
         await createLesson(payload);
 
-        messageApi.success("Đã tạo bài học mới");
+        notify.success("Đã tạo bài học mới");
       }
 
       setLessonModalOpen(false);
@@ -487,9 +487,7 @@ const LessonQuestionPage = () => {
         return;
       }
 
-      messageApi.error(
-        error?.response?.data?.message || "Không thể lưu bài học",
-      );
+      notify.error(error?.response?.data?.message || "Không thể lưu bài học");
     } finally {
       setLessonSaving(false);
     }
@@ -521,7 +519,7 @@ const LessonQuestionPage = () => {
         try {
           await deleteLesson(record.id);
 
-          messageApi.success("Đã xóa bài học");
+          notify.success("Đã xóa bài học");
 
           let page = lessonPagination.current;
 
@@ -531,7 +529,7 @@ const LessonQuestionPage = () => {
 
           await loadLessons(page, lessonPagination.pageSize, lessonSearch);
         } catch (error) {
-          messageApi.error(
+          notify.error(
             error?.response?.data?.message || "Không thể xóa bài học",
           );
         }
@@ -557,7 +555,7 @@ const LessonQuestionPage = () => {
 
       setLessonDetail(payload?.data || payload);
     } catch (error) {
-      messageApi.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải chi tiết bài học",
       );
 
@@ -605,7 +603,7 @@ const LessonQuestionPage = () => {
 
       setQuestionModalOpen(true);
     } catch (error) {
-      message.error("OPEN EDIT QUESTION ERROR:", error);
+      notify.error("OPEN EDIT QUESTION ERROR:", error);
     }
   };
 
@@ -634,7 +632,7 @@ const LessonQuestionPage = () => {
       };
 
       if (!payload.question) {
-        messageApi.error("Nội dung câu hỏi không được bỏ trống");
+        notify.error("Nội dung câu hỏi không được bỏ trống");
 
         return;
       }
@@ -645,13 +643,13 @@ const LessonQuestionPage = () => {
         !payload.answer_c ||
         !payload.answer_d
       ) {
-        messageApi.error("Vui lòng nhập đầy đủ 4 đáp án");
+        notify.error("Vui lòng nhập đầy đủ 4 đáp án");
 
         return;
       }
 
       if (!["A", "B", "C", "D"].includes(payload.correct_answer)) {
-        messageApi.error("Đáp án đúng không hợp lệ");
+        notify.error("Đáp án đúng không hợp lệ");
 
         return;
       }
@@ -661,11 +659,11 @@ const LessonQuestionPage = () => {
       if (editingQuestion) {
         await updateQuestion(editingQuestion.id, payload);
 
-        messageApi.success("Đã cập nhật câu hỏi");
+        notify.success("Đã cập nhật câu hỏi");
       } else {
         await createQuestion(payload);
 
-        messageApi.success("Đã tạo câu hỏi mới");
+        notify.success("Đã tạo câu hỏi mới");
       }
 
       setQuestionModalOpen(false);
@@ -685,9 +683,7 @@ const LessonQuestionPage = () => {
         return;
       }
 
-      messageApi.error(
-        error?.response?.data?.message || "Không thể lưu câu hỏi",
-      );
+      notify.error(error?.response?.data?.message || "Không thể lưu câu hỏi");
     } finally {
       setQuestionSaving(false);
     }
@@ -715,7 +711,7 @@ const LessonQuestionPage = () => {
         try {
           await deleteQuestion(record.id);
 
-          messageApi.success("Đã xóa câu hỏi");
+          notify.success("Đã xóa câu hỏi");
 
           let page = questionPagination.current;
 
@@ -730,7 +726,7 @@ const LessonQuestionPage = () => {
             questionLessonFilter,
           );
         } catch (error) {
-          messageApi.error(
+          notify.error(
             error?.response?.data?.message || "Không thể xóa câu hỏi",
           );
         }
@@ -756,7 +752,7 @@ const LessonQuestionPage = () => {
 
       setQuestionDetail(payload?.data || payload);
     } catch (error) {
-      messageApi.error(
+      notify.error(
         error?.response?.data?.message || "Không thể tải chi tiết câu hỏi",
       );
 
@@ -1082,8 +1078,6 @@ const LessonQuestionPage = () => {
 
   return (
     <>
-      {contextHolder}
-
       <div
         style={{
           paddingBottom: 40,

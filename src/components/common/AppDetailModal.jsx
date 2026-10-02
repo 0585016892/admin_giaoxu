@@ -147,13 +147,13 @@ const AppDetailModal = ({
         >
           <Space align="center" size={14}>
             <Avatar
-              size={50}
+              size={80}
               src={avatar}
               icon={avatar ? undefined : avatarIcon}
               style={{
                 backgroundColor: "#EEF2F7",
                 color: "#173B5E",
-                borderRadius: 14,
+                borderRadius: 50,
                 border: "1.5px solid #D9E2EC",
                 fontSize: 22,
                 flexShrink: 0,

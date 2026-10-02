@@ -14,7 +14,6 @@ import {
 } from "@ant-design/icons";
 
 import { Scanner } from "@yudiel/react-qr-scanner";
-
 import { scanQRCode } from "../../../api/attendanceApi";
 
 /* =========================================================

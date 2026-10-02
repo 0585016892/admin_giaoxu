@@ -8,7 +8,6 @@ import {
   Tag,
   Empty,
   Select,
-  message,
   Descriptions,
   Divider,
   Tooltip,
@@ -22,7 +21,7 @@ import {
   FilterOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
-
+import student_defaut from "../../../assets/images/student-default.png";
 import StatCard from "../../../components/common/StatCard";
 import AppDetailModal from "../../../components/common/AppDetailModal";
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
@@ -31,6 +30,7 @@ import AppButton from "../../../components/common/AppButton";
 import AppTable from "../../../components/common/AppTable";
 import studentApi from "../../../api/studentApi";
 import ErrorPage from "../ErrorPage";
+import { useNotification } from "../../../components/notification";
 
 const { Text } = Typography;
 
@@ -42,6 +42,8 @@ const accentGold = "#D9A441";
 const borderColor = "#D9E2EC";
 
 const MyStudentsPage = () => {
+  const notify = useNotification();
+
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -98,7 +100,7 @@ const MyStudentsPage = () => {
         }
       }
     } catch (error) {
-      message.warning("Đang hiển thị thông tin sẵn có của học sinh.");
+      notify.warning("Đang hiển thị thông tin sẵn có của học sinh.");
     } finally {
       setDetailLoading(false);
     }
@@ -229,11 +231,11 @@ const MyStudentsPage = () => {
         <div className="student-table-cell">
           <Avatar
             size={36}
-            src={
-              record.avatar
-                ? `${process.env.REACT_APP_API_URL}${record.avatar}`
-                : undefined
-            }
+            onError={(e) => {
+              e.currentTarget.src = student_defaut;
+              return false;
+            }}
+            src={record.avatar || student_defaut}
             style={{
               background: getAvatarColor(index),
               color: "#FFFFFF",

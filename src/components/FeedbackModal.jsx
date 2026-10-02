@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Select, Rate, message, Divider } from "antd";
+import { Modal, Form, Input, Select, Rate, Divider } from "antd";
 import {
   SendOutlined,
   HeartFilled,
@@ -12,7 +12,7 @@ import { sendFeedback } from "../api/contactMessageApi";
 import { useUser } from "../context/UserContext";
 import LoadingLogo from "../components/LoadingLogo";
 import AppButton from "../components/common/AppButton";
-
+import { useNotification } from "./notification";
 const { TextArea } = Input;
 
 const COLORS = {
@@ -26,6 +26,7 @@ const COLORS = {
 };
 
 const FeedbackModal = ({ open, onClose }) => {
+  const notify = useNotification();
   const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
@@ -104,7 +105,7 @@ const FeedbackModal = ({ open, onClose }) => {
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      message.success("Cảm ơn bạn! Góp ý đã được gửi thành công.");
+      notify.success("Cảm ơn bạn! Góp ý đã được gửi thành công.");
 
       form.resetFields();
 
@@ -119,7 +120,7 @@ const FeedbackModal = ({ open, onClose }) => {
 
       setLoadingProgress(0);
 
-      message.error(
+      notify.error(
         error?.response?.data?.message ||
           "Không thể gửi góp ý. Vui lòng thử lại sau.",
       );
