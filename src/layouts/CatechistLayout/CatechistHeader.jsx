@@ -169,6 +169,8 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
     } else if (path === "/catechist/profile") {
       title = "Trang cá nhân";
     } else if (path === "/catechist/settings") {
+      title = "Thiết lập giáo xứ";
+    } else if (path === "/catechist/settings/church") {
       title = "Thiết lập hệ thống";
     } else if (path === "/catechist/statistics") {
       title = "Báo cáo hệ thống";
@@ -685,6 +687,11 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
     {
       key: "settings",
       icon: <SettingOutlined />,
+      label: "Thiết lập giáo xứ",
+    },
+    {
+      key: "settings_church",
+      icon: <SettingOutlined />,
       label: "Thiết lập hệ thống",
     },
 
@@ -713,7 +720,9 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
       case "settings":
         navigate("/catechist/settings");
         break;
-
+      case "settings_church":
+        navigate("/catechist/settings/church");
+        break;
       case "logout":
         handleLogout();
         break;

@@ -42,7 +42,7 @@ import {
   TeamOutlined,
   BookOutlined,
   HeartOutlined,
-  FileExcelOutlined,
+  // FileExcelOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -55,6 +55,7 @@ import AppSearchInput from "../../../components/common/SearchInput";
 import AppButton from "../../../components/common/AppButton";
 import attendanceApi from "../../../api/attendanceApi";
 import classApi from "../../../api/classApi";
+import { useChurchSettings } from "../../../context/ChurchSettingsContext";
 
 const { Text, Title } = Typography;
 
@@ -325,12 +326,60 @@ const getAttendanceTypeConfig = (type) => {
   return ATTENDANCE_TYPE_CONFIG[type] || ATTENDANCE_TYPE_CONFIG.catechism;
 };
 
+const isSettingEnabled = (value, defaultValue = false) => {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  return value === true || value === 1 || value === "1";
+};
+
+const getAttendanceSettings = (settings = {}) => {
+  const attendanceEnabled = isSettingEnabled(settings.attendance_enabled, true);
+
+  return {
+    // Bật/tắt điểm danh tổng thể
+    attendanceEnabled,
+
+    // Bật/tắt từng loại
+    catechismEnabled: isSettingEnabled(settings.catechism_enabled, true),
+    catechismAttendanceEnabled: isSettingEnabled(
+      settings.catechism_attendance_enabled,
+      true,
+    ),
+
+    // Phương thức điểm danh
+    qrEnabled: isSettingEnabled(settings.attendance_qr_enabled, true),
+    manualEnabled: isSettingEnabled(settings.attendance_manual_enabled, true),
+
+    // Đi muộn
+    lateEnabled:
+      isSettingEnabled(settings.attendance_late_enabled, true) &&
+      isSettingEnabled(settings.allow_late, true),
+
+    lateMinutes: Number(settings.late_minutes) || 15,
+
+    // Tự động xử lý
+    autoAbsent:
+      isSettingEnabled(settings.attendance_auto_absent) ||
+      isSettingEnabled(settings.auto_absent),
+
+    autoLock: isSettingEnabled(settings.attendance_auto_lock),
+
+    // Chỉnh sửa điểm danh
+    editEnabled: isSettingEnabled(settings.attendance_edit_enabled),
+
+    // Thời lượng phiên điểm danh
+    durationMinutes: Number(settings.attendance_duration_minutes) || 120,
+  };
+};
 /* =========================================================
    COMPONENT
 ========================================================= */
 
 const AttendancePage = () => {
   const notify = useNotification();
+  const { settings } = useChurchSettings();
 
   /* =======================================================
      STATE
@@ -400,7 +449,27 @@ const AttendancePage = () => {
     return selectedDate.format("YYYY-MM-DD");
   }, [selectedDate]);
 
-  const isLocked = selectedDate.isBefore(dayjs(), "day");
+  const attendanceSettings = useMemo(
+    () => getAttendanceSettings(settings || {}),
+    [settings],
+  );
+
+  const {
+    attendanceEnabled,
+    catechismEnabled,
+    catechismAttendanceEnabled,
+    qrEnabled,
+    manualEnabled,
+    lateEnabled,
+    lateMinutes,
+    autoAbsent,
+    autoLock,
+    editEnabled,
+    durationMinutes,
+  } = attendanceSettings;
+
+  const isPastDate = selectedDate.isBefore(dayjs(), "day");
+  const isLocked = isPastDate && !editEnabled;
 
   /* =======================================================
      SELECTED CLASS
@@ -413,6 +482,34 @@ const AttendancePage = () => {
 
     return classes.find((item) => Number(item.id) === Number(selectedClassId));
   }, [classes, selectedClassId, attendanceType]);
+
+  useEffect(() => {
+    if (!attendanceType) return;
+
+    const typeEnabled =
+      attendanceType === "mass"
+        ? attendanceEnabled
+        : catechismEnabled && catechismAttendanceEnabled;
+
+    if (!typeEnabled) {
+      setAttendanceType(null);
+      setSelectedClassId(null);
+      setIsQrOpen(false);
+      setStudents([]);
+      setStatistics(DEFAULT_STATISTICS);
+      setPagination(DEFAULT_PAGINATION);
+
+      notify.warning(
+        "Loại điểm danh này hiện đang được tắt trong cài đặt giáo xứ.",
+      );
+    }
+  }, [
+    attendanceType,
+    attendanceEnabled,
+    catechismEnabled,
+    catechismAttendanceEnabled,
+    notify,
+  ]);
 
   /* =======================================================
      ATTENDANCE TYPE CONFIG
@@ -453,13 +550,40 @@ const AttendancePage = () => {
   ======================================================= */
 
   const loadAttendance = useCallback(async () => {
+    const clearAttendance = () => {
+      // Vô hiệu hóa request cũ đang chạy
+      requestIdRef.current += 1;
+
+      setStudents([]);
+      setStatistics(DEFAULT_STATISTICS);
+      setPagination(DEFAULT_PAGINATION);
+      setLoadingAttendance(false);
+    };
+
     /*
      * Chưa chọn loại điểm danh
      */
     if (!attendanceType) {
-      setStudents([]);
-      setStatistics(DEFAULT_STATISTICS);
-      setPagination(DEFAULT_PAGINATION);
+      clearAttendance();
+      return;
+    }
+
+    /*
+     * Điểm danh tổng thể đang bị tắt
+     */
+    if (!attendanceEnabled) {
+      clearAttendance();
+      return;
+    }
+
+    /*
+     * Kiểm tra cấu hình điểm danh Giáo lý
+     */
+    if (
+      attendanceType === "catechism" &&
+      (!catechismEnabled || !catechismAttendanceEnabled)
+    ) {
+      clearAttendance();
       return;
     }
 
@@ -467,9 +591,7 @@ const AttendancePage = () => {
      * Học Giáo lý bắt buộc class_id
      */
     if (attendanceType === "catechism" && !selectedClassId) {
-      setStudents([]);
-      setStatistics(DEFAULT_STATISTICS);
-      setPagination(DEFAULT_PAGINATION);
+      clearAttendance();
       return;
     }
 
@@ -502,23 +624,22 @@ const AttendancePage = () => {
 
       const response = await attendanceApi.getAttendance(payload);
 
+      // Bỏ qua response của request cũ
       if (requestId !== requestIdRef.current) {
         return;
       }
 
       const nextStudents = getAttendanceResponseData(response);
-
       const nextPagination = getPaginationFromResponse(response);
-
       const nextStatistics = getStatisticsFromResponse(response);
 
       setStudents(nextStudents);
-
       setPagination(nextPagination);
-
       setStatistics(nextStatistics);
     } catch (error) {
       if (requestId === requestIdRef.current) {
+        console.error("[ATTENDANCE] Load error:", error);
+
         const responseData = error?.response?.data;
 
         notify.error(
@@ -533,9 +654,12 @@ const AttendancePage = () => {
       }
     }
   }, [
+    attendanceType,
+    attendanceEnabled,
+    catechismEnabled,
+    catechismAttendanceEnabled,
     selectedClassId,
     dateString,
-    attendanceType,
     page,
     pageSize,
     search,
@@ -618,7 +742,20 @@ const AttendancePage = () => {
         notify.warning("Vui lòng chọn loại điểm danh.");
         return;
       }
+      if (!attendanceEnabled) {
+        notify.warning("Điểm danh hiện đang bị tắt trong cài đặt giáo xứ.");
+        return;
+      }
 
+      if (!manualEnabled) {
+        notify.warning("Giáo xứ hiện không cho phép điểm danh thủ công.");
+        return;
+      }
+
+      if (status === "late" && !lateEnabled) {
+        notify.warning("Giáo xứ hiện không cho phép ghi nhận đi muộn.");
+        return;
+      }
       if (attendanceType === "catechism" && !selectedClassId) {
         notify.warning("Vui lòng chọn lớp.");
         return;
@@ -712,6 +849,9 @@ const AttendancePage = () => {
       currentTypeConfig,
       loadAttendance,
       notify,
+      attendanceEnabled,
+      manualEnabled,
+      lateEnabled,
     ],
   );
 
@@ -732,21 +872,47 @@ const AttendancePage = () => {
      FINISH QR ATTENDANCE
   ======================================================= */
 
+  /* =======================================================
+   FINISH QR ATTENDANCE
+======================================================= */
+
   const handleFinishQRAttendance = useCallback(async () => {
+    if (!attendanceEnabled) {
+      notify.warning("Chức năng điểm danh hiện đang bị tắt.");
+      setIsQrOpen(false);
+      return;
+    }
+
+    if (!qrEnabled) {
+      notify.warning("Giáo xứ hiện không cho phép điểm danh bằng mã QR.");
+      setIsQrOpen(false);
+      return;
+    }
+
     if (!attendanceType) {
       setIsQrOpen(false);
       return;
     }
 
-    /*
-     * Giáo lý cần class
-     */
+    // Giáo lý cần chọn lớp
     if (attendanceType === "catechism" && !selectedClassId) {
+      notify.warning("Vui lòng chọn lớp giáo lý trước khi kết thúc điểm danh.");
+      setIsQrOpen(false);
+      return;
+    }
+
+    // Kiểm tra cấu hình điểm danh Giáo lý
+    if (
+      attendanceType === "catechism" &&
+      (!catechismEnabled || !catechismAttendanceEnabled)
+    ) {
+      notify.warning("Điểm danh giáo lý hiện đang bị tắt.");
       setIsQrOpen(false);
       return;
     }
 
     if (isLocked) {
+      notify.warning("Ngày điểm danh đã bị khóa, không thể kết thúc.");
       setIsQrOpen(false);
       return;
     }
@@ -756,29 +922,30 @@ const AttendancePage = () => {
 
       const payload = {
         attendance_date: dateString,
-
         attendance_type: attendanceType,
       };
 
-      /*
-       * Giáo lý -> gửi class_id
-       *
-       * Thánh lễ -> backend tự xác định lớp
-       */
+      // Giáo lý gửi class_id; Thánh lễ không gửi class_id
       if (attendanceType === "catechism") {
         payload.class_id = Number(selectedClassId);
       }
+
+      console.log("[QR ATTENDANCE] Finish payload:", payload);
 
       await attendanceApi.finishAttendance(payload);
 
       setIsQrOpen(false);
 
       notify.success(
-        `Đã kết thúc điểm danh ${currentTypeConfig.shortLabel}. Các học sinh chưa được ghi nhận đã chuyển sang Vắng.`,
+        autoAbsent
+          ? `Đã kết thúc điểm danh ${currentTypeConfig.shortLabel}. Học sinh chưa được ghi nhận đã chuyển thành Vắng.`
+          : `Đã kết thúc điểm danh ${currentTypeConfig.shortLabel}.`,
       );
 
       await loadAttendance();
     } catch (error) {
+      console.error("[QR ATTENDANCE] Finish error:", error);
+
       notify.error(
         error?.response?.data?.message || "Không thể kết thúc điểm danh",
       );
@@ -786,18 +953,23 @@ const AttendancePage = () => {
       setSaving(false);
     }
   }, [
-    selectedClassId,
-    dateString,
+    attendanceEnabled,
+    qrEnabled,
     attendanceType,
+    selectedClassId,
+    catechismEnabled,
+    catechismAttendanceEnabled,
     isLocked,
+    dateString,
+    autoAbsent,
     currentTypeConfig,
     loadAttendance,
     notify,
   ]);
 
   /* =======================================================
-     TOGGLE QR
-  ======================================================= */
+   TOGGLE QR
+======================================================= */
 
   const handleToggleQR = useCallback(() => {
     if (!attendanceType) {
@@ -805,9 +977,26 @@ const AttendancePage = () => {
       return;
     }
 
-    /*
-     * Chỉ Giáo lý cần chọn lớp.
-     */
+    if (!attendanceEnabled) {
+      notify.warning("Điểm danh hiện đang bị tắt.");
+      return;
+    }
+
+    if (!qrEnabled) {
+      notify.warning("Giáo xứ hiện không bật điểm danh bằng QR.");
+      return;
+    }
+
+    // Kiểm tra cấu hình Giáo lý
+    if (
+      attendanceType === "catechism" &&
+      (!catechismEnabled || !catechismAttendanceEnabled)
+    ) {
+      notify.warning("Điểm danh giáo lý hiện đang bị tắt.");
+      return;
+    }
+
+    // Chỉ Giáo lý cần chọn lớp
     if (attendanceType === "catechism" && !selectedClassId) {
       notify.warning("Vui lòng chọn lớp trước.");
       return;
@@ -825,142 +1014,146 @@ const AttendancePage = () => {
 
     setIsQrOpen(true);
   }, [
-    selectedClassId,
     attendanceType,
+    attendanceEnabled,
+    qrEnabled,
+    catechismEnabled,
+    catechismAttendanceEnabled,
+    selectedClassId,
     isLocked,
-    notify,
     isQrOpen,
     handleFinishQRAttendance,
+    notify,
   ]);
   /* =======================================================
    EXPORT EXCEL
 ======================================================= */
 
-  const handleExportExcel = useCallback(async () => {
-    if (!attendanceType) {
-      notify.warning("Vui lòng chọn loại điểm danh.");
-      return;
-    }
+  // const handleExportExcel = useCallback(async () => {
+  //   if (!attendanceType) {
+  //     notify.warning("Vui lòng chọn loại điểm danh.");
+  //     return;
+  //   }
 
-    if (!dateString) {
-      notify.warning("Vui lòng chọn ngày điểm danh.");
-      return;
-    }
+  //   if (!dateString) {
+  //     notify.warning("Vui lòng chọn ngày điểm danh.");
+  //     return;
+  //   }
 
-    if (attendanceType === "catechism" && !selectedClassId) {
-      notify.warning("Vui lòng chọn lớp.");
-      return;
-    }
+  //   if (attendanceType === "catechism" && !selectedClassId) {
+  //     notify.warning("Vui lòng chọn lớp.");
+  //     return;
+  //   }
 
-    try {
-      notify.loading({
-        content: "Đang xuất file Excel...",
-        key: "export-attendance",
-        duration: 0,
-      });
+  //   try {
+  //     notify.loading({
+  //       content: "Đang xuất file Excel...",
+  //       key: "export-attendance",
+  //       duration: 0,
+  //     });
 
-      const payload = {
-        date: dateString,
-        attendance_type: attendanceType,
-        search: search.trim(),
-        status: statusFilter,
-      };
+  //     const payload = {
+  //       date: dateString,
+  //       attendance_type: attendanceType,
+  //       search: search.trim(),
+  //       status: statusFilter,
+  //     };
 
-      if (attendanceType === "catechism") {
-        payload.class_id = Number(selectedClassId);
-      }
+  //     if (attendanceType === "catechism") {
+  //       payload.class_id = Number(selectedClassId);
+  //     }
 
-      const response = await attendanceApi.exportExcel(payload);
+  //     const response = await attendanceApi.exportExcel(payload);
 
-      const data = response?.data;
+  //     const data = response?.data;
 
-      if (!data) {
-        throw new Error("Backend không trả dữ liệu file.");
-      }
+  //     if (!data) {
+  //       throw new Error("Backend không trả dữ liệu file.");
+  //     }
 
-      // Axios responseType blob: lỗi JSON cũng có thể nằm trong Blob
-      const contentType = response.headers?.["content-type"] || "";
+  //     // Axios responseType blob: lỗi JSON cũng có thể nằm trong Blob
+  //     const contentType = response.headers?.["content-type"] || "";
 
-      if (
-        contentType.includes("application/json") ||
-        data.type === "application/json"
-      ) {
-        const errorText =
-          data instanceof Blob ? await data.text() : String(data);
+  //     if (
+  //       contentType.includes("application/json") ||
+  //       data.type === "application/json"
+  //     ) {
+  //       const errorText =
+  //         data instanceof Blob ? await data.text() : String(data);
 
-        let errorMessage = "Backend trả về lỗi khi xuất Excel.";
+  //       let errorMessage = "Backend trả về lỗi khi xuất Excel.";
 
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
+  //       try {
+  //         const errorJson = JSON.parse(errorText);
+  //         errorMessage = errorJson.message || errorMessage;
+  //       } catch {
+  //         errorMessage = errorText || errorMessage;
+  //       }
 
-        throw new Error(errorMessage);
-      }
+  //       throw new Error(errorMessage);
+  //     }
 
-      const blob =
-        data instanceof Blob
-          ? data
-          : new Blob([data], {
-              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            });
+  //     const blob =
+  //       data instanceof Blob
+  //         ? data
+  //         : new Blob([data], {
+  //             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //           });
 
-      if (blob.size === 0) {
-        throw new Error("File Excel nhận được đang rỗng.");
-      }
+  //     if (blob.size === 0) {
+  //       throw new Error("File Excel nhận được đang rỗng.");
+  //     }
 
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
+  //     const url = window.URL.createObjectURL(blob);
+  //     const link = document.createElement("a");
 
-      link.href = url;
-      link.download = `diem-danh-${attendanceType}-${dateString}.xlsx`;
+  //     link.href = url;
+  //     link.download = `diem-danh-${attendanceType}-${dateString}.xlsx`;
 
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     link.remove();
 
-      window.setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 1000);
+  //     window.setTimeout(() => {
+  //       window.URL.revokeObjectURL(url);
+  //     }, 1000);
 
-      notify.success({
-        content: "Xuất Excel thành công.",
-        key: "export-attendance",
-      });
-    } catch (error) {
-      let errorMessage =
-        error?.message ||
-        error?.response?.data?.message ||
-        "Không thể xuất file Excel.";
+  //     notify.success({
+  //       content: "Xuất Excel thành công.",
+  //       key: "export-attendance",
+  //     });
+  //   } catch (error) {
+  //     let errorMessage =
+  //       error?.message ||
+  //       error?.response?.data?.message ||
+  //       "Không thể xuất file Excel.";
 
-      const errorData = error?.response?.data;
+  //     const errorData = error?.response?.data;
 
-      if (errorData instanceof Blob) {
-        try {
-          const text = await errorData.text();
-          const json = JSON.parse(text);
-          errorMessage = json.message || errorMessage;
-        } catch {
-          // Không phải JSON thì giữ nguyên lỗi hiện tại
-        }
-      }
+  //     if (errorData instanceof Blob) {
+  //       try {
+  //         const text = await errorData.text();
+  //         const json = JSON.parse(text);
+  //         errorMessage = json.message || errorMessage;
+  //       } catch {
+  //         // Không phải JSON thì giữ nguyên lỗi hiện tại
+  //       }
+  //     }
 
-      notify.error({
-        content: errorMessage,
-        key: "export-attendance",
-        duration: 5,
-      });
-    }
-  }, [
-    attendanceType,
-    selectedClassId,
-    dateString,
-    search,
-    statusFilter,
-    notify,
-  ]);
+  //     notify.error({
+  //       content: errorMessage,
+  //       key: "export-attendance",
+  //       duration: 5,
+  //     });
+  //   }
+  // }, [
+  //   attendanceType,
+  //   selectedClassId,
+  //   dateString,
+  //   search,
+  //   statusFilter,
+  //   notify,
+  // ]);
   /* =======================================================
      HISTORY
   ======================================================= */
@@ -1101,11 +1294,13 @@ const AttendancePage = () => {
         align: "center",
 
         render: (_, record) => {
-          const current = record.currentStatus;
-          const disabled = isLocked || saving;
+          const current = record.currentStatus || "not_attended";
+
+          const disabled = isLocked || saving || !manualEnabled;
 
           return (
             <div className="manual-attendance-actions">
+              {/* CÓ MẶT */}
               <Tooltip title="Có mặt">
                 <Button
                   className="manual-action-btn manual-present"
@@ -1117,17 +1312,21 @@ const AttendancePage = () => {
                 />
               </Tooltip>
 
-              <Tooltip title="Đi muộn">
-                <Button
-                  className="manual-action-btn manual-late"
-                  size="small"
-                  shape="circle"
-                  icon={<ClockCircleOutlined />}
-                  disabled={disabled || current === "late"}
-                  onClick={() => updateAttendance(record, "late")}
-                />
-              </Tooltip>
+              {/* ĐI MUỘN */}
+              {lateEnabled && (
+                <Tooltip title={`Đi muộn (sau ${lateMinutes} phút)`}>
+                  <Button
+                    className="manual-action-btn manual-late"
+                    size="small"
+                    shape="circle"
+                    icon={<ClockCircleOutlined />}
+                    disabled={disabled || current === "late"}
+                    onClick={() => updateAttendance(record, "late")}
+                  />
+                </Tooltip>
+              )}
 
+              {/* VẮNG */}
               <Tooltip title="Vắng">
                 <Button
                   className="manual-action-btn manual-absent"
@@ -1139,6 +1338,7 @@ const AttendancePage = () => {
                 />
               </Tooltip>
 
+              {/* CÓ PHÉP */}
               <Tooltip title="Có phép">
                 <Button
                   className="manual-action-btn manual-excused"
@@ -1150,6 +1350,7 @@ const AttendancePage = () => {
                 />
               </Tooltip>
 
+              {/* LỊCH SỬ */}
               <Tooltip title="Xem lịch sử">
                 <Button
                   className="manual-action-btn manual-history"
@@ -1164,9 +1365,16 @@ const AttendancePage = () => {
         },
       },
     ],
-    [isLocked, saving, updateAttendance, openHistory],
+    [
+      isLocked,
+      saving,
+      manualEnabled,
+      updateAttendance,
+      openHistory,
+      lateEnabled,
+      lateMinutes,
+    ],
   );
-
   /* =======================================================
      HISTORY COLUMNS
   ======================================================= */
@@ -1331,6 +1539,10 @@ const AttendancePage = () => {
                 placeholder="Chọn loại điểm danh"
                 className="attendance-type-select"
                 allowClear
+                disabled={
+                  !attendanceEnabled &&
+                  (!catechismEnabled || !catechismAttendanceEnabled)
+                }
                 onChange={(value) => {
                   const nextType = value || null;
 
@@ -1547,6 +1759,24 @@ const AttendancePage = () => {
                 {dayjs(dateString).format("DD/MM/YYYY")}
               </span>
             </div>
+            {attendanceType && !manualEnabled && !qrEnabled && (
+              <Alert
+                style={{ marginTop: 16, borderRadius: 13 }}
+                type="warning"
+                showIcon
+                message="Chưa bật phương thức điểm danh"
+                description="Giáo xứ cần bật điểm danh thủ công hoặc điểm danh QR trong phần Cài đặt giáo xứ."
+              />
+            )}
+            {attendanceType && !manualEnabled && qrEnabled && (
+              <Alert
+                style={{ marginTop: 12, borderRadius: 12 }}
+                type="info"
+                showIcon
+                message="Điểm danh thủ công đang tắt"
+                description="Bạn chỉ có thể điểm danh bằng cách quét mã QR."
+              />
+            )}
           </div>
         ) : (
           <Alert
@@ -1687,14 +1917,7 @@ const AttendancePage = () => {
                     </Text>
                   </div>
                 </div>
-                <AppButton
-                  icon={<FileExcelOutlined />}
-                  size="small"
-                  onClick={handleExportExcel}
-                  disabled={!attendanceType}
-                >
-                  Xuất Excel
-                </AppButton>
+
                 <div className="total-student-tag">
                   <strong>{pagination.total || 0}</strong>
 
@@ -1836,7 +2059,22 @@ const AttendancePage = () => {
 
                 <span>{dayjs(dateString).format("dddd, DD/MM/YYYY")}</span>
               </div>
+              <div className="qr-settings-summary">
+                <span>
+                  <ClockCircleOutlined />
+                  Thời lượng: <strong>{durationMinutes} phút</strong>
+                </span>
 
+                <span>
+                  <CheckCircleFilled />
+                  {autoAbsent ? "Tự chuyển vắng: Bật" : "Tự chuyển vắng: Tắt"}
+                </span>
+
+                <span>
+                  <StopOutlined />
+                  {autoLock ? "Tự khóa: Bật" : "Tự khóa: Tắt"}
+                </span>
+              </div>
               <div
                 className={`qr-scanner-box ${isQrOpen ? "scanner-active" : ""}`}
               >
@@ -1873,6 +2111,8 @@ const AttendancePage = () => {
                 loading={saving && isQrOpen}
                 disabled={
                   !attendanceType ||
+                  !attendanceEnabled ||
+                  !qrEnabled ||
                   isLocked ||
                   (attendanceType === "catechism" && !selectedClassId)
                 }
@@ -2251,7 +2491,32 @@ const AttendancePage = () => {
           border: 1px solid ${COLORS.border} !important;
           background: ${COLORS.white} !important;
           box-shadow: 0 8px 26px rgba(23, 59, 94, 0.05) !important;
-        }
+        }.qr-settings-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 16px 13px;
+}
+
+.qr-settings-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid #E2E8F0;
+  border-radius: 7px;
+  background: #F7F9FC;
+  color: #64748B;
+  font-size: 10px;
+}
+
+.qr-settings-summary .anticon {
+  color: #173B5E;
+}
+
+.qr-settings-summary strong {
+  color: #173B5E;
+}
 
         .student-list-header {
           display: flex;

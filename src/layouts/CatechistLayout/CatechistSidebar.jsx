@@ -37,6 +37,7 @@ import {
 import imgSidebar from "../../assets/images/logosidebar.png";
 import logoWeb from "../../assets/images/logoweb.png";
 import usePermission from "../../hooks/usePermission";
+import { useChurchSettings } from "../../context/ChurchSettingsContext";
 
 const { Sider } = Layout;
 const { Title, Text } = Typography;
@@ -124,22 +125,6 @@ const isPathActive = (pathname, path) => {
   return pathname === path || pathname.startsWith(`${path}/`);
 };
 
-/**
- * Tìm toàn bộ parent của một menu item.
- *
- * Ví dụ:
- *
- * group-training
- *   └── group-classes
- *       └── /catechist/classes-teacher
- *
- * Kết quả:
- *
- * [
- *   "group-training",
- *   "group-classes"
- * ]
- */
 const getMenuParentKeys = (items, targetKey, parents = []) => {
   for (const item of items) {
     if (item.key === targetKey) {
@@ -171,10 +156,14 @@ export default function CatechistSidebar({
   mobileOpen = false,
   setMobileOpen,
 }) {
+  const { settings } = useChurchSettings();
+
   const navigate = useNavigate();
   const location = useLocation();
 
   const { canViewClass, canViewStudents, canViewCatechists } = usePermission();
+
+  console.log("settings:::", settings);
 
   /* =========================================================
       PERMISSION

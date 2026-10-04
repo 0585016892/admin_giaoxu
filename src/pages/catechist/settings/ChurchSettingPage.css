@@ -1,0 +1,573 @@
+/* ============================================================
+   CHURCH SETTING PAGE
+   FaithEdu - Compact Settings UI
+   ============================================================ */
+
+/* =========================
+   PAGE
+========================= */
+
+.church-setting-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px 20px 20px;
+  box-sizing: border-box;
+  background: #f7f9fc;
+  overflow-x: hidden;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.church-setting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.church-setting-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.church-setting-title-icon {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #eaf0f6;
+  color: #173b5e;
+  font-size: 17px;
+}
+
+.church-setting-title {
+  margin: 0 !important;
+  color: #173b5e !important;
+  font-size: 20px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
+}
+
+.church-setting-subtitle {
+  display: block;
+  margin-top: 3px;
+  color: #718096;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.church-setting-page .ant-btn {
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.church-setting-page .ant-btn .anticon {
+  font-size: 12px;
+}
+
+.church-setting-page .ant-btn-primary {
+  background: #173b5e;
+  border-color: #173b5e;
+}
+
+.church-setting-page .ant-btn-primary:hover,
+.church-setting-page .ant-btn-primary:focus {
+  background: #244f78 !important;
+  border-color: #244f78 !important;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.church-setting-card {
+  height: 100%;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(23, 59, 94, 0.04) !important;
+}
+
+.church-setting-card .ant-card-body {
+  padding: 15px !important;
+}
+
+.setting-card-height {
+  height: 100%;
+}
+
+/* =========================
+   SECTION HEADER
+========================= */
+
+.setting-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.setting-section-icon {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #eef3f7;
+  color: #173b5e;
+  font-size: 15px;
+}
+
+.setting-section-header > div:last-child {
+  min-width: 0;
+}
+
+.setting-section-header .ant-typography {
+  margin: 0 !important;
+}
+
+.setting-section-header h4.ant-typography {
+  color: #173b5e;
+  font-size: 15px !important;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.setting-section-header .ant-typography-secondary {
+  display: block;
+  margin-top: 2px;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* =========================
+   DIVIDER
+========================= */
+
+.church-setting-card .ant-divider {
+  margin: 11px 0 !important;
+  border-color: #edf0f4;
+}
+
+.church-setting-card .setting-inner-divider {
+  margin: 12px 0 !important;
+}
+
+/* =========================
+   FORM
+========================= */
+
+.church-setting-page .ant-form-item {
+  margin-bottom: 10px;
+}
+
+.church-setting-page .ant-form-item-label {
+  padding-bottom: 3px;
+}
+
+.church-setting-page .ant-form-item-label > label {
+  height: auto;
+  color: #475467;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.church-setting-page .ant-form-item-explain,
+.church-setting-page .ant-form-item-extra {
+  font-size: 11px;
+}
+
+/* =========================
+   INPUT
+========================= */
+
+.church-setting-page .ant-input,
+.church-setting-page .ant-input-affix-wrapper {
+  min-height: 30px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.church-setting-page .ant-input::placeholder,
+.church-setting-page .ant-input-affix-wrapper input::placeholder {
+  color: #a0aec0;
+  font-size: 11px;
+}
+
+.church-setting-page .ant-input-clear-icon {
+  font-size: 11px;
+}
+
+/* =========================
+   INPUT NUMBER
+========================= */
+
+.church-setting-page .ant-input-number {
+  width: 100%;
+  min-height: 30px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.church-setting-page .ant-input-number-input-wrap {
+  height: 28px;
+}
+
+.church-setting-page .ant-input-number-input {
+  height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.church-setting-page .ant-input-number-group-addon {
+  padding: 0 8px;
+  color: #667085;
+  font-size: 11px;
+}
+
+/* =========================
+   TIME PICKER
+========================= */
+
+.church-setting-page .ant-picker {
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 9px;
+  border-radius: 6px;
+}
+
+.church-setting-page .ant-picker-input > input {
+  font-size: 12px;
+}
+
+.church-setting-page .ant-picker-input > input::placeholder {
+  color: #a0aec0;
+  font-size: 11px;
+}
+
+.church-setting-page .ant-picker-suffix,
+.church-setting-page .ant-picker-clear {
+  font-size: 11px;
+}
+
+/* =========================
+   SWITCH GRID
+   Hai cột, nhãn trái - switch phải
+========================= */
+
+.setting-switch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 10px;
+}
+
+.setting-switch-grid .ant-form-item {
+  min-width: 0;
+  margin: 0 !important;
+}
+
+/* Mỗi lựa chọn là một hàng ngang */
+
+.setting-switch-grid .ant-form-item-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid #edf0f4;
+  border-radius: 7px;
+  background: #f8fafc;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.setting-switch-grid .ant-form-item-row:hover {
+  background: #f1f5f9;
+  border-color: #d7e0ea;
+}
+
+/* Label */
+
+.setting-switch-grid .ant-form-item-label {
+  flex: 1;
+  min-width: 0;
+  padding: 0 !important;
+  overflow: hidden;
+  text-align: left;
+}
+
+.setting-switch-grid .ant-form-item-label > label {
+  display: block;
+  height: auto;
+  color: #475467;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.setting-switch-grid .ant-form-item-label > label::after {
+  display: none;
+}
+
+/* Control */
+
+.setting-switch-grid .ant-form-item-control {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.setting-switch-grid .ant-form-item-control-input {
+  min-height: auto;
+}
+
+.setting-switch-grid .ant-form-item-control-input-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Switch size nhỏ */
+
+.setting-switch-grid .ant-switch {
+  flex-shrink: 0;
+  min-width: 28px;
+  height: 16px;
+  line-height: 16px;
+}
+
+.setting-switch-grid .ant-switch .ant-switch-handle {
+  width: 12px;
+  height: 12px;
+  top: 2px;
+}
+
+.setting-switch-grid .ant-switch.ant-switch-checked .ant-switch-handle {
+  inset-inline-start: calc(100% - 14px);
+}
+
+.setting-switch-grid .ant-switch-inner {
+  font-size: 9px;
+}
+
+/* =========================
+   SUBTITLE
+========================= */
+
+.setting-subtitle {
+  margin-bottom: 9px;
+  color: #173b5e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* =========================
+   ALERT
+========================= */
+
+.church-setting-page .ant-alert {
+  padding: 9px 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+}
+
+.church-setting-page .ant-alert-icon {
+  margin-inline-end: 8px;
+  font-size: 14px;
+}
+
+.church-setting-page .ant-alert-message {
+  color: #173b5e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.church-setting-page .ant-alert-description {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =========================
+   LOADING
+========================= */
+
+.church-setting-loading {
+  display: flex;
+  min-height: 60vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.church-setting-loading .ant-typography {
+  color: #718096;
+  font-size: 13px;
+}
+
+/* =========================
+   RESPONSIVE - TABLET
+========================= */
+
+@media (max-width: 992px) {
+  .church-setting-page {
+    padding: 14px;
+  }
+
+  .church-setting-card .ant-card-body {
+    padding: 13px !important;
+  }
+
+  .setting-switch-grid {
+    gap: 6px 8px;
+  }
+}
+
+/* =========================
+   RESPONSIVE - MOBILE
+========================= */
+
+@media (max-width: 576px) {
+  .church-setting-page {
+    min-height: 100vh;
+    padding: 10px;
+  }
+
+  .church-setting-header {
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .church-setting-title-row {
+    gap: 8px;
+  }
+
+  .church-setting-title-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    font-size: 15px;
+  }
+
+  .church-setting-title {
+    font-size: 17px !important;
+  }
+
+  .church-setting-subtitle {
+    font-size: 10px;
+  }
+
+  .church-setting-header .ant-btn {
+    flex-shrink: 0;
+    height: 29px;
+    padding: 0 9px;
+    font-size: 11px;
+  }
+
+  .church-setting-card .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .setting-section-icon {
+    width: 31px;
+    height: 31px;
+    min-width: 31px;
+    font-size: 14px;
+  }
+
+  .setting-section-header h4.ant-typography {
+    font-size: 14px !important;
+  }
+
+  .setting-section-header .ant-typography-secondary {
+    font-size: 10px;
+  }
+
+  /* Mobile chuyển thành 1 cột để nhãn không bị chật */
+
+  .setting-switch-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .setting-switch-grid .ant-form-item-row {
+    min-height: 33px;
+    padding: 5px 9px;
+  }
+
+  .setting-switch-grid .ant-form-item-label > label {
+    font-size: 11px;
+  }
+
+  .church-setting-card .ant-divider {
+    margin: 10px 0 !important;
+  }
+
+  .church-setting-page .ant-alert {
+    padding: 8px 10px;
+  }
+}
+
+/* =========================
+   SHORT SCREEN
+========================= */
+
+@media (max-height: 760px) and (min-width: 577px) {
+  .church-setting-page {
+    padding-top: 10px;
+    padding-bottom: 12px;
+  }
+
+  .church-setting-header {
+    margin-bottom: 10px;
+  }
+
+  .church-setting-card .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .church-setting-card .ant-divider {
+    margin: 8px 0 !important;
+  }
+
+  .church-setting-page .ant-form-item {
+    margin-bottom: 7px;
+  }
+
+  .setting-switch-grid {
+    gap: 5px 8px;
+  }
+
+  .setting-switch-grid .ant-form-item-row {
+    min-height: 31px;
+    padding: 4px 8px;
+  }
+}

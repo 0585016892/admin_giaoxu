@@ -1138,60 +1138,76 @@ export default function StudentManagement() {
   =================================================== */
 
   const handleImportExcel = async (file) => {
-    if (!file || importing) {
-      return;
-    }
+    if (!file || importing) return;
 
-    const isExcel =
-      file.type ===
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-      file.type === "application/vnd.ms-excel" ||
-      file.name?.toLowerCase().endsWith(".xlsx") ||
-      file.name?.toLowerCase().endsWith(".xls");
+    const fileName = file.name?.toLowerCase() || "";
+    const isExcel = /\.(xlsx|xls)$/.test(fileName);
 
     if (!isExcel) {
       notify.error("Vui lòng chọn file Excel (.xlsx hoặc .xls)!");
       return;
     }
 
-    const isLt10M = file.size / 1024 / 1024 < 10;
-
-    if (!isLt10M) {
+    if (file.size > 10 * 1024 * 1024) {
       notify.error("File Excel không được vượt quá 10MB!");
       return;
     }
 
+    console.log("========== IMPORT EXCEL START ==========");
+    console.log("Tên file:", file.name);
+    console.log("Dung lượng:", file.size);
+    console.log("Loại file:", file.type);
+
+    console.time("IMPORT_EXCEL");
+
+    setImporting(true);
+
     try {
-      setImporting(true);
+      console.log("[1] Bắt đầu gửi file lên API");
 
-      const hide = notify.loading("Đang import danh sách học sinh...", 0);
+      const response = await studentApi.importExcel(file);
 
-      try {
-        const response = await studentApi.importExcel(file);
+      console.log("[2] API trả về:", response);
 
-        notify.success(
-          response?.data?.message ||
-            response?.data?.data?.message ||
-            "Import học sinh thành công!",
-        );
-      } finally {
-        hide();
+      const result = response?.data;
+
+      if (result?.success === false) {
+        throw new Error(result?.message || "Import học sinh thất bại!");
       }
 
-      await fetchStudents({
-        silent: true,
-      });
+      console.log("[3] Import thành công");
+
+      notify.success(
+        result?.message ||
+          result?.data?.message ||
+          "Import học sinh thành công!",
+      );
+
+      console.log("[4] Bắt đầu tải lại danh sách");
+
+      await fetchStudents({ silent: true });
+
+      console.log("[5] Đã tải lại danh sách");
 
       setSelectedRowKeys([]);
       setCurrentPage(1);
     } catch (error) {
+      console.error("========== IMPORT EXCEL ERROR ==========");
+      console.error("Message:", error?.message);
+      console.error("Response:", error?.response?.data);
+      console.error("Status:", error?.response?.status);
+      console.error("Stack:", error?.stack);
+
       notify.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||
           error?.message ||
-          "Không thể import danh sách học sinh!",
+          "Không thể import học sinh!",
       );
     } finally {
+      console.timeEnd("IMPORT_EXCEL");
+      console.log("========== IMPORT EXCEL END ==========");
+
       setImporting(false);
     }
   };
@@ -1549,13 +1565,6 @@ export default function StudentManagement() {
         return;
       }
 
-      const hide = notify.loading(
-        changeClassStudent.classId
-          ? "Đang chuyển lớp..."
-          : "Đang thêm vào lớp...",
-        0,
-      );
-
       try {
         if (changeClassStudent.classId) {
           await classStudentApi.changeClass(
@@ -1573,7 +1582,7 @@ export default function StudentManagement() {
           });
         }
       } finally {
-        hide();
+        setBulkChangeClassLoading(false);
       }
 
       notify.success(
@@ -1723,11 +1732,6 @@ export default function StudentManagement() {
     try {
       setBulkChangeClassLoading(true);
 
-      const hide = notify.loading(
-        `Đang chuyển ${studentIds.length} học sinh...`,
-        0,
-      );
-
       try {
         /*
          * ===================================================
@@ -1748,7 +1752,7 @@ export default function StudentManagement() {
 
         await classStudentApi.changeClassStudents(parsedNewClassId, studentIds);
       } finally {
-        hide();
+        setBulkChangeClassLoading(false);
       }
 
       // =====================================================
@@ -1991,8 +1995,6 @@ export default function StudentManagement() {
     try {
       setBulkDeleting(true);
 
-      const hide = notify.loading(`Đang xóa ${deleteCount} học sinh...`, 0);
-
       try {
         const response = await studentApi.deleteBulk(selectedRowKeys);
 
@@ -2011,7 +2013,7 @@ export default function StudentManagement() {
           silent: true,
         });
       } finally {
-        hide();
+        setBulkChangeClassLoading(false);
       }
     } catch (error) {
       notify.error(
@@ -3228,7 +3230,13 @@ export default function StudentManagement() {
           secondaryButtonText={importing ? "Đang import..." : "Import Excel"}
           secondaryButtonIcon={<UploadOutlined />}
           onSecondaryClick={() => {
-            document.getElementById("student-excel-input")?.click();
+            if (importing || loading || saving || bulkDeleting) return;
+
+            const input = document.getElementById("student-excel-input");
+
+            if (input) {
+              input.click();
+            }
           }}
           secondaryButtonLoading={importing}
           secondaryButtonDisabled={loading || saving || bulkDeleting}
@@ -3242,6 +3250,7 @@ export default function StudentManagement() {
           extra={
             <AppButton
               size="small"
+              type="button"
               icon={<DownloadOutlined />}
               onClick={handleDownloadExcelTemplate}
               disabled={loading || saving || importing || bulkDeleting}
@@ -3404,6 +3413,7 @@ export default function StudentManagement() {
             <Col xs={24} md={6} lg={3}>
               <AppButton
                 size="small"
+                type="button"
                 block
                 disabled={loading || saving || bulkDeleting}
                 onClick={resetFilters}
@@ -3474,6 +3484,7 @@ export default function StudentManagement() {
                 <AppButton
                   icon={<QrcodeOutlined />}
                   loading={bulkQRDownloading}
+                  type="button"
                   disabled={
                     loading || saving || bulkDeleting || bulkChangeClassLoading
                   }

@@ -50,6 +50,7 @@ import QuestionPlayPage from "../pages/catechist/QuestionPlayPage";
 import LicensePage from "../pages/catechist/License/LicensePage";
 import QuestionPage from "../pages/catechist/QuestionPage";
 import StudentBulkEditPage from "../pages/catechist/Students/StudentBulkEditPage";
+import ChurchSettingPage from "../pages/catechist/settings/ChurchSettingPage";
 // ============================================================
 // PARENTS
 // ============================================================
@@ -257,7 +258,10 @@ export default function AppRoutes() {
               path="/catechist/settings"
               element={<ParishSettingsPage />}
             />
-
+            <Route
+              path="/catechist/settings/church"
+              element={<ChurchSettingPage />}
+            />
             {/* ================= LESSON ================= */}
 
             <Route

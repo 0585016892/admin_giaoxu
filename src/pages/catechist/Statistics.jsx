@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 
@@ -13,6 +14,7 @@ import {
   Spin,
   Table,
   Tag,
+  Tooltip,
 } from "antd";
 
 import viVN from "antd/locale/vi_VN";
@@ -22,6 +24,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardCheck,
+  Download,
   GraduationCap,
   RefreshCw,
   Search,
@@ -43,21 +46,19 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
 } from "recharts";
 
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
 import { useNotification } from "../../components/notification";
+
 import {
-  getStatisticsOverview,
-  getStudentStatistics,
-  getClassStatistics,
-  getAttendanceStatistics,
-  getCatechistStatistics,
-  getStudentAttendanceStatistics,
+  getAllStatistics,
+  exportAttendanceReport,
 } from "../../api/statisticsApi";
+import AppButton from "../../components/common/AppButton";
 
 dayjs.locale("vi");
 
@@ -209,30 +210,13 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 10,
+    flexWrap: "wrap",
   },
 
   search: {
     width: 250,
     height: 38,
     borderRadius: 9,
-  },
-
-  twoGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 16,
-  },
-
-  threeGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 16,
-  },
-
-  chartGrid: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)",
-    gap: 16,
   },
 
   attendanceBox: {
@@ -314,6 +298,21 @@ const safeArray = (value) => {
   return Array.isArray(value) ? value : [];
 };
 
+const unwrapData = (response) => {
+  if (response === undefined || response === null) {
+    return null;
+  }
+
+  if (
+    typeof response === "object" &&
+    Object.prototype.hasOwnProperty.call(response, "data")
+  ) {
+    return response.data;
+  }
+
+  return response;
+};
+
 const getStudentName = (student) => {
   return (
     student?.student_name ||
@@ -360,9 +359,11 @@ const getStatusLabel = (status) => {
     inactive: "Không hoạt động",
     pending: "Chờ duyệt",
     suspended: "Tạm ngưng",
+
     new: "Mới",
     studying: "Đang học",
     completed: "Đã hoàn thành",
+
     male: "Nam",
     female: "Nữ",
   };
@@ -395,40 +396,99 @@ const getStatusColor = (status) => {
 const Statistics = () => {
   const notify = useNotification();
 
-  /* ----------------------------------------------------------
+  /* ==========================================================
      FILTER
-  ---------------------------------------------------------- */
+  ========================================================== */
 
   const [selectedMonth, setSelectedMonth] = useState(dayjs());
+
   const [attendanceType, setAttendanceType] = useState(null);
+
   const [selectedClassId, setSelectedClassId] = useState(null);
+
   const [dateRange, setDateRange] = useState(null);
 
-  /* ----------------------------------------------------------
+  /* ==========================================================
      SEARCH
-  ---------------------------------------------------------- */
+  ========================================================== */
 
   const [classSearch, setClassSearch] = useState("");
+
   const [catechistSearch, setCatechistSearch] = useState("");
+
   const [studentSearch, setStudentSearch] = useState("");
 
-  /* ----------------------------------------------------------
+  /* ==========================================================
      DATA
-  ---------------------------------------------------------- */
+  ========================================================== */
 
   const [overview, setOverview] = useState(null);
+
   const [students, setStudents] = useState(null);
+
   const [classes, setClasses] = useState([]);
+
   const [attendance, setAttendance] = useState(null);
+
   const [catechists, setCatechists] = useState([]);
+
   const [studentAttendance, setStudentAttendance] = useState(null);
 
-  /* ----------------------------------------------------------
+  /* ==========================================================
      STATE
-  ---------------------------------------------------------- */
+  ========================================================== */
 
   const [loading, setLoading] = useState(false);
+
+  const [exporting, setExporting] = useState(false);
+
   const [error, setError] = useState("");
+
+  /* ==========================================================
+     BUILD ATTENDANCE PARAMS
+  ========================================================== */
+
+  const attendanceParams = useMemo(() => {
+    const params = {};
+
+    const month = selectedMonth.month() + 1;
+
+    const year = selectedMonth.year();
+
+    /* --------------------------------------------------------
+       DATE RANGE
+    -------------------------------------------------------- */
+
+    if (dateRange?.[0] && dateRange?.[1]) {
+      params.from = dateRange[0].format("YYYY-MM-DD");
+
+      params.to = dateRange[1].format("YYYY-MM-DD");
+    } else {
+      params.month = month;
+      params.year = year;
+    }
+
+    /* --------------------------------------------------------
+       ATTENDANCE TYPE
+    -------------------------------------------------------- */
+
+    if (attendanceType) {
+      params.attendance_type = attendanceType;
+    }
+
+    /* --------------------------------------------------------
+       CLASS
+       
+       MASS:
+       Không bao giờ gửi class_id.
+    -------------------------------------------------------- */
+
+    if (selectedClassId && attendanceType !== "mass") {
+      params.class_id = selectedClassId;
+    }
+
+    return params;
+  }, [selectedMonth, dateRange, attendanceType, selectedClassId]);
 
   /* ==========================================================
      LOAD STATISTICS
@@ -439,105 +499,159 @@ const Statistics = () => {
       setLoading(true);
       setError("");
 
-      const month = selectedMonth.month() + 1;
-      const year = selectedMonth.year();
+      console.log("");
+      console.log("=================================================");
+      console.log("📊 LOAD STATISTICS");
+      console.log("=================================================");
 
-      const attendanceParams = {};
+      console.log("Attendance params:", attendanceParams);
 
-      if (dateRange?.[0] && dateRange?.[1]) {
-        attendanceParams.from = dateRange[0].format("YYYY-MM-DD");
+      console.log("Attendance type:", attendanceType);
 
-        attendanceParams.to = dateRange[1].format("YYYY-MM-DD");
-      } else {
-        attendanceParams.month = month;
-        attendanceParams.year = year;
-      }
+      console.log("Class ID:", attendanceParams.class_id || "ALL");
 
-      if (selectedClassId) {
-        attendanceParams.class_id = selectedClassId;
-      }
+      const result = await getAllStatistics(attendanceParams);
 
-      if (attendanceType) {
-        attendanceParams.attendance_type = attendanceType;
-      }
+      console.log("📊 ALL STATISTICS RESULT:", result);
 
-      const [
-        overviewRes,
-        studentsRes,
-        classesRes,
-        attendanceRes,
-        catechistsRes,
-        studentAttendanceRes,
-      ] = await Promise.all([
-        getStatisticsOverview({
-          month,
-          year,
-        }),
+      /* ----------------------------------------------------
+           NORMALIZE
+        ---------------------------------------------------- */
 
-        getStudentStatistics(),
+      const overviewData = unwrapData(result?.overview);
 
-        getClassStatistics(),
+      const studentsData = unwrapData(result?.students);
 
-        getAttendanceStatistics(attendanceParams),
+      const classesData = unwrapData(result?.classes);
 
-        getCatechistStatistics(),
+      const attendanceData = unwrapData(result?.attendance);
 
-        getStudentAttendanceStatistics(attendanceParams),
-      ]);
+      const catechistsData = unwrapData(result?.catechists);
 
-      setOverview(overviewRes?.data || overviewRes || null);
+      const studentAttendanceData = unwrapData(result?.studentAttendance);
 
-      setStudents(studentsRes?.data || studentsRes || null);
+      /* ----------------------------------------------------
+           SET STATE
+        ---------------------------------------------------- */
 
-      setClasses(safeArray(classesRes?.data || classesRes));
+      setOverview(overviewData);
 
-      setAttendance(attendanceRes?.data || attendanceRes || null);
+      setStudents(studentsData);
 
-      setCatechists(safeArray(catechistsRes?.data || catechistsRes));
-
-      setStudentAttendance(
-        studentAttendanceRes?.data || studentAttendanceRes || null,
+      setClasses(
+        safeArray(classesData?.classes || classesData?.items || classesData),
       );
+
+      setAttendance(attendanceData);
+
+      setCatechists(
+        safeArray(
+          catechistsData?.catechists || catechistsData?.items || catechistsData,
+        ),
+      );
+
+      setStudentAttendance(studentAttendanceData);
+
+      console.log("✅ STATISTICS UPDATED");
     } catch (err) {
-      notify.error(err?.message || "Không thể tải dữ liệu thống kê.");
+      console.error("❌ LOAD STATISTICS ERROR:", err);
+
+      const message = err?.message || "Không thể tải dữ liệu thống kê.";
+
+      setError(message);
+
+      notify.error(message);
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, attendanceType, selectedClassId, dateRange, notify]);
+  }, [attendanceParams, attendanceType, notify]);
+
+  /* ==========================================================
+     INITIAL / FILTER LOAD
+  ========================================================== */
+
   useEffect(() => {
     loadStatistics();
   }, [loadStatistics]);
+
   /* ==========================================================
-     NORMALIZE
+     OVERVIEW ATTENDANCE
   ========================================================== */
 
-  const catechismAttendance = useMemo(
-    () => overview?.catechism_attendance || overview?.catechism || {},
-    [overview],
-  );
-  const massAttendance = useMemo(
-    () => overview?.mass_attendance || overview?.mass || {},
-    [overview],
-  );
-  const attendanceSummary = useMemo(
-    () => attendance?.summary || {},
-    [attendance],
-  );
+  const catechismAttendance = useMemo(() => {
+    return overview?.catechism_attendance || overview?.catechism || {};
+  }, [overview]);
+
+  const massAttendance = useMemo(() => {
+    return overview?.mass_attendance || overview?.mass || {};
+  }, [overview]);
+
+  /* ==========================================================
+     ATTENDANCE SUMMARY
+  ========================================================== */
+
+  const attendanceSummary = useMemo(() => {
+    return attendance?.summary || {};
+  }, [attendance]);
+
+  /* ==========================================================
+     SELECTED ATTENDANCE SOURCE
+  ========================================================== */
+
+  const selectedAttendanceSource = useMemo(() => {
+    if (Object.keys(attendanceSummary).length > 0) {
+      return attendanceSummary;
+    }
+
+    if (attendanceType === "mass") {
+      return massAttendance;
+    }
+
+    if (attendanceType === "catechism") {
+      return catechismAttendance;
+    }
+
+    return {};
+  }, [attendanceSummary, attendanceType, massAttendance, catechismAttendance]);
+
+  /* ==========================================================
+     SELECTED ATTENDANCE RATE
+  ========================================================== */
+
+  const selectedAttendanceRate = useMemo(() => {
+    return getAttendanceRate(selectedAttendanceSource);
+  }, [selectedAttendanceSource]);
+
   /* ==========================================================
      CLASS OPTIONS
   ========================================================== */
 
-  const classOptions = useMemo(
-    () =>
-      classes.map((item) => ({
-        value: item.id,
-        label: item.name || item.code || "Lớp chưa đặt tên",
-      })),
-    [classes],
-  );
+  const classOptions = useMemo(() => {
+    return classes
+      .map((item) => {
+        const id = item.id ?? item.class_id;
+
+        const label =
+          item.name ||
+          item.class_name ||
+          item.code ||
+          item.class_code ||
+          "Lớp chưa đặt tên";
+
+        if (id === undefined || id === null) {
+          return null;
+        }
+
+        return {
+          value: id,
+          label,
+        };
+      })
+      .filter(Boolean);
+  }, [classes]);
 
   /* ==========================================================
-     DAILY CHART
+     DAILY ATTENDANCE
   ========================================================== */
 
   const dailyAttendanceData = useMemo(() => {
@@ -560,78 +674,67 @@ const Statistics = () => {
      ATTENDANCE PIE
   ========================================================== */
 
-  const attendancePieData = useMemo(
-    () =>
-      [
-        {
-          name: "Có mặt",
-          value: Number(
-            attendanceSummary.present ?? catechismAttendance.present ?? 0,
-          ),
-        },
+  const attendancePieData = useMemo(() => {
+    const source = selectedAttendanceSource;
 
-        {
-          name: "Vắng",
-          value: Number(
-            attendanceSummary.absent ?? catechismAttendance.absent ?? 0,
-          ),
-        },
+    return [
+      {
+        name: "Có mặt",
+        value: Number(source.present || 0),
+      },
 
-        {
-          name: "Trễ",
-          value: Number(
-            attendanceSummary.late ?? catechismAttendance.late ?? 0,
-          ),
-        },
+      {
+        name: "Vắng",
+        value: Number(source.absent || 0),
+      },
 
-        {
-          name: "Có phép",
-          value: Number(
-            attendanceSummary.excused ?? catechismAttendance.excused ?? 0,
-          ),
-        },
-      ].filter((item) => item.value > 0),
-    [attendanceSummary, catechismAttendance],
-  );
+      {
+        name: "Trễ",
+        value: Number(source.late || 0),
+      },
+
+      {
+        name: "Có phép",
+        value: Number(source.excused || 0),
+      },
+    ].filter((item) => item.value > 0);
+  }, [selectedAttendanceSource]);
 
   /* ==========================================================
      GENDER
   ========================================================== */
 
-  const genderData = useMemo(
-    () =>
-      safeArray(students?.gender).map((item) => ({
-        name: getStatusLabel(item.gender),
-        value: Number(item.total || 0),
-      })),
-    [students],
-  );
+  const genderData = useMemo(() => {
+    return safeArray(students?.gender).map((item) => ({
+      name: getStatusLabel(item.gender),
+
+      value: Number(item.total || 0),
+    }));
+  }, [students]);
 
   /* ==========================================================
      STUDENT STATUS
   ========================================================== */
 
-  const studentStatusData = useMemo(
-    () =>
-      safeArray(students?.status).map((item) => ({
-        name: getStatusLabel(item.status),
-        value: Number(item.total || 0),
-      })),
-    [students],
-  );
+  const studentStatusData = useMemo(() => {
+    return safeArray(students?.status).map((item) => ({
+      name: getStatusLabel(item.status),
+
+      value: Number(item.total || 0),
+    }));
+  }, [students]);
 
   /* ==========================================================
      CATECHISM STATUS
   ========================================================== */
 
-  const catechismStatusData = useMemo(
-    () =>
-      safeArray(students?.catechism_status).map((item) => ({
-        name: getStatusLabel(item.status),
-        value: Number(item.total || 0),
-      })),
-    [students],
-  );
+  const catechismStatusData = useMemo(() => {
+    return safeArray(students?.catechism_status).map((item) => ({
+      name: getStatusLabel(item.status),
+
+      value: Number(item.total || 0),
+    }));
+  }, [students]);
 
   /* ==========================================================
      CLASS ROWS
@@ -639,9 +742,9 @@ const Statistics = () => {
 
   const classRows = useMemo(() => {
     return safeArray(attendance?.by_class).map((item, index) => ({
-      key: item.class_id || item.id || index,
+      key: item.class_id ?? item.id ?? index,
 
-      class_id: item.class_id || item.id,
+      class_id: item.class_id ?? item.id,
 
       class_name: item.class_name || item.name || "Chưa có tên",
 
@@ -685,20 +788,20 @@ const Statistics = () => {
      CLASS CHART
   ========================================================== */
 
-  const classChartData = useMemo(
-    () =>
-      classRows.map((item) => ({
-        name:
-          item.class_name?.length > 14
-            ? `${item.class_name.slice(0, 14)}...`
-            : item.class_name,
+  const classChartData = useMemo(() => {
+    return classRows.map((item) => ({
+      name:
+        item.class_name?.length > 14
+          ? `${item.class_name.slice(0, 14)}...`
+          : item.class_name,
 
-        "Có mặt": item.present,
-        Vắng: item.absent,
-        Trễ: item.late,
-      })),
-    [classRows],
-  );
+      "Có mặt": item.present,
+
+      Vắng: item.absent,
+
+      Trễ: item.late,
+    }));
+  }, [classRows]);
 
   /* ==========================================================
      FILTER CATECHIST
@@ -733,8 +836,8 @@ const Statistics = () => {
   const studentAttendanceRows = useMemo(() => {
     const source =
       studentAttendance?.students ||
-      studentAttendance?.data ||
       studentAttendance?.items ||
+      studentAttendance?.data ||
       studentAttendance;
 
     if (!Array.isArray(source)) {
@@ -744,13 +847,16 @@ const Statistics = () => {
     return source.map((item, index) => ({
       ...item,
 
-      key: item.student_id || item.id || index,
+      key: item.student_id ?? item.id ?? index,
 
       student_name: getStudentName(item),
 
       student_code: getStudentCode(item),
 
-      class_name: item.class_name || item.class?.name || "-",
+      class_name:
+        attendanceType === "mass"
+          ? "Không theo lớp"
+          : item.class_name || item.class?.name || "-",
 
       total: Number(item.total || 0),
 
@@ -764,7 +870,7 @@ const Statistics = () => {
 
       rate: getAttendanceRate(item),
     }));
-  }, [studentAttendance]);
+  }, [studentAttendance, attendanceType]);
 
   /* ==========================================================
      FILTER STUDENT
@@ -785,6 +891,84 @@ const Statistics = () => {
       return name.includes(keyword) || code.includes(keyword);
     });
   }, [studentAttendanceRows, studentSearch]);
+
+  /* ==========================================================
+     EXPORT
+  ========================================================== */
+
+  const handleExportAttendance = useCallback(async () => {
+    try {
+      setExporting(true);
+
+      setError("");
+
+      console.log("");
+      console.log("=================================================");
+      console.log("📥 EXPORT ATTENDANCE REPORT");
+      console.log("=================================================");
+
+      console.log("Export params:", attendanceParams);
+
+      const response = await exportAttendanceReport(attendanceParams);
+
+      const blob = response?.data;
+
+      if (!(blob instanceof Blob)) {
+        throw new Error("Dữ liệu báo cáo không hợp lệ.");
+      }
+
+      /* ----------------------------------------------------
+           FILE NAME
+        ---------------------------------------------------- */
+
+      let fileName = "bao-cao-diem-danh.xlsx";
+
+      const disposition = response?.headers?.["content-disposition"];
+
+      if (disposition) {
+        const match = disposition.match(
+          /filename\*?=(?:UTF-8'')?["']?([^;"']+)["']?/i,
+        );
+
+        if (match?.[1]) {
+          fileName = decodeURIComponent(match[1]);
+        }
+      }
+
+      /* ----------------------------------------------------
+           DOWNLOAD
+        ---------------------------------------------------- */
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = fileName;
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+
+      console.log("✅ EXPORT SUCCESS:", fileName);
+
+      notify.success("Xuất báo cáo điểm danh thành công.");
+    } catch (err) {
+      console.error("❌ EXPORT ERROR:", err);
+
+      const message = err?.message || "Không thể xuất báo cáo điểm danh.";
+
+      setError(message);
+
+      notify.error(message);
+    } finally {
+      setExporting(false);
+    }
+  }, [attendanceParams, notify]);
 
   /* ==========================================================
      SEARCH INPUT
@@ -1062,8 +1246,10 @@ const Statistics = () => {
     },
 
     {
-      title: "Lớp",
+      title: attendanceType === "mass" ? "Phân loại" : "Lớp",
+
       dataIndex: "class_name",
+
       key: "class_name",
     },
 
@@ -1122,6 +1308,15 @@ const Statistics = () => {
     },
 
     {
+      title: "Có phép",
+      dataIndex: "excused",
+      key: "excused",
+      align: "center",
+
+      render: (value) => numberFormat(value),
+    },
+
+    {
       title: "Tỷ lệ",
       dataIndex: "rate",
       key: "rate",
@@ -1159,27 +1354,56 @@ const Statistics = () => {
           description="Tổng quan tình hình lớp học, học viên, giáo lý viên và chuyên cần."
           icon={<TrendingUp size={22} />}
           extra={
-            <button
-              type="button"
-              onClick={loadStatistics}
-              disabled={loading}
+            <div
               style={{
-                ...styles.refreshButton,
-                ...(loading ? styles.refreshButtonDisabled : {}),
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
               }}
             >
-              <RefreshCw
-                size={16}
-                style={
-                  loading
-                    ? {
-                        animation: "statistics-spin 1s linear infinite",
-                      }
-                    : undefined
-                }
-              />
-              Làm mới
-            </button>
+              <Tooltip title="Xuất báo cáo điểm danh">
+                <AppButton
+                  type="primary"
+                  icon={<Download size={16} />}
+                  loading={exporting}
+                  size="small"
+                  disabled={loading}
+                  onClick={handleExportAttendance}
+                  style={{
+                    height: 38,
+                    borderRadius: 9,
+                    background: COLORS.navy,
+                    borderColor: COLORS.navy,
+                    fontWeight: 600,
+                  }}
+                >
+                  Xuất báo cáo điểm danh
+                </AppButton>
+              </Tooltip>
+
+              <button
+                type="button"
+                onClick={loadStatistics}
+                disabled={loading}
+                style={{
+                  ...styles.refreshButton,
+
+                  ...(loading ? styles.refreshButtonDisabled : {}),
+                }}
+              >
+                <RefreshCw
+                  size={16}
+                  style={
+                    loading
+                      ? {
+                          animation: "statistics-spin 1s linear infinite",
+                        }
+                      : undefined
+                  }
+                />
+                Làm mới
+              </button>
+            </div>
           }
         />
 
@@ -1207,7 +1431,7 @@ const Statistics = () => {
         <div style={styles.section}>
           <Card bordered style={styles.filterCard}>
             <div style={styles.filter}>
-              {/* Tháng */}
+              {/* THÁNG */}
 
               <div style={styles.filterItem}>
                 <div style={styles.filterLabel}>Tháng thống kê</div>
@@ -1218,6 +1442,7 @@ const Statistics = () => {
                   onChange={(value) => {
                     if (value) {
                       setSelectedMonth(value);
+
                       setDateRange(null);
                     }
                   }}
@@ -1230,14 +1455,16 @@ const Statistics = () => {
                 />
               </div>
 
-              {/* Khoảng ngày */}
+              {/* KHOẢNG NGÀY */}
 
               <div style={styles.filterItem}>
                 <div style={styles.filterLabel}>Khoảng thời gian</div>
 
                 <DatePicker.RangePicker
                   value={dateRange}
-                  onChange={(value) => setDateRange(value)}
+                  onChange={(value) => {
+                    setDateRange(value);
+                  }}
                   format="DD/MM/YYYY"
                   placeholder={["Từ ngày", "Đến ngày"]}
                   style={{
@@ -1247,7 +1474,7 @@ const Statistics = () => {
                 />
               </div>
 
-              {/* Attendance type */}
+              {/* LOẠI */}
 
               <div style={styles.filterItem}>
                 <div style={styles.filterLabel}>Loại chuyên cần</div>
@@ -1255,7 +1482,13 @@ const Statistics = () => {
                 <Select
                   allowClear
                   value={attendanceType}
-                  onChange={setAttendanceType}
+                  onChange={(value) => {
+                    setAttendanceType(value);
+
+                    if (value === "mass") {
+                      setSelectedClassId(null);
+                    }
+                  }}
                   placeholder="Tất cả"
                   style={{
                     width: 170,
@@ -1263,8 +1496,9 @@ const Statistics = () => {
                   options={[
                     {
                       value: "catechism",
-                      label: "Giáo lý",
+                      label: "Học giáo lý",
                     },
+
                     {
                       value: "mass",
                       label: "Thánh lễ",
@@ -1273,24 +1507,46 @@ const Statistics = () => {
                 />
               </div>
 
-              {/* Class */}
+              {/* CLASS */}
 
-              <div style={styles.filterItem}>
-                <div style={styles.filterLabel}>Lớp</div>
+              {attendanceType !== "mass" && (
+                <div style={styles.filterItem}>
+                  <div style={styles.filterLabel}>Lớp</div>
 
-                <Select
-                  allowClear
-                  showSearch
-                  optionFilterProp="label"
-                  value={selectedClassId}
-                  onChange={setSelectedClassId}
-                  placeholder="Tất cả lớp"
-                  options={classOptions}
+                  <Select
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    value={selectedClassId}
+                    onChange={setSelectedClassId}
+                    placeholder="Tất cả lớp"
+                    options={classOptions}
+                    style={{
+                      width: 220,
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* MASS INFO */}
+
+              {attendanceType === "mass" && (
+                <div
                   style={{
-                    width: 220,
+                    height: 38,
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0 12px",
+                    borderRadius: 9,
+                    background: COLORS.successBg,
+                    color: COLORS.success,
+                    fontSize: 13,
+                    fontWeight: 600,
                   }}
-                />
-              </div>
+                >
+                  Thánh lễ: không phân theo lớp
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -1334,13 +1590,9 @@ const Statistics = () => {
 
                 <StatCard
                   title="Tỷ lệ chuyên cần"
-                  value={percentFormat(
-                    attendanceSummary.attendance_rate ??
-                      catechismAttendance.rate ??
-                      0,
-                  )}
+                  value={percentFormat(selectedAttendanceRate)}
                   icon={<ClipboardCheck size={21} />}
-                  description="Theo dữ liệu hiện tại"
+                  description="Theo bộ lọc hiện tại"
                 />
               </div>
             </div>
@@ -1358,11 +1610,11 @@ const Statistics = () => {
                 />
 
                 <div className="statistics-two-grid">
-                  {/* Giáo lý */}
+                  {/* GIÁO LÝ */}
 
                   <div style={styles.attendanceBox}>
                     <div style={styles.attendanceHeader}>
-                      <span style={styles.attendanceTitle}>Giáo lý</span>
+                      <span style={styles.attendanceTitle}>Học giáo lý</span>
 
                       <Tag color="processing">
                         {percentFormat(catechismAttendance.rate)}
@@ -1424,7 +1676,7 @@ const Statistics = () => {
                     </div>
                   </div>
 
-                  {/* Thánh lễ */}
+                  {/* MASS */}
 
                   <div style={styles.attendanceBox}>
                     <div style={styles.attendanceHeader}>
@@ -1499,7 +1751,7 @@ const Statistics = () => {
 
             <div style={styles.section}>
               <div className="statistics-chart-grid">
-                {/* Daily chart */}
+                {/* DAILY */}
 
                 <Card bordered style={styles.card}>
                   <SectionHeader
@@ -1525,22 +1777,11 @@ const Statistics = () => {
                             stroke={COLORS.border}
                           />
 
-                          <XAxis
-                            dataKey="date"
-                            tick={{
-                              fill: COLORS.textSecondary,
-                              fontSize: 12,
-                            }}
-                          />
+                          <XAxis dataKey="date" />
 
-                          <YAxis
-                            tick={{
-                              fill: COLORS.textSecondary,
-                              fontSize: 12,
-                            }}
-                          />
+                          <YAxis />
 
-                          <Tooltip />
+                          <RechartsTooltip />
 
                           <Legend />
 
@@ -1581,7 +1822,7 @@ const Statistics = () => {
                   )}
                 </Card>
 
-                {/* Pie chart */}
+                {/* PIE */}
 
                 <Card bordered style={styles.card}>
                   <SectionHeader
@@ -1619,7 +1860,7 @@ const Statistics = () => {
                             ))}
                           </Pie>
 
-                          <Tooltip />
+                          <RechartsTooltip />
 
                           <Legend />
                         </PieChart>
@@ -1637,8 +1878,8 @@ const Statistics = () => {
             ================================================== */}
 
             <div style={styles.section}>
-              <div className="statistics-chart-grid">
-                {/* Gender */}
+              <div className="statistics-student-grid">
+                {/* GENDER */}
 
                 <Card bordered style={styles.card}>
                   <SectionHeader
@@ -1667,7 +1908,7 @@ const Statistics = () => {
                             ))}
                           </Pie>
 
-                          <Tooltip />
+                          <RechartsTooltip />
 
                           <Legend />
                         </PieChart>
@@ -1678,7 +1919,7 @@ const Statistics = () => {
                   )}
                 </Card>
 
-                {/* Student status */}
+                {/* STUDENT STATUS */}
 
                 <Card bordered style={styles.card}>
                   <SectionHeader
@@ -1704,7 +1945,7 @@ const Statistics = () => {
 
                           <YAxis />
 
-                          <Tooltip />
+                          <RechartsTooltip />
 
                           <Bar
                             dataKey="value"
@@ -1720,7 +1961,7 @@ const Statistics = () => {
                   )}
                 </Card>
 
-                {/* Catechism */}
+                {/* CATECHISM STATUS */}
 
                 <Card bordered style={styles.card}>
                   <SectionHeader
@@ -1746,7 +1987,7 @@ const Statistics = () => {
 
                           <YAxis />
 
-                          <Tooltip />
+                          <RechartsTooltip />
 
                           <Bar
                             dataKey="value"
@@ -1766,123 +2007,130 @@ const Statistics = () => {
 
             {/* ==================================================
                 CLASS CHART
+                MASS KHÔNG HIỆN
             ================================================== */}
 
-            <div style={styles.section}>
-              <Card bordered style={styles.card}>
-                <SectionHeader
-                  icon={<BookOpen size={20} />}
-                  title="Chuyên cần theo lớp"
-                  description="So sánh số lượng có mặt, vắng và trễ giữa các lớp"
-                />
+            {attendanceType !== "mass" && (
+              <div style={styles.section}>
+                <Card bordered style={styles.card}>
+                  <SectionHeader
+                    icon={<BookOpen size={20} />}
+                    title="Chuyên cần theo lớp"
+                    description="So sánh số lượng có mặt, vắng và trễ giữa các lớp"
+                  />
 
-                {classChartData.length > 0 ? (
-                  <div style={styles.chartLarge}>
-                    <ResponsiveContainer>
-                      <BarChart
-                        data={classChartData}
-                        margin={{
-                          top: 10,
-                          right: 20,
-                          left: 0,
-                          bottom: 50,
-                        }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke={COLORS.border}
-                        />
-
-                        <XAxis
-                          dataKey="name"
-                          angle={-35}
-                          textAnchor="end"
-                          interval={0}
-                          height={80}
-                          tick={{
-                            fontSize: 11,
-                            fill: COLORS.textSecondary,
+                  {classChartData.length > 0 ? (
+                    <div style={styles.chartLarge}>
+                      <ResponsiveContainer>
+                        <BarChart
+                          data={classChartData}
+                          margin={{
+                            top: 10,
+                            right: 20,
+                            left: 0,
+                            bottom: 50,
                           }}
-                        />
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke={COLORS.border}
+                          />
 
-                        <YAxis />
+                          <XAxis
+                            dataKey="name"
+                            angle={-35}
+                            textAnchor="end"
+                            interval={0}
+                            height={80}
+                            tick={{
+                              fontSize: 11,
+                              fill: COLORS.textSecondary,
+                            }}
+                          />
 
-                        <Tooltip />
+                          <YAxis />
 
-                        <Legend />
+                          <RechartsTooltip />
 
-                        <Bar
-                          dataKey="Có mặt"
-                          fill={COLORS.success}
-                          radius={[4, 4, 0, 0]}
-                        />
+                          <Legend />
 
-                        <Bar
-                          dataKey="Vắng"
-                          fill={COLORS.danger}
-                          radius={[4, 4, 0, 0]}
-                        />
+                          <Bar
+                            dataKey="Có mặt"
+                            fill={COLORS.success}
+                            radius={[4, 4, 0, 0]}
+                          />
 
-                        <Bar
-                          dataKey="Trễ"
-                          fill={COLORS.gold}
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <Empty description="Chưa có dữ liệu lớp học" />
-                )}
-              </Card>
-            </div>
+                          <Bar
+                            dataKey="Vắng"
+                            fill={COLORS.danger}
+                            radius={[4, 4, 0, 0]}
+                          />
+
+                          <Bar
+                            dataKey="Trễ"
+                            fill={COLORS.gold}
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <Empty description="Chưa có dữ liệu lớp học" />
+                  )}
+                </Card>
+              </div>
+            )}
 
             {/* ==================================================
                 CLASS TABLE
+                MASS KHÔNG HIỆN
             ================================================== */}
 
-            <div style={styles.section}>
-              <Card bordered style={styles.card}>
-                <SectionHeader
-                  icon={<BookOpen size={20} />}
-                  title="Danh sách lớp học"
-                  description={`${numberFormat(
-                    filteredClassRows.length,
-                  )} lớp được hiển thị`}
-                  extra={
-                    <SearchInput
-                      value={classSearch}
-                      onChange={setClassSearch}
-                      placeholder="Tìm tên hoặc mã lớp..."
-                    />
-                  }
-                />
-
-                <Table
-                  columns={classColumns}
-                  dataSource={filteredClassRows}
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showTotal: (total) => `Tổng ${numberFormat(total)} lớp`,
-                  }}
-                  locale={{
-                    emptyText: (
-                      <Empty
-                        description={
-                          classSearch
-                            ? "Không tìm thấy lớp phù hợp"
-                            : "Chưa có dữ liệu lớp"
-                        }
+            {attendanceType !== "mass" && (
+              <div style={styles.section}>
+                <Card bordered style={styles.card}>
+                  <SectionHeader
+                    icon={<BookOpen size={20} />}
+                    title="Danh sách lớp học"
+                    description={`${numberFormat(
+                      filteredClassRows.length,
+                    )} lớp được hiển thị`}
+                    extra={
+                      <SearchInput
+                        value={classSearch}
+                        onChange={setClassSearch}
+                        placeholder="Tìm tên hoặc mã lớp..."
                       />
-                    ),
-                  }}
-                  scroll={{
-                    x: 700,
-                  }}
-                />
-              </Card>
-            </div>
+                    }
+                  />
+
+                  <Table
+                    columns={classColumns}
+                    dataSource={filteredClassRows}
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+
+                      showTotal: (total) => `Tổng ${numberFormat(total)} lớp`,
+                    }}
+                    locale={{
+                      emptyText: (
+                        <Empty
+                          description={
+                            classSearch
+                              ? "Không tìm thấy lớp phù hợp"
+                              : "Chưa có dữ liệu lớp"
+                          }
+                        />
+                      ),
+                    }}
+                    scroll={{
+                      x: 700,
+                    }}
+                  />
+                </Card>
+              </div>
+            )}
 
             {/* ==================================================
                 CATECHIST TABLE
@@ -1911,6 +2159,7 @@ const Statistics = () => {
                   pagination={{
                     pageSize: 10,
                     showSizeChanger: true,
+
                     showTotal: (total) =>
                       `Tổng ${numberFormat(total)} giáo lý viên`,
                   }}
@@ -1933,7 +2182,7 @@ const Statistics = () => {
             </div>
 
             {/* ==================================================
-                STUDENT TABLE
+                STUDENT ATTENDANCE
             ================================================== */}
 
             <div style={styles.section}>
@@ -1964,6 +2213,7 @@ const Statistics = () => {
                     pagination={{
                       pageSize: 10,
                       showSizeChanger: true,
+
                       showTotal: (total) =>
                         `Tổng ${numberFormat(total)} học viên`,
                     }}
@@ -1979,7 +2229,7 @@ const Statistics = () => {
                       ),
                     }}
                     scroll={{
-                      x: 850,
+                      x: 950,
                     }}
                   />
                 ) : (
@@ -1996,264 +2246,181 @@ const Statistics = () => {
         {/* ======================================================
             RESPONSIVE CSS
         ====================================================== */}
+
         <style>
           {`
-    /* =====================================================
-       STATISTICS CARD GRID
-    ===================================================== */
+            .statistics-card-grid {
+              display: grid;
+              grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+              gap: 16px;
+              width: 100%;
+            }
 
-    .statistics-card-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-      width: 100%;
-    }
+            .statistics-chart-grid {
+              display: grid;
+              grid-template-columns:
+                minmax(0, 2fr)
+                minmax(320px, 1fr);
+              gap: 16px;
+              width: 100%;
+              min-width: 0;
+            }
 
-    /* =====================================================
-       CHART GRID
-       Desktop: 2 cột
-    ===================================================== */
+            .statistics-chart-grid > .ant-card {
+              min-width: 0;
+              width: 100%;
+            }
 
-    .statistics-chart-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
-      gap: 16px;
-      width: 100%;
-      min-width: 0;
-    }
+            .statistics-student-grid {
+              display: grid;
+              grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+              gap: 16px;
+              width: 100%;
+              min-width: 0;
+            }
 
-    .statistics-chart-grid > .ant-card {
-      min-width: 0;
-      width: 100%;
-    }
+            .statistics-student-grid > .ant-card {
+              min-width: 0;
+            }
 
-    /* =====================================================
-       TABLET
-    ===================================================== */
+            .statistics-two-grid {
+              display: grid;
+              grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+              gap: 16px;
+              width: 100%;
+            }
 
-    @media (max-width: 1200px) {
+            @media (max-width: 1200px) {
 
-      .statistics-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+              .statistics-card-grid {
+                grid-template-columns:
+                  repeat(2, minmax(0, 1fr));
+              }
 
-      .statistics-chart-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+              .statistics-chart-grid {
+                grid-template-columns: 1fr;
+              }
 
-    /* =====================================================
-       TABLET NHỎ
-    ===================================================== */
+              .statistics-student-grid {
+                grid-template-columns:
+                  repeat(2, minmax(0, 1fr));
+              }
+            }
 
-    @media (max-width: 900px) {
+            @media (max-width: 900px) {
 
-      .statistics-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+              .statistics-two-grid {
+                grid-template-columns: 1fr;
+              }
 
-      .statistics-chart-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+              .statistics-student-grid {
+                grid-template-columns: 1fr;
+              }
+            }
 
-    /* =====================================================
-       MOBILE
-    ===================================================== */
+            @media (max-width: 768px) {
 
-    @media (max-width: 768px) {
+              .statistics-card-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+              }
 
-      .statistics-card-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
+              .statistics-chart-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+              }
 
-      .statistics-chart-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
+              .statistics-student-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+              }
 
-      .statistics-chart-grid > .ant-card {
-        width: 100%;
-        min-width: 0;
-      }
+              .statistics-two-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+              }
 
-      .statistics-page-section {
-        padding-left: 16px;
-        padding-right: 16px;
-      }
+              .statistics-search {
+                width: 100% !important;
+              }
 
-      .ant-card {
-        max-width: 100%;
-      }
+              .ant-card {
+                max-width: 100%;
+              }
 
-      .ant-table-wrapper {
-        max-width: 100%;
-        overflow-x: auto;
-      }
-    }
+              .ant-table-wrapper {
+                max-width: 100%;
+                overflow-x: auto;
+              }
+            }
 
-    /* =====================================================
-       MOBILE NHỎ
-    ===================================================== */
+            @media (max-width: 576px) {
 
-    @media (max-width: 576px) {
+              .statistics-card-grid,
+              .statistics-chart-grid,
+              .statistics-student-grid,
+              .statistics-two-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+              }
+            }
 
-      .statistics-card-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
+            @media (max-width: 400px) {
 
-      .statistics-chart-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
+              .statistics-card-grid,
+              .statistics-chart-grid,
+              .statistics-student-grid,
+              .statistics-two-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+              }
+            }
 
-      .statistics-chart-grid > .ant-card {
-        width: 100%;
-      }
-    }
+            @keyframes statistics-spin {
+              from {
+                transform: rotate(0deg);
+              }
 
-    /* =====================================================
-       VERY SMALL MOBILE
-    ===================================================== */
+              to {
+                transform: rotate(360deg);
+              }
+            }
 
-    @media (max-width: 400px) {
+            .ant-table-thead > tr > th {
+              color: ${COLORS.navy};
+              font-weight: 700;
+              background: ${COLORS.background} !important;
+            }
 
-      .statistics-card-grid,
-      .statistics-chart-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
-    }
+            .ant-table-tbody > tr:hover > td {
+              background: ${COLORS.navyLight} !important;
+            }
 
-    /* =====================================================
-       SPIN
-    ===================================================== */
+            .ant-pagination-item-active {
+              border-color: ${COLORS.navy} !important;
+            }
 
-    @keyframes statistics-spin {
-      from {
-        transform: rotate(0deg);
-      }
+            .ant-pagination-item-active a {
+              color: ${COLORS.navy} !important;
+            }
 
-      to {
-        transform: rotate(360deg);
-      }
-    }
+            .ant-picker:hover,
+            .ant-picker-focused {
+              border-color: ${COLORS.navy} !important;
+            }
 
-    /* =====================================================
-       TABLE
-    ===================================================== */
+            .ant-select:hover .ant-select-selector,
+            .ant-select-focused .ant-select-selector {
+              border-color: ${COLORS.navy} !important;
 
-    .ant-table-thead > tr > th {
-      color: ${COLORS.navy};
-      font-weight: 700;
-      background: ${COLORS.background} !important;
-    }
-
-    .ant-table-tbody > tr:hover > td {
-      background: ${COLORS.navyLight} !important;
-    }
-
-    .ant-pagination-item-active {
-      border-color: ${COLORS.navy} !important;
-    }
-
-    .ant-pagination-item-active a {
-      color: ${COLORS.navy} !important;
-    }
-
-    /* =====================================================
-       DATE PICKER
-    ===================================================== */
-
-    .ant-picker:hover,
-    .ant-picker-focused {
-      border-color: ${COLORS.navy} !important;
-    }
-
-    /* =====================================================
-       SELECT
-    ===================================================== */
-
-    .ant-select:hover .ant-select-selector,
-    .ant-select-focused .ant-select-selector {
-      border-color: ${COLORS.navy} !important;
-      box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.08) !important;
-    }
-      /* =====================================================
-   TỔNG QUAN CHUYÊN CẦN
-===================================================== */
-
-.statistics-two-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  width: 100%;
-}
-
-/* =====================================================
-   CÁC CHỈ SỐ ĐIỂM DANH
-===================================================== */
-
-.statistics-attendance-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-/* =====================================================
-   TABLET
-===================================================== */
-
-@media (max-width: 900px) {
-  .statistics-two-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* =====================================================
-   MOBILE
-===================================================== */
-
-@media (max-width: 768px) {
-  .statistics-two-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .statistics-attendance-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-}
-
-/* =====================================================
-   MOBILE NHỎ
-===================================================== */
-
-@media (max-width: 576px) {
-  .statistics-two-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .statistics-attendance-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-}
-
-/* =====================================================
-   MOBILE RẤT NHỎ
-===================================================== */
-
-@media (max-width: 400px) {
-  .statistics-attendance-stats {
-    grid-template-columns: 1fr;
-  }
-}
-  `}
+              box-shadow:
+                0 0 0 2px
+                rgba(23, 59, 94, 0.08) !important;
+            }
+          `}
         </style>
       </div>
     </ConfigProvider>
