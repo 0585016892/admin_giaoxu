@@ -6,11 +6,11 @@ import {
   Card,
   Col,
   Empty,
+  Progress,
   Row,
   Select,
   Skeleton,
   Space,
-  Statistic,
   Tag,
   Typography,
   message,
@@ -19,20 +19,26 @@ import {
 import {
   ArrowLeftOutlined,
   BellOutlined,
+  BookOutlined,
   CalendarOutlined,
+  CheckCircleFilled,
   CheckCircleOutlined,
   ClockCircleOutlined,
   DownloadOutlined,
   EnvironmentOutlined,
+  FireFilled,
   HomeOutlined,
   IdcardOutlined,
   ManOutlined,
   PhoneOutlined,
   ReadOutlined,
+  ReloadOutlined,
   RiseOutlined,
   SafetyCertificateOutlined,
   ScheduleOutlined,
+  StarFilled,
   TeamOutlined,
+  TrophyFilled,
   UserOutlined,
   WomanOutlined,
 } from "@ant-design/icons";
@@ -40,15 +46,15 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 
 import parentApi from "../../../../api/parentApi";
+import AppButton from "../../../../components/common/AppButton";
+import heroFamily from "../../../../assets/images/student-default.png";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-/**
- * =========================================================
- * HELPERS
- * =========================================================
- */
+/* =========================================================
+   HELPERS
+========================================================= */
 
 const formatDate = (value) => {
   if (!value) return "Chưa cập nhật";
@@ -70,6 +76,21 @@ const formatTime = (value) => {
   }
 
   return value;
+};
+
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return heroFamily;
+
+  if (
+    String(avatar).startsWith("http://") ||
+    String(avatar).startsWith("https://")
+  ) {
+    return avatar;
+  }
+
+  const baseUrl = process.env.REACT_APP_API_URL || "";
+
+  return `${baseUrl}${avatar}`;
 };
 
 const getGenderText = (gender) => {
@@ -224,34 +245,33 @@ const getAttendanceTypeText = (type) => {
 const getExamTypeText = (type) => {
   const value = String(type || "").toLowerCase();
 
-  switch (value) {
-    case "online":
-      return "Trực tuyến";
-
-    case "paper":
-      return "Trên giấy";
-
-    default:
-      return type || "Bài kiểm tra";
+  if (value === "online") {
+    return "Trực tuyến";
   }
+
+  if (value === "paper") {
+    return "Trên giấy";
+  }
+
+  return type || "Bài kiểm tra";
 };
 
 const getScoreColor = (score) => {
   const value = Number(score);
 
   if (Number.isNaN(value)) {
-    return undefined;
+    return "#173B5E";
   }
 
   if (value >= 8) {
-    return "green";
+    return "#2E7D5B";
   }
 
   if (value >= 5) {
-    return "orange";
+    return "#D9A441";
   }
 
-  return "red";
+  return "#C94B4B";
 };
 
 const getMonthRange = (monthValue) => {
@@ -280,11 +300,10 @@ const getMonthRange = (monthValue) => {
   };
 };
 
-/**
- * =========================================================
- * NORMALIZE CHILD
- * =========================================================
- */
+/* =========================================================
+   NORMALIZE CHILD
+========================================================= */
+
 const normalizeChildData = (response) => {
   if (!response?.success) {
     return null;
@@ -411,195 +430,755 @@ const normalizeChildData = (response) => {
     },
   };
 };
-/**
- * =========================================================
- * COMPONENT
- * =========================================================
- */
+
+/* =========================================================
+   MAIN COMPONENT
+========================================================= */
 
 export default function ChildDetail() {
   const navigate = useNavigate();
-
   const { studentId } = useParams();
 
   const [messageApi, contextHolder] = message.useMessage();
 
-  // CSS responsive được giới hạn trong trang chi tiết học sinh.
+  /* =======================================================
+     RESPONSIVE CSS
+  ======================================================= */
+
   useEffect(() => {
-    const styleId = "parent-child-detail-responsive-styles";
-    if (document.getElementById(styleId)) return;
+    const styleId = "faith-edu-family-child-detail-v2";
+
+    if (document.getElementById(styleId)) {
+      return;
+    }
 
     const style = document.createElement("style");
+
     style.id = styleId;
+
     style.textContent = `
-      .parent-child-detail-page {
-        color: #14264a;
-        background: linear-gradient(180deg, #f0f7ff 0%, #f7faff 55%, #f8fafc 100%);
-        min-height: 100%;
-        font-family: Inter, "Be Vietnam Pro", "Segoe UI", sans-serif;
+      .fe-child-page {
+        min-height: 100vh;
+   
+        color: #173B5E;
+        font-family: "Be Vietnam Pro", Inter, "Segoe UI", sans-serif;
       }
-      .parent-child-detail-container {
+
+      .fe-child-container {
+        width: 100%;
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 20px 28px 40px;
         box-sizing: border-box;
-        max-width: 1680px !important;
-        margin: 0 auto !important;
-        padding: 12px 22px 28px !important;
       }
-      .parent-child-detail-page .ant-card {
-        border: 1px solid rgba(221, 232, 246, .95) !important;
-        border-radius: 16px !important;
-        box-shadow: 0 5px 20px rgba(28, 68, 120, .045) !important;
-        transition: transform .2s ease, box-shadow .2s ease;
+
+      .fe-child-card {
+        border: 1px solid rgba(226,232,240,.85) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 10px 35px rgba(23,59,94,.055) !important;
       }
-      .parent-child-detail-page .ant-card:not(.ant-card-small):hover {
-        box-shadow: 0 9px 25px rgba(28, 68, 120, .08) !important;
+
+      .fe-child-card .ant-card-head {
+        border-bottom: 1px solid #EEF2F6 !important;
       }
-      .parent-child-detail-page .ant-card-head {
-        border-bottom-color: #edf2f9 !important;
-        color: #14264a;
-      }
-      .parent-child-detail-page .ant-card-head-title {
-        color: #14264a !important;
+
+      .fe-child-card .ant-card-head-title {
         font-weight: 800 !important;
+        color: #173B5E !important;
       }
-      .parent-child-detail-page .ant-btn-primary {
-        background: #1769e8 !important;
-        border-color: #1769e8 !important;
-        border-radius: 9px !important;
-        box-shadow: 0 4px 10px rgba(23, 105, 232, .15);
-      }
-      .parent-child-detail-page .ant-btn-primary:hover {
-        background: #0f55c6 !important;
-        border-color: #0f55c6 !important;
-      }
-      .parent-child-detail-page .ant-btn:not(.ant-btn-primary) {
-        border-radius: 9px;
-      }
-      .parent-child-detail-page .ant-select-selector,
-      .parent-child-detail-page input[type=month] {
-        border-radius: 9px !important;
-      }
-      .parent-child-detail-page .ant-tag {
-        border-radius: 7px;
-        padding-inline: 9px;
-        font-weight: 600;
-      }
-      .parent-child-detail-page .ant-statistic-title {
-        color: #687b9a !important;
-        font-size: 12px !important;
-        font-weight: 650;
-      }
-      .parent-child-detail-page .ant-statistic-content {
-        color: #14264a;
-        font-weight: 800;
-      }
-      .parent-child-detail-page .ant-statistic-content-prefix {
-        margin-right: 9px;
-      }
-      .parent-child-detail-page .ant-empty {
-        padding: 14px 0;
-      }
-      .parent-child-detail-page .ant-card-body {
-        min-width: 0;
-      }
-      .parent-child-detail-page .ant-alert {
-        border-radius: 14px;
-      }
-      .parent-child-detail-page button:focus-visible {
-        outline: 3px solid rgba(217,164,65,.55);
-        outline-offset: 2px;
-      }
-      .parent-child-detail-hero {
+
+      .fe-child-hero {
         position: relative;
         overflow: hidden;
-        border: 1px solid #dceaf9;
+        border: 0 !important;
+        border-radius: 32px !important;
         background:
-          radial-gradient(ellipse at 84% 20%, rgba(255,255,255,.88) 0, rgba(255,255,255,0) 31%),
-          linear-gradient(105deg, #ffffff 0%, #eef7ff 48%, #d9edff 100%);
+          radial-gradient(circle at 90% 18%, rgba(255,255,255,.95), transparent 22%),
+          radial-gradient(circle at 78% 100%, rgba(217,164,65,.14), transparent 30%),
+          linear-gradient(125deg, #FFFFFF 0%, #F1F8FF 52%, #E6F3FF 100%);
+        box-shadow: 0 18px 50px rgba(23,59,94,.09) !important;
       }
-      .parent-child-detail-hero::after {
+
+      .fe-child-hero::before {
         content: "";
         position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 34%;
-        height: 100%;
+        width: 220px;
+        height: 220px;
+        right: -70px;
+        top: -85px;
+        border-radius: 50%;
+        border: 35px solid rgba(217,164,65,.08);
         pointer-events: none;
-        background: linear-gradient(90deg, rgba(232,245,255,0), rgba(255,255,255,.24));
       }
-      .child-detail-avatar-placeholder {
+
+      .fe-child-hero::after {
+        content: "✦";
+        position: absolute;
+        right: 11%;
+        bottom: 18px;
+        color: rgba(217,164,65,.25);
+        font-size: 46px;
+        pointer-events: none;
+      }
+
+      .fe-child-hero-content {
+        position: relative;
+        z-index: 1;
         display: flex;
-        flex: 0 0 126px;
-        width: 126px;
-        height: 126px;
+        align-items: center;
+        gap: 26px;
+      }
+
+      .fe-child-avatar {
+        width: 132px;
+        height: 132px;
+        flex: 0 0 132px;
+        border-radius: 42px;
+        padding: 5px;
+        background: linear-gradient(145deg, #D9A441, #F2D58C);
+        box-shadow:
+          0 12px 30px rgba(217,164,65,.20),
+          0 0 0 8px rgba(255,255,255,.72);
+      }
+
+      .fe-child-avatar-inner {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 37px;
+        background: #FFF;
+        display: flex;
         align-items: center;
         justify-content: center;
-        overflow: hidden;
-        border: 5px solid rgba(255,255,255,.95);
-        border-radius: 50%;
-        background: #f5f8fc;
-        box-shadow: 0 5px 18px rgba(26, 67, 115, .12);
       }
-      .child-detail-avatar-placeholder img {
+
+      .fe-child-avatar-inner img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: block;
       }
-      .child-detail-avatar-empty {
+
+      .fe-child-avatar-fallback {
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, #f7f9fc, #e9f0f8);
-      }
-      .parent-child-detail-tabs {
-        position: sticky;
-        top: 0;
-        z-index: 3;
-        background: rgba(255,255,255,.96);
-        backdrop-filter: blur(10px);
-      }
-      .parent-child-detail-tabs button {
-        position: relative;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        min-height: 48px;
-        border-radius: 10px !important;
-        transition: color .18s ease, background .18s ease;
+        background: linear-gradient(145deg, #FBF5E7, #F5E3B5);
+        color: #173B5E;
+        font-size: 34px;
+        font-weight: 900;
       }
-      .parent-child-detail-tabs button:hover {
-        background: #f1f6ff !important;
-        color: #1769e8 !important;
+
+      .fe-child-hero-main {
+        min-width: 0;
+        flex: 1;
       }
-      .parent-child-detail-tabs button[aria-current="page"] {
-        color: #1769e8 !important;
-        background: #eef5ff !important;
+
+      .fe-child-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 11px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.78);
+        color: #B78316;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .02em;
       }
-      .parent-child-detail-page .ant-progress-bg {
-        border-radius: 99px;
+
+      .fe-child-name {
+        margin: 9px 0 3px !important;
+        color: #173B5E !important;
+        font-size: 34px !important;
+        line-height: 1.15 !important;
+        font-weight: 900 !important;
+        letter-spacing: -.03em;
       }
-      @media (max-width: 1100px) {
-        .parent-child-detail-container { padding-left: 16px !important; padding-right: 16px !important; }
+
+      .fe-child-saint {
+        color: #64748B;
+        font-size: 14px;
       }
-      @media (max-width: 768px) {
-        .parent-child-detail-container { padding: 10px 12px 22px !important; }
-        .parent-child-detail-page { padding-top: 8px !important; }
-        .parent-child-detail-page .ant-card-body { padding: 16px; }
-        .parent-child-detail-page .ant-card-head { padding-inline: 16px; }
-        .parent-child-detail-page .ant-card-head-title { white-space: normal; }
-        .child-detail-avatar-placeholder { flex-basis: 88px; width: 88px; height: 88px; }
+
+      .fe-child-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 17px;
       }
-      @media (max-width: 560px) {
-        .parent-child-detail-page .ant-statistic-title { font-size: 12px; }
-        .parent-child-detail-page .ant-statistic-content { font-size: 23px; }
-        .parent-child-detail-page .ant-space { max-width: 100%; }
-        .parent-child-detail-container { padding-inline: 10px !important; }
+
+      .fe-child-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.72);
+        border: 1px solid rgba(255,255,255,.95);
+        color: #52657F;
+        font-size: 13px;
+      }
+
+      .fe-child-meta-pill strong {
+        color: #173B5E;
+      }
+
+      .fe-child-class-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 15px;
+        padding: 10px 14px;
+        border-radius: 14px;
+        background: #173B5E;
+        color: white;
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: 0 8px 18px rgba(23,59,94,.15);
+      }
+
+      .fe-child-class-badge .anticon {
+        color: #F0CA6D;
+      }
+
+      .fe-child-tabs {
+        margin-top: 18px;
+        padding: 7px;
+        border-radius: 20px;
+        background: rgba(255,255,255,.9);
+        border: 1px solid #E4EAF1;
+        box-shadow: 0 8px 28px rgba(23,59,94,.05);
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .fe-child-tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .fe-child-tabs-inner {
+        display: flex;
+        min-width: max-content;
+        gap: 4px;
+      }
+
+      .fe-child-tab {
+        height: 44px !important;
+        border: 0 !important;
+        border-radius: 14px !important;
+        padding: 0 15px !important;
+        background: transparent !important;
+        color: #64748B !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .fe-child-tab:hover {
+        color: #173B5E !important;
+        background: #F2F6FA !important;
+      }
+
+      .fe-child-tab-active {
+        color: white !important;
+        background: #173B5E !important;
+        box-shadow: 0 6px 16px rgba(23,59,94,.16);
+      }
+
+      .fe-child-content {
+        margin-top: 18px;
+      }
+
+      .fe-insight-card {
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+        border: 0 !important;
+        border-radius: 22px !important;
+        box-shadow: 0 9px 28px rgba(23,59,94,.055) !important;
+      }
+
+      .fe-insight-card::after {
+        content: "";
+        position: absolute;
+        width: 75px;
+        height: 75px;
+        right: -24px;
+        top: -24px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.48);
+      }
+
+      .fe-insight-blue {
+        background: linear-gradient(145deg, #EFF7FF, #E2F0FF);
+      }
+
+      .fe-insight-green {
+        background: linear-gradient(145deg, #EEF9F3, #E1F4EA);
+      }
+
+      .fe-insight-gold {
+        background: linear-gradient(145deg, #FFF9EA, #FDF0C9);
+      }
+
+      .fe-insight-purple {
+        background: linear-gradient(145deg, #F5F0FF, #ECE4FF);
+      }
+
+      .fe-insight-icon {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        margin-bottom: 15px;
+        font-size: 20px;
+        background: rgba(255,255,255,.8);
+      }
+
+      .fe-insight-label {
+        color: #64748B;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .fe-insight-value {
+        margin-top: 4px;
+        color: #173B5E;
+        font-size: 29px;
+        font-weight: 900;
+        letter-spacing: -.04em;
+      }
+
+      .fe-insight-action {
+        margin-top: 5px;
+        padding: 0 !important;
+        color: #52708F !important;
+        font-weight: 700;
+      }
+
+      .fe-section {
+        border-radius: 24px !important;
+      }
+
+      .fe-section-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .fe-section-title-icon {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        background: #FBF5E7;
+        color: #B78316;
+      }
+
+      .fe-info-row {
+        display: grid;
+        grid-template-columns: 30px 125px minmax(0,1fr);
+        align-items: start;
+        gap: 10px;
+        padding: 13px 0;
+        border-bottom: 1px dashed #E9EEF4;
+      }
+
+      .fe-info-row:last-child {
+        border-bottom: 0;
+      }
+
+      .fe-info-icon {
+        color: #D9A441;
+        padding-top: 2px;
+      }
+
+      .fe-info-label {
+        color: #7A8799;
+        font-size: 13px;
+      }
+
+      .fe-info-value {
+        color: #26384F;
+        font-size: 14px;
+        font-weight: 700;
+        word-break: break-word;
+      }
+
+      .fe-family-card {
+        height: 100%;
+        padding: 17px;
+        border-radius: 19px;
+        background: #F8FAFC;
+        border: 1px solid #E8EDF3;
+        transition: transform .2s ease, box-shadow .2s ease;
+      }
+
+      .fe-family-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(23,59,94,.06);
+      }
+
+      .fe-family-avatar {
+        width: 43px;
+        height: 43px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        color: #173B5E;
+        border: 1px solid #E4EAF0;
+        font-size: 18px;
+      }
+
+      .fe-next-class {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 20px;
+        border-radius: 21px;
+        background:
+          radial-gradient(circle at 100% 0%, rgba(217,164,65,.12), transparent 30%),
+          linear-gradient(135deg, #F8FBFF, #FFFFFF);
+        border: 1px solid #E2EAF2;
+      }
+
+      .fe-next-class-icon {
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 18px;
+        background: #173B5E;
+        color: #F4CF75;
+        font-size: 23px;
+      }
+
+      .fe-sacrament {
+        position: relative;
+        padding: 18px 18px 18px 52px;
+        border-radius: 18px;
+        background: #FFFDF8;
+        border: 1px solid #F0E4C4;
+      }
+
+      .fe-sacrament-dot {
+        position: absolute;
+        left: 18px;
+        top: 20px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #D9A441;
+        color: white;
+        font-size: 10px;
+      }
+
+      .fe-filter-card {
+        border-radius: 20px !important;
+        background: rgba(255,255,255,.88);
+      }
+
+      .fe-rate-card {
+        border-radius: 24px !important;
+        background: linear-gradient(135deg, #173B5E, #24567F);
+        color: white;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .fe-rate-card::after {
+        content: "";
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        right: -80px;
+        top: -110px;
+        border-radius: 50%;
+        border: 40px solid rgba(217,164,65,.13);
+      }
+
+      .fe-rate-number {
+        font-size: 42px;
+        line-height: 1;
+        font-weight: 900;
+        color: #FFFFFF;
+      }
+
+      .fe-rate-label {
+        color: rgba(255,255,255,.68);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .fe-attendance-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 0;
+        border-bottom: 1px solid #F0F3F6;
+      }
+
+      .fe-attendance-item:last-child {
+        border-bottom: 0;
+      }
+
+      .fe-date-box {
+        width: 76px;
+        flex: 0 0 76px;
+        padding: 9px 5px;
+        text-align: center;
+        border-radius: 14px;
+        background: #F7F9FC;
+      }
+
+      .fe-date-box strong {
+        display: block;
+        color: #173B5E;
+        font-size: 13px;
+      }
+
+      .fe-date-box span {
+        color: #8A97A8;
+        font-size: 10px;
+      }
+
+      .fe-result-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 17px 0;
+        border-bottom: 1px solid #F0F3F6;
+      }
+
+      .fe-result-item:last-child {
+        border-bottom: 0;
+      }
+
+      .fe-score {
+        width: 65px;
+        height: 65px;
+        flex: 0 0 65px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        background: #F8FAFC;
+        border: 1px solid #E6ECF2;
+      }
+
+      .fe-score strong {
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      .fe-score span {
+        color: #94A0B0;
+        font-size: 10px;
+      }
+
+      .fe-schedule-item {
+        display: grid;
+        grid-template-columns: 100px 16px minmax(0,1fr);
+        gap: 16px;
+        padding: 18px 0;
+        border-bottom: 1px solid #EEF2F6;
+      }
+
+      .fe-schedule-item:last-child {
+        border-bottom: 0;
+      }
+
+      .fe-schedule-day {
+        text-align: right;
+        color: #173B5E;
+        font-weight: 800;
+        font-size: 13px;
+      }
+
+      .fe-schedule-line {
+        width: 3px;
+        border-radius: 10px;
+        background: linear-gradient(#D9A441, #EED38E);
+      }
+
+      .fe-certificate {
+        height: 100%;
+        padding: 20px;
+        border-radius: 22px;
+        background: linear-gradient(145deg, #FFFFFF, #FBF8F0);
+        border: 1px solid #EDE3C8;
+      }
+
+      .fe-certificate-icon {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 18px;
+        background: #FBF1D7;
+        color: #B78316;
+        font-size: 25px;
+      }
+
+      .fe-empty-card {
+        margin-top: 18px;
+        border-radius: 24px !important;
+      }
+
+      .fe-mobile-only {
+        display: none;
+      }
+
+      @media (max-width: 900px) {
+        .fe-child-container {
+          padding: 15px 17px 30px;
+        }
+
+        .fe-child-name {
+          font-size: 29px !important;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .fe-child-container {
+          padding: 12px 11px 25px;
+        }
+
+        .fe-child-hero-content {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .fe-child-avatar {
+          width: 100px;
+          height: 100px;
+          flex-basis: 100px;
+          border-radius: 32px;
+        }
+
+        .fe-child-avatar-inner {
+          border-radius: 27px;
+        }
+
+        .fe-child-name {
+          font-size: 26px !important;
+        }
+
+        .fe-child-meta {
+          gap: 7px;
+        }
+
+        .fe-child-meta-pill {
+          padding: 7px 9px;
+          font-size: 12px;
+        }
+
+        .fe-child-class-badge {
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .fe-info-row {
+          grid-template-columns: 26px 100px minmax(0,1fr);
+        }
+
+        .fe-next-class {
+          align-items: flex-start;
+        }
+
+        .fe-schedule-item {
+          grid-template-columns: 75px 10px minmax(0,1fr);
+          gap: 10px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .fe-child-card {
+          border-radius: 19px !important;
+        }
+
+        .fe-child-hero {
+          border-radius: 24px !important;
+        }
+
+        .fe-child-name {
+          font-size: 23px !important;
+        }
+
+        .fe-child-tabs {
+          border-radius: 17px;
+        }
+
+        .fe-child-tab {
+          height: 40px !important;
+          padding: 0 11px !important;
+          font-size: 12px !important;
+        }
+
+        .fe-info-row {
+          grid-template-columns: 25px minmax(0,1fr);
+        }
+
+        .fe-info-label {
+          display: none;
+        }
+
+        .fe-info-value {
+          font-size: 13px;
+        }
+
+        .fe-attendance-item {
+          align-items: flex-start;
+        }
+
+        .fe-date-box {
+          width: 64px;
+          flex-basis: 64px;
+        }
+
+        .fe-result-item {
+          align-items: flex-start;
+        }
+
+        .fe-score {
+          width: 58px;
+          height: 58px;
+          flex-basis: 58px;
+        }
+
+        .fe-rate-number {
+          font-size: 35px;
+        }
       }
     `;
+
     document.head.appendChild(style);
+
+    return () => {
+      document.getElementById(styleId)?.remove();
+    };
   }, []);
 
-  /**
-   * =======================================================
-   * STATE
-   * =======================================================
-   */
+  /* =======================================================
+     STATE
+  ======================================================= */
 
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -625,31 +1204,17 @@ export default function ChildDetail() {
 
   const [error, setError] = useState("");
 
-  /**
-   * Attendance filters
-   */
-
   const [attendanceMonth, setAttendanceMonth] = useState("");
 
   const [attendanceType, setAttendanceType] = useState("all");
 
-  /**
-   * Results filter
-   */
-
   const [resultExamType, setResultExamType] = useState("all");
-
-  /**
-   * Schedule filter
-   */
 
   const [scheduleType, setScheduleType] = useState("all");
 
-  /**
-   * =======================================================
-   * LOAD CHILD
-   * =======================================================
-   */
+  /* =======================================================
+     LOAD CHILD
+  ======================================================= */
 
   const loadChild = useCallback(async () => {
     if (!studentId) {
@@ -685,11 +1250,10 @@ export default function ChildDetail() {
       setLoadingChild(false);
     }
   }, [studentId]);
-  /**
-   * =======================================================
-   * LOAD ATTENDANCE
-   * =======================================================
-   */
+
+  /* =======================================================
+     LOAD ATTENDANCE
+  ======================================================= */
 
   const loadAttendance = useCallback(async () => {
     if (!studentId) return;
@@ -756,22 +1320,15 @@ export default function ChildDetail() {
           attended: 0,
           rate: 0,
         },
-        pagination: {
-          page: 1,
-          pageSize: 100,
-          total: 0,
-          totalPages: 1,
-        },
       });
     } finally {
       setLoadingAttendance(false);
     }
   }, [studentId, attendanceMonth, attendanceType]);
-  /**
-   * =======================================================
-   * LOAD RESULTS
-   * =======================================================
-   */
+
+  /* =======================================================
+     LOAD RESULTS
+  ======================================================= */
 
   const loadResults = useCallback(async () => {
     if (!studentId) return;
@@ -805,11 +1362,9 @@ export default function ChildDetail() {
     }
   }, [studentId, resultExamType]);
 
-  /**
-   * =======================================================
-   * LOAD SCHEDULE
-   * =======================================================
-   */
+  /* =======================================================
+     LOAD SCHEDULE
+  ======================================================= */
 
   const loadSchedule = useCallback(async () => {
     if (!studentId) return;
@@ -832,11 +1387,9 @@ export default function ChildDetail() {
     }
   }, [studentId]);
 
-  /**
-   * =======================================================
-   * LOAD CERTIFICATES
-   * =======================================================
-   */
+  /* =======================================================
+     LOAD CERTIFICATES
+  ======================================================= */
 
   const loadCertificates = useCallback(async () => {
     if (!studentId) return;
@@ -863,21 +1416,17 @@ export default function ChildDetail() {
     }
   }, [studentId]);
 
-  /**
-   * =======================================================
-   * INITIAL LOAD
-   * =======================================================
-   */
+  /* =======================================================
+     INITIAL
+  ======================================================= */
 
   useEffect(() => {
     loadChild();
   }, [loadChild]);
 
-  /**
-   * =======================================================
-   * LOAD DATA WHEN TAB CHANGES
-   * =======================================================
-   */
+  /* =======================================================
+     TAB DATA
+  ======================================================= */
 
   useEffect(() => {
     if (!studentId) return;
@@ -906,11 +1455,9 @@ export default function ChildDetail() {
     loadCertificates,
   ]);
 
-  /**
-   * =======================================================
-   * OVERVIEW DATA
-   * =======================================================
-   */
+  /* =======================================================
+     DERIVED
+  ======================================================= */
 
   const overviewAttendance = useMemo(() => {
     const summary = child?.attendance || {};
@@ -942,12 +1489,6 @@ export default function ChildDetail() {
     };
   }, [child]);
 
-  /**
-   * =======================================================
-   * CURRENT CLASS
-   * =======================================================
-   */
-
   const currentClass = useMemo(() => {
     if (!child) return null;
 
@@ -962,55 +1503,33 @@ export default function ChildDetail() {
     return null;
   }, [child]);
 
-  /**
-   * =======================================================
-   * LATEST SCORE
-   * =======================================================
-   */
-
   const latestScore = useMemo(() => {
     const result = child?.latestResult;
 
-    if (!result) {
-      return null;
-    }
+    if (!result) return null;
 
     return result.score ?? result.result ?? result.point ?? null;
   }, [child]);
 
-  /**
-   * =======================================================
-   * NEXT CLASS
-   * =======================================================
-   */
-
   const nextClass = useMemo(() => {
     if (!currentClass) return null;
 
+    const schedule = currentClass?.schedules?.[0];
+
+    if (!schedule) return null;
+
     return {
-      day:
-        currentClass?.schedules?.[0]?.day_of_week ??
-        currentClass?.schedules?.[0]?.dayOfWeek,
+      day: schedule.day_of_week ?? schedule.dayOfWeek,
 
-      start:
-        currentClass?.schedules?.[0]?.start_time ??
-        currentClass?.schedules?.[0]?.startTime,
+      start: schedule.start_time ?? schedule.startTime,
 
-      end:
-        currentClass?.schedules?.[0]?.end_time ??
-        currentClass?.schedules?.[0]?.endTime,
+      end: schedule.end_time ?? schedule.endTime,
 
-      room: currentClass?.schedules?.[0]?.room,
+      room: schedule.room,
 
       name: currentClass.name || child?.className || "Lớp Giáo lý",
     };
   }, [currentClass, child]);
-
-  /**
-   * =======================================================
-   * ATTENDANCE RECORDS
-   * =======================================================
-   */
 
   const attendanceRecords = useMemo(() => {
     if (!attendanceData) return [];
@@ -1025,12 +1544,6 @@ export default function ChildDetail() {
     return Array.isArray(records) ? records : [];
   }, [attendanceData]);
 
-  /**
-   * =======================================================
-   * ATTENDANCE SUMMARY
-   * =======================================================
-   */
-
   const attendanceSummary = useMemo(() => {
     if (!attendanceData) {
       return overviewAttendance;
@@ -1042,12 +1555,6 @@ export default function ChildDetail() {
       overviewAttendance
     );
   }, [attendanceData, overviewAttendance]);
-
-  /**
-   * =======================================================
-   * RESULTS RECORDS
-   * =======================================================
-   */
 
   const resultRecords = useMemo(() => {
     if (!resultsData) return [];
@@ -1062,21 +1569,9 @@ export default function ChildDetail() {
     return Array.isArray(records) ? records : [];
   }, [resultsData]);
 
-  /**
-   * =======================================================
-   * RESULTS SUMMARY
-   * =======================================================
-   */
-
   const resultSummary = useMemo(() => {
     return resultsData?.summary || resultsData?.data?.summary || {};
   }, [resultsData]);
-
-  /**
-   * =======================================================
-   * SCHEDULE RECORDS
-   * =======================================================
-   */
 
   const scheduleRecords = useMemo(() => {
     if (!scheduleData) return [];
@@ -1092,12 +1587,6 @@ export default function ChildDetail() {
     return Array.isArray(records) ? records : [];
   }, [scheduleData]);
 
-  /**
-   * =======================================================
-   * FILTER SCHEDULE
-   * =======================================================
-   */
-
   const filteredSchedule = useMemo(() => {
     if (scheduleType === "all") {
       return scheduleRecords;
@@ -1110,12 +1599,6 @@ export default function ChildDetail() {
       return String(type).toLowerCase() === String(scheduleType).toLowerCase();
     });
   }, [scheduleRecords, scheduleType]);
-
-  /**
-   * =======================================================
-   * CERTIFICATES
-   * =======================================================
-   */
 
   const certificateRecords = useMemo(() => {
     if (!certificatesData) return [];
@@ -1131,52 +1614,42 @@ export default function ChildDetail() {
     return Array.isArray(records) ? records : [];
   }, [certificatesData]);
 
-  /**
-   * =======================================================
-   * LOADING
-   * =======================================================
-   */
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (loadingChild) {
     return (
-      <div className="parent-child-detail-page" style={styles.page}>
+      <div className="fe-child-page">
         {contextHolder}
 
-        <div
-          className="parent-child-detail-container parent-child-detail-loading"
-          style={styles.loadingContainer}
-        >
-          <Card style={styles.loadingCard}>
-            <Skeleton
-              active
-              avatar={{ size: 88 }}
-              paragraph={{
-                rows: 7,
-              }}
-            />
+        <div className="fe-child-container">
+          <Card className="fe-child-card">
+            <Skeleton active avatar={{ size: 110 }} paragraph={{ rows: 7 }} />
           </Card>
         </div>
       </div>
     );
   }
 
-  /**
-   * =======================================================
-   * ERROR
-   * =======================================================
-   */
+  /* =======================================================
+     ERROR
+  ======================================================= */
 
   if (error || !child) {
     return (
-      <div className="parent-child-detail-page" style={styles.page}>
+      <div className="fe-child-page">
         {contextHolder}
 
-        <div className="parent-child-detail-container" style={styles.container}>
+        <div className="fe-child-container">
           <Button
+            type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate(-1)}
             style={{
-              marginBottom: 20,
+              marginBottom: 15,
+              color: "#173B5E",
+              fontWeight: 700,
             }}
           >
             Quay lại
@@ -1185,7 +1658,7 @@ export default function ChildDetail() {
           <Alert
             type="error"
             showIcon
-            message="Không thể tải học sinh"
+            message="Không thể tải thông tin học sinh"
             description={error || "Không tìm thấy thông tin học sinh"}
           />
         </div>
@@ -1193,22 +1666,29 @@ export default function ChildDetail() {
     );
   }
 
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
-    <div className="parent-child-detail-page" style={styles.page}>
+    <div className="fe-child-page">
       {contextHolder}
 
-      <div className="parent-child-detail-container" style={styles.container}>
-        {/* =================================================
-            BACK
-        ================================================= */}
+      <div className="fe-child-container">
+        {/* BACK */}
 
         <Button
           type="text"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate(-1)}
-          style={styles.backButton}
+          style={{
+            marginBottom: 14,
+            paddingLeft: 2,
+            color: "#52657F",
+            fontWeight: 700,
+          }}
         >
-          Quay lại danh sách con
+          Danh sách các con
         </Button>
 
         {/* =================================================
@@ -1217,41 +1697,47 @@ export default function ChildDetail() {
 
         <Card
           bordered={false}
-          className="parent-child-detail-hero"
-          style={styles.heroCard}
+          className="fe-child-hero"
+          bodyStyle={{
+            padding: 30,
+          }}
         >
-          <div style={styles.hero}>
-            <div
-              className="child-detail-avatar-placeholder"
-              aria-label="Ảnh đại diện học sinh"
-            >
-              {child.avatar ? (
-                <img src={child.avatar} alt="" />
-              ) : (
-                <div className="child-detail-avatar-empty" />
-              )}
+          <div className="fe-child-hero-content">
+            <div className="fe-child-avatar">
+              <div className="fe-child-avatar-inner">
+                <img
+                  src={getAvatarUrl(child.avatar)}
+                  alt={`Ảnh đại diện ${child.name || "học sinh"}`}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = heroFamily;
+                  }}
+                />
+              </div>
             </div>
 
-            <div style={styles.heroInfo}>
-              <div style={styles.heroTitleRow}>
-                <Title level={2} style={styles.heroTitle}>
-                  {child.name}
-                </Title>
-
-                <Tag color="green">
-                  {child.status === "studying"
-                    ? "Đang học"
-                    : child.status || "Đang học"}
-                </Tag>
+            <div className="fe-child-hero-main">
+              <div className="fe-child-eyebrow">
+                <StarFilled />
+                HỒ SƠ CỦA CON
               </div>
 
-              <div style={styles.heroMeta}>
-                <span>
-                  <IdcardOutlined />
-                  Mã HS: <strong>{child.code || "--"}</strong>
-                </span>
+              <Title className="fe-child-name">
+                {child.saint_name ? `† ${child.saint_name} ` : ""}
+                {child.name}
+              </Title>
 
-                <span>
+              <Text className="fe-child-saint">
+                Hành trình học Giáo lý & sống Đức tin
+              </Text>
+
+              <div className="fe-child-meta">
+                <div className="fe-child-meta-pill">
+                  <IdcardOutlined />
+                  Mã HS <strong>{child.code || "--"}</strong>
+                </div>
+
+                <div className="fe-child-meta-pill">
                   {String(child.gender || "").toLowerCase() === "female" ? (
                     <WomanOutlined />
                   ) : (
@@ -1259,26 +1745,56 @@ export default function ChildDetail() {
                   )}
 
                   {getGenderText(child.gender)}
-                </span>
+                </div>
 
-                <span>
+                <div className="fe-child-meta-pill">
                   <CalendarOutlined />
                   {formatDate(child.date_of_birth)}
-                </span>
+                </div>
+
+                <div className="fe-child-meta-pill">
+                  <CheckCircleFilled
+                    style={{
+                      color: "#2E7D5B",
+                    }}
+                  />
+                  <strong>
+                    {child.status === "studying"
+                      ? "Đang học"
+                      : child.status || "Đang học"}
+                  </strong>
+                </div>
               </div>
 
-              <div style={styles.heroClass}>
+              <div className="fe-child-class-badge">
                 <TeamOutlined />
 
-                <strong>{child.className || "Chưa xếp lớp"}</strong>
+                <span>{child.className || "Chưa xếp lớp"}</span>
 
-                {child.classCode && <Tag>{child.classCode}</Tag>}
+                {child.classCode && (
+                  <span
+                    style={{
+                      opacity: 0.7,
+                    }}
+                  >
+                    • {child.classCode}
+                  </span>
+                )}
 
                 {child.room && (
-                  <span>
+                  <>
+                    <span
+                      style={{
+                        opacity: 0.5,
+                      }}
+                    >
+                      •
+                    </span>
+
                     <EnvironmentOutlined />
-                    {child.room}
-                  </span>
+
+                    <span>{child.room}</span>
+                  </>
                 )}
               </div>
             </div>
@@ -1289,14 +1805,8 @@ export default function ChildDetail() {
             TABS
         ================================================= */}
 
-        <Card
-          bordered={false}
-          style={styles.tabCard}
-          bodyStyle={{
-            padding: 8,
-          }}
-        >
-          <div className="parent-child-detail-tabs" style={styles.tabs}>
+        <div className="fe-child-tabs">
+          <div className="fe-child-tabs-inner">
             {[
               {
                 key: "overview",
@@ -1325,7 +1835,7 @@ export default function ChildDetail() {
               },
               {
                 key: "certificates",
-                label: "Chứng chỉ",
+                label: "Chứng nhận",
                 icon: <SafetyCertificateOutlined />,
               },
               {
@@ -1334,21 +1844,19 @@ export default function ChildDetail() {
                 icon: <BellOutlined />,
               },
             ].map((tab) => (
-              <button
+              <Button
                 key={tab.key}
-                type="button"
+                className={`fe-child-tab ${
+                  activeTab === tab.key ? "fe-child-tab-active" : ""
+                }`}
                 onClick={() => setActiveTab(tab.key)}
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === tab.key ? styles.tabActive : {}),
-                }}
               >
                 {tab.icon}
-                <span>{tab.label}</span>
-              </button>
+                {tab.label}
+              </Button>
             ))}
           </div>
-        </Card>
+        </div>
 
         {/* =================================================
             OVERVIEW
@@ -1416,13 +1924,15 @@ export default function ChildDetail() {
         )}
 
         {/* =================================================
-            LESSONS PLACEHOLDER
+            LESSONS
         ================================================= */}
 
         {activeTab === "lessons" && (
-          <Card bordered={false} style={{ marginTop: 16, borderRadius: 16 }}>
-            <Empty description="Khu vực bài học — sẽ bổ sung dữ liệu sau" />
-          </Card>
+          <EmptyFeature
+            icon={<BookOutlined />}
+            title="Bài học của con"
+            description="Kho bài học Giáo lý sẽ được bổ sung trong phiên bản tiếp theo."
+          />
         )}
 
         {/* =================================================
@@ -1439,24 +1949,24 @@ export default function ChildDetail() {
         )}
 
         {/* =================================================
-            NOTIFICATIONS PLACEHOLDER
+            NOTIFICATIONS
         ================================================= */}
 
         {activeTab === "notifications" && (
-          <Card bordered={false} style={{ marginTop: 16, borderRadius: 16 }}>
-            <Empty description="Khu vực thông báo — sẽ bổ sung dữ liệu sau" />
-          </Card>
+          <EmptyFeature
+            icon={<BellOutlined />}
+            title="Thông báo của con"
+            description="Các thông báo liên quan đến việc học và sinh hoạt của con sẽ hiển thị tại đây."
+          />
         )}
       </div>
     </div>
   );
 }
 
-/**
- * =========================================================
- * OVERVIEW TAB
- * =========================================================
- */
+/* =========================================================
+   OVERVIEW
+========================================================= */
 
 function OverviewTab({
   child,
@@ -1470,108 +1980,258 @@ function OverviewTab({
   onOpenCertificates,
 }) {
   return (
-    <div style={styles.content}>
-      {/* ===================================================
-          STATISTICS
-      =================================================== */}
+    <div className="fe-child-content">
+      {/* =================================================
+          INSIGHTS
+      ================================================= */}
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Tỷ lệ chuyên cần"
-              value={attendance.rate}
-              suffix="%"
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{
-                color: attendance.rate >= 80 ? "#16a34a" : "#dc2626",
+      <Row gutter={[14, 14]}>
+        <Col xs={12} sm={12} lg={6}>
+          <Card
+            bordered={false}
+            className="fe-insight-card fe-insight-blue"
+            bodyStyle={{
+              padding: 19,
+            }}
+          >
+            <div
+              className="fe-insight-icon"
+              style={{
+                color: "#1769E8",
               }}
-            />
+            >
+              <CheckCircleFilled />
+            </div>
+
+            <div className="fe-insight-label">CHUYÊN CẦN</div>
+
+            <div className="fe-insight-value">{attendance.rate}%</div>
 
             <Button
               type="link"
+              className="fe-insight-action"
               onClick={onOpenAttendance}
-              style={{
-                paddingLeft: 0,
-              }}
             >
-              Xem điểm danh
+              Xem điểm danh →
             </Button>
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Có mặt"
-              value={attendance.present}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{
-                color: "#16a34a",
+        <Col xs={12} sm={12} lg={6}>
+          <Card
+            bordered={false}
+            className="fe-insight-card fe-insight-green"
+            bodyStyle={{
+              padding: 19,
+            }}
+          >
+            <div
+              className="fe-insight-icon"
+              style={{
+                color: "#2E7D5B",
               }}
-            />
+            >
+              <TeamOutlined />
+            </div>
 
-            <Text type="secondary">Tổng {attendance.total} buổi</Text>
+            <div className="fe-insight-label">THAM GIA</div>
+
+            <div className="fe-insight-value">{attendance.present}</div>
+
+            <Text
+              type="secondary"
+              style={{
+                fontSize: 12,
+              }}
+            >
+              buổi có mặt
+            </Text>
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Điểm gần nhất"
-              value={
-                latestScore === null || latestScore === undefined
-                  ? "--"
-                  : Number(latestScore)
-              }
-              suffix={
-                latestScore !== null && latestScore !== undefined ? "/10" : ""
-              }
-              prefix={<RiseOutlined />}
-              valueStyle={{
-                color:
-                  latestScore !== null && Number(latestScore) >= 5
-                    ? "#16a34a"
-                    : "#dc2626",
+        <Col xs={12} sm={12} lg={6}>
+          <Card
+            bordered={false}
+            className="fe-insight-card fe-insight-gold"
+            bodyStyle={{
+              padding: 19,
+            }}
+          >
+            <div
+              className="fe-insight-icon"
+              style={{
+                color: "#B78316",
               }}
-            />
+            >
+              <TrophyFilled />
+            </div>
+
+            <div className="fe-insight-label">KẾT QUẢ GẦN NHẤT</div>
+
+            <div className="fe-insight-value">
+              {latestScore === null || latestScore === undefined
+                ? "--"
+                : Number(latestScore).toFixed(1)}
+            </div>
 
             <Button
               type="link"
+              className="fe-insight-action"
               onClick={onOpenResults}
-              style={{
-                paddingLeft: 0,
-              }}
             >
-              Xem kết quả
+              Xem kết quả →
             </Button>
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Chứng nhận"
-              value={certificateCount}
-              prefix={<SafetyCertificateOutlined />}
-            />
+        <Col xs={12} sm={12} lg={6}>
+          <Card
+            bordered={false}
+            className="fe-insight-card fe-insight-purple"
+            bodyStyle={{
+              padding: 19,
+            }}
+          >
+            <div
+              className="fe-insight-icon"
+              style={{
+                color: "#7654B7",
+              }}
+            >
+              <SafetyCertificateOutlined />
+            </div>
+
+            <div className="fe-insight-label">CHỨNG NHẬN</div>
+
+            <div className="fe-insight-value">{certificateCount || 0}</div>
 
             <Button
               type="link"
+              className="fe-insight-action"
               onClick={onOpenCertificates}
-              style={{
-                paddingLeft: 0,
-              }}
             >
-              Xem chứng nhận
+              Xem chứng nhận →
             </Button>
           </Card>
         </Col>
       </Row>
 
-      {/* ===================================================
-          PERSONAL + CLASS
-      =================================================== */}
+      {/* =================================================
+          NEXT CLASS + PERSONAL
+      ================================================= */}
+
+      <Row
+        gutter={[16, 16]}
+        style={{
+          marginTop: 16,
+        }}
+      >
+        <Col xs={24} lg={14}>
+          <Card
+            bordered={false}
+            className="fe-child-card fe-section"
+            title={
+              <SectionTitle
+                icon={<ScheduleOutlined />}
+                title="Điều đang chờ con"
+              />
+            }
+          >
+            {nextClass ? (
+              <div className="fe-next-class">
+                <div className="fe-next-class-icon">
+                  <CalendarOutlined />
+                </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: 12,
+                    }}
+                  >
+                    LỊCH HỌC TIẾP THEO
+                  </Text>
+
+                  <Title
+                    level={4}
+                    style={{
+                      margin: "5px 0 8px",
+                      color: "#173B5E",
+                    }}
+                  >
+                    {nextClass.name}
+                  </Title>
+
+                  <Space wrap size={[14, 8]}>
+                    <Text>
+                      <CalendarOutlined /> {getDayName(nextClass.day)}
+                    </Text>
+
+                    <Text>
+                      <ClockCircleOutlined /> {formatTime(nextClass.start)} -{" "}
+                      {formatTime(nextClass.end)}
+                    </Text>
+
+                    <Text>
+                      <EnvironmentOutlined />{" "}
+                      {nextClass.room || "Chưa cập nhật"}
+                    </Text>
+                  </Space>
+                </div>
+              </div>
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Chưa có lịch học"
+              />
+            )}
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={10}>
+          <Card
+            bordered={false}
+            className="fe-child-card fe-section"
+            title={
+              <SectionTitle icon={<UserOutlined />} title="Một chút về con" />
+            }
+          >
+            <InfoRow
+              icon={<CalendarOutlined />}
+              label="Ngày sinh"
+              value={formatDate(child.date_of_birth)}
+            />
+
+            <InfoRow
+              icon={<IdcardOutlined />}
+              label="Mã học sinh"
+              value={child.code || "--"}
+            />
+
+            <InfoRow
+              icon={<HomeOutlined />}
+              label="Giáo xứ"
+              value={child.parish || "Chưa cập nhật"}
+            />
+
+            <InfoRow
+              icon={<PhoneOutlined />}
+              label="Điện thoại"
+              value={child.phone || "Chưa cập nhật"}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* =================================================
+          CLASS + FAMILY
+      ================================================= */}
 
       <Row
         gutter={[16, 16]}
@@ -1581,69 +2241,9 @@ function OverviewTab({
       >
         <Col xs={24} lg={12}>
           <Card
-            title={
-              <Space>
-                <UserOutlined />
-                Thông tin cá nhân
-              </Space>
-            }
             bordered={false}
-            style={styles.sectionCard}
-          >
-            <InfoRow
-              icon={<IdcardOutlined />}
-              label="Mã học sinh"
-              value={child.code}
-            />
-
-            <InfoRow
-              icon={<CalendarOutlined />}
-              label="Ngày sinh"
-              value={formatDate(child.date_of_birth)}
-            />
-
-            <InfoRow
-              icon={
-                String(child.gender || "").toLowerCase() === "female" ? (
-                  <WomanOutlined />
-                ) : (
-                  <ManOutlined />
-                )
-              }
-              label="Giới tính"
-              value={getGenderText(child.gender)}
-            />
-
-            <InfoRow
-              icon={<PhoneOutlined />}
-              label="Điện thoại"
-              value={child.phone || "Chưa cập nhật"}
-            />
-
-            <InfoRow
-              icon={<HomeOutlined />}
-              label="Địa chỉ"
-              value={child.address || "Chưa cập nhật"}
-            />
-
-            <InfoRow
-              icon={<HomeOutlined />}
-              label="Giáo xứ"
-              value={child.parish || "Chưa cập nhật"}
-            />
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={12}>
-          <Card
-            title={
-              <Space>
-                <TeamOutlined />
-                Lớp học hiện tại
-              </Space>
-            }
-            bordered={false}
-            style={styles.sectionCard}
+            className="fe-child-card fe-section"
+            title={<SectionTitle icon={<TeamOutlined />} title="Lớp Giáo lý" />}
           >
             <InfoRow
               icon={<TeamOutlined />}
@@ -1668,28 +2268,6 @@ function OverviewTab({
             />
 
             <InfoRow
-              icon={<CalendarOutlined />}
-              label="Ngày học"
-              value={
-                currentClass?.schedules?.[0]?.day_of_week != null
-                  ? getDayName(currentClass.schedules[0].day_of_week)
-                  : "Chưa cập nhật"
-              }
-            />
-
-            <InfoRow
-              icon={<ClockCircleOutlined />}
-              label="Thời gian"
-              value={
-                currentClass?.schedules?.[0]
-                  ? `${formatTime(
-                      currentClass.schedules[0].start_time,
-                    )} - ${formatTime(currentClass.schedules[0].end_time)}`
-                  : "Chưa cập nhật"
-              }
-            />
-
-            <InfoRow
               icon={<UserOutlined />}
               label="Giáo lý viên"
               value={
@@ -1701,144 +2279,60 @@ function OverviewTab({
             />
           </Card>
         </Col>
+
+        <Col xs={24} lg={12}>
+          <Card
+            bordered={false}
+            className="fe-child-card fe-section"
+            title={<SectionTitle icon={<TeamOutlined />} title="Gia đình" />}
+          >
+            <Row gutter={[10, 10]}>
+              <Col xs={24} sm={12}>
+                <FamilyCard
+                  title="Cha"
+                  icon={<ManOutlined />}
+                  name={child.family?.father?.name}
+                  phone={child.family?.father?.phone}
+                />
+              </Col>
+
+              <Col xs={24} sm={12}>
+                <FamilyCard
+                  title="Mẹ"
+                  icon={<WomanOutlined />}
+                  name={child.family?.mother?.name}
+                  phone={child.family?.mother?.phone}
+                />
+              </Col>
+
+              <Col xs={24}>
+                <FamilyCard
+                  title="Người đỡ đầu"
+                  icon={<UserOutlined />}
+                  name={child.family?.guardian?.name}
+                  phone={child.family?.guardian?.phone}
+                  relationship={child.family?.guardian?.relationship}
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
       </Row>
 
-      {/* ===================================================
-          FAMILY
-      =================================================== */}
-
-      <Card
-        title={
-          <Space>
-            <TeamOutlined />
-            Thông tin gia đình
-          </Space>
-        }
-        bordered={false}
-        style={{
-          ...styles.sectionCard,
-          marginTop: 16,
-        }}
-      >
-        <Row gutter={[16, 16]}>
-          <Col xs={24} md={8}>
-            <FamilyCard
-              title="Cha"
-              icon={<ManOutlined />}
-              name={child.family?.father?.name}
-              phone={child.family?.father?.phone}
-            />
-          </Col>
-
-          <Col xs={24} md={8}>
-            <FamilyCard
-              title="Mẹ"
-              icon={<WomanOutlined />}
-              name={child.family?.mother?.name}
-              phone={child.family?.mother?.phone}
-            />
-          </Col>
-
-          <Col xs={24} md={8}>
-            <FamilyCard
-              title="Người giám hộ"
-              icon={<UserOutlined />}
-              name={child.family?.guardian?.name}
-              phone={child.family?.guardian?.phone}
-              relationship={child.family?.guardian?.relationship}
-            />
-          </Col>
-        </Row>
-      </Card>
-
-      {/* ===================================================
-          NEXT CLASS
-      =================================================== */}
-
-      {nextClass && (
-        <Card
-          title={
-            <Space>
-              <ScheduleOutlined />
-              Lịch học
-            </Space>
-          }
-          bordered={false}
-          style={{
-            ...styles.sectionCard,
-            marginTop: 16,
-          }}
-        >
-          <div style={styles.nextClass}>
-            <div style={styles.nextClassIcon}>
-              <CalendarOutlined />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <Text
-                type="secondary"
-                style={{
-                  fontSize: 13,
-                }}
-              >
-                Lịch học định kỳ
-              </Text>
-
-              <div
-                style={{
-                  marginTop: 4,
-                }}
-              >
-                <Text
-                  strong
-                  style={{
-                    fontSize: 17,
-                  }}
-                >
-                  {nextClass.name}
-                </Text>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 8,
-                }}
-              >
-                <Space wrap size={16}>
-                  <span>
-                    <CalendarOutlined /> {getDayName(nextClass.day)}
-                  </span>
-
-                  <span>
-                    <ClockCircleOutlined /> {formatTime(nextClass.start)} -{" "}
-                    {formatTime(nextClass.end)}
-                  </span>
-
-                  <span>
-                    <EnvironmentOutlined />
-                    Phòng {nextClass.room || "Chưa cập nhật"}
-                  </span>
-                </Space>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* ===================================================
+      {/* =================================================
           SACRAMENTS
-      =================================================== */}
+      ================================================= */}
 
       <Card
-        title={
-          <Space>
-            <SafetyCertificateOutlined />
-            Các Bí tích
-          </Space>
-        }
         bordered={false}
+        className="fe-child-card fe-section"
+        title={
+          <SectionTitle
+            icon={<SafetyCertificateOutlined />}
+            title="Hành trình Bí tích"
+          />
+        }
         style={{
-          ...styles.sectionCard,
           marginTop: 16,
         }}
       >
@@ -1846,31 +2340,56 @@ function OverviewTab({
           <Row gutter={[12, 12]}>
             {child.sacraments.map((sacrament, index) => (
               <Col xs={24} md={12} key={sacrament.id || index}>
-                <Card size="small" style={styles.sacramentCard}>
-                  <Space direction="vertical" size={4}>
-                    <Text strong>
-                      {sacrament.name || sacrament.type || "Bí tích"}
+                <div className="fe-sacrament">
+                  <div className="fe-sacrament-dot">
+                    <CheckCircleFilled />
+                  </div>
+
+                  <Text
+                    strong
+                    style={{
+                      color: "#173B5E",
+                    }}
+                  >
+                    {sacrament.name || sacrament.type || "Bí tích"}
+                  </Text>
+
+                  {sacrament.date_received && (
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+                        marginTop: 6,
+                      }}
+                    >
+                      Ngày lãnh nhận: {formatDate(sacrament.date_received)}
                     </Text>
+                  )}
 
-                    {sacrament.date_received && (
-                      <Text type="secondary">
-                        Ngày: {formatDate(sacrament.date_received)}
-                      </Text>
-                    )}
+                  {sacrament.saint_name && (
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+                        marginTop: 4,
+                      }}
+                    >
+                      Tên thánh: {sacrament.saint_name}
+                    </Text>
+                  )}
 
-                    {sacrament.saint_name && (
-                      <Text type="secondary">
-                        Tên thánh: {sacrament.saint_name}
-                      </Text>
-                    )}
-
-                    {sacrament.church_name_custom && (
-                      <Text type="secondary">
-                        Nơi lãnh nhận: {sacrament.church_name_custom}
-                      </Text>
-                    )}
-                  </Space>
-                </Card>
+                  {sacrament.church_name_custom && (
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+                        marginTop: 4,
+                      }}
+                    >
+                      Nơi lãnh nhận: {sacrament.church_name_custom}
+                    </Text>
+                  )}
+                </div>
               </Col>
             ))}
           </Row>
@@ -1885,11 +2404,9 @@ function OverviewTab({
   );
 }
 
-/**
- * =========================================================
- * ATTENDANCE TAB
- * =========================================================
- */
+/* =========================================================
+   ATTENDANCE
+========================================================= */
 
 function AttendanceTab({
   loading,
@@ -1921,29 +2438,33 @@ function AttendanceTab({
         : 0;
 
   return (
-    <div style={styles.content}>
-      {/* ===================================================
-          FILTER
-      =================================================== */}
-
-      <Card bordered={false} style={styles.filterCard}>
-        <Space wrap size={12}>
+    <div className="fe-child-content">
+      <Card bordered={false} className="fe-child-card fe-filter-card">
+        <Space wrap size={[12, 12]}>
           <div>
             <Text
               type="secondary"
               style={{
                 display: "block",
                 marginBottom: 6,
+                fontSize: 12,
+                fontWeight: 700,
               }}
             >
-              Tháng
+              THÁNG
             </Text>
 
             <input
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              style={styles.monthInput}
+              style={{
+                height: 34,
+                border: "1px solid #DCE4EC",
+                borderRadius: 9,
+                padding: "0 10px",
+                color: "#173B5E",
+              }}
             />
           </div>
 
@@ -1953,9 +2474,11 @@ function AttendanceTab({
               style={{
                 display: "block",
                 marginBottom: 6,
+                fontSize: 12,
+                fontWeight: 700,
               }}
             >
-              Loại điểm danh
+              LOẠI ĐIỂM DANH
             </Text>
 
             <Select
@@ -1973,153 +2496,146 @@ function AttendanceTab({
             </Select>
           </div>
 
-          <Button
-            type="primary"
-            onClick={onReload}
+          <AppButton
+            size="small"
+            icon={<ReloadOutlined />}
             loading={loading}
+            onClick={onReload}
             style={{
-              marginTop: 24,
+              marginTop: 22,
             }}
           >
             Tải lại
-          </Button>
+          </AppButton>
         </Space>
       </Card>
 
-      {/* ===================================================
-          STATS
-      =================================================== */}
-
       <Row
-        gutter={[16, 16]}
+        gutter={[12, 12]}
         style={{
-          marginTop: 16,
+          marginTop: 14,
         }}
       >
-        {/* TỔNG BUỔI */}
-        <Col xs={12} sm={12} md={8} lg={4}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic title="Tổng buổi" value={total} />
-          </Card>
-        </Col>
-
-        {/* CÓ MẶT */}
-        <Col xs={12} sm={12} md={8} lg={5}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Có mặt"
-              value={present}
-              valueStyle={{
-                color: "#16a34a",
+        {[
+          ["Tổng buổi", total, "#173B5E", <CalendarOutlined />],
+          ["Có mặt", present, "#2E7D5B", <CheckCircleFilled />],
+          ["Đi muộn", late, "#B78316", <ClockCircleOutlined />],
+          ["Vắng", absent, "#C94B4B", <FireFilled />],
+          ["Có phép", excused, "#3878B9", <SafetyCertificateOutlined />],
+        ].map(([title, value, color, icon]) => (
+          <Col xs={12} sm={12} md={8} lg={4} key={title}>
+            <Card
+              bordered={false}
+              className="fe-insight-card"
+              style={{
+                background: "#FFFFFF",
               }}
-            />
-          </Card>
-        </Col>
-
-        {/* ĐI MUỘN */}
-        <Col xs={12} sm={12} md={8} lg={5}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Đi muộn"
-              value={late}
-              valueStyle={{
-                color: "#d97706",
+              bodyStyle={{
+                padding: 17,
               }}
-            />
-          </Card>
-        </Col>
+            >
+              <div
+                style={{
+                  color,
+                  fontSize: 20,
+                  marginBottom: 9,
+                }}
+              >
+                {icon}
+              </div>
 
-        {/* VẮNG */}
-        <Col xs={12} sm={12} md={8} lg={5}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Vắng"
-              value={absent}
-              valueStyle={{
-                color: "#dc2626",
-              }}
-            />
-          </Card>
-        </Col>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: 12,
+                }}
+              >
+                {title}
+              </Text>
 
-        {/* CÓ PHÉP */}
-        <Col xs={12} sm={12} md={8} lg={5}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Có phép"
-              value={excused}
-              valueStyle={{
-                color: "#2563eb",
-              }}
-            />
-          </Card>
-        </Col>
+              <div
+                style={{
+                  color,
+                  fontSize: 26,
+                  fontWeight: 900,
+                  marginTop: 2,
+                }}
+              >
+                {value}
+              </div>
+            </Card>
+          </Col>
+        ))}
       </Row>
 
-      {/* ===================================================
-          RATE
-      =================================================== */}
-
       <Card
         bordered={false}
+        className="fe-rate-card"
         style={{
-          ...styles.sectionCard,
-          marginTop: 16,
+          marginTop: 14,
+        }}
+        bodyStyle={{
+          padding: 24,
         }}
       >
-        <div style={styles.rateBox}>
-          <div>
-            <Text type="secondary">Tỷ lệ chuyên cần</Text>
+        <Row align="middle" gutter={[25, 20]}>
+          <Col xs={24} sm={8}>
+            <div className="fe-rate-label">TỶ LỆ CHUYÊN CẦN</div>
 
-            <div style={styles.rateValue}>{Math.round(rate)}%</div>
-          </div>
+            <div
+              className="fe-rate-number"
+              style={{
+                marginTop: 7,
+              }}
+            >
+              {Math.round(rate)}%
+            </div>
+          </Col>
 
-          <div style={styles.rateTrack}>
+          <Col xs={24} sm={16}>
+            <Progress
+              percent={Math.min(Math.max(rate, 0), 100)}
+              showInfo={false}
+              strokeWidth={12}
+              trailColor="rgba(255,255,255,.15)"
+              strokeColor="#D9A441"
+            />
+
             <div
               style={{
-                ...styles.rateBar,
-                width: `${Math.min(Math.max(rate, 0), 100)}%`,
+                marginTop: 9,
+                color: "rgba(255,255,255,.7)",
+                fontSize: 12,
               }}
-            />
-          </div>
-
-          <div>
-            <Text type="secondary">Có phép: {excused}</Text>
-          </div>
-        </div>
+            >
+              Có mặt {present} buổi · Đi muộn {late} buổi · Vắng {absent} buổi
+            </div>
+          </Col>
+        </Row>
       </Card>
 
-      {/* ===================================================
-          RECORDS
-      =================================================== */}
-
       <Card
-        title={
-          <Space>
-            <CheckCircleOutlined />
-            Lịch sử điểm danh
-          </Space>
-        }
         bordered={false}
+        className="fe-child-card fe-section"
+        title={
+          <SectionTitle
+            icon={<CheckCircleOutlined />}
+            title="Nhật ký điểm danh"
+          />
+        }
         style={{
-          ...styles.sectionCard,
-          marginTop: 16,
+          marginTop: 14,
         }}
       >
         {loading ? (
-          <Skeleton
-            active
-            paragraph={{
-              rows: 8,
-            }}
-          />
+          <Skeleton active paragraph={{ rows: 7 }} />
         ) : records.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="Chưa có dữ liệu điểm danh"
           />
         ) : (
-          <div style={styles.attendanceList}>
+          <div>
             {records.map((item, index) => {
               const status = item.status || item.attendance_status;
 
@@ -2133,24 +2649,18 @@ function AttendanceTab({
               return (
                 <div
                   key={item.id || `${date}-${index}`}
-                  style={styles.attendanceItem}
+                  className="fe-attendance-item"
                 >
-                  <div style={styles.attendanceDate}>
-                    <Text strong>{formatDate(date)}</Text>
+                  <div className="fe-date-box">
+                    <strong>{formatDate(date)}</strong>
 
-                    <Text
-                      type="secondary"
-                      style={{
-                        fontSize: 12,
-                      }}
-                    >
-                      {getAttendanceTypeText(attendanceType)}
-                    </Text>
+                    <span>{getAttendanceTypeText(attendanceType)}</span>
                   </div>
 
                   <div
                     style={{
                       flex: 1,
+                      minWidth: 0,
                     }}
                   >
                     <Text strong>{className}</Text>
@@ -2161,7 +2671,7 @@ function AttendanceTab({
                         style={{
                           display: "block",
                           fontSize: 12,
-                          marginTop: 3,
+                          marginTop: 4,
                         }}
                       >
                         Phòng {item.room}
@@ -2182,11 +2692,9 @@ function AttendanceTab({
   );
 }
 
-/**
- * =========================================================
- * RESULTS TAB
- * =========================================================
- */
+/* =========================================================
+   RESULTS
+========================================================= */
 
 function ResultsTab({
   loading,
@@ -2206,22 +2714,20 @@ function ResultsTab({
   const latest = summary?.latest?.score ?? latestResult?.score ?? 0;
 
   return (
-    <div style={styles.content}>
-      {/* ===================================================
-          FILTER
-      =================================================== */}
-
-      <Card bordered={false} style={styles.filterCard}>
-        <Space wrap size={12}>
+    <div className="fe-child-content">
+      <Card bordered={false} className="fe-child-card fe-filter-card">
+        <Space wrap size={[12, 12]}>
           <div>
             <Text
               type="secondary"
               style={{
                 display: "block",
                 marginBottom: 6,
+                fontSize: 12,
+                fontWeight: 700,
               }}
             >
-              Hình thức kiểm tra
+              HÌNH THỨC KIỂM TRA
             </Text>
 
             <Select
@@ -2239,100 +2745,72 @@ function ResultsTab({
             </Select>
           </div>
 
-          <Button
-            type="primary"
-            onClick={onReload}
+          <AppButton
+            size="small"
+            icon={<ReloadOutlined />}
             loading={loading}
+            onClick={onReload}
             style={{
-              marginTop: 24,
+              marginTop: 22,
             }}
           >
             Tải lại
-          </Button>
+          </AppButton>
         </Space>
       </Card>
 
-      {/* ===================================================
-          STATS
-      =================================================== */}
-
       <Row
-        gutter={[16, 16]}
+        gutter={[14, 14]}
         style={{
-          marginTop: 16,
+          marginTop: 14,
         }}
       >
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Điểm trung bình"
-              value={Number(average) || 0}
-              precision={2}
-              suffix="/10"
-            />
-          </Card>
+          <ScoreSummary
+            title="Điểm trung bình"
+            value={average}
+            icon={<RiseOutlined />}
+          />
         </Col>
 
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Điểm cao nhất"
-              value={Number(highest) || 0}
-              precision={2}
-              suffix="/10"
-              valueStyle={{
-                color: "#16a34a",
-              }}
-            />
-          </Card>
+          <ScoreSummary
+            title="Điểm cao nhất"
+            value={highest}
+            icon={<TrophyFilled />}
+            accent="#2E7D5B"
+          />
         </Col>
 
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={styles.statCard}>
-            <Statistic
-              title="Điểm gần nhất"
-              value={Number(latest) || 0}
-              precision={2}
-              suffix="/10"
-              valueStyle={{
-                color: getScoreColor(latest),
-              }}
-            />
-          </Card>
+          <ScoreSummary
+            title="Điểm gần nhất"
+            value={latest}
+            icon={<StarFilled />}
+            accent={getScoreColor(latest)}
+          />
         </Col>
       </Row>
 
-      {/* ===================================================
-          RESULT LIST
-      =================================================== */}
-
       <Card
-        title={
-          <Space>
-            <RiseOutlined />
-            Kết quả học tập
-          </Space>
-        }
         bordered={false}
+        className="fe-child-card fe-section"
+        title={
+          <SectionTitle icon={<RiseOutlined />} title="Hành trình học tập" />
+        }
         style={{
-          ...styles.sectionCard,
-          marginTop: 16,
+          marginTop: 14,
         }}
       >
         {loading ? (
-          <Skeleton
-            active
-            paragraph={{
-              rows: 8,
-            }}
-          />
+          <Skeleton active paragraph={{ rows: 7 }} />
         ) : records.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="Chưa có kết quả học tập"
           />
         ) : (
-          <div style={styles.resultList}>
+          <div>
             {records.map((item, index) => {
               const score = item.score ?? item.point ?? item.result;
 
@@ -2347,41 +2825,49 @@ function ResultsTab({
                 "Bài kiểm tra";
 
               return (
-                <div key={item.id || index} style={styles.resultItem}>
-                  <div style={styles.resultInfo}>
+                <div key={item.id || index} className="fe-result-item">
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
                     <Text strong>{title}</Text>
 
                     <div
                       style={{
-                        marginTop: 6,
+                        marginTop: 7,
                       }}
                     >
-                      <Space size={12} wrap>
-                        <Text type="secondary">
+                      <Space wrap size={8}>
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: 12,
+                          }}
+                        >
                           {formatDate(
                             item.exam_date || item.examDate || item.date,
                           )}
                         </Text>
 
                         <Tag>{getExamTypeText(examTypeValue)}</Tag>
-
-                        {item.note && <Text type="secondary">{item.note}</Text>}
                       </Space>
                     </div>
                   </div>
 
-                  <div style={styles.scoreCircle}>
-                    <span
+                  <div className="fe-score">
+                    <strong
                       style={{
-                        color: getScoreColor(score) || "#173B5E",
+                        color: getScoreColor(score),
                       }}
                     >
                       {score === null || score === undefined
                         ? "--"
                         : Number(score).toFixed(1)}
-                    </span>
+                    </strong>
 
-                    <small>/10</small>
+                    <span>/ 10</span>
                   </div>
                 </div>
               );
@@ -2394,7 +2880,7 @@ function ResultsTab({
             type="secondary"
             style={{
               display: "block",
-              marginTop: 16,
+              marginTop: 15,
             }}
           >
             Điểm thấp nhất: {Number(lowest).toFixed(2)}
@@ -2405,26 +2891,85 @@ function ResultsTab({
   );
 }
 
-/**
- * =========================================================
- * SCHEDULE TAB
- * =========================================================
- */
+/* =========================================================
+   SCORE SUMMARY
+========================================================= */
+
+function ScoreSummary({ title, value, icon, accent = "#173B5E" }) {
+  return (
+    <Card
+      bordered={false}
+      className="fe-insight-card"
+      style={{
+        background: "linear-gradient(145deg,#FFFFFF,#F8FAFC)",
+      }}
+      bodyStyle={{
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          color: accent,
+          fontSize: 21,
+          marginBottom: 10,
+        }}
+      >
+        {icon}
+      </div>
+
+      <Text
+        type="secondary"
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+        }}
+      >
+        {title}
+      </Text>
+
+      <div
+        style={{
+          marginTop: 3,
+          color: accent,
+          fontSize: 31,
+          fontWeight: 900,
+        }}
+      >
+        {Number(value) || 0}
+        <span
+          style={{
+            fontSize: 13,
+            marginLeft: 3,
+            color: "#94A0B0",
+          }}
+        >
+          /10
+        </span>
+      </div>
+    </Card>
+  );
+}
+
+/* =========================================================
+   SCHEDULE
+========================================================= */
 
 function ScheduleTab({ loading, type, setType, records, onReload }) {
   return (
-    <div style={styles.content}>
-      <Card bordered={false} style={styles.filterCard}>
-        <Space wrap size={12}>
+    <div className="fe-child-content">
+      <Card bordered={false} className="fe-child-card fe-filter-card">
+        <Space wrap size={[12, 12]}>
           <div>
             <Text
               type="secondary"
               style={{
                 display: "block",
                 marginBottom: 6,
+                fontSize: 12,
+                fontWeight: 700,
               }}
             >
-              Loại lịch
+              LOẠI LỊCH
             </Text>
 
             <Select
@@ -2442,46 +2987,42 @@ function ScheduleTab({ loading, type, setType, records, onReload }) {
             </Select>
           </div>
 
-          <Button
-            type="primary"
-            onClick={onReload}
+          <AppButton
+            size="small"
+            icon={<ReloadOutlined />}
             loading={loading}
+            onClick={onReload}
             style={{
-              marginTop: 24,
+              marginTop: 22,
             }}
           >
             Tải lại
-          </Button>
+          </AppButton>
         </Space>
       </Card>
 
       <Card
-        title={
-          <Space>
-            <ScheduleOutlined />
-            Lịch học
-          </Space>
-        }
         bordered={false}
+        className="fe-child-card fe-section"
+        title={
+          <SectionTitle
+            icon={<ScheduleOutlined />}
+            title="Nhịp học trong tuần"
+          />
+        }
         style={{
-          ...styles.sectionCard,
-          marginTop: 16,
+          marginTop: 14,
         }}
       >
         {loading ? (
-          <Skeleton
-            active
-            paragraph={{
-              rows: 8,
-            }}
-          />
+          <Skeleton active paragraph={{ rows: 8 }} />
         ) : records.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="Chưa có lịch học"
           />
         ) : (
-          <div style={styles.scheduleList}>
+          <div>
             {records.map((item, index) => {
               const day = item.day_of_week ?? item.dayOfWeek;
 
@@ -2498,32 +3039,34 @@ function ScheduleTab({ loading, type, setType, records, onReload }) {
                 item.type || item.schedule_type || item.category || "catechism";
 
               return (
-                <div key={item.id || index} style={styles.scheduleItem}>
-                  <div style={styles.scheduleDay}>
-                    <div>{getDayName(day)}</div>
+                <div key={item.id || index} className="fe-schedule-item">
+                  <div className="fe-schedule-day">
+                    {getDayName(day)}
 
-                    <Text type="secondary">{formatTime(start)}</Text>
+                    <div
+                      style={{
+                        marginTop: 5,
+                        color: "#8B98A9",
+                        fontWeight: 500,
+                        fontSize: 11,
+                      }}
+                    >
+                      {formatTime(start)}
+                    </div>
                   </div>
 
-                  <div
-                    style={{
-                      width: 2,
-                      background: "#D9A441",
-                      borderRadius: 2,
-                    }}
-                  />
+                  <div className="fe-schedule-line" />
 
                   <div
                     style={{
-                      flex: 1,
-                      paddingLeft: 18,
+                      minWidth: 0,
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        gap: 12,
+                        gap: 10,
                         flexWrap: "wrap",
                       }}
                     >
@@ -2532,29 +3075,40 @@ function ScheduleTab({ loading, type, setType, records, onReload }) {
                       <Tag>{getAttendanceTypeText(scheduleType)}</Tag>
                     </div>
 
-                    <div
+                    <Space
+                      wrap
+                      size={[13, 7]}
                       style={{
-                        marginTop: 8,
+                        marginTop: 9,
                       }}
                     >
-                      <Space wrap size={16}>
-                        <span>
-                          <ClockCircleOutlined /> {formatTime(start)} -{" "}
-                          {formatTime(end)}
-                        </span>
+                      <Text
+                        type="secondary"
+                        style={{
+                          fontSize: 12,
+                        }}
+                      >
+                        <ClockCircleOutlined /> {formatTime(start)} -{" "}
+                        {formatTime(end)}
+                      </Text>
 
-                        <span>
-                          <EnvironmentOutlined /> {room || "Chưa cập nhật"}
-                        </span>
-                      </Space>
-                    </div>
+                      <Text
+                        type="secondary"
+                        style={{
+                          fontSize: 12,
+                        }}
+                      >
+                        <EnvironmentOutlined /> {room || "Chưa cập nhật"}
+                      </Text>
+                    </Space>
 
                     {(item.catechist_name || item.catechistName) && (
                       <Text
                         type="secondary"
                         style={{
                           display: "block",
-                          marginTop: 8,
+                          marginTop: 7,
+                          fontSize: 12,
                         }}
                       >
                         Giáo lý viên:{" "}
@@ -2572,11 +3126,9 @@ function ScheduleTab({ loading, type, setType, records, onReload }) {
   );
 }
 
-/**
- * =========================================================
- * CERTIFICATES TAB
- * =========================================================
- */
+/* =========================================================
+   CERTIFICATES
+========================================================= */
 
 function CertificatesTab({ loading, records, onReload, messageApi }) {
   const handleDownload = (item) => {
@@ -2585,7 +3137,6 @@ function CertificatesTab({ loading, records, onReload, messageApi }) {
 
     if (!url) {
       messageApi.warning("Chứng nhận này chưa có file tải xuống");
-
       return;
     }
 
@@ -2593,31 +3144,34 @@ function CertificatesTab({ loading, records, onReload, messageApi }) {
   };
 
   return (
-    <div style={styles.content}>
+    <div className="fe-child-content">
       <Card
-        title={
-          <Space>
-            <SafetyCertificateOutlined />
-            Chứng nhận & chứng chỉ
-          </Space>
-        }
         bordered={false}
-        style={styles.sectionCard}
+        className="fe-child-card fe-section"
+        title={
+          <SectionTitle
+            icon={<SafetyCertificateOutlined />}
+            title="Những dấu mốc của con"
+          />
+        }
+        extra={
+          <Button
+            type="text"
+            icon={<ReloadOutlined />}
+            onClick={onReload}
+            loading={loading}
+          />
+        }
       >
         {loading ? (
-          <Skeleton
-            active
-            paragraph={{
-              rows: 8,
-            }}
-          />
+          <Skeleton active paragraph={{ rows: 8 }} />
         ) : records.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="Chưa có chứng nhận"
           />
         ) : (
-          <Row gutter={[16, 16]}>
+          <Row gutter={[15, 15]}>
             {records.map((item, index) => {
               const title =
                 item.title ||
@@ -2646,16 +3200,16 @@ function CertificatesTab({ loading, records, onReload, messageApi }) {
 
               return (
                 <Col xs={24} md={12} lg={8} key={item.id || index}>
-                  <Card hoverable bordered style={styles.certificateCard}>
-                    <div style={styles.certificateIcon}>
+                  <div className="fe-certificate">
+                    <div className="fe-certificate-icon">
                       <SafetyCertificateOutlined />
                     </div>
 
                     <Title
                       level={5}
                       style={{
-                        marginTop: 14,
-                        marginBottom: 8,
+                        margin: "15px 0 8px",
+                        color: "#173B5E",
                       }}
                     >
                       {title}
@@ -2665,7 +3219,7 @@ function CertificatesTab({ loading, records, onReload, messageApi }) {
 
                     <div
                       style={{
-                        marginTop: 14,
+                        marginTop: 15,
                       }}
                     >
                       <InfoRow
@@ -2699,12 +3253,14 @@ function CertificatesTab({ loading, records, onReload, messageApi }) {
                       disabled={!fileUrl}
                       onClick={() => handleDownload(item)}
                       style={{
-                        marginTop: 14,
+                        marginTop: 15,
+                        borderRadius: 11,
+                        height: 40,
                       }}
                     >
-                      {fileUrl ? "Tải chứng nhận" : "Chưa có file"}
+                      {fileUrl ? "Mở chứng nhận" : "Chưa có file"}
                     </Button>
-                  </Card>
+                  </div>
                 </Col>
               );
             })}
@@ -2715,48 +3271,133 @@ function CertificatesTab({ loading, records, onReload, messageApi }) {
   );
 }
 
-/**
- * =========================================================
- * INFO ROW
- * =========================================================
- */
+/* =========================================================
+   EMPTY FEATURE
+========================================================= */
 
-function InfoRow({ icon, label, value }) {
+function EmptyFeature({ icon, title, description }) {
   return (
-    <div style={styles.infoRow}>
-      <div style={styles.infoIcon}>{icon}</div>
+    <Card
+      bordered={false}
+      className="fe-child-card fe-empty-card"
+      bodyStyle={{
+        padding: "65px 25px",
+      }}
+    >
+      <div
+        style={{
+          width: 74,
+          height: 74,
+          margin: "0 auto 18px",
+          borderRadius: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#FBF5E7",
+          color: "#B78316",
+          fontSize: 29,
+        }}
+      >
+        {icon}
+      </div>
 
-      <div style={styles.infoLabel}>{label}</div>
+      <Title
+        level={4}
+        style={{
+          textAlign: "center",
+          marginBottom: 7,
+          color: "#173B5E",
+        }}
+      >
+        {title}
+      </Title>
 
-      <div style={styles.infoValue}>{value || "Chưa cập nhật"}</div>
+      <Text
+        type="secondary"
+        style={{
+          display: "block",
+          maxWidth: 500,
+          margin: "0 auto",
+          textAlign: "center",
+          lineHeight: 1.7,
+        }}
+      >
+        {description}
+      </Text>
+    </Card>
+  );
+}
+
+/* =========================================================
+   SECTION TITLE
+========================================================= */
+
+function SectionTitle({ icon, title }) {
+  return (
+    <div className="fe-section-title">
+      <span className="fe-section-title-icon">{icon}</span>
+
+      <span>{title}</span>
     </div>
   );
 }
 
-/**
- * =========================================================
- * FAMILY CARD
- * =========================================================
- */
+/* =========================================================
+   INFO ROW
+========================================================= */
+
+function InfoRow({ icon, label, value }) {
+  return (
+    <div className="fe-info-row">
+      <div className="fe-info-icon">{icon}</div>
+
+      <div className="fe-info-label">{label}</div>
+
+      <div className="fe-info-value">{value || "Chưa cập nhật"}</div>
+    </div>
+  );
+}
+
+/* =========================================================
+   FAMILY CARD
+========================================================= */
 
 function FamilyCard({ title, icon, name, phone, relationship }) {
   return (
-    <div style={styles.familyCard}>
-      <div style={styles.familyHeader}>
-        <div style={styles.familyIcon}>{icon}</div>
+    <div className="fe-family-card">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 11,
+        }}
+      >
+        <div className="fe-family-avatar">{icon}</div>
 
-        <div>
+        <div
+          style={{
+            minWidth: 0,
+          }}
+        >
           <Text
             type="secondary"
             style={{
-              fontSize: 12,
+              fontSize: 11,
+              fontWeight: 700,
             }}
           >
             {title}
           </Text>
 
           <div>
-            <Text strong>{name || "Chưa cập nhật"}</Text>
+            <Text
+              strong
+              style={{
+                color: "#173B5E",
+              }}
+            >
+              {name || "Chưa cập nhật"}
+            </Text>
           </div>
         </div>
       </div>
@@ -2767,386 +3408,23 @@ function FamilyCard({ title, icon, name, phone, relationship }) {
           style={{
             display: "block",
             marginTop: 10,
+            fontSize: 12,
           }}
         >
           Quan hệ: {relationship}
         </Text>
       )}
 
-      <div
+      <Text
+        type="secondary"
         style={{
+          display: "block",
           marginTop: 10,
+          fontSize: 12,
         }}
       >
-        <Text type="secondary">
-          <PhoneOutlined /> {phone || "Chưa cập nhật"}
-        </Text>
-      </div>
+        <PhoneOutlined /> {phone || "Chưa cập nhật"}
+      </Text>
     </div>
   );
 }
-
-/**
- * =========================================================
- * STYLES
- * =========================================================
- */
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#F7F9FC",
-  },
-
-  container: {
-    width: "100%",
-    maxWidth: 1440,
-    margin: "0 auto",
-    padding: "0 28px",
-  },
-
-  loadingContainer: {
-    maxWidth: 1400,
-    margin: "0 auto",
-    padding: "40px 24px",
-  },
-
-  loadingCard: {
-    borderRadius: 16,
-    border: "1px solid #E2E8F0",
-  },
-
-  backButton: {
-    marginBottom: 16,
-    paddingLeft: 0,
-    color: "#173B5E",
-    fontWeight: 600,
-  },
-
-  heroCard: {
-    borderRadius: 22,
-    border: "1px solid #E5EAF0",
-    overflow: "hidden",
-    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-    boxShadow: "0 12px 36px rgba(23,59,94,0.07)",
-  },
-
-  hero: {
-    display: "flex",
-    alignItems: "center",
-    gap: 24,
-    flexWrap: "wrap",
-  },
-
-  avatar: {
-    flexShrink: 0,
-    background: "#173B5E",
-    color: "#fff",
-    fontSize: 30,
-    fontWeight: 700,
-    border: "4px solid rgba(217,164,65,0.25)",
-  },
-
-  heroInfo: {
-    flex: 1,
-    minWidth: 280,
-  },
-
-  heroTitleRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    flexWrap: "wrap",
-  },
-
-  heroTitle: {
-    margin: 0,
-    color: "#173B5E",
-    fontWeight: 700,
-  },
-
-  heroMeta: {
-    display: "flex",
-    gap: 18,
-    flexWrap: "wrap",
-    marginTop: 8,
-    color: "#64748B",
-  },
-
-  heroClass: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
-    marginTop: 14,
-    color: "#475569",
-  },
-
-  tabCard: {
-    marginTop: 16,
-    borderRadius: 14,
-    border: "1px solid #E2E8F0",
-  },
-
-  tabs: {
-    display: "flex",
-    gap: 4,
-    overflowX: "auto",
-  },
-
-  tab: {
-    border: "none",
-    background: "transparent",
-    padding: "12px 16px",
-    borderRadius: 10,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    whiteSpace: "nowrap",
-    color: "#64748B",
-    fontSize: 14,
-    fontWeight: 600,
-    transition: "all 0.2s ease",
-  },
-
-  tabActive: {
-    background: "#173B5E",
-    color: "#fff",
-    boxShadow: "0 4px 12px rgba(23,59,94,0.16)",
-  },
-
-  content: {
-    marginTop: 16,
-  },
-
-  statCard: {
-    borderRadius: 18,
-    border: "1px solid #E5EAF0",
-    height: "100%",
-    boxShadow: "0 6px 22px rgba(15,23,42,0.035)",
-  },
-
-  sectionCard: {
-    borderRadius: 18,
-    border: "1px solid #E5EAF0",
-    boxShadow: "0 6px 22px rgba(15,23,42,0.035)",
-  },
-
-  filterCard: {
-    borderRadius: 14,
-    border: "1px solid #E2E8F0",
-  },
-
-  infoRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 10,
-    padding: "10px 0",
-    borderBottom: "1px solid #F1F5F9",
-  },
-
-  infoIcon: {
-    width: 24,
-    color: "#D9A441",
-    flexShrink: 0,
-    paddingTop: 2,
-  },
-
-  infoLabel: {
-    width: 125,
-    color: "#64748B",
-    flexShrink: 0,
-  },
-
-  infoValue: {
-    flex: 1,
-    color: "#172033",
-    fontWeight: 500,
-    wordBreak: "break-word",
-  },
-
-  familyCard: {
-    padding: 16,
-    borderRadius: 12,
-    background: "#F8FAFC",
-    border: "1px solid #E2E8F0",
-    height: "100%",
-  },
-
-  familyHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  familyIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#fff",
-    color: "#173B5E",
-    border: "1px solid #E2E8F0",
-    fontSize: 18,
-  },
-
-  nextClass: {
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    padding: 18,
-    borderRadius: 12,
-    background: "linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%)",
-    border: "1px solid #E2E8F0",
-  },
-
-  nextClassIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#173B5E",
-    color: "#fff",
-    fontSize: 22,
-    flexShrink: 0,
-  },
-
-  sacramentCard: {
-    borderRadius: 10,
-    background: "#F8FAFC",
-  },
-
-  monthInput: {
-    height: 32,
-    border: "1px solid #D9E1EA",
-    borderRadius: 6,
-    padding: "0 10px",
-    color: "#172033",
-    background: "#fff",
-  },
-
-  rateBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 20,
-    flexWrap: "wrap",
-  },
-
-  rateValue: {
-    fontSize: 32,
-    lineHeight: 1.2,
-    fontWeight: 700,
-    color: "#173B5E",
-    marginTop: 4,
-  },
-
-  rateTrack: {
-    flex: 1,
-    minWidth: 160,
-    height: 10,
-    borderRadius: 10,
-    background: "#E2E8F0",
-    overflow: "hidden",
-  },
-
-  rateBar: {
-    height: "100%",
-    borderRadius: 10,
-    background: "linear-gradient(90deg, #173B5E 0%, #D9A441 100%)",
-    transition: "width 0.3s ease",
-  },
-
-  attendanceList: {
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  attendanceItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    padding: "15px 0",
-    borderBottom: "1px solid #F1F5F9",
-  },
-
-  attendanceDate: {
-    width: 130,
-    display: "flex",
-    flexDirection: "column",
-    gap: 3,
-    flexShrink: 0,
-  },
-
-  resultList: {
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  resultItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 18,
-    padding: "16px 0",
-    borderBottom: "1px solid #F1F5F9",
-  },
-
-  resultInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  scoreCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: "50%",
-    background: "#F8FAFC",
-    border: "2px solid #E2E8F0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  scheduleList: {
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  scheduleItem: {
-    display: "flex",
-    gap: 18,
-    padding: "18px 0",
-    borderBottom: "1px solid #F1F5F9",
-  },
-
-  scheduleDay: {
-    width: 100,
-    flexShrink: 0,
-    textAlign: "right",
-    color: "#173B5E",
-    fontWeight: 600,
-  },
-
-  certificateCard: {
-    borderRadius: 14,
-    height: "100%",
-    border: "1px solid #E2E8F0",
-  },
-
-  certificateIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(217,164,65,0.12)",
-    color: "#B78316",
-    fontSize: 26,
-  },
-};

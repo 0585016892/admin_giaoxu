@@ -30,25 +30,13 @@ export function ChurchSettingsProvider({ children }) {
     async (force = false) => {
       // Đã load rồi thì không gọi lại
       if (loaded && !force) {
-        console.log("[ChurchSettings] Đã có settings → không gọi API");
         return settings;
       }
 
       try {
-        console.log("");
-        console.log(
-          "============================================================",
-        );
-        console.log("             LOAD CHURCH SETTINGS");
-        console.log(
-          "============================================================",
-        );
-
         setLoading(true);
 
         const response = await getChurchSettings();
-
-        console.log("[ChurchSettings] RESPONSE:", response);
 
         if (!response?.success) {
           throw new Error(
@@ -58,15 +46,11 @@ export function ChurchSettingsProvider({ children }) {
 
         const data = response.data || {};
 
-        console.log("[ChurchSettings] DATA:", data);
-
         setSettings(data);
         setLoaded(true);
 
         return data;
       } catch (error) {
-        console.error("[ChurchSettings] LOAD ERROR:", error);
-
         throw error;
       } finally {
         setLoading(false);
@@ -81,22 +65,9 @@ export function ChurchSettingsProvider({ children }) {
 
   const saveSettings = useCallback(async (data) => {
     try {
-      console.log("");
-      console.log(
-        "============================================================",
-      );
-      console.log("            UPDATE CHURCH SETTINGS");
-      console.log(
-        "============================================================",
-      );
-
-      console.log("[ChurchSettings] PAYLOAD:", data);
-
       setSaving(true);
 
       const response = await updateChurchSettings(data);
-
-      console.log("[ChurchSettings] UPDATE RESPONSE:", response);
 
       if (!response?.success) {
         throw new Error(
@@ -109,12 +80,8 @@ export function ChurchSettingsProvider({ children }) {
       setSettings(newSettings);
       setLoaded(true);
 
-      console.log("[ChurchSettings] SETTINGS UPDATED:", newSettings);
-
       return newSettings;
     } catch (error) {
-      console.error("[ChurchSettings] UPDATE ERROR:", error);
-
       throw error;
     } finally {
       setSaving(false);

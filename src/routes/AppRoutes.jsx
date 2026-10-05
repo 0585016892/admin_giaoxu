@@ -40,7 +40,7 @@ import MyStudentsPage from "../pages/catechist/Students/MyStudentsPage";
 import SendNotificationPage from "../pages/catechist/SendNotificationPage";
 import NotificationsCatePage from "../pages/catechist/NotificationsCatePage";
 import ErrorPage from "../pages/catechist/ErrorPage";
-import FaithEduRegister from "../pages/catechist/FaithEduRegister";
+import FaithEduRegister from "../pages/catechist/register/FaithEduRegister";
 import Statistics from "../pages/catechist/Statistics";
 import CertificatePage from "../pages/catechist/CertificatePage";
 import LessonLibraryPage from "../pages/catechist/LessonLibraryPage";

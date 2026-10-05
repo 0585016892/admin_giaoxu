@@ -3,426 +3,808 @@ import {
   ArrowRightOutlined,
   CalendarOutlined,
   CheckCircleFilled,
+  HeartFilled,
   IdcardOutlined,
   ReadOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 
 /* =========================================================
-   FAITHEDU CHILD CARD
-   - CSS tích hợp ngay trong file
-   - Responsive
-   - Không bắt buộc phải có ảnh avatar
-   - Có fallback khi thiếu dữ liệu lớp/học sinh
+   FAITHEDU FAMILY — CHILD PROFILE CARD
+   Giao diện mới hoàn toàn
 ========================================================= */
 
 const CHILD_CARD_CSS = `
-.child-card {
-  --child-navy: #173b5e;
-  --child-blue: #2563eb;
-  --child-gold: #e7b84b;
-  --child-text: #17233b;
-  --child-muted: #64748b;
-  --child-border: #e7edf5;
+/* =========================================================
+   CARD
+========================================================= */
+
+.fe-child-profile {
+  --navy: #173b5e;
+  --navy-dark: #102a43;
+  --gold: #d9a441;
+  --gold-soft: #fff8e8;
+
+  --text: #243447;
+  --muted: #7b8797;
+  --border: #e8edf3;
 
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   min-width: 0;
-  padding: 20px;
+
   overflow: hidden;
-  border: 1px solid var(--child-border);
-  border-radius: 20px;
-  background: linear-gradient(145deg, #ffffff 0%, #fbfdff 70%, #f2f7ff 100%);
-  box-shadow: 0 5px 18px rgba(23, 59, 94, 0.055);
-  color: var(--child-text);
-  font-family: Inter, "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+
+  border: 1px solid var(--border);
+  border-radius: 28px;
+
+  background: #ffffff;
+
+  color: var(--text);
+
+  box-shadow:
+    0 10px 35px rgba(23, 59, 94, 0.055);
+
+  font-family:
+    "Be Vietnam Pro",
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+
   box-sizing: border-box;
 }
 
-.child-card *,
-.child-card *::before,
-.child-card *::after {
+.fe-child-profile *,
+.fe-child-profile *::before,
+.fe-child-profile *::after {
   box-sizing: border-box;
 }
 
-.child-card::before {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 5px;
-  background: linear-gradient(90deg, #2563eb 0%, #43b6e8 45%, #e7b84b 100%);
-  content: "";
+.fe-child-profile:hover {
+  transform: translateY(-5px);
+
+  border-color: #dfcfaa;
+
+  box-shadow:
+    0 22px 45px rgba(23, 59, 94, 0.105);
 }
 
-.child-card::after {
+
+/* =========================================================
+   DECORATION
+========================================================= */
+
+.fe-child-profile__circle {
   position: absolute;
-  top: -45px;
-  right: -35px;
-  width: 130px;
-  height: 130px;
+
+  width: 220px;
+  height: 220px;
+
+  right: -105px;
+  top: -115px;
+
   border-radius: 50%;
-  background: rgba(219, 234, 254, .38);
-  content: "";
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(217, 164, 65, 0.13),
+      rgba(217, 164, 65, 0.035) 55%,
+      transparent 70%
+    );
+
   pointer-events: none;
 }
 
-.child-card:hover {
-  transform: translateY(-3px);
-  border-color: #cbdcf0;
-  box-shadow: 0 13px 30px rgba(23, 59, 94, 0.11);
+.fe-child-profile__circle-small {
+  position: absolute;
+
+  width: 90px;
+  height: 90px;
+
+  right: 80px;
+  top: 35px;
+
+  border: 1px dashed rgba(217, 164, 65, 0.24);
+  border-radius: 50%;
+
+  pointer-events: none;
 }
 
-.child-card-top {
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.fe-child-profile__header {
   position: relative;
-  z-index: 1;
+
+  min-height: 165px;
+
+  padding: 25px 25px 23px;
+
+  background:
+    radial-gradient(
+      circle at 88% 15%,
+      rgba(217, 164, 65, 0.16),
+      transparent 27%
+    ),
+    linear-gradient(
+      135deg,
+      #fffaf0 0%,
+      #ffffff 65%,
+      #f8fbfd 100%
+    );
+}
+
+.fe-child-profile__header-inner {
+  position: relative;
+  z-index: 2;
+
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
+
   min-width: 0;
 }
 
-.child-avatar-wrap {
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+.fe-child-profile__avatar-wrapper {
   position: relative;
+
   flex: 0 0 auto;
 }
 
-.child-avatar {
+.fe-child-profile__avatar {
+  position: relative;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 68px;
-  height: 68px;
+
+  width: 86px;
+  height: 86px;
+
   overflow: hidden;
-  border: 3px solid #fff;
-  border-radius: 21px;
-  background: linear-gradient(145deg, #dbeafe 0%, #e0f2fe 52%, #fef3c7 100%);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, .13);
-  color: #2563eb;
-  font-size: 27px;
+
+  border: 5px solid #ffffff;
+  border-radius: 27px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #eaf1f7 0%,
+      #dce9f1 50%,
+      #fff1cf 100%
+    );
+
+  color: var(--navy);
+
+  font-size: 31px;
+  font-weight: 800;
+
+  box-shadow:
+    0 12px 25px rgba(23, 59, 94, 0.12);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
-.child-avatar img {
+.fe-child-profile:hover .fe-child-profile__avatar {
+  transform: rotate(-2deg) scale(1.025);
+
+  box-shadow:
+    0 15px 30px rgba(23, 59, 94, 0.16);
+}
+
+.fe-child-profile__avatar img {
   display: block;
+
   width: 100%;
   height: 100%;
+
   object-fit: cover;
 }
 
-.child-avatar-badge {
+.fe-child-profile__avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      #ffffff,
+      transparent 25%
+    ),
+    linear-gradient(
+      145deg,
+      #e7f0f7,
+      #dbe8ef
+    );
+
+  color: var(--navy);
+
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.fe-child-profile__status-dot {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
+
+  right: -2px;
+  bottom: -2px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: 2px solid #fff;
+
+  width: 27px;
+  height: 27px;
+
+  border: 4px solid #ffffff;
   border-radius: 50%;
-  background: #22a66b;
-  color: #fff;
-  font-size: 11px;
+
+  background: #2e9d69;
+
+  color: #ffffff;
+
+  font-size: 10px;
+
+  box-shadow:
+    0 4px 10px rgba(46, 157, 105, 0.22);
 }
 
-.child-card-main {
+
+/* =========================================================
+   HEADER TEXT
+========================================================= */
+
+.fe-child-profile__identity {
+  min-width: 0;
   flex: 1;
-  min-width: 0;
 }
 
-.child-card-name {
-  overflow: hidden;
-  color: var(--child-navy);
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.child-card-code {
-  display: inline-flex;
+.fe-child-profile__eyebrow {
+  display: flex;
   align-items: center;
   gap: 6px;
-  max-width: 100%;
-  margin-top: 7px;
-  padding: 5px 9px;
-  overflow: hidden;
-  border: 1px solid #e2eaff;
-  border-radius: 8px;
-  background: #f1f6ff;
-  color: #47658b;
-  font-size: 11px;
-  font-weight: 600;
-}
 
-.child-card-code span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.child-status {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-
-.child-status-studying {
-  border-color: #c9f0db;
-  background: #eafaf1;
-  color: #168451;
-}
-
-.child-status-inactive {
-  border-color: #e2e8f0;
-  background: #f1f5f9;
-  color: #64748b;
-}
-
-.child-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 0 3px rgba(22, 132, 81, .09);
-}
-
-.child-status-inactive .child-status-dot {
-  box-shadow: none;
-}
-
-.child-card-divider {
-  height: 1px;
-  margin: 19px 0 16px;
-  background: linear-gradient(90deg, #e8eef6, #f4f7fb);
-}
-
-.child-card-info {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 11px;
-}
-
-.child-info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-width: 0;
-  min-height: 66px;
-  padding: 12px;
-  border: 1px solid #edf2f8;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, .82);
-  transition: background .18s ease, border-color .18s ease;
-}
-
-.child-info-item:hover {
-  border-color: #d8e6fa;
-  background: #f7faff;
-}
-
-.child-info-icon {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  background: #eaf2ff;
-  color: #2865ce;
-  font-size: 15px;
-}
-
-.child-info-item:nth-child(2) .child-info-icon {
-  background: #e9fbf3;
-  color: #199765;
-}
-
-.child-info-item:nth-child(3) .child-info-icon {
-  background: #fff5df;
-  color: #c58a14;
-}
-
-.child-info-item:nth-child(4) .child-info-icon {
-  background: #f5edff;
-  color: #8b5bd6;
-}
-
-.child-info-content {
-  min-width: 0;
-  padding-top: 1px;
-}
-
-.child-info-label {
   margin-bottom: 5px;
-  color: #8a98ab;
-  font-size: 10px;
-  font-weight: 650;
+
+  color: var(--gold);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
-.child-info-value {
-  overflow-wrap: anywhere;
-  color: #263c58;
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.45;
+.fe-child-profile__eyebrow::before {
+  content: "";
+
+  width: 16px;
+  height: 2px;
+
+  border-radius: 99px;
+
+  background: var(--gold);
 }
 
-.child-card-footer {
+.fe-child-profile__name {
+  margin: 0;
+
+  overflow: hidden;
+
+  color: var(--navy);
+
+  font-size: 21px;
+  font-weight: 850;
+
+  line-height: 1.3;
+
+  letter-spacing: -0.45px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fe-child-profile__code {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  max-width: 100%;
+
+  margin-top: 8px;
+
+  padding: 5px 8px;
+
+  border-radius: 7px;
+
+  background: rgba(23, 59, 94, 0.055);
+
+  color: #657589;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.fe-child-profile__code span {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   CLASS PILL
+========================================================= */
+
+.fe-child-profile__class {
+  position: absolute;
+
+  right: 23px;
+  bottom: 21px;
+
+  z-index: 4;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  max-width: 145px;
+
+  padding: 7px 10px;
+
+  overflow: hidden;
+
+  border: 1px solid #f0dfb9;
+  border-radius: 999px;
+
+  background: rgba(255, 249, 232, 0.95);
+
+  color: #9a6c1d;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  box-shadow:
+    0 4px 12px rgba(154, 108, 29, 0.07);
+
+  white-space: nowrap;
+}
+
+.fe-child-profile__class span {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   BODY
+========================================================= */
+
+.fe-child-profile__body {
+  padding: 20px 25px 18px;
+
+  border-top: 1px solid #f0f2f5;
+}
+
+
+/* =========================================================
+   JOURNEY LABEL
+========================================================= */
+
+.fe-child-profile__journey {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 17px;
-  padding-top: 14px;
-  border-top: 1px solid #edf1f6;
+
+  gap: 10px;
+
+  margin-bottom: 13px;
 }
 
-.child-card-class-code {
+.fe-child-profile__journey-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  color: var(--navy);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.fe-child-profile__journey-title-icon {
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.fe-child-profile__journey-status {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
+
+  color: #2e8b62;
+
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.fe-child-profile__journey-status-dot {
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+
+/* =========================================================
+   INFO ROW
+========================================================= */
+
+.fe-child-profile__details {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.2fr)
+    minmax(0, 1fr)
+    minmax(0, 0.85fr);
+
+  gap: 8px;
+}
+
+.fe-child-profile__detail {
   min-width: 0;
-  padding: 7px 10px;
+
+  padding: 11px;
+
+  border: 1px solid #edf1f5;
+  border-radius: 13px;
+
+  background: #fcfdfe;
+}
+
+.fe-child-profile__detail-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  margin-bottom: 5px;
+
+  color: #9aa6b5;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+}
+
+.fe-child-profile__detail-label svg {
+  font-size: 10px;
+}
+
+.fe-child-profile__detail-value {
   overflow: hidden;
-  border-radius: 8px;
-  background: #fff7e4;
-  color: #9b6b12;
+
+  color: #34495e;
+
   font-size: 10px;
   font-weight: 750;
+
+  line-height: 1.4;
+
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.child-card-detail-button {
-  display: inline-flex;
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.fe-child-profile__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 14px 25px 18px;
+
+  border-top: 1px solid #f0f2f5;
+}
+
+.fe-child-profile__message {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  min-width: 0;
+
+  color: #9aa4b1;
+
+  font-size: 8.5px;
+  line-height: 1.4;
+}
+
+.fe-child-profile__message-icon {
   flex: 0 0 auto;
+
+  color: var(--gold);
+
+  font-size: 11px;
+}
+
+.fe-child-profile__button {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
+
+  flex: 0 0 auto;
+
   min-height: 37px;
-  padding: 0 13px;
+
+  padding: 0 14px;
+
   border: 0;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #2563eb 0%, #1677ff 100%);
-  box-shadow: 0 4px 10px rgba(37, 99, 235, .18);
-  color: #fff;
+  border-radius: 11px;
+
+  background: var(--navy);
+
+  color: #ffffff;
+
   cursor: pointer;
+
   font: inherit;
-  font-size: 11px;
-  font-weight: 750;
-  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+  font-size: 9.5px;
+  font-weight: 800;
+
+  box-shadow:
+    0 7px 15px rgba(23, 59, 94, 0.15);
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.child-card-detail-button:hover {
+.fe-child-profile__button:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, #1d4ed8 0%, #0966df 100%);
-  box-shadow: 0 7px 15px rgba(37, 99, 235, .25);
+
+  background: #244f78;
+
+  box-shadow:
+    0 10px 19px rgba(23, 59, 94, 0.21);
 }
 
-.child-card-detail-button:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, .28);
+.fe-child-profile__button:active {
+  transform: translateY(0);
+}
+
+.fe-child-profile__button:focus-visible {
+  outline: 3px solid rgba(217, 164, 65, 0.3);
   outline-offset: 3px;
 }
 
-@media (max-width: 575px) {
-  .child-card {
-    padding: 16px;
-    border-radius: 17px;
+
+/* =========================================================
+   INACTIVE
+========================================================= */
+
+.fe-child-profile--inactive .fe-child-profile__status-dot {
+  background: #94a3b8;
+
+  box-shadow: none;
+}
+
+.fe-child-profile--inactive .fe-child-profile__journey-status {
+  color: #94a3b8;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+  .fe-child-profile__details {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 
-  .child-card-top {
-    gap: 11px;
-    flex-wrap: wrap;
-  }
+  .fe-child-profile__class {
+    position: static;
 
-  .child-avatar {
-    width: 58px;
-    height: 58px;
-    border-radius: 18px;
-    font-size: 23px;
-  }
-
-  .child-card-name {
-    font-size: 15px;
-  }
-
-  .child-status {
-    margin-left: auto;
-    padding: 6px 8px;
-    font-size: 9px;
-  }
-
-  .child-card-info {
-    gap: 8px;
-  }
-
-  .child-info-item {
-    gap: 8px;
-    padding: 10px;
-  }
-
-  .child-info-icon {
-    width: 30px;
-    height: 30px;
-    font-size: 13px;
-  }
-
-  .child-info-value {
-    font-size: 11px;
-  }
-
-  .child-card-footer {
-    align-items: stretch;
-  }
-
-  .child-card-detail-button {
-    padding: 0 10px;
+    margin-top: 12px;
   }
 }
 
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 575px) {
+  .fe-child-profile {
+    border-radius: 22px;
+  }
+
+  .fe-child-profile__header {
+    min-height: 145px;
+
+    padding: 20px 18px;
+  }
+
+  .fe-child-profile__header-inner {
+    gap: 13px;
+  }
+
+  .fe-child-profile__avatar {
+    width: 68px;
+    height: 68px;
+
+    border-radius: 21px;
+
+    font-size: 25px;
+  }
+
+  .fe-child-profile__status-dot {
+    width: 23px;
+    height: 23px;
+
+    border-width: 3px;
+
+    font-size: 8px;
+  }
+
+  .fe-child-profile__eyebrow {
+    font-size: 7px;
+  }
+
+  .fe-child-profile__name {
+    font-size: 17px;
+  }
+
+  .fe-child-profile__code {
+    margin-top: 6px;
+
+    font-size: 8px;
+  }
+
+  .fe-child-profile__class {
+    margin-top: 10px;
+
+    padding: 6px 9px;
+
+    font-size: 8px;
+  }
+
+  .fe-child-profile__body {
+    padding: 16px 16px 15px;
+  }
+
+  .fe-child-profile__details {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 7px;
+  }
+
+  .fe-child-profile__detail {
+    padding: 9px;
+  }
+
+  .fe-child-profile__detail-label {
+    font-size: 7px;
+  }
+
+  .fe-child-profile__detail-value {
+    font-size: 9px;
+  }
+
+  .fe-child-profile__footer {
+    padding:
+      12px 16px 15px;
+  }
+
+  .fe-child-profile__message {
+    font-size: 8px;
+  }
+
+  .fe-child-profile__button {
+    min-height: 34px;
+
+    padding: 0 11px;
+
+    font-size: 8.5px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL
+========================================================= */
+
 @media (max-width: 360px) {
-  .child-card-info {
-    grid-template-columns: minmax(0, 1fr);
+  .fe-child-profile__header {
+    padding: 17px 15px;
   }
 
-  .child-info-item {
-    min-height: 56px;
+  .fe-child-profile__avatar {
+    width: 60px;
+    height: 60px;
+
+    border-radius: 18px;
   }
 
-  .child-card-footer {
+  .fe-child-profile__name {
+    font-size: 15px;
+  }
+
+  .fe-child-profile__details {
+    grid-template-columns: 1fr;
+  }
+
+  .fe-child-profile__footer {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .child-card-class-code,
-  .child-card-detail-button {
+  .fe-child-profile__message {
+    justify-content: center;
+  }
+
+  .fe-child-profile__button {
     width: 100%;
   }
 }
 
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
 @media (prefers-reduced-motion: reduce) {
-  .child-card,
-  .child-card *,
-  .child-card *::before,
-  .child-card *::after {
+  .fe-child-profile,
+  .fe-child-profile *,
+  .fe-child-profile *::before,
+  .fe-child-profile *::after {
     transition: none !important;
   }
 }
 `;
 
+/* =========================================================
+   HELPERS
+========================================================= */
+
 const getApiBaseUrl = () => {
-  // Dự án Create React App: khai báo REACT_APP_API_URL trong file .env.
   const rawUrl =
     typeof process !== "undefined" && process.env
       ? process.env.REACT_APP_API_URL || ""
@@ -433,149 +815,279 @@ const getApiBaseUrl = () => {
 
 const getAvatarUrl = (avatar) => {
   if (!avatar) return "";
-  if (/^(https?:)?\/\//i.test(avatar) || avatar.startsWith("data:")) {
-    return avatar;
+
+  const value = String(avatar).trim();
+
+  if (
+    /^(https?:)?\/\//i.test(value) ||
+    value.startsWith("data:") ||
+    value.startsWith("blob:")
+  ) {
+    return value;
   }
 
   const baseUrl = getApiBaseUrl();
-  const path = avatar.startsWith("/") ? avatar : `/${avatar}`;
+
+  const path = value.startsWith("/") ? value : `/${value}`;
+
   return `${baseUrl}${path}`;
 };
 
 const displayValue = (value, fallback = "Chưa cập nhật") => {
-  if (value === null || value === undefined || value === "") return fallback;
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+
   return value;
 };
 
+const getGenderLabel = (gender) => {
+  if (!gender) return "Chưa cập nhật";
+
+  const value = String(gender).toLowerCase();
+
+  if (value === "female" || value === "nữ" || value === "nu" || value === "f") {
+    return "Nữ";
+  }
+
+  if (value === "male" || value === "nam" || value === "m") {
+    return "Nam";
+  }
+
+  return gender;
+};
+
+const getInitials = (name) => {
+  const words = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!words.length) return "?";
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+
+  return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+};
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 const ChildCard = ({ child = {}, onView = () => {} }) => {
   const student = child || {};
+
   const studentClass = student.class || {};
+
   const isStudying =
     student.status === "active" ||
     student.status === "Active" ||
+    student.status === "studying" ||
+    student.status === "Studying" ||
     student.status === true;
 
   const avatarUrl = getAvatarUrl(student.avatar);
-  const gender =
-    student.gender === "female" || student.gender === "Female"
-      ? "Nữ"
-      : student.gender === "male" || student.gender === "Male"
-        ? "Nam"
-        : "Chưa cập nhật";
+
+  const gender = getGenderLabel(student.gender);
+
+  const className =
+    student.class_name || student.className || studentClass.name || null;
+
+  // const classCode =
+  //   student.class_code || student.classCode || studentClass.code || null;
+
+  const catechismLevel =
+    student.catechism_level ||
+    student.catechismLevel ||
+    studentClass.category ||
+    null;
+
+  const studentName =
+    student.name || student.full_name || student.fullName || "Học sinh";
 
   return (
     <>
       <style>{CHILD_CARD_CSS}</style>
 
-      <article className="child-card">
-        <div className="child-card-top">
-          <div className="child-avatar-wrap">
-            <div className="child-avatar">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={student.name || "Ảnh đại diện học sinh"}
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
-                />
-              ) : (
-                <UserOutlined />
-              )}
-            </div>
+      <article
+        className={[
+          "fe-child-profile",
+          !isStudying ? "fe-child-profile--inactive" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {/* =================================================
+            DECORATION
+        ================================================= */}
 
-            {isStudying && (
-              <span className="child-avatar-badge" title="Đang học">
-                <CheckCircleFilled />
+        <div className="fe-child-profile__circle" />
+
+        <div className="fe-child-profile__circle-small" />
+
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
+        <div className="fe-child-profile__header">
+          <div className="fe-child-profile__header-inner">
+            {/* AVATAR */}
+
+            <div className="fe-child-profile__avatar-wrapper">
+              <div className="fe-child-profile__avatar">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={studentName}
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="fe-child-profile__avatar-fallback">
+                    {getInitials(studentName)}
+                  </div>
+                )}
+              </div>
+
+              <span
+                className="fe-child-profile__status-dot"
+                title={isStudying ? "Đang học" : "Không hoạt động"}
+              >
+                {isStudying ? <CheckCircleFilled /> : null}
               </span>
-            )}
-          </div>
-
-          <div className="child-card-main">
-            <div className="child-card-name">
-              {displayValue(student.name, "Học sinh")}
             </div>
 
-            <div className="child-card-code" title={student.code || ""}>
-              <IdcardOutlined />
-              <span>{displayValue(student.code, "Chưa có mã học sinh")}</span>
+            {/* IDENTITY */}
+
+            <div className="fe-child-profile__identity">
+              <div className="fe-child-profile__eyebrow">Hồ sơ của con</div>
+
+              <h3 className="fe-child-profile__name" title={studentName}>
+                {studentName}
+              </h3>
+
+              <div
+                className="fe-child-profile__code"
+                title={student.code || ""}
+              >
+                <IdcardOutlined />
+
+                <span>{displayValue(student.code, "Chưa có mã học sinh")}</span>
+              </div>
             </div>
           </div>
 
-          <div
-            className={`child-status ${
-              isStudying ? "child-status-studying" : "child-status-inactive"
-            }`}
-          >
-            <span className="child-status-dot" />
-            {isStudying ? "Đang học" : "Không hoạt động"}
+          {/* CLASS */}
+
+          <div className="fe-child-profile__class" title={className || ""}>
+            <ReadOutlined />
+
+            <span>{displayValue(className, "Chưa xếp lớp")}</span>
           </div>
         </div>
 
-        <div className="child-card-divider" />
+        {/* =================================================
+            BODY
+        ================================================= */}
 
-        <div className="child-card-info">
-          <div className="child-info-item">
-            <div className="child-info-icon">
-              <ReadOutlined />
+        <div className="fe-child-profile__body">
+          <div className="fe-child-profile__journey">
+            <div className="fe-child-profile__journey-title">
+              <HeartFilled className="fe-child-profile__journey-title-icon" />
+              Hành trình giáo lý
             </div>
-            <div className="child-info-content">
-              <div className="child-info-label">Lớp hiện tại</div>
-              <div className="child-info-value">
-                {displayValue(studentClass.name, "Chưa xếp lớp")}
-              </div>
+
+            <div className="fe-child-profile__journey-status">
+              <span className="fe-child-profile__journey-status-dot" />
+
+              {isStudying ? "Đang theo học" : "Tạm ngưng"}
             </div>
           </div>
 
-          <div className="child-info-item">
-            <div className="child-info-icon">
-              <ReadOutlined />
-            </div>
-            <div className="child-info-content">
-              <div className="child-info-label">Khối giáo lý</div>
-              <div className="child-info-value">
-                {displayValue(studentClass.category, "Chưa cập nhật")}
+          <div className="fe-child-profile__details">
+            {/* LỚP */}
+
+            <div className="fe-child-profile__detail">
+              <div className="fe-child-profile__detail-label">
+                <ReadOutlined />
+                Lớp hiện tại
+              </div>
+
+              <div
+                className="fe-child-profile__detail-value"
+                title={className || ""}
+              >
+                {displayValue(className, "Chưa xếp lớp")}
               </div>
             </div>
-          </div>
 
-          <div className="child-info-item">
-            <div className="child-info-icon">
-              <CalendarOutlined />
-            </div>
-            <div className="child-info-content">
-              <div className="child-info-label">Ngày sinh</div>
-              <div className="child-info-value">
-                {displayValue(student.formattedDateOfBirth)}
+            {/* KHỐI */}
+
+            <div className="fe-child-profile__detail">
+              <div className="fe-child-profile__detail-label">
+                <ReadOutlined />
+                Khối giáo lý
+              </div>
+
+              <div
+                className="fe-child-profile__detail-value"
+                title={catechismLevel || ""}
+              >
+                {displayValue(catechismLevel, "Chưa cập nhật")}
               </div>
             </div>
-          </div>
 
-          <div className="child-info-item">
-            <div className="child-info-icon">
-              <UserOutlined />
+            {/* NGÀY SINH */}
+
+            <div className="fe-child-profile__detail">
+              <div className="fe-child-profile__detail-label">
+                <CalendarOutlined />
+                Ngày sinh
+              </div>
+
+              <div className="fe-child-profile__detail-value">
+                {displayValue(
+                  student.formattedDateOfBirth ||
+                    student.date_of_birth ||
+                    student.dateOfBirth,
+                )}
+              </div>
             </div>
-            <div className="child-info-content">
-              <div className="child-info-label">Giới tính</div>
-              <div className="child-info-value">{gender}</div>
+
+            {/* GIỚI TÍNH */}
+
+            <div className="fe-child-profile__detail">
+              <div className="fe-child-profile__detail-label">
+                <UserOutlined />
+                Giới tính
+              </div>
+
+              <div className="fe-child-profile__detail-value">{gender}</div>
             </div>
           </div>
         </div>
 
-        <div className="child-card-footer">
-          <div
-            className="child-card-class-code"
-            title={studentClass.code || ""}
-          >
-            {displayValue(studentClass.code, "Chưa có lớp")}
+        {/* =================================================
+            FOOTER
+        ================================================= */}
+
+        <div className="fe-child-profile__footer">
+          <div className="fe-child-profile__message">
+            <HeartFilled className="fe-child-profile__message-icon" />
+
+            <span>Gia đình đồng hành cùng con</span>
           </div>
 
           <button
             type="button"
-            className="child-card-detail-button"
+            className="fe-child-profile__button"
             onClick={() => onView(student)}
           >
-            <span>Xem chi tiết</span>
+            <span>Xem hành trình</span>
+
             <ArrowRightOutlined />
           </button>
         </div>
