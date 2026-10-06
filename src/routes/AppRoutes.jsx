@@ -51,6 +51,7 @@ import LicensePage from "../pages/catechist/License/LicensePage";
 import QuestionPage from "../pages/catechist/QuestionPage";
 import StudentBulkEditPage from "../pages/catechist/Students/StudentBulkEditPage";
 import ChurchSettingPage from "../pages/catechist/settings/ChurchSettingPage";
+import HelpCenterPage from "../pages/catechist/help/HelpCenterPage";
 // ============================================================
 // PARENTS
 // ============================================================
@@ -293,6 +294,9 @@ export default function AppRoutes() {
             {/* ================= LICENSE ================= */}
 
             <Route path="/catechist/license" element={<LicensePage />} />
+
+            {/* ================= HELP ================= */}
+            <Route path="/catechist/help" element={<HelpCenterPage />} />
           </Route>
         </Route>
       </Route>

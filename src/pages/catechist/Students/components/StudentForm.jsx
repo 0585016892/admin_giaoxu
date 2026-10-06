@@ -361,23 +361,23 @@ const StudentForm = ({
      PHONE
   ===================================================== */
 
-  const phoneRule = {
-    validator: (_, value) => {
-      if (!value) {
-        return Promise.resolve();
-      }
+  // const phoneRule = {
+  //   validator: (_, value) => {
+  //     if (!value) {
+  //       return Promise.resolve();
+  //     }
 
-      const phone = String(value).replace(/\s/g, "");
+  //     const phone = String(value).replace(/\s/g, "");
 
-      const valid = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(phone);
+  //     const valid = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(phone);
 
-      if (!valid) {
-        return Promise.reject(new Error("Số điện thoại không hợp lệ"));
-      }
+  //     if (!valid) {
+  //       return Promise.reject(new Error("Số điện thoại không hợp lệ"));
+  //     }
 
-      return Promise.resolve();
-    },
-  };
+  //     return Promise.resolve();
+  //   },
+  // };
 
   /* =====================================================
      BASIC
@@ -546,21 +546,12 @@ const StudentForm = ({
           </Form.Item>
         </Col>
         <Col xs={24} md={8}>
-          <Form.Item label="Số điện thoại" name="phone" rules={[phoneRule]}>
+          <Form.Item label="Số điện thoại" name="phone">
             <Input placeholder="09xxxxxxxx" />
           </Form.Item>
         </Col>
         <Col xs={24} md={8}>
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              {
-                type: "email",
-                message: "Email không hợp lệ",
-              },
-            ]}
-          >
+          <Form.Item label="Email" name="email">
             <Input placeholder="example@email.com" />
           </Form.Item>
         </Col>
@@ -611,7 +602,7 @@ const StudentForm = ({
           <Form.Item
             label="Số điện thoại cha"
             name="father_phone"
-            rules={[phoneRule]}
+            // rules={[phoneRule]}
           >
             <Input placeholder="Số điện thoại cha" />
           </Form.Item>
@@ -631,7 +622,7 @@ const StudentForm = ({
           <Form.Item
             label="Số điện thoại mẹ"
             name="mother_phone"
-            rules={[phoneRule]}
+            // rules={[phoneRule]}
           >
             <Input placeholder="Số điện thoại mẹ" />
           </Form.Item>
@@ -651,7 +642,7 @@ const StudentForm = ({
           <Form.Item
             label="Số điện thoại"
             name="guardian_phone"
-            rules={[phoneRule]}
+            // rules={[phoneRule]}
           >
             <Input placeholder="Số điện thoại" />
           </Form.Item>

@@ -321,13 +321,28 @@ export default function StudentManagement() {
   // =========================================================
   // 1. TẠO ẢNH THẺ QR
   // =========================================================
-
   const createQRCardBlob = async ({
     background,
     qrCanvas,
     studentName = "",
     className = "Chưa xếp lớp",
   }) => {
+    // =======================================================
+    // VALIDATE
+    // =======================================================
+
+    if (!background) {
+      throw new Error("Không có ảnh background!");
+    }
+
+    if (!qrCanvas) {
+      throw new Error("Không có mã QR!");
+    }
+
+    // =======================================================
+    // CREATE CANVAS
+    // =======================================================
+
     const canvas = document.createElement("canvas");
 
     canvas.width = QR_CARD_WIDTH;
@@ -351,55 +366,90 @@ export default function StudentManagement() {
 
     const qrSize = 700;
 
-    // Căn giữa QR theo khung trắng
     const qrX = QR_CENTER_X - qrSize / 2;
 
-    // Vị trí QR theo chiều dọc
     const qrY = 540;
 
     ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
     // =======================================================
-    // CẤU HÌNH TEXT
+    // TEXT CONFIG
     // =======================================================
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     // =======================================================
-    // TÊN HỌC SINH
+    // STUDENT NAME
     // =======================================================
 
-    ctx.font = "bold 52px Arial";
+    let studentFontSize = 52;
+
+    const maxTextWidth = 650;
+
+    const safeStudentName = String(studentName || "").trim() || "Chưa có tên";
+
+    /**
+     * Tự giảm font nếu tên quá dài
+     */
+
+    ctx.font = `bold ${studentFontSize}px Arial`;
+
+    while (
+      ctx.measureText(safeStudentName).width > maxTextWidth &&
+      studentFontSize > 32
+    ) {
+      studentFontSize -= 2;
+
+      ctx.font = `bold ${studentFontSize}px Arial`;
+    }
+
     ctx.fillStyle = "#17365D";
 
-    ctx.fillText(studentName, QR_CENTER_X, qrY + qrSize + 70, 650);
+    ctx.fillText(safeStudentName, QR_CENTER_X, qrY + qrSize + 70, maxTextWidth);
 
     // =======================================================
-    // TÊN LỚP
+    // CLASS
     // =======================================================
 
-    ctx.font = "bold 42px Arial";
+    const safeClassName = String(className || "").trim() || "Chưa xếp lớp";
+
+    let classFontSize = 42;
+
+    ctx.font = `bold ${classFontSize}px Arial`;
+
+    while (
+      ctx.measureText(safeClassName).width > maxTextWidth &&
+      classFontSize > 28
+    ) {
+      classFontSize -= 2;
+
+      ctx.font = `bold ${classFontSize}px Arial`;
+    }
+
     ctx.fillStyle = "#555555";
 
-    ctx.fillText(className, QR_CENTER_X, qrY + qrSize + 135, 650);
+    ctx.fillText(safeClassName, QR_CENTER_X, qrY + qrSize + 135, maxTextWidth);
 
     // =======================================================
-    // CANVAS -> PNG BLOB
+    // CANVAS → PNG BLOB
     // =======================================================
 
     return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error("Không thể tạo ảnh QR!"));
-          return;
-        }
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Không thể tạo ảnh QR!"));
+            return;
+          }
 
-        resolve(blob);
-      }, "image/png");
+          resolve(blob);
+        },
+        "image/png",
+        1,
+      );
     });
   };
-
   // =========================================================
   // 2. TẢI QR MỘT HỌC SINH
   // =========================================================
@@ -416,7 +466,7 @@ export default function StudentManagement() {
       // -----------------------------------------------------
 
       const background = await new Promise((resolve, reject) => {
-        const img = new Image();
+        const img = new window.Image();
 
         img.onload = () => resolve(img);
 
@@ -426,7 +476,6 @@ export default function StudentManagement() {
 
         img.src = backqr;
       });
-
       // -----------------------------------------------------
       // LẤY QR CANVAS ĐANG HIỂN THỊ
       // -----------------------------------------------------
@@ -498,7 +547,7 @@ export default function StudentManagement() {
 
     const loadImage = (src) => {
       return new Promise((resolve, reject) => {
-        const img = new Image();
+        const img = new window.Image();
 
         img.onload = () => resolve(img);
 
@@ -3444,7 +3493,7 @@ export default function StudentManagement() {
                     fontWeight: 600,
                   }}
                 >
-                  Sửa danh theo sách lớp
+                  Sửa theo danh sách lớp
                 </AppButton>
               )}
             </Col>

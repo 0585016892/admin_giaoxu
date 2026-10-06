@@ -1,0 +1,2035 @@
+/* =========================================================
+   FAITHEDU ASSISTANT
+   Family / Catholic / Warm UI
+   ========================================================= */
+
+:root {
+  --faith-navy: #173b5e;
+  --faith-deep-navy: #102a43;
+
+  --faith-gold: #d9a441;
+  --faith-soft-gold: #f4e7c1;
+  --faith-cream: #fff9ee;
+
+  --faith-bg: #f7f9fc;
+  --faith-surface: #ffffff;
+
+  --faith-border: #e2e8f0;
+
+  --faith-text: #243447;
+  --faith-muted: #6b7280;
+
+  --faith-success: #2e7d5b;
+  --faith-success-soft: #e8f5ee;
+
+  --faith-warning: #b7791f;
+  --faith-warning-soft: #fff7e0;
+
+  --faith-danger: #c94c4c;
+  --faith-danger-soft: #fdecec;
+
+  --faith-blue-soft: #eef3f7;
+
+  --faith-shadow-sm: 0 4px 14px rgba(16, 42, 67, 0.08);
+
+  --faith-shadow-md: 0 14px 40px rgba(16, 42, 67, 0.14);
+
+  --faith-shadow-lg: 0 24px 70px rgba(16, 42, 67, 0.18);
+
+  --faith-radius-sm: 10px;
+  --faith-radius-md: 14px;
+  --faith-radius-lg: 20px;
+  --faith-radius-xl: 26px;
+
+  --faith-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --faith-font:
+    "Be Vietnam Pro", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+.faith-assistant-floating,
+.faith-assistant-floating *,
+.faith-assistant-greeting,
+.faith-assistant-greeting *,
+.faith-assistant-overlay,
+.faith-assistant-overlay *,
+.faith-assistant-modal,
+.faith-assistant-modal * {
+  box-sizing: border-box;
+}
+
+.faith-assistant-floating,
+.faith-assistant-greeting button,
+.faith-assistant-modal button {
+  font-family: var(--faith-font);
+}
+
+/* =========================================================
+   FLOATING BUTTON
+   ========================================================= */
+
+.faith-assistant-floating {
+  position: fixed;
+
+  right: 26px;
+  bottom: 26px;
+
+  width: 68px;
+  height: 68px;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: linear-gradient(145deg, #ffffff 0%, var(--faith-cream) 100%);
+
+  box-shadow:
+    0 12px 32px rgba(16, 42, 67, 0.18),
+    0 0 0 1px rgba(217, 164, 65, 0.16);
+
+  cursor: pointer;
+
+  z-index: 1200;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    transform var(--faith-transition),
+    box-shadow var(--faith-transition);
+}
+
+.faith-assistant-floating:hover {
+  transform: translateY(-4px) scale(1.03);
+
+  box-shadow:
+    0 18px 42px rgba(16, 42, 67, 0.22),
+    0 0 0 1px rgba(217, 164, 65, 0.28);
+}
+
+.faith-assistant-floating:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+/* =========================================================
+   FLOATING RING
+   ========================================================= */
+
+.faith-assistant-floating-ring {
+  position: absolute;
+
+  inset: -5px;
+
+  border-radius: 50%;
+
+  border: 1px solid rgba(217, 164, 65, 0.42);
+
+  pointer-events: none;
+
+  animation: faithAssistantPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes faithAssistantPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 0.05;
+  }
+}
+
+/* =========================================================
+   FLOATING IMAGE
+   ========================================================= */
+
+.faith-assistant-floating-image {
+  width: 54px;
+  height: 54px;
+
+  object-fit: contain;
+
+  border-radius: 50%;
+
+  position: relative;
+  z-index: 2;
+
+  display: block;
+}
+
+/* =========================================================
+   FLOATING BADGE
+   ========================================================= */
+
+.faith-assistant-floating-badge {
+  position: absolute;
+
+  right: -2px;
+  bottom: -1px;
+
+  width: 23px;
+  height: 23px;
+
+  border-radius: 50%;
+
+  background: var(--faith-navy);
+
+  color: #ffffff;
+
+  border: 2px solid #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 11px;
+
+  z-index: 4;
+
+  box-shadow: var(--faith-shadow-sm);
+}
+
+/* =========================================================
+   GREETING
+   ========================================================= */
+
+.faith-assistant-greeting {
+  position: fixed;
+
+  right: 108px;
+  bottom: 32px;
+
+  width: 310px;
+
+  z-index: 1199;
+
+  animation: faithAssistantGreetingIn 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes faithAssistantGreetingIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.faith-assistant-greeting-content {
+  width: 100%;
+
+  padding: 17px 42px 17px 18px;
+
+  border: 1px solid var(--faith-border);
+
+  border-radius: 18px;
+
+  background: linear-gradient(145deg, #ffffff 0%, var(--faith-cream) 100%);
+
+  box-shadow: var(--faith-shadow-md);
+
+  text-align: left;
+
+  cursor: pointer;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  transition:
+    transform var(--faith-transition),
+    box-shadow var(--faith-transition);
+}
+
+.faith-assistant-greeting-content:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 18px 42px rgba(16, 42, 67, 0.16);
+}
+
+.faith-assistant-greeting-title {
+  color: var(--faith-deep-navy);
+
+  font-size: 14px;
+  font-weight: 750;
+
+  line-height: 1.4;
+}
+
+.faith-assistant-greeting-subtitle {
+  color: var(--faith-muted);
+
+  font-size: 12px;
+
+  line-height: 1.55;
+}
+
+.faith-assistant-greeting-close {
+  position: absolute;
+
+  top: 9px;
+  right: 10px;
+
+  width: 26px;
+  height: 26px;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  background: transparent;
+
+  color: var(--faith-muted);
+
+  cursor: pointer;
+
+  z-index: 3;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    background var(--faith-transition),
+    color var(--faith-transition);
+}
+
+.faith-assistant-greeting-close:hover {
+  background: var(--faith-blue-soft);
+
+  color: var(--faith-deep-navy);
+}
+
+/* =========================================================
+   OVERLAY
+   ========================================================= */
+
+.faith-assistant-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1300;
+
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: flex-end;
+
+  padding: 24px 26px;
+
+  background: rgba(16, 42, 67, 0.12);
+
+  backdrop-filter: blur(2px);
+
+  animation: faithAssistantOverlayIn 180ms ease-out;
+}
+
+@keyframes faithAssistantOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.faith-assistant-modal {
+  width: min(470px, calc(100vw - 32px));
+
+  height: min(720px, calc(100vh - 48px));
+
+  min-height: 520px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: var(--faith-surface);
+
+  border: 1px solid rgba(226, 232, 240, 0.95);
+
+  border-radius: 24px;
+
+  box-shadow: var(--faith-shadow-lg);
+
+  animation: faithAssistantModalIn 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes faithAssistantModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.faith-assistant-header {
+  flex: 0 0 auto;
+
+  min-height: 82px;
+
+  padding: 14px 16px 14px 18px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  background: linear-gradient(
+    135deg,
+    var(--faith-deep-navy) 0%,
+    var(--faith-navy) 68%,
+    #23557f 100%
+  );
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+/* decorative glow */
+
+.faith-assistant-header::after {
+  content: "";
+
+  position: absolute;
+
+  width: 170px;
+  height: 170px;
+
+  right: -70px;
+  top: -100px;
+
+  border-radius: 50%;
+
+  background: rgba(217, 164, 65, 0.15);
+
+  pointer-events: none;
+}
+
+.faith-assistant-header-left {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  min-width: 0;
+
+  position: relative;
+
+  z-index: 2;
+}
+
+/* =========================================================
+   HEADER AVATAR
+   ========================================================= */
+
+.faith-assistant-header-avatar {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: 50px;
+  height: 50px;
+
+  padding: 3px;
+
+  border-radius: 50%;
+
+  background: linear-gradient(145deg, #ffffff, var(--faith-soft-gold));
+
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
+}
+
+.faith-assistant-header-avatar img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: contain;
+
+  border-radius: 50%;
+}
+
+.faith-assistant-online-dot {
+  position: absolute;
+
+  right: 0;
+  bottom: 1px;
+
+  width: 12px;
+  height: 12px;
+
+  border-radius: 50%;
+
+  background: #59c98a;
+
+  border: 2px solid var(--faith-navy);
+}
+
+/* =========================================================
+   HEADER TEXT
+   ========================================================= */
+
+.faith-assistant-header-info {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.faith-assistant-title {
+  color: #ffffff;
+
+  font-size: 15px;
+
+  font-weight: 750;
+
+  line-height: 1.35;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+.faith-assistant-status {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  color: rgba(255, 255, 255, 0.72);
+
+  font-size: 11px;
+
+  line-height: 1.4;
+}
+
+.faith-assistant-status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #64d99b;
+
+  box-shadow: 0 0 0 3px rgba(100, 217, 155, 0.14);
+}
+
+/* =========================================================
+   CLOSE
+   ========================================================= */
+
+.faith-assistant-close {
+  position: relative;
+
+  z-index: 4;
+
+  flex: 0 0 auto;
+
+  width: 36px;
+  height: 36px;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.1);
+
+  color: rgba(255, 255, 255, 0.88);
+
+  cursor: pointer;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+
+  transition:
+    background var(--faith-transition),
+    transform var(--faith-transition),
+    color var(--faith-transition);
+}
+
+.faith-assistant-close:hover {
+  background: rgba(255, 255, 255, 0.18);
+
+  color: #ffffff;
+
+  transform: rotate(3deg);
+}
+
+/* =========================================================
+   BODY
+   ========================================================= */
+
+.faith-assistant-body {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(244, 231, 193, 0.28),
+      transparent 32%
+    ),
+    var(--faith-bg);
+}
+
+.faith-assistant-message-list {
+  width: 100%;
+  height: 100%;
+
+  overflow-y: auto;
+
+  padding: 20px 16px 22px;
+
+  scroll-behavior: smooth;
+
+  overscroll-behavior: contain;
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.faith-assistant-message-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.faith-assistant-message-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.faith-assistant-message-list::-webkit-scrollbar-thumb {
+  background: rgba(23, 59, 94, 0.18);
+
+  border-radius: 99px;
+}
+
+.faith-assistant-message-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(23, 59, 94, 0.28);
+}
+
+/* =========================================================
+   MESSAGE ROW
+   ========================================================= */
+
+.faith-assistant-message-row {
+  width: 100%;
+
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 9px;
+
+  margin-bottom: 18px;
+
+  animation: faithAssistantMessageIn 240ms ease-out;
+}
+
+@keyframes faithAssistantMessageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faith-assistant-message-row.is-user {
+  justify-content: flex-end;
+}
+
+/* =========================================================
+   MESSAGE AVATAR
+   ========================================================= */
+
+.faith-assistant-message-avatar {
+  flex: 0 0 auto;
+
+  width: 32px;
+  height: 32px;
+
+  border-radius: 50%;
+
+  overflow: hidden;
+
+  background: linear-gradient(145deg, #ffffff, var(--faith-soft-gold));
+
+  border: 1px solid rgba(217, 164, 65, 0.25);
+
+  box-shadow: 0 3px 9px rgba(16, 42, 67, 0.08);
+}
+
+.faith-assistant-message-avatar img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.faith-assistant-message-avatar.user {
+  background: var(--faith-blue-soft);
+
+  border-color: rgba(23, 59, 94, 0.1);
+}
+
+/* =========================================================
+   MESSAGE WRAPPER
+   ========================================================= */
+
+.faith-assistant-message-wrapper {
+  min-width: 0;
+
+  max-width: 82%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.faith-assistant-message-row.is-user .faith-assistant-message-wrapper {
+  align-items: flex-end;
+}
+
+/* =========================================================
+   MESSAGE BUBBLE
+   ========================================================= */
+
+.faith-assistant-message {
+  position: relative;
+
+  width: fit-content;
+
+  max-width: 100%;
+
+  padding: 11px 14px;
+
+  border-radius: 6px 17px 17px 17px;
+
+  background: #ffffff;
+
+  border: 1px solid var(--faith-border);
+
+  color: var(--faith-text);
+
+  box-shadow: 0 3px 12px rgba(16, 42, 67, 0.045);
+}
+
+.faith-assistant-message-row.is-user .faith-assistant-message {
+  border-radius: 17px 6px 17px 17px;
+
+  background: linear-gradient(135deg, var(--faith-navy), #205579);
+
+  color: #ffffff;
+
+  border-color: transparent;
+
+  box-shadow: 0 5px 16px rgba(23, 59, 94, 0.15);
+}
+
+.faith-assistant-message-content {
+  font-family: var(--faith-font);
+
+  font-size: 13px;
+
+  line-height: 1.68;
+
+  word-break: break-word;
+
+  white-space: normal;
+}
+
+/* =========================================================
+   BLOCKS
+   ========================================================= */
+
+.faith-assistant-blocks {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+/* =========================================================
+   GENERIC BLOCK
+   ========================================================= */
+
+.faith-assistant-block {
+  width: 100%;
+
+  padding: 13px;
+
+  border-radius: 15px;
+
+  background: #ffffff;
+
+  border: 1px solid var(--faith-border);
+
+  box-shadow: 0 3px 12px rgba(16, 42, 67, 0.045);
+}
+
+.faith-assistant-block-header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-bottom: 12px;
+}
+
+.faith-assistant-block-icon {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 auto;
+
+  border-radius: 10px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  color: var(--faith-navy);
+
+  background: var(--faith-blue-soft);
+
+  font-size: 15px;
+}
+
+.faith-assistant-block-title {
+  color: var(--faith-deep-navy);
+
+  font-size: 13px;
+
+  font-weight: 750;
+
+  line-height: 1.45;
+}
+
+.faith-assistant-muted {
+  margin-top: 2px;
+
+  color: var(--faith-muted);
+
+  font-size: 11px;
+
+  line-height: 1.45;
+}
+
+/* =========================================================
+   STUDENT CARD
+   ========================================================= */
+
+.faith-assistant-student-card-top {
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  margin-bottom: 13px;
+}
+
+.faith-assistant-student-main {
+  min-width: 0;
+}
+
+.faith-assistant-student-main .faith-assistant-block-title {
+  font-size: 14px;
+}
+
+/* =========================================================
+   INFO GRID
+   ========================================================= */
+
+.faith-assistant-info-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 8px;
+}
+
+.faith-assistant-info-grid > div {
+  min-width: 0;
+
+  padding: 9px 10px;
+
+  border-radius: 10px;
+
+  background: var(--faith-bg);
+}
+
+.faith-assistant-info-grid span {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: var(--faith-muted);
+
+  font-size: 10px;
+
+  line-height: 1.35;
+}
+
+.faith-assistant-info-grid strong {
+  display: block;
+
+  color: var(--faith-text);
+
+  font-size: 11px;
+
+  line-height: 1.45;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   CLASS CARD
+   ========================================================= */
+
+.faith-assistant-class-card-header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-bottom: 13px;
+}
+
+/* =========================================================
+   STATISTICS
+   ========================================================= */
+
+.faith-assistant-stat-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 8px;
+}
+
+.faith-assistant-stat-item {
+  padding: 10px;
+
+  border-radius: 11px;
+
+  background: var(--faith-bg);
+
+  border: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.faith-assistant-stat-item span {
+  display: block;
+
+  color: var(--faith-muted);
+
+  font-size: 10px;
+
+  margin-bottom: 3px;
+}
+
+.faith-assistant-stat-item strong {
+  display: block;
+
+  color: var(--faith-deep-navy);
+
+  font-size: 17px;
+
+  line-height: 1.25;
+
+  font-weight: 750;
+}
+
+.faith-assistant-block-footer {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  margin-top: 11px;
+
+  color: var(--faith-muted);
+
+  font-size: 10px;
+}
+
+/* =========================================================
+   ATTENDANCE SUMMARY
+   ========================================================= */
+
+.faith-assistant-attendance-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 6px;
+}
+
+.faith-assistant-attendance-item {
+  min-width: 0;
+
+  padding: 9px 5px;
+
+  border-radius: 11px;
+
+  text-align: center;
+
+  background: var(--faith-bg);
+}
+
+.faith-assistant-attendance-icon {
+  color: var(--faith-navy);
+
+  font-size: 13px;
+
+  margin-bottom: 4px;
+}
+
+.faith-assistant-attendance-item strong {
+  display: block;
+
+  color: var(--faith-deep-navy);
+
+  font-size: 15px;
+
+  line-height: 1.25;
+}
+
+.faith-assistant-attendance-item span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--faith-muted);
+
+  font-size: 9px;
+
+  line-height: 1.3;
+}
+
+.faith-assistant-rate {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 11px;
+
+  padding: 10px 12px;
+
+  border-radius: 11px;
+
+  background: var(--faith-success-soft);
+
+  color: var(--faith-success);
+}
+
+.faith-assistant-rate span {
+  font-size: 11px;
+}
+
+.faith-assistant-rate strong {
+  font-size: 14px;
+}
+
+/* =========================================================
+   LIST
+   ========================================================= */
+
+.faith-assistant-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.faith-assistant-list-row {
+  min-height: 48px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 8px 0;
+
+  border-bottom: 1px solid var(--faith-border);
+}
+
+.faith-assistant-list-row:last-child {
+  border-bottom: 0;
+}
+
+.faith-assistant-list-row > div:first-child {
+  min-width: 0;
+}
+
+.faith-assistant-list-row strong {
+  display: block;
+
+  color: var(--faith-text);
+
+  font-size: 11px;
+
+  line-height: 1.45;
+}
+
+.faith-assistant-list-row span {
+  display: block;
+
+  margin-top: 2px;
+
+  color: var(--faith-muted);
+
+  font-size: 10px;
+
+  line-height: 1.4;
+}
+
+.faith-assistant-list-right {
+  margin-left: auto;
+
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  text-align: right;
+}
+
+.faith-assistant-list-right > span {
+  white-space: nowrap;
+}
+
+.faith-assistant-list-right .ant-tag {
+  margin-inline-end: 0;
+
+  border-radius: 99px;
+
+  font-size: 9px;
+
+  line-height: 20px;
+
+  height: 20px;
+}
+
+.faith-assistant-list-student {
+  flex: 1;
+
+  min-width: 0;
+}
+
+.faith-assistant-class-list-icon {
+  width: 32px;
+  height: 32px;
+
+  flex: 0 0 auto;
+
+  border-radius: 9px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  color: var(--faith-navy);
+
+  background: var(--faith-blue-soft);
+}
+
+/* =========================================================
+   RANKING
+   ========================================================= */
+
+.faith-assistant-ranking {
+  display: flex;
+  flex-direction: column;
+}
+
+.faith-assistant-ranking-row {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  min-height: 47px;
+
+  padding: 7px 0;
+
+  border-bottom: 1px solid var(--faith-border);
+}
+
+.faith-assistant-ranking-row:last-child {
+  border-bottom: 0;
+}
+
+.faith-assistant-rank-number {
+  width: 26px;
+  height: 26px;
+
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  background: var(--faith-blue-soft);
+
+  color: var(--faith-navy);
+
+  font-size: 10px;
+
+  font-weight: 750;
+}
+
+.faith-assistant-ranking-row:nth-child(1) .faith-assistant-rank-number {
+  background: var(--faith-soft-gold);
+
+  color: var(--faith-deep-navy);
+}
+
+.faith-assistant-ranking-name {
+  min-width: 0;
+
+  flex: 1;
+}
+
+.faith-assistant-ranking-name strong {
+  display: block;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+
+  font-size: 11px;
+}
+
+.faith-assistant-ranking-name span {
+  display: block;
+
+  color: var(--faith-muted);
+
+  font-size: 9px;
+
+  margin-top: 2px;
+}
+
+.faith-assistant-ranking-rate {
+  flex: 0 0 auto;
+
+  color: var(--faith-success);
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   NOTICE
+   ========================================================= */
+
+.faith-assistant-notice {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 10px;
+}
+
+.faith-assistant-notice.warning {
+  background: var(--faith-warning-soft);
+
+  border-color: rgba(183, 121, 31, 0.2);
+}
+
+.faith-assistant-notice.info {
+  background: var(--faith-blue-soft);
+
+  border-color: rgba(23, 59, 94, 0.1);
+}
+
+.faith-assistant-notice-icon {
+  width: 31px;
+  height: 31px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  font-size: 14px;
+}
+
+.faith-assistant-notice.warning .faith-assistant-notice-icon {
+  color: var(--faith-warning);
+
+  background: rgba(183, 121, 31, 0.12);
+}
+
+.faith-assistant-notice.info .faith-assistant-notice-icon {
+  color: var(--faith-navy);
+
+  background: rgba(23, 59, 94, 0.08);
+}
+
+.faith-assistant-notice-content {
+  margin-top: 3px;
+
+  color: var(--faith-text);
+
+  font-size: 11px;
+
+  line-height: 1.6;
+}
+
+/* =========================================================
+   META
+   ========================================================= */
+
+.faith-assistant-meta {
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  padding-left: 2px;
+
+  color: var(--faith-muted);
+
+  font-size: 10px;
+}
+
+/* =========================================================
+   SUGGESTIONS
+   ========================================================= */
+
+.faith-assistant-suggestions {
+  width: 100%;
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 7px;
+}
+
+.faith-assistant-suggestion {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  max-width: 100%;
+
+  padding: 7px 10px;
+
+  border: 1px solid rgba(23, 59, 94, 0.12);
+
+  border-radius: 99px;
+
+  background: #ffffff;
+
+  color: var(--faith-navy);
+
+  font-family: var(--faith-font);
+
+  font-size: 10px;
+
+  line-height: 1.35;
+
+  cursor: pointer;
+
+  box-shadow: 0 2px 7px rgba(16, 42, 67, 0.035);
+
+  transition:
+    background var(--faith-transition),
+    border-color var(--faith-transition),
+    color var(--faith-transition),
+    transform var(--faith-transition);
+}
+
+.faith-assistant-suggestion span {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.faith-assistant-suggestion:hover {
+  background: var(--faith-blue-soft);
+
+  border-color: rgba(23, 59, 94, 0.2);
+
+  color: var(--faith-deep-navy);
+
+  transform: translateY(-1px);
+}
+
+.faith-assistant-suggestion:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* =========================================================
+   QUICK QUESTIONS
+   ========================================================= */
+
+.faith-assistant-quick {
+  margin: 4px 0 14px 41px;
+}
+
+.faith-assistant-quick-title {
+  margin-bottom: 8px;
+
+  color: var(--faith-muted);
+
+  font-size: 10px;
+
+  font-weight: 650;
+}
+
+.faith-assistant-quick-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.faith-assistant-quick-button {
+  width: 100%;
+
+  min-height: 38px;
+
+  padding: 8px 11px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  border: 1px solid var(--faith-border);
+
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  color: var(--faith-text);
+
+  font-family: var(--faith-font);
+
+  font-size: 10px;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.035);
+
+  transition:
+    transform var(--faith-transition),
+    background var(--faith-transition),
+    border-color var(--faith-transition);
+}
+
+.faith-assistant-quick-button:hover {
+  transform: translateX(2px);
+
+  background: var(--faith-cream);
+
+  border-color: rgba(217, 164, 65, 0.35);
+}
+
+.faith-assistant-quick-button svg {
+  flex: 0 0 auto;
+
+  color: var(--faith-gold);
+
+  font-size: 10px;
+}
+
+/* =========================================================
+   TYPING
+   ========================================================= */
+
+.faith-assistant-message.typing {
+  padding: 12px 15px;
+}
+
+.faith-assistant-typing {
+  display: flex;
+
+  align-items: center;
+
+  gap: 4px;
+}
+
+.faith-assistant-typing span {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: var(--faith-navy);
+
+  opacity: 0.45;
+
+  animation: faithAssistantTyping 1.2s infinite ease-in-out;
+}
+
+.faith-assistant-typing span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.faith-assistant-typing span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes faithAssistantTyping {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+
+    opacity: 0.35;
+  }
+
+  30% {
+    transform: translateY(-4px);
+
+    opacity: 0.9;
+  }
+}
+
+/* =========================================================
+   INPUT AREA
+   ========================================================= */
+
+.faith-assistant-input-area {
+  flex: 0 0 auto;
+
+  padding: 10px 14px 13px;
+
+  background: #ffffff;
+
+  border-top: 1px solid var(--faith-border);
+}
+
+.faith-assistant-input-wrapper {
+  position: relative;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 7px;
+
+  padding: 5px;
+
+  border: 1px solid var(--faith-border);
+
+  border-radius: 16px;
+
+  background: var(--faith-bg);
+
+  transition:
+    border-color var(--faith-transition),
+    box-shadow var(--faith-transition);
+}
+
+.faith-assistant-input-wrapper:focus-within {
+  border-color: rgba(23, 59, 94, 0.3);
+
+  box-shadow: 0 0 0 3px rgba(23, 59, 94, 0.06);
+
+  background: #ffffff;
+}
+
+/* =========================================================
+   TEXTAREA
+   ========================================================= */
+
+.faith-assistant-textarea.ant-input {
+  flex: 1;
+
+  min-height: 36px !important;
+
+  padding: 7px 8px;
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+
+  background: transparent !important;
+
+  color: var(--faith-text);
+
+  font-family: var(--faith-font);
+
+  font-size: 12px;
+
+  line-height: 1.55;
+
+  resize: none;
+}
+
+.faith-assistant-textarea.ant-input::placeholder {
+  color: #9aa5b1;
+}
+
+.faith-assistant-textarea.ant-input:focus {
+  box-shadow: none !important;
+}
+
+/* =========================================================
+   SEND
+   ========================================================= */
+
+.faith-assistant-send.ant-btn {
+  flex: 0 0 auto;
+
+  width: 37px;
+  height: 37px;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 12px;
+
+  background: linear-gradient(135deg, var(--faith-navy), #205579);
+
+  box-shadow: 0 5px 12px rgba(23, 59, 94, 0.18);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    transform var(--faith-transition),
+    box-shadow var(--faith-transition),
+    opacity var(--faith-transition);
+}
+
+.faith-assistant-send.ant-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  box-shadow: 0 7px 15px rgba(23, 59, 94, 0.24);
+}
+
+.faith-assistant-send.ant-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.faith-assistant-send.ant-btn:disabled {
+  opacity: 0.38;
+
+  box-shadow: none;
+}
+
+/* =========================================================
+   INPUT HINT
+   ========================================================= */
+
+.faith-assistant-input-hint {
+  margin-top: 6px;
+
+  padding-left: 4px;
+
+  color: #9aa5b1;
+
+  font-size: 9px;
+
+  line-height: 1.35;
+
+  text-align: left;
+}
+
+/* =========================================================
+   ANT DESIGN OVERRIDES
+   ========================================================= */
+
+.faith-assistant-modal .ant-avatar {
+  flex: 0 0 auto;
+}
+
+.faith-assistant-modal .ant-tag {
+  border: 0;
+
+  background: var(--faith-blue-soft);
+
+  color: var(--faith-navy);
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .faith-assistant-overlay {
+    padding: 12px;
+  }
+
+  .faith-assistant-modal {
+    width: min(470px, calc(100vw - 24px));
+
+    height: min(720px, calc(100vh - 24px));
+
+    border-radius: 21px;
+  }
+
+  .faith-assistant-floating {
+    right: 18px;
+    bottom: 18px;
+  }
+
+  .faith-assistant-greeting {
+    right: 94px;
+    bottom: 25px;
+
+    width: 280px;
+  }
+
+  .faith-assistant-message-list {
+    padding: 17px 13px 20px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .faith-assistant-overlay {
+    padding: 0;
+
+    align-items: stretch;
+    justify-content: stretch;
+
+    background: rgba(16, 42, 67, 0.18);
+  }
+
+  .faith-assistant-modal {
+    width: 100%;
+    height: 100dvh;
+
+    min-height: 0;
+
+    border: 0;
+
+    border-radius: 0;
+
+    box-shadow: none;
+
+    animation: faithAssistantMobileIn 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes faithAssistantMobileIn {
+    from {
+      opacity: 0;
+
+      transform: translateY(18px);
+    }
+
+    to {
+      opacity: 1;
+
+      transform: translateY(0);
+    }
+  }
+
+  .faith-assistant-header {
+    min-height: 70px;
+
+    padding: 11px 13px;
+  }
+
+  .faith-assistant-header-avatar {
+    width: 43px;
+    height: 43px;
+  }
+
+  .faith-assistant-title {
+    font-size: 14px;
+  }
+
+  .faith-assistant-status {
+    font-size: 10px;
+  }
+
+  .faith-assistant-close {
+    width: 34px;
+    height: 34px;
+  }
+
+  .faith-assistant-message-list {
+    padding: 15px 11px 18px;
+  }
+
+  .faith-assistant-message-wrapper {
+    max-width: 88%;
+  }
+
+  .faith-assistant-message {
+    padding: 10px 12px;
+  }
+
+  .faith-assistant-message-content {
+    font-size: 12px;
+
+    line-height: 1.65;
+  }
+
+  .faith-assistant-message-avatar {
+    width: 29px;
+    height: 29px;
+  }
+
+  .faith-assistant-block {
+    padding: 11px;
+
+    border-radius: 14px;
+  }
+
+  .faith-assistant-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .faith-assistant-attendance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 7px;
+  }
+
+  .faith-assistant-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .faith-assistant-list-right {
+    gap: 4px;
+  }
+
+  .faith-assistant-list-right > span {
+    display: none;
+  }
+
+  .faith-assistant-quick {
+    margin-left: 38px;
+  }
+
+  .faith-assistant-input-area {
+    padding: 8px 10px calc(9px + env(safe-area-inset-bottom));
+  }
+
+  .faith-assistant-input-hint {
+    display: none;
+  }
+
+  .faith-assistant-floating {
+    width: 61px;
+    height: 61px;
+
+    right: 15px;
+    bottom: calc(15px + env(safe-area-inset-bottom));
+  }
+
+  .faith-assistant-floating-image {
+    width: 49px;
+    height: 49px;
+  }
+
+  .faith-assistant-floating-badge {
+    width: 21px;
+    height: 21px;
+  }
+
+  .faith-assistant-greeting {
+    right: 88px;
+
+    bottom: calc(20px + env(safe-area-inset-bottom));
+
+    width: calc(100vw - 108px);
+
+    max-width: 270px;
+  }
+
+  .faith-assistant-greeting-content {
+    padding: 14px 38px 14px 14px;
+
+    border-radius: 16px;
+  }
+
+  .faith-assistant-greeting-title {
+    font-size: 12px;
+  }
+
+  .faith-assistant-greeting-subtitle {
+    font-size: 10px;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 380px) {
+  .faith-assistant-header-left {
+    gap: 9px;
+  }
+
+  .faith-assistant-header-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .faith-assistant-title {
+    font-size: 13px;
+  }
+
+  .faith-assistant-message-wrapper {
+    max-width: 86%;
+  }
+
+  .faith-assistant-message-content {
+    font-size: 11.5px;
+  }
+
+  .faith-assistant-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .faith-assistant-stat-item strong {
+    font-size: 15px;
+  }
+
+  .faith-assistant-floating {
+    width: 57px;
+    height: 57px;
+  }
+
+  .faith-assistant-floating-image {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.faith-assistant-floating:focus-visible,
+.faith-assistant-greeting-content:focus-visible,
+.faith-assistant-greeting-close:focus-visible,
+.faith-assistant-close:focus-visible,
+.faith-assistant-suggestion:focus-visible,
+.faith-assistant-quick-button:focus-visible,
+.faith-assistant-send:focus-visible {
+  outline: 3px solid rgba(217, 164, 65, 0.35);
+
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .faith-assistant-floating,
+  .faith-assistant-greeting-content,
+  .faith-assistant-message,
+  .faith-assistant-message-row,
+  .faith-assistant-modal,
+  .faith-assistant-suggestion,
+  .faith-assistant-quick-button {
+    animation: none !important;
+
+    transition: none !important;
+  }
+
+  .faith-assistant-floating-ring {
+    animation: none !important;
+  }
+
+  .faith-assistant-typing span {
+    animation: none !important;
+  }
+}

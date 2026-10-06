@@ -215,6 +215,16 @@ export function UserProvider({ children }) {
   // LOGOUT
   // ==========================================================
   const logout = () => {
+    const userId =
+      user?.id || user?.admin_id || user?.user_id || user?.username;
+
+    if (userId) {
+      const assistantKey = `faith_assistant_messages_${userId}`;
+
+      localStorage.removeItem(assistantKey);
+
+      console.log("🗑️ CLEARED FAITH ASSISTANT:", assistantKey);
+    }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("catechist_user");

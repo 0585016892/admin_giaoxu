@@ -190,7 +190,7 @@ export default function CatechistLayout() {
             --faith-gold: #D9A441;
             --faith-gold-soft: #F8EBCF;
 
-            --faith-background: #F6F8FB;
+            --faith-background: #ffffff;
             --faith-surface: #FFFFFF;
 
             --faith-heading: #172B3A;

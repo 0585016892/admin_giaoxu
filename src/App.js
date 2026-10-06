@@ -7,6 +7,7 @@ import AppNotificationProvider from "./components/notification";
 import NotificationListener from "./components/NotificationListener";
 import { LicenseProvider } from "./context/LicenseContext";
 import LicenseGuard from "./components/LicenseGuard";
+import FaithAssistant from "./components/assistant/FaithAssistant";
 export default function App() {
   return (
     <BrowserRouter>
@@ -17,6 +18,7 @@ export default function App() {
               <NotificationListener />
               <AppNotificationProvider>
                 <AppRoutes />
+                <FaithAssistant />
               </AppNotificationProvider>
             </SocketProvider>
           </LicenseGuard>

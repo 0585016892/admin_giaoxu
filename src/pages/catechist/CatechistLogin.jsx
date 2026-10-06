@@ -19,7 +19,7 @@ import { useUser } from "../../context/UserContext";
 import LoadingLogo from "../../components/LoadingLogo";
 
 import background from "../../assets/images/login-background.png";
-import logobackground from "../../assets/images/logo-giao-ly.png.png";
+import logobackground from "../../assets/images/TNTT.png";
 import { useNotification } from "../../components/notification";
 
 /* =========================================================

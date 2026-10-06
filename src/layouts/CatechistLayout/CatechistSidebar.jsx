@@ -32,6 +32,7 @@ import {
   CircleHelp,
   LibraryBig,
   Package,
+  HelpCircle,
 } from "lucide-react";
 
 import imgSidebar from "../../assets/images/logosidebar.png";
@@ -106,6 +107,8 @@ const MENU_PATHS = {
   notifications: "/catechist/my-notifications",
   statistics: "/catechist/statistics",
   license: "/catechist/license",
+
+  help: "/catechist/help",
 };
 
 /* =========================================================
@@ -392,7 +395,13 @@ export default function CatechistSidebar({
         icon: <Package size={18} strokeWidth={2.2} />,
       });
     }
-
+    if (permission.canViewCatechists) {
+      items.push({
+        key: MENU_PATHS.help,
+        label: "Trung tâm trợ giúp",
+        icon: <HelpCircle size={18} strokeWidth={2.2} />,
+      });
+    }
     return items;
   }, [permission]);
 
