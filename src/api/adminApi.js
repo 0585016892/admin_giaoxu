@@ -8,7 +8,11 @@ export const getAdminById = (id) => axios.get(`/admins/${id}`);
 
 // 4. UPDATE: Cập nhật thông tin admin (nhận FormData nếu có upload avatar)
 export const updateAdmin = (id, data) => axios.put(`/admins/${id}`, data);
-
+export const updateCatechistRole = (id, role) => {
+  return axios.patch(`/admins/${id}/role`, {
+    role,
+  });
+};
 // 6. TOGGLE ACTIVE: Khóa / mở khóa tài khoản admin
 export const toggleAdmin = (id) =>
   axios.patch(`/admins/${id}/toggle-catechits`);

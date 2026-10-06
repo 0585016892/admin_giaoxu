@@ -60,7 +60,11 @@ import { useNotification } from "../../../components/notification";
 // API
 import catechistApi from "../../../api/catechistApi";
 import classApi from "../../../api/classApi";
-import { resetAdminPassword, toggleAdmin } from "../../../api/adminApi";
+import {
+  resetAdminPassword,
+  toggleAdmin,
+  updateCatechistRole,
+} from "../../../api/adminApi";
 import dayjs from "dayjs";
 
 import avataImg from "../../../assets/images/imgGLV.png";
@@ -633,6 +637,140 @@ export default function CatechistManagement() {
       },
     });
   };
+
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [roleChangingRecord, setRoleChangingRecord] = useState(null);
+  const [roleChangingTo, setRoleChangingTo] = useState(null);
+  const [roleChanging, setRoleChanging] = useState(false);
+
+  const handleChangeRole = (record, role) => {
+    // =====================================================
+    // TARGET
+    // =====================================================
+
+    const targetId = Number(record?.id);
+    const targetUsername = record?.username || record?.catechist_code || null;
+    const targetRole = record?.role;
+
+    if (!record) {
+      notify.error("Không xác định được tài khoản cần thay đổi.");
+
+      return;
+    }
+
+    if (!Number.isInteger(targetId) || targetId <= 0) {
+      notify.error("ID tài khoản không hợp lệ.");
+
+      return;
+    }
+
+    if (!targetUsername) {
+      notify.error("Không xác định được tên tài khoản.");
+
+      return;
+    }
+
+    if (!targetRole) {
+      notify.error("Không xác định được vai trò hiện tại.");
+
+      return;
+    }
+
+    // =====================================================
+    // KHÔNG CHO THAY ĐỔI ADMIN CATECHIST
+    // =====================================================
+
+    if (targetRole === "admin_catechist") {
+      notify.warning("Tài khoản Quản trị giáo lý không thể thay đổi vai trò.");
+
+      return;
+    }
+
+    // =====================================================
+    // CHỈ CHO PHÉP:
+    //
+    // catechist -> teacher
+    // teacher   -> catechist
+    // =====================================================
+
+    const validTransition =
+      (targetRole === "catechist" && role === "teacher") ||
+      (targetRole === "teacher" && role === "catechist");
+
+    if (!validTransition) {
+      notify.warning("Chỉ được chuyển đổi giữa Giáo lý viên và Giáo viên.");
+
+      return;
+    }
+
+    // =====================================================
+    // LƯU TARGET
+    // =====================================================
+    const roleTarget = {
+      ...record,
+
+      // ID của bảng catechists
+      id: Number(record.id),
+
+      // ID của bảng admins - dùng để đổi role
+      admin_id: Number(record.admin_id),
+
+      username:
+        record.username || record.admin_username || record.catechist_code,
+
+      role: targetRole,
+
+      church_id: Number(record.church_id),
+    };
+
+    // =====================================================
+    // OPEN MODAL
+    // =====================================================
+
+    setRoleChangingRecord(roleTarget);
+    setRoleChangingTo(role);
+    setRoleModalOpen(true);
+  };
+  const handleConfirmChangeRole = async () => {
+    if (!roleChangingRecord || !roleChangingTo) {
+      return;
+    }
+
+    const adminId = Number(roleChangingRecord.admin_id);
+
+    if (!Number.isInteger(adminId) || adminId <= 0) {
+      notify.error("Không xác định được tài khoản đăng nhập để đổi vai trò.");
+
+      return;
+    }
+
+    try {
+      setRoleChanging(true);
+
+      await updateCatechistRole(adminId, roleChangingTo);
+
+      notify.success("Đổi vai trò thành công");
+
+      setRoleModalOpen(false);
+      setRoleChangingRecord(null);
+      setRoleChangingTo(null);
+
+      await fetchData();
+    } catch (error) {
+      notify.error(
+        error?.response?.data?.message || "Không thể đổi vai trò tài khoản",
+      );
+    } finally {
+      setRoleChanging(false);
+    }
+  };
+  const handleCloseRoleModal = () => {
+    if (roleChanging) return;
+
+    setRoleModalOpen(false);
+    setRoleChangingRecord(null);
+    setRoleChangingTo(null);
+  };
   /* =======================================================
      STATUS
   ======================================================= */
@@ -739,13 +877,42 @@ export default function CatechistManagement() {
         </Tag>
       ),
     },
-
     {
-      title: "Trạng thái",
-      dataIndex: "status",
+      title: "Vai trò",
+      dataIndex: "role",
+      key: "role",
+      align: "center",
 
-      render: (status) => {
-        const config = getStatusConfig(status);
+      render: (role) => {
+        const roleConfig = {
+          admin_catechist: {
+            label: "Quản trị giáo lý",
+            color: "#173B5E",
+            bg: "#EEF3F7",
+            border: "#B8C9D8",
+          },
+
+          catechist: {
+            label: "Huấn luyện viên (Admin)",
+            color: "#9A6700",
+            bg: "#FFF7E0",
+            border: "#E8D39A",
+          },
+
+          teacher: {
+            label: "Giáo viên",
+            color: "#2E7D5B",
+            bg: "#EAF6F0",
+            border: "#B8DEC9",
+          },
+        };
+
+        const config = roleConfig[role] || {
+          label: role || "Chưa xác định",
+          color: "#64748B",
+          bg: "#F1F5F9",
+          border: "#CBD5E1",
+        };
 
         return (
           <Tag
@@ -754,9 +921,23 @@ export default function CatechistManagement() {
               color: config.color,
               background: config.bg,
               borderColor: config.border,
+              fontWeight: 600,
+              borderRadius: 999,
+              padding: "3px 10px",
+              margin: 0,
+              lineHeight: "20px",
             }}
           >
-            ● {config.label}
+            <span
+              style={{
+                marginRight: 5,
+                fontSize: 9,
+              }}
+            >
+              ●
+            </span>
+
+            {config.label}
           </Tag>
         );
       },
@@ -764,98 +945,276 @@ export default function CatechistManagement() {
 
     {
       title: "Thao tác",
+      key: "actions",
       align: "center",
 
-      render: (_, record) => (
-        <Space size={6}>
-          <Tooltip title="Xem chi tiết">
-            <AppButton
-              icon={<EyeOutlined />}
-              size="small"
-              variant="secondary"
-              onClick={() => handleOpenDetail(record)}
-            />
-          </Tooltip>
+      render: (_, record) => {
+        // =====================================================
+        // ROLE
+        // =====================================================
 
-          <Tooltip title="Chỉnh sửa">
-            <AppButton
-              size="small"
-              icon={<EditOutlined />}
-              variant="secondary"
-              onClick={() => handleOpenEditModal(record)}
-            />
-          </Tooltip>
+        const currentRole = record?.role;
 
-          <Dropdown
-            trigger={["click"]}
-            menu={{
-              items: [
-                {
-                  label: "Phân công lớp giảng dạy",
-                  icon: <SwapOutlined />,
-                  onClick: () => handleOpenAssignModal(record),
-                },
+        const isAdminCatechist = currentRole === "admin_catechist";
 
-                {
-                  type: "divider",
-                },
+        const isCatechist = currentRole === "catechist";
 
-                {
-                  key: "reset-password",
-                  label: "Cấp lại mật khẩu",
-                  icon: <KeyOutlined />,
-                  onClick: () => openResetPassword(record),
-                },
+        const isTeacher = currentRole === "teacher";
 
-                {
-                  key: "toggle-active",
-                  label:
-                    record.status === "active"
-                      ? "Khóa tài khoản"
-                      : "Mở khóa tài khoản",
-                  icon:
-                    record.status === "active" ? (
-                      <LockOutlined />
-                    ) : (
-                      <UnlockOutlined />
-                    ),
-                  onClick: () => handleToggleAdmin(record),
-                },
+        // =====================================================
+        // ROLE CHANGE
+        //
+        // Chỉ cho phép:
+        //
+        // catechist -> teacher
+        // teacher   -> catechist
+        //
+        // Không cho:
+        //
+        // admin_catechist -> ...
+        // ... -> admin_catechist
+        // =====================================================
 
-                {
-                  type: "divider",
-                },
+        const canChangeRole = isCatechist || isTeacher;
 
-                {
-                  key: "delete",
+        // =====================================================
+        // ROLE CHANGE ITEMS
+        // =====================================================
+
+        const roleChangeItems = [];
+
+        // -----------------------------------------------------
+        // GIÁO LÝ VIÊN -> GIÁO VIÊN
+        // -----------------------------------------------------
+
+        if (isCatechist) {
+          roleChangeItems.push({
+            key: "role-teacher",
+
+            label: "Chuyển thành Giáo viên",
+
+            icon: <SwapOutlined />,
+
+            onClick: () => {
+              handleChangeRole(record, "teacher");
+            },
+          });
+        }
+
+        // -----------------------------------------------------
+        // GIÁO VIÊN -> GIÁO LÝ VIÊN
+        // -----------------------------------------------------
+
+        if (isTeacher) {
+          roleChangeItems.push({
+            key: "role-catechist",
+
+            label: "Chuyển thành Huấn luyện viên",
+
+            icon: <SwapOutlined />,
+
+            onClick: () => {
+              handleChangeRole(record, "catechist");
+            },
+          });
+        }
+
+        // =====================================================
+        // ROLE FALLBACK
+        // =====================================================
+
+        let roleFallbackItem = null;
+
+        if (isAdminCatechist) {
+          roleFallbackItem = {
+            key: "role-not-available",
+
+            label: "Không thể thay đổi vai trò quản trị",
+
+            disabled: true,
+          };
+        } else if (!canChangeRole) {
+          roleFallbackItem = {
+            key: "role-not-available",
+
+            label: "Không có vai trò khả dụng",
+
+            disabled: true,
+          };
+        }
+
+        // =====================================================
+        // DROPDOWN ITEMS
+        // =====================================================
+
+        const menuItems = [
+          // ===================================================
+          // PHÂN CÔNG LỚP
+          // ===================================================
+
+          {
+            key: "assign-class",
+
+            label: "Phân công lớp giảng dạy",
+
+            icon: <SwapOutlined />,
+
+            onClick: () => {
+              handleOpenAssignModal(record);
+            },
+          },
+
+          // ===================================================
+          // ĐỔI VAI TRÒ
+          // ===================================================
+
+          {
+            key: "change-role",
+
+            label: "Đổi vai trò",
+
+            icon: <SwapOutlined />,
+
+            disabled: !canChangeRole,
+
+            children:
+              roleChangeItems.length > 0 ? roleChangeItems : [roleFallbackItem],
+          },
+
+          {
+            type: "divider",
+          },
+
+          // ===================================================
+          // CẤP LẠI MẬT KHẨU
+          // ===================================================
+
+          {
+            key: "reset-password",
+
+            label: "Cấp lại mật khẩu",
+
+            icon: <KeyOutlined />,
+
+            onClick: () => {
+              openResetPassword(record);
+            },
+          },
+
+          // ===================================================
+          // KHÓA / MỞ KHÓA
+          // ===================================================
+
+          {
+            key: "toggle-active",
+
+            label:
+              record?.status === "active"
+                ? "Khóa tài khoản"
+                : "Mở khóa tài khoản",
+
+            icon:
+              record?.status === "active" ? (
+                <LockOutlined />
+              ) : (
+                <UnlockOutlined />
+              ),
+
+            onClick: () => {
+              handleToggleAdmin(record);
+            },
+          },
+
+          {
+            type: "divider",
+          },
+
+          // ===================================================
+          // XÓA
+          // ===================================================
+
+          {
+            key: "delete",
+
+            danger: true,
+
+            label: (
+              <Popconfirm
+                title="Xóa tài khoản?"
+                description="Dữ liệu tài khoản này sẽ không thể khôi phục lại!"
+                onConfirm={() => {
+                  handleDelete(record.id);
+                }}
+                okText="Xóa"
+                cancelText="Hủy"
+                okButtonProps={{
                   danger: true,
-                  label: (
-                    <Popconfirm
-                      title="Xóa Giáo lý viên?"
-                      description="Dữ liệu này sẽ không thể khôi phục lại!"
-                      onConfirm={() => handleDelete(record.id)}
-                      okText="Xóa"
-                      cancelText="Hủy"
-                      okButtonProps={{
-                        danger: true,
-                      }}
-                    >
-                      Xóa thông tin
-                    </Popconfirm>
-                  ),
-                  icon: <DeleteOutlined />,
-                },
-              ],
-            }}
-          >
-            <AppButton
-              className="chibi-action-btn chibi-btn-more"
-              size="small"
-              icon={<MoreOutlined />}
-            />
-          </Dropdown>
-        </Space>
-      ),
+                }}
+              >
+                <span>Xóa thông tin</span>
+              </Popconfirm>
+            ),
+
+            icon: <DeleteOutlined />,
+          },
+        ];
+
+        // =====================================================
+        // RENDER
+        // =====================================================
+
+        return (
+          <Space size={6}>
+            {/* =================================================
+            XEM CHI TIẾT
+        ================================================= */}
+
+            <Tooltip title="Xem chi tiết">
+              <AppButton
+                icon={<EyeOutlined />}
+                size="small"
+                variant="secondary"
+                onClick={() => {
+                  handleOpenDetail(record);
+                }}
+              />
+            </Tooltip>
+
+            {/* =================================================
+            CHỈNH SỬA
+        ================================================= */}
+
+            <Tooltip title="Chỉnh sửa">
+              <AppButton
+                size="small"
+                icon={<EditOutlined />}
+                variant="secondary"
+                onClick={() => {
+                  handleOpenEditModal(record);
+                }}
+              />
+            </Tooltip>
+
+            {/* =================================================
+            MORE
+        ================================================= */}
+
+            <Dropdown
+              trigger={["click"]}
+              placement="bottomRight"
+              menu={{
+                items: menuItems,
+              }}
+            >
+              <AppButton
+                className="chibi-action-btn chibi-btn-more"
+                size="small"
+                icon={<MoreOutlined />}
+              />
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -2309,7 +2668,389 @@ export default function CatechistManagement() {
             </Form.Item>
           </Form>
         </Modal>
+        <Modal
+          open={roleModalOpen}
+          onCancel={handleCloseRoleModal}
+          footer={null}
+          centered
+          destroyOnClose
+          width={560}
+          title={
+            <div>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#173B5E",
+                }}
+              >
+                Xác nhận thay đổi vai trò
+              </div>
 
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 13,
+                  fontWeight: 400,
+                  color: "#6B7280",
+                }}
+              >
+                Kiểm tra quyền sử dụng trước khi xác nhận
+              </div>
+            </div>
+          }
+        >
+          {roleChangingRecord && roleChangingTo && (
+            <div>
+              {/* ===================================================== */}
+              {/* TÀI KHOẢN */}
+              {/* ===================================================== */}
+
+              <div
+                style={{
+                  padding: 16,
+                  marginBottom: 18,
+                  borderRadius: 14,
+                  background: "#F7F9FC",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#6B7280",
+                    marginBottom: 5,
+                  }}
+                >
+                  TÀI KHOẢN
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "#243447",
+                  }}
+                >
+                  {roleChangingRecord.name ||
+                    roleChangingRecord.full_name ||
+                    roleChangingRecord.username ||
+                    `Tài khoản #${roleChangingRecord.id}`}
+                </div>
+
+                {roleChangingRecord.username && (
+                  <div
+                    style={{
+                      marginTop: 3,
+                      fontSize: 13,
+                      color: "#6B7280",
+                    }}
+                  >
+                    @{roleChangingRecord.username}
+                  </div>
+                )}
+              </div>
+
+              {/* ===================================================== */}
+              {/* ROLE CHANGE */}
+              {/* ===================================================== */}
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    flex: 1,
+                    padding: "14px 16px",
+                    borderRadius: 12,
+                    background: "#EEF3F7",
+                    border: "1px solid #E2E8F0",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#6B7280",
+                      marginBottom: 5,
+                    }}
+                  >
+                    VAI TRÒ HIỆN TẠI
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#173B5E",
+                    }}
+                  >
+                    {roleChangingRecord.role === "catechist"
+                      ? "Huấn luyện viên ( Admin )"
+                      : "Giáo viên"}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 20,
+                    color: "#D9A441",
+                    fontWeight: 700,
+                  }}
+                >
+                  →
+                </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                    padding: "14px 16px",
+                    borderRadius: 12,
+                    background: "#FFF9EE",
+                    border: "1px solid #F4E7C1",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#6B7280",
+                      marginBottom: 5,
+                    }}
+                  >
+                    VAI TRÒ MỚI
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#173B5E",
+                    }}
+                  >
+                    {roleChangingTo === "catechist"
+                      ? "Huấn luyện viên ( Admin )"
+                      : "Giáo viên"}
+                  </div>
+                </div>
+              </div>
+
+              {/* ===================================================== */}
+              {/* QUYỀN GIÁO LÝ VIÊN */}
+              {/* ===================================================== */}
+
+              {roleChangingTo === "catechist" && (
+                <div
+                  style={{
+                    padding: 16,
+                    marginBottom: 16,
+                    borderRadius: 14,
+                    background: "#E8F5EE",
+                    border: "1px solid #CFE8DB",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 8,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#2E7D5B",
+                        color: "#FFFFFF",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ✓
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: "#245C45",
+                      }}
+                    >
+                      Huấn Luyện Viên (Admin)
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      color: "#365B49",
+                    }}
+                  >
+                    Tài khoản có quyền sử dụng các chức năng nghiệp vụ của hệ
+                    thống trong phạm vi giáo xứ.
+                  </div>
+
+                  <ul
+                    style={{
+                      marginTop: 10,
+                      marginBottom: 0,
+                      paddingLeft: 20,
+                      color: "#365B49",
+                      fontSize: 13,
+                      lineHeight: 1.8,
+                    }}
+                  >
+                    <li>Quản lý học sinh</li>
+                    <li>Quản lý lớp học</li>
+                    <li>Điểm danh</li>
+                    <li>Quản lý giáo lý và kết quả học tập</li>
+                    <li>Các chức năng nghiệp vụ khác được phân quyền</li>
+                  </ul>
+                </div>
+              )}
+
+              {/* ===================================================== */}
+              {/* QUYỀN GIÁO VIÊN */}
+              {/* ===================================================== */}
+
+              {roleChangingTo === "teacher" && (
+                <div
+                  style={{
+                    padding: 16,
+                    marginBottom: 16,
+                    borderRadius: 14,
+                    background: "#EEF3F7",
+                    border: "1px solid #D9E3EC",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 8,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#173B5E",
+                        color: "#FFFFFF",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ✓
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: "#173B5E",
+                      }}
+                    >
+                      Giáo viên
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      color: "#4B5F70",
+                    }}
+                  >
+                    Tài khoản được giới hạn quyền để tập trung vào việc quản trị
+                    các lớp học được phân công.
+                  </div>
+
+                  <ul
+                    style={{
+                      marginTop: 10,
+                      marginBottom: 0,
+                      paddingLeft: 20,
+                      color: "#4B5F70",
+                      fontSize: 13,
+                      lineHeight: 1.8,
+                    }}
+                  >
+                    <li>Quản lý lớp được phân công</li>
+                    <li>Quản lý học sinh trong lớp</li>
+                    <li>Thực hiện điểm danh</li>
+                    <li>Theo dõi hoạt động học tập của lớp</li>
+                  </ul>
+                </div>
+              )}
+
+              {/* ===================================================== */}
+              {/* WARNING */}
+              {/* ===================================================== */}
+
+              <div
+                style={{
+                  padding: 12,
+                  marginBottom: 20,
+                  borderRadius: 10,
+                  background: "#FFF7E0",
+                  border: "1px solid #F4E7C1",
+                  color: "#7A5A18",
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                }}
+              >
+                <strong>Lưu ý:</strong> Thay đổi vai trò sẽ làm thay đổi quyền
+                truy cập của tài khoản. Người dùng có thể cần đăng nhập lại để
+                hệ thống áp dụng đầy đủ quyền mới.
+              </div>
+
+              {/* ===================================================== */}
+              {/* ACTION */}
+              {/* ===================================================== */}
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 10,
+                }}
+              >
+                <AppButton
+                  size="small"
+                  onClick={handleCloseRoleModal}
+                  disabled={roleChanging}
+                >
+                  Hủy
+                </AppButton>
+
+                <AppButton
+                  type="primary"
+                  size="small"
+                  loading={roleChanging}
+                  onClick={handleConfirmChangeRole}
+                  style={{
+                    background: "#173B5E",
+                    borderColor: "#173B5E",
+                  }}
+                >
+                  Xác nhận đổi vai trò
+                </AppButton>
+              </div>
+            </div>
+          )}
+        </Modal>
         {/* =================================================
             CSS
         ================================================= */}
