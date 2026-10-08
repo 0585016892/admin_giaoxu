@@ -37,6 +37,7 @@ import HelpModalCate from "../../components/HelpModalCate";
 import notificationApi from "../../api/notificationApi";
 import logoWeb from "../../assets/images/logoXn.png";
 import { useNotification } from "../../components/notification";
+import { useChurchSettings } from "../../context/ChurchSettingsContext";
 
 const { Header } = Layout;
 
@@ -123,6 +124,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
   const { user, logout } = useUser();
 
   const [helpOpen, setHelpOpen] = useState(false);
+  const { settings } = useChurchSettings();
 
   /* =========================================================
      NOTIFICATIONS STATE
@@ -373,7 +375,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
             icon: logoWeb,
           });
         } catch (error) {
-          console.error("Browser notification error:", error);
+          notify.error("Browser notification error:", error);
         }
       }
 
@@ -392,7 +394,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
 
       socket.disconnect();
     };
-  }, [user?.id, user?.church_id]);
+  }, [user?.id, user?.church_id, notify]);
 
   /* =========================================================
      BROWSER NOTIFICATION
@@ -931,13 +933,23 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
             }}
           >
             <div className="faith-brand-logo--img">
-              <img src={logoWeb} alt="FaithEdu" className="faith-logo-image" />
+              <img
+                src={settings?.logo ? `${API_URL}${settings.logo}` : logoWeb}
+                alt={settings?.slogan || "FaithEdu"}
+                className="faith-logo-image"
+              />
             </div>
 
             <div className="faith-brand-content">
               <div className="faith-brand-name">
-                Faith
-                <span>Edu</span>
+                {settings?.slogan ? (
+                  <span className="faith-brand-slogan">{settings.slogan}</span>
+                ) : (
+                  <>
+                    Faith
+                    <span>Edu</span>
+                  </>
+                )}
               </div>
 
               <div className="faith-brand-slogan">
@@ -1151,8 +1163,8 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
         .faith-brand-logo--img {
         background:none;
         border: 2px solid rgba(255, 255, 255, 0.9) !important;
-          width: 42px;
-          height: 42px;
+          width: 50px;
+          height: 50px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1160,7 +1172,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
 
         .faith-logo-image {
           width: auto;
-          height: 38px;
+          height: 50px;
           object-fit: contain;
           transition: transform 0.2s ease;
         }
@@ -1173,6 +1185,17 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
           display: flex;
           flex-direction: column;
         }
+.faith-brand-name {
+  color: #173B5E;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.faith-brand-name > span:not(.faith-brand-slogan) {
+  color: #D9A441;
+}
+
 
         .faith-brand-name {
           font-family: "Quicksand", sans-serif;
@@ -1190,7 +1213,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
         .faith-brand-slogan {
           margin-top: 4px;
           font-family: "Quicksand", sans-serif;
-          font-size: 11px;
+          font-size: 15px;
           font-weight: 600;
           color: var(--faith-muted);
           line-height: 1;

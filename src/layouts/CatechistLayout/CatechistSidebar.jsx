@@ -38,7 +38,6 @@ import {
 import imgSidebar from "../../assets/images/logosidebar.png";
 import logoWeb from "../../assets/images/logoweb.png";
 import usePermission from "../../hooks/usePermission";
-import { useChurchSettings } from "../../context/ChurchSettingsContext";
 
 const { Sider } = Layout;
 const { Title, Text } = Typography;
@@ -87,6 +86,7 @@ const MENU_PATHS = {
 
   classes: "/catechist/classes",
   myClasses: "/catechist/classes-teacher",
+  classPromotions: "/catechist/classes-promotions",
 
   students: "/catechist/students",
   myStudents: "/catechist/student-class",
@@ -159,14 +159,10 @@ export default function CatechistSidebar({
   mobileOpen = false,
   setMobileOpen,
 }) {
-  const { settings } = useChurchSettings();
-
   const navigate = useNavigate();
   const location = useLocation();
 
   const { canViewClass, canViewStudents, canViewCatechists } = usePermission();
-
-  console.log("settings:::", settings);
 
   /* =========================================================
       PERMISSION
@@ -333,6 +329,13 @@ export default function CatechistSidebar({
       ],
     });
 
+    // if (permission.canViewClass) {
+    //   items.push({
+    //     key: MENU_PATHS.classPromotions,
+    //     label: "Lên lớp cuối năm",
+    //     icon: <GraduationCap size={18} strokeWidth={2.2} />,
+    //   });
+    // }
     /* =======================================================
       6. BẰNG & CHỨNG CHỈ
     ======================================================= */
@@ -774,7 +777,7 @@ export default function CatechistSidebar({
         {showInfo && (
           <div className="faith-brand-info">
             <Title level={5} className="faith-brand-title">
-              TNTT FaithEdu
+              FaithEdu
             </Title>
 
             <Text className="faith-brand-subtitle">Cổng Giáo Lý Viên</Text>

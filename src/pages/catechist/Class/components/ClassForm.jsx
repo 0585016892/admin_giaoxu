@@ -166,7 +166,25 @@ const dayOptions = [
     label: "Chúa Nhật",
   },
 ];
+/* =========================================================
+   ACADEMIC YEAR OPTIONS
+========================================================= */
 
+const generateAcademicYearOptions = () => {
+  const currentYear = dayjs().year();
+
+  return Array.from({ length: 6 }, (_, index) => {
+    const startYear = currentYear - 2 + index;
+    const endYear = startYear + 1;
+
+    return {
+      value: `${startYear}-${endYear}`,
+      label: `Năm học ${startYear}–${endYear}`,
+    };
+  });
+};
+
+const academicYearOptions = generateAcademicYearOptions();
 /* =========================================================
    HELPERS
 ========================================================= */
@@ -591,6 +609,8 @@ const ClassForm = ({
       form.resetFields();
 
       form.setFieldsValue({
+        academic_year: `${dayjs().year()}-${dayjs().year() + 1}`,
+
         category: "Giáo lý Hôn Nhân",
         status: "active",
 
@@ -619,6 +639,9 @@ const ClassForm = ({
 
     form.setFieldsValue({
       name: editingClass.name || "",
+
+      academic_year:
+        editingClass.academic_year || `${dayjs().year()}-${dayjs().year() + 1}`,
 
       category: editingClass.category || "Giáo lý Hôn Nhân",
 
@@ -804,6 +827,36 @@ const ClassForm = ({
                 size="large"
                 options={statusOptions}
                 placeholder="Chọn trạng thái"
+                style={{
+                  width: "100%",
+                }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24} md={24}>
+            <Form.Item
+              name="academic_year"
+              label="Năm học"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng chọn năm học",
+                },
+              ]}
+              style={{
+                marginBottom: 0,
+              }}
+            >
+              <Select
+                size="large"
+                options={academicYearOptions}
+                placeholder="Chọn năm học"
+                showSearch
+                optionFilterProp="label"
+                suffixIcon={<CalendarOutlined />}
+                allowClear
                 style={{
                   width: "100%",
                 }}

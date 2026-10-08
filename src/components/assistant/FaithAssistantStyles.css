@@ -1,14 +1,20 @@
 /* =========================================================
    FAITHEDU ASSISTANT
    Family / Catholic / Warm UI
+   Production Ready
    ========================================================= */
 
 :root {
+  /* =======================================================
+     FAITHEDU FAMILY COLORS
+     ======================================================= */
+
   --faith-navy: #173b5e;
   --faith-deep-navy: #102a43;
 
   --faith-gold: #d9a441;
   --faith-soft-gold: #f4e7c1;
+
   --faith-cream: #fff9ee;
 
   --faith-bg: #f7f9fc;
@@ -30,18 +36,39 @@
 
   --faith-blue-soft: #eef3f7;
 
+  /* =======================================================
+     SHADOWS
+     ======================================================= */
+
   --faith-shadow-sm: 0 4px 14px rgba(16, 42, 67, 0.08);
 
   --faith-shadow-md: 0 14px 40px rgba(16, 42, 67, 0.14);
 
   --faith-shadow-lg: 0 24px 70px rgba(16, 42, 67, 0.18);
 
+  --faith-shadow-floating:
+    0 14px 34px rgba(16, 42, 67, 0.18), 0 0 0 1px rgba(217, 164, 65, 0.14);
+
+  /* =======================================================
+     RADIUS
+     ======================================================= */
+
   --faith-radius-sm: 10px;
   --faith-radius-md: 14px;
   --faith-radius-lg: 20px;
   --faith-radius-xl: 26px;
 
+  /* =======================================================
+     TRANSITION
+     ======================================================= */
+
   --faith-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --faith-transition-spring: 280ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* =======================================================
+     FONT
+     ======================================================= */
 
   --faith-font:
     "Be Vietnam Pro", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -49,11 +76,11 @@
 }
 
 /* =========================================================
-   RESET
+   GLOBAL RESET - ASSISTANT ONLY
    ========================================================= */
 
-.faith-assistant-floating,
-.faith-assistant-floating *,
+.faith-assistant-floating-wrapper,
+.faith-assistant-floating-wrapper *,
 .faith-assistant-greeting,
 .faith-assistant-greeting *,
 .faith-assistant-overlay,
@@ -63,10 +90,51 @@
   box-sizing: border-box;
 }
 
-.faith-assistant-floating,
+.faith-assistant-floating-wrapper,
 .faith-assistant-greeting button,
-.faith-assistant-modal button {
+.faith-assistant-modal button,
+.faith-assistant-modal textarea {
   font-family: var(--faith-font);
+}
+
+/* =========================================================
+   FLOATING ASSISTANT WRAPPER
+   ========================================================= */
+
+.faith-assistant-floating-wrapper {
+  position: fixed;
+
+  /*
+   * Default position.
+   * Khi React set style left/top thì sẽ override bằng inline style.
+   */
+  right: 24px;
+  bottom: 24px;
+
+  width: 68px;
+  height: 68px;
+
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+
+  cursor: grab;
+
+  /*
+   * Tránh browser tạo ghost image / native drag.
+   */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.faith-assistant-floating-wrapper.is-dragging {
+  cursor: grabbing;
 }
 
 /* =========================================================
@@ -74,14 +142,12 @@
    ========================================================= */
 
 .faith-assistant-floating {
-  position: fixed;
-
-  right: 26px;
-  bottom: 26px;
+  position: relative;
 
   width: 68px;
   height: 68px;
 
+  margin: 0;
   padding: 0;
 
   border: 0;
@@ -89,33 +155,87 @@
 
   background: linear-gradient(145deg, #ffffff 0%, var(--faith-cream) 100%);
 
-  box-shadow:
-    0 12px 32px rgba(16, 42, 67, 0.18),
-    0 0 0 1px rgba(217, 164, 65, 0.16);
-
-  cursor: pointer;
-
-  z-index: 1200;
+  box-shadow: var(--faith-shadow-floating);
 
   display: flex;
   align-items: center;
   justify-content: center;
 
+  cursor: inherit;
+
+  outline: none;
+
+  user-select: none;
+  -webkit-user-select: none;
+
+  touch-action: none;
+
+  -webkit-tap-highlight-color: transparent;
+
   transition:
     transform var(--faith-transition),
-    box-shadow var(--faith-transition);
+    box-shadow var(--faith-transition),
+    filter var(--faith-transition);
 }
 
-.faith-assistant-floating:hover {
-  transform: translateY(-4px) scale(1.03);
+/* =========================================================
+   FLOATING BUTTON HOVER
+   ========================================================= */
+
+.faith-assistant-floating-wrapper:not(.is-dragging)
+  .faith-assistant-floating:hover {
+  transform: translateY(-4px) scale(1.04);
 
   box-shadow:
     0 18px 42px rgba(16, 42, 67, 0.22),
-    0 0 0 1px rgba(217, 164, 65, 0.28);
+    0 0 0 1px rgba(217, 164, 65, 0.25);
 }
 
-.faith-assistant-floating:active {
+/* =========================================================
+   FLOATING BUTTON ACTIVE
+   ========================================================= */
+
+.faith-assistant-floating-wrapper:not(.is-dragging)
+  .faith-assistant-floating:active {
   transform: translateY(-1px) scale(0.98);
+}
+
+/* =========================================================
+   DRAGGING STATE
+   ========================================================= */
+
+.faith-assistant-floating-wrapper.is-dragging .faith-assistant-floating {
+  transform: scale(1.06);
+
+  filter: drop-shadow(0 12px 24px rgba(16, 42, 67, 0.25));
+
+  transition: none;
+}
+
+/* =========================================================
+   FLOATING IMAGE
+   ========================================================= */
+
+.faith-assistant-floating-image {
+  position: relative;
+
+  width: 58px;
+  height: 58px;
+
+  object-fit: contain;
+
+  display: block;
+
+  border-radius: 50%;
+
+  z-index: 2;
+
+  pointer-events: none;
+
+  user-select: none;
+  -webkit-user-select: none;
+
+  -webkit-user-drag: none;
 }
 
 /* =========================================================
@@ -125,46 +245,37 @@
 .faith-assistant-floating-ring {
   position: absolute;
 
-  inset: -5px;
+  inset: 1px;
+
+  width: auto;
+  height: auto;
 
   border-radius: 50%;
 
-  border: 1px solid rgba(217, 164, 65, 0.42);
+  border: 2px solid rgba(217, 164, 65, 0.55);
+
+  z-index: 1;
 
   pointer-events: none;
 
-  animation: faithAssistantPulse 2.8s ease-in-out infinite;
+  animation: faithAssistantPulse 2.6s ease-in-out infinite;
 }
 
 @keyframes faithAssistantPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.45;
+  0% {
+    transform: scale(0.94);
+    opacity: 0.35;
   }
 
   50% {
-    transform: scale(1.08);
-    opacity: 0.05;
+    transform: scale(1.05);
+    opacity: 0.85;
   }
-}
 
-/* =========================================================
-   FLOATING IMAGE
-   ========================================================= */
-
-.faith-assistant-floating-image {
-  width: 54px;
-  height: 54px;
-
-  object-fit: contain;
-
-  border-radius: 50%;
-
-  position: relative;
-  z-index: 2;
-
-  display: block;
+  100% {
+    transform: scale(0.94);
+    opacity: 0.35;
+  }
 }
 
 /* =========================================================
@@ -174,11 +285,11 @@
 .faith-assistant-floating-badge {
   position: absolute;
 
-  right: -2px;
+  right: -1px;
   bottom: -1px;
 
-  width: 23px;
-  height: 23px;
+  width: 25px;
+  height: 25px;
 
   border-radius: 50%;
 
@@ -192,11 +303,26 @@
   align-items: center;
   justify-content: center;
 
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 700;
+
+  line-height: 1;
 
   z-index: 4;
 
-  box-shadow: var(--faith-shadow-sm);
+  pointer-events: none;
+
+  box-shadow: 0 4px 12px rgba(16, 42, 67, 0.18);
+}
+
+/* =========================================================
+   FLOATING FOCUS
+   ========================================================= */
+
+.faith-assistant-floating:focus-visible {
+  outline: 3px solid rgba(217, 164, 65, 0.4);
+
+  outline-offset: 4px;
 }
 
 /* =========================================================
@@ -206,12 +332,16 @@
 .faith-assistant-greeting {
   position: fixed;
 
-  right: 108px;
-  bottom: 32px;
+  /*
+   * Default fallback.
+   * Nếu JSX truyền left/top thì inline style sẽ override.
+   */
+  right: 104px;
+  bottom: 28px;
 
   width: 310px;
 
-  z-index: 1199;
+  z-index: 9998;
 
   animation: faithAssistantGreetingIn 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -228,7 +358,13 @@
   }
 }
 
+/* =========================================================
+   GREETING CONTENT
+   ========================================================= */
+
 .faith-assistant-greeting-content {
+  position: relative;
+
   width: 100%;
 
   padding: 17px 42px 17px 18px;
@@ -247,6 +383,7 @@
 
   display: flex;
   flex-direction: column;
+
   gap: 5px;
 
   transition:
@@ -260,6 +397,10 @@
   box-shadow: 0 18px 42px rgba(16, 42, 67, 0.16);
 }
 
+/* =========================================================
+   GREETING TITLE
+   ========================================================= */
+
 .faith-assistant-greeting-title {
   color: var(--faith-deep-navy);
 
@@ -269,6 +410,10 @@
   line-height: 1.4;
 }
 
+/* =========================================================
+   GREETING SUBTITLE
+   ========================================================= */
+
 .faith-assistant-greeting-subtitle {
   color: var(--faith-muted);
 
@@ -276,6 +421,10 @@
 
   line-height: 1.55;
 }
+
+/* =========================================================
+   GREETING CLOSE
+   ========================================================= */
 
 .faith-assistant-greeting-close {
   position: absolute;
@@ -286,8 +435,9 @@
   width: 26px;
   height: 26px;
 
-  border: 0;
+  padding: 0;
 
+  border: 0;
   border-radius: 50%;
 
   background: transparent;
@@ -304,17 +454,31 @@
 
   transition:
     background var(--faith-transition),
-    color var(--faith-transition);
+    color var(--faith-transition),
+    transform var(--faith-transition);
 }
 
 .faith-assistant-greeting-close:hover {
   background: var(--faith-blue-soft);
 
   color: var(--faith-deep-navy);
+
+  transform: scale(1.04);
 }
 
 /* =========================================================
-   OVERLAY
+   GREETING FOCUS
+   ========================================================= */
+
+.faith-assistant-greeting-content:focus-visible,
+.faith-assistant-greeting-close:focus-visible {
+  outline: 3px solid rgba(217, 164, 65, 0.35);
+
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   MODAL OVERLAY
    ========================================================= */
 
 .faith-assistant-overlay {
@@ -334,6 +498,7 @@
   background: rgba(16, 42, 67, 0.12);
 
   backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 
   animation: faithAssistantOverlayIn 180ms ease-out;
 }
@@ -378,11 +543,13 @@
 @keyframes faithAssistantModalIn {
   from {
     opacity: 0;
+
     transform: translateY(20px) scale(0.97);
   }
 
   to {
     opacity: 1;
+
     transform: translateY(0) scale(1);
   }
 }
@@ -392,6 +559,8 @@
    ========================================================= */
 
 .faith-assistant-header {
+  position: relative;
+
   flex: 0 0 auto;
 
   min-height: 82px;
@@ -410,12 +579,12 @@
     #23557f 100%
   );
 
-  position: relative;
-
   overflow: hidden;
 }
 
-/* decorative glow */
+/* =========================================================
+   HEADER DECORATIVE GLOW
+   ========================================================= */
 
 .faith-assistant-header::after {
   content: "";
@@ -435,18 +604,22 @@
   pointer-events: none;
 }
 
+/* =========================================================
+   HEADER LEFT
+   ========================================================= */
+
 .faith-assistant-header-left {
+  position: relative;
+
+  z-index: 2;
+
+  min-width: 0;
+
   display: flex;
 
   align-items: center;
 
   gap: 12px;
-
-  min-width: 0;
-
-  position: relative;
-
-  z-index: 2;
 }
 
 /* =========================================================
@@ -481,6 +654,10 @@
   border-radius: 50%;
 }
 
+/* =========================================================
+   ONLINE DOT
+   ========================================================= */
+
 .faith-assistant-online-dot {
   position: absolute;
 
@@ -498,7 +675,7 @@
 }
 
 /* =========================================================
-   HEADER TEXT
+   HEADER INFO
    ========================================================= */
 
 .faith-assistant-header-info {
@@ -509,6 +686,10 @@
 
   gap: 4px;
 }
+
+/* =========================================================
+   TITLE
+   ========================================================= */
 
 .faith-assistant-title {
   color: #ffffff;
@@ -525,6 +706,10 @@
 
   text-overflow: ellipsis;
 }
+
+/* =========================================================
+   STATUS
+   ========================================================= */
 
 .faith-assistant-status {
   display: flex;
@@ -544,6 +729,8 @@
   width: 6px;
   height: 6px;
 
+  flex: 0 0 auto;
+
   border-radius: 50%;
 
   background: #64d99b;
@@ -552,7 +739,7 @@
 }
 
 /* =========================================================
-   CLOSE
+   CLOSE BUTTON
    ========================================================= */
 
 .faith-assistant-close {
@@ -568,7 +755,6 @@
   padding: 0;
 
   border: 0;
-
   border-radius: 50%;
 
   background: rgba(255, 255, 255, 0.1);
@@ -598,6 +784,12 @@
   transform: rotate(3deg);
 }
 
+.faith-assistant-close:focus-visible {
+  outline: 3px solid rgba(217, 164, 65, 0.5);
+
+  outline-offset: 2px;
+}
+
 /* =========================================================
    BODY
    ========================================================= */
@@ -618,6 +810,10 @@
     var(--faith-bg);
 }
 
+/* =========================================================
+   MESSAGE LIST
+   ========================================================= */
+
 .faith-assistant-message-list {
   width: 100%;
   height: 100%;
@@ -629,6 +825,8 @@
   scroll-behavior: smooth;
 
   overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
 }
 
 /* =========================================================
@@ -674,11 +872,13 @@
 @keyframes faithAssistantMessageIn {
   from {
     opacity: 0;
+
     transform: translateY(6px);
   }
 
   to {
     opacity: 1;
+
     transform: translateY(0);
   }
 }
@@ -778,6 +978,10 @@
   box-shadow: 0 5px 16px rgba(23, 59, 94, 0.15);
 }
 
+/* =========================================================
+   MESSAGE CONTENT
+   ========================================================= */
+
 .faith-assistant-message-content {
   font-family: var(--faith-font);
 
@@ -798,6 +1002,7 @@
   width: 100%;
 
   display: flex;
+
   flex-direction: column;
 
   gap: 9px;
@@ -821,6 +1026,10 @@
   box-shadow: 0 3px 12px rgba(16, 42, 67, 0.045);
 }
 
+/* =========================================================
+   BLOCK HEADER
+   ========================================================= */
+
 .faith-assistant-block-header {
   display: flex;
 
@@ -830,6 +1039,10 @@
 
   margin-bottom: 12px;
 }
+
+/* =========================================================
+   BLOCK ICON
+   ========================================================= */
 
 .faith-assistant-block-icon {
   width: 34px;
@@ -851,6 +1064,10 @@
   font-size: 15px;
 }
 
+/* =========================================================
+   BLOCK TITLE
+   ========================================================= */
+
 .faith-assistant-block-title {
   color: var(--faith-deep-navy);
 
@@ -860,6 +1077,10 @@
 
   line-height: 1.45;
 }
+
+/* =========================================================
+   MUTED
+   ========================================================= */
 
 .faith-assistant-muted {
   margin-top: 2px;
@@ -999,6 +1220,10 @@
   font-weight: 750;
 }
 
+/* =========================================================
+   BLOCK FOOTER
+   ========================================================= */
+
 .faith-assistant-block-footer {
   display: flex;
 
@@ -1067,10 +1292,15 @@
   line-height: 1.3;
 }
 
+/* =========================================================
+   ATTENDANCE RATE
+   ========================================================= */
+
 .faith-assistant-rate {
   display: flex;
 
   align-items: center;
+
   justify-content: space-between;
 
   margin-top: 11px;
@@ -1098,6 +1328,7 @@
 
 .faith-assistant-list {
   display: flex;
+
   flex-direction: column;
 }
 
@@ -1145,6 +1376,10 @@
   line-height: 1.4;
 }
 
+/* =========================================================
+   LIST RIGHT
+   ========================================================= */
+
 .faith-assistant-list-right {
   margin-left: auto;
 
@@ -1175,11 +1410,19 @@
   height: 20px;
 }
 
+/* =========================================================
+   STUDENT LIST
+   ========================================================= */
+
 .faith-assistant-list-student {
   flex: 1;
 
   min-width: 0;
 }
+
+/* =========================================================
+   CLASS LIST ICON
+   ========================================================= */
 
 .faith-assistant-class-list-icon {
   width: 32px;
@@ -1205,6 +1448,7 @@
 
 .faith-assistant-ranking {
   display: flex;
+
   flex-direction: column;
 }
 
@@ -1225,6 +1469,10 @@
 .faith-assistant-ranking-row:last-child {
   border-bottom: 0;
 }
+
+/* =========================================================
+   RANK NUMBER
+   ========================================================= */
 
 .faith-assistant-rank-number {
   width: 26px;
@@ -1254,6 +1502,10 @@
   color: var(--faith-deep-navy);
 }
 
+/* =========================================================
+   RANK NAME
+   ========================================================= */
+
 .faith-assistant-ranking-name {
   min-width: 0;
 
@@ -1281,6 +1533,10 @@
 
   margin-top: 2px;
 }
+
+/* =========================================================
+   RANK RATE
+   ========================================================= */
 
 .faith-assistant-ranking-rate {
   flex: 0 0 auto;
@@ -1314,6 +1570,10 @@
   border-color: rgba(23, 59, 94, 0.1);
 }
 
+/* =========================================================
+   NOTICE ICON
+   ========================================================= */
+
 .faith-assistant-notice-icon {
   width: 31px;
   height: 31px;
@@ -1341,6 +1601,10 @@
 
   background: rgba(23, 59, 94, 0.08);
 }
+
+/* =========================================================
+   NOTICE CONTENT
+   ========================================================= */
 
 .faith-assistant-notice-content {
   margin-top: 3px;
@@ -1482,6 +1746,7 @@
   display: flex;
 
   align-items: center;
+
   justify-content: space-between;
 
   gap: 10px;
@@ -1593,6 +1858,10 @@
   border-top: 1px solid var(--faith-border);
 }
 
+/* =========================================================
+   INPUT WRAPPER
+   ========================================================= */
+
 .faith-assistant-input-wrapper {
   position: relative;
 
@@ -1612,7 +1881,8 @@
 
   transition:
     border-color var(--faith-transition),
-    box-shadow var(--faith-transition);
+    box-shadow var(--faith-transition),
+    background var(--faith-transition);
 }
 
 .faith-assistant-input-wrapper:focus-within {
@@ -1660,7 +1930,7 @@
 }
 
 /* =========================================================
-   SEND
+   SEND BUTTON
    ========================================================= */
 
 .faith-assistant-send.ant-btn {
@@ -1733,11 +2003,15 @@
 }
 
 .faith-assistant-modal .ant-tag {
+  margin-inline-end: 0;
+
   border: 0;
 
   background: var(--faith-blue-soft);
 
   color: var(--faith-navy);
+
+  border-radius: 99px;
 }
 
 /* =========================================================
@@ -1757,16 +2031,36 @@
     border-radius: 21px;
   }
 
-  .faith-assistant-floating {
+  .faith-assistant-floating-wrapper {
+    width: 64px;
+    height: 64px;
+
     right: 18px;
     bottom: 18px;
   }
 
+  .faith-assistant-floating {
+    width: 64px;
+    height: 64px;
+  }
+
+  .faith-assistant-floating-image {
+    width: 54px;
+    height: 54px;
+  }
+
+  .faith-assistant-floating-badge {
+    width: 23px;
+    height: 23px;
+
+    font-size: 11px;
+  }
+
   .faith-assistant-greeting {
+    width: 280px;
+
     right: 94px;
     bottom: 25px;
-
-    width: 280px;
   }
 
   .faith-assistant-message-list {
@@ -1783,6 +2077,7 @@
     padding: 0;
 
     align-items: stretch;
+
     justify-content: stretch;
 
     background: rgba(16, 42, 67, 0.18);
@@ -1790,6 +2085,7 @@
 
   .faith-assistant-modal {
     width: 100%;
+
     height: 100dvh;
 
     min-height: 0;
@@ -1817,10 +2113,18 @@
     }
   }
 
+  /* =======================================================
+     HEADER
+     ======================================================= */
+
   .faith-assistant-header {
     min-height: 70px;
 
     padding: 11px 13px;
+  }
+
+  .faith-assistant-header-left {
+    gap: 9px;
   }
 
   .faith-assistant-header-avatar {
@@ -1840,6 +2144,10 @@
     width: 34px;
     height: 34px;
   }
+
+  /* =======================================================
+     MESSAGE
+     ======================================================= */
 
   .faith-assistant-message-list {
     padding: 15px 11px 18px;
@@ -1864,11 +2172,19 @@
     height: 29px;
   }
 
+  /* =======================================================
+     BLOCK
+     ======================================================= */
+
   .faith-assistant-block {
     padding: 11px;
 
     border-radius: 14px;
   }
+
+  /* =======================================================
+     GRID
+     ======================================================= */
 
   .faith-assistant-info-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1884,6 +2200,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* =======================================================
+     LIST
+     ======================================================= */
+
   .faith-assistant-list-right {
     gap: 4px;
   }
@@ -1892,9 +2212,17 @@
     display: none;
   }
 
+  /* =======================================================
+     QUICK
+     ======================================================= */
+
   .faith-assistant-quick {
     margin-left: 38px;
   }
+
+  /* =======================================================
+     INPUT
+     ======================================================= */
 
   .faith-assistant-input-area {
     padding: 8px 10px calc(9px + env(safe-area-inset-bottom));
@@ -1904,12 +2232,22 @@
     display: none;
   }
 
-  .faith-assistant-floating {
+  /* =======================================================
+     FLOATING BUTTON
+     ======================================================= */
+
+  .faith-assistant-floating-wrapper {
     width: 61px;
     height: 61px;
 
     right: 15px;
+
     bottom: calc(15px + env(safe-area-inset-bottom));
+  }
+
+  .faith-assistant-floating {
+    width: 61px;
+    height: 61px;
   }
 
   .faith-assistant-floating-image {
@@ -1920,16 +2258,22 @@
   .faith-assistant-floating-badge {
     width: 21px;
     height: 21px;
+
+    font-size: 10px;
   }
 
+  /* =======================================================
+     GREETING
+     ======================================================= */
+
   .faith-assistant-greeting {
-    right: 88px;
-
-    bottom: calc(20px + env(safe-area-inset-bottom));
-
     width: calc(100vw - 108px);
 
     max-width: 270px;
+
+    right: 88px;
+
+    bottom: calc(20px + env(safe-area-inset-bottom));
   }
 
   .faith-assistant-greeting-content {
@@ -1953,7 +2297,7 @@
 
 @media (max-width: 380px) {
   .faith-assistant-header-left {
-    gap: 9px;
+    gap: 8px;
   }
 
   .faith-assistant-header-avatar {
@@ -1981,6 +2325,11 @@
     font-size: 15px;
   }
 
+  .faith-assistant-floating-wrapper {
+    width: 57px;
+    height: 57px;
+  }
+
   .faith-assistant-floating {
     width: 57px;
     height: 57px;
@@ -1989,6 +2338,11 @@
   .faith-assistant-floating-image {
     width: 46px;
     height: 46px;
+  }
+
+  .faith-assistant-floating-badge {
+    width: 20px;
+    height: 20px;
   }
 }
 
@@ -2014,12 +2368,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .faith-assistant-floating,
+  .faith-assistant-greeting,
   .faith-assistant-greeting-content,
   .faith-assistant-message,
   .faith-assistant-message-row,
   .faith-assistant-modal,
   .faith-assistant-suggestion,
-  .faith-assistant-quick-button {
+  .faith-assistant-quick-button,
+  .faith-assistant-close {
     animation: none !important;
 
     transition: none !important;
@@ -2031,5 +2387,33 @@
 
   .faith-assistant-typing span {
     animation: none !important;
+  }
+
+  .faith-assistant-message-list {
+    scroll-behavior: auto;
+  }
+}
+
+/* =========================================================
+   SAFETY - PREVENT IMAGE DRAG
+   ========================================================= */
+
+.faith-assistant-floating img,
+.faith-assistant-header-avatar img,
+.faith-assistant-message-avatar img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* =========================================================
+   FINAL MOBILE HEIGHT FIX
+   ========================================================= */
+
+@supports (height: 100svh) {
+  @media (max-width: 600px) {
+    .faith-assistant-modal {
+      height: 100svh;
+    }
   }
 }

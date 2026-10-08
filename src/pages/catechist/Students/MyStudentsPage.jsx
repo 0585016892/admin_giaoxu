@@ -221,202 +221,172 @@ const MyStudentsPage = () => {
   // TABLE COLUMNS
   // =====================================================
   const columns = [
+    // ============================================================
+    // HỌC SINH
+    // ============================================================
     {
       title: "HỌC SINH",
       dataIndex: "name",
       key: "name",
-      width: 215,
+      width: 245,
 
       render: (text, record, index) => (
         <div className="student-table-cell">
           <Avatar
-            size={36}
+            size={44}
+            src={record.avatar || student_defaut}
             onError={(e) => {
               e.currentTarget.src = student_defaut;
               return false;
             }}
-            src={record.avatar || student_defaut}
             style={{
               background: getAvatarColor(index),
               color: "#FFFFFF",
               fontWeight: 700,
               fontSize: 13,
               border: "2px solid #FFFFFF",
-              boxShadow: "0 2px 6px rgba(23, 59, 94, 0.12)",
+              boxShadow: "0 3px 10px rgba(23, 59, 94, 0.12)",
               flexShrink: 0,
             }}
           >
-            {(text || "?").charAt(0)?.toUpperCase()}
+            {(text || "?").charAt(0).toUpperCase()}
           </Avatar>
 
-          <div
-            className="student-table-info"
-            style={{
-              minWidth: 0,
-              flex: 1,
-            }}
-          >
-            <Text
-              strong
-              className="student-table-name"
-              ellipsis
-              style={{
-                display: "block",
-                maxWidth: "100%",
-              }}
-            >
+          <div className="student-table-info">
+            <Text strong ellipsis className="student-table-name">
               {record.saint_name ? `${record.saint_name} ` : ""}
               {text || "Chưa cập nhật"}
             </Text>
 
-            {record.code && (
-              <Text
-                className="student-table-code"
-                style={{
-                  display: "block",
-                  fontSize: 11,
-                }}
-              >
-                {record.code}
+            <Text className="student-table-code">
+              {record.code || "Chưa có mã học sinh"}
+            </Text>
+          </div>
+        </div>
+      ),
+    },
+
+    // ============================================================
+    // LỚP
+    // ============================================================
+    {
+      title: "LỚP",
+      dataIndex: "class_name",
+      key: "class_name",
+      width: 180,
+
+      render: (className, record) => (
+        <div className="class-table-cell">
+          <div className="class-table-icon">
+            <BookOutlined />
+          </div>
+
+          <div className="class-table-info">
+            <Tooltip title={className || "Chưa xếp lớp"}>
+              <Text className="class-name" ellipsis>
+                {className || "Chưa xếp lớp"}
               </Text>
+            </Tooltip>
+
+            {record.class_code && (
+              <span className="class-code">{record.class_code}</span>
             )}
           </div>
         </div>
       ),
     },
 
-    {
-      title: "LỚP",
-      dataIndex: "class_name",
-      key: "class_name",
-      width: 150,
-
-      render: (className, record) => (
-        <div
-          className="class-table-cell"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            minWidth: 0,
-          }}
-        >
-          <BookOutlined
-            style={{
-              color: accentGold,
-              flexShrink: 0,
-              fontSize: 14,
-            }}
-          />
-
-          <Text
-            className="class-name"
-            ellipsis
-            style={{
-              minWidth: 0,
-              maxWidth: 90,
-            }}
-          >
-            {className || "Chưa xếp lớp"}
-          </Text>
-
-          {record.class_code && (
-            <Tag
-              className="class-code-tag"
-              style={{
-                margin: 0,
-                flexShrink: 0,
-                fontSize: 11,
-                paddingInline: 5,
-              }}
-            >
-              {record.class_code}
-            </Tag>
-          )}
-        </div>
-      ),
-    },
-
+    // ============================================================
+    // GIỚI TÍNH
+    // ============================================================
     {
       title: "GIỚI TÍNH",
       dataIndex: "gender",
       key: "gender",
-      width: 95,
+      width: 105,
       align: "center",
 
       render: (gender) => {
-        const isMale = gender?.toLowerCase() === "nam" || gender === "male";
+        const normalizedGender = String(gender || "")
+          .trim()
+          .toLowerCase();
+
+        const isMale =
+          normalizedGender === "nam" || normalizedGender === "male";
+
+        const isFemale =
+          normalizedGender === "nữ" ||
+          normalizedGender === "nu" ||
+          normalizedGender === "female";
+
+        if (!isMale && !isFemale) {
+          return <span className="table-muted-text">Chưa cập nhật</span>;
+        }
 
         return (
           <div
-            className="gender-cell"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 5,
-            }}
+            className={`gender-cell ${
+              isMale ? "gender-male" : "gender-female"
+            }`}
           >
-            {isMale ? (
-              <ManOutlined style={{ color: "#2563EB" }} />
-            ) : (
-              <WomanOutlined style={{ color: "#DB2777" }} />
-            )}
+            {isMale ? <ManOutlined /> : <WomanOutlined />}
 
-            <Text className="table-secondary-text">
-              {isMale ? "Nam" : "Nữ"}
-            </Text>
+            <span>{isMale ? "Nam" : "Nữ"}</span>
           </div>
         );
       },
     },
 
+    // ============================================================
+    // ĐIỆN THOẠI
+    // ============================================================
     {
       title: "ĐIỆN THOẠI",
       dataIndex: "phone",
       key: "phone",
-      width: 125,
+      width: 140,
 
       render: (phone) => (
-        <Text
-          className="table-secondary-text"
-          style={{
-            fontSize: 13,
-            whiteSpace: "nowrap",
-          }}
-        >
+        <Text className="table-secondary-text" ellipsis>
           {renderValue(phone)}
         </Text>
       ),
     },
 
+    // ============================================================
+    // TRẠNG THÁI
+    // ============================================================
     {
       title: "TRẠNG THÁI",
       dataIndex: "class_student_status",
       key: "status",
-      width: 105,
+      width: 120,
       align: "center",
 
-      render: (status) => (
-        <Tag
-          color={status === "studying" ? "success" : "default"}
-          className="status-tag"
-          style={{
-            margin: 0,
-            fontSize: 11,
-            borderRadius: 6,
-            paddingInline: 7,
-          }}
-        >
-          {status === "studying" ? "Đang học" : renderValue(status)}
-        </Tag>
-      ),
+      render: (status) => {
+        const isStudying = status === "studying";
+
+        return (
+          <Tag
+            className={`student-status-tag ${
+              isStudying ? "student-status-studying" : "student-status-other"
+            }`}
+          >
+            <span className="student-status-dot" />
+
+            {isStudying ? "Đang học" : renderValue(status)}
+          </Tag>
+        );
+      },
     },
 
+    // ============================================================
+    // ACTION
+    // ============================================================
     {
       title: "",
       key: "action",
-      width: 95,
+      width: 90,
       fixed: "right",
       align: "center",
 
@@ -895,7 +865,48 @@ const MyStudentsPage = () => {
           color: #64748B;
           font-weight: 600;
         }
+.class-table-info {
+  min-width: 0;
+  flex: 1;
 
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.class-name {
+  display: block !important;
+
+  width: 100%;
+  max-width: 100%;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #173B5E !important;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.class-code {
+  display: block;
+
+  max-width: 100%;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #94A3B8;
+
+  font-size: 10px;
+  line-height: 15px;
+}
         /* Detail Modal Layout Fixes */
         .student-detail-container {
           width: 100%;

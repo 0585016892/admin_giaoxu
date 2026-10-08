@@ -1188,7 +1188,7 @@ const ClassManagement = () => {
             : null,
 
           status: values.status || "active",
-
+          academic_year: values.academic_year,
           schedules,
         };
 

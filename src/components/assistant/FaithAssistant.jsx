@@ -35,6 +35,12 @@ const MAX_MESSAGES = 100;
 
 const MAX_SUGGESTIONS = 6;
 
+const FLOATING_SIZE = 68;
+
+const FLOATING_GAP = 8;
+
+const FLOATING_POSITION_KEY = "faith_assistant_floating_position";
+
 const QUICK_QUESTIONS = [
   "Làm sao điểm danh bằng QR?",
   "Làm sao thêm học sinh?",
@@ -150,7 +156,7 @@ const loadAssistantMessages = (user) => {
 
     return limitMessages(parsedMessages);
   } catch (error) {
-    console.error("[FaithAssistant] LOAD HISTORY ERROR:", error);
+    console.warn("[FaithAssistant] Không thể đọc lịch sử:", error);
 
     return [getWelcomeMessage()];
   }
@@ -174,7 +180,7 @@ const saveAssistantMessages = (user, messages) => {
 
     localStorage.setItem(storageKey, JSON.stringify(messagesToSave));
   } catch (error) {
-    console.error("[FaithAssistant] SAVE HISTORY ERROR:", error);
+    console.warn("[FaithAssistant] Không thể lưu lịch sử:", error);
   }
 };
 
@@ -294,6 +300,30 @@ const getBlockData = (block) => {
 
 /**
  * ==========================================================
+ * CLAMP FLOATING POSITION
+ * ==========================================================
+ */
+
+const clampFloatingPosition = (left, top) => {
+  const maxLeft = Math.max(
+    FLOATING_GAP,
+    window.innerWidth - FLOATING_SIZE - FLOATING_GAP,
+  );
+
+  const maxTop = Math.max(
+    FLOATING_GAP,
+    window.innerHeight - FLOATING_SIZE - FLOATING_GAP,
+  );
+
+  return {
+    left: Math.min(Math.max(FLOATING_GAP, left), maxLeft),
+
+    top: Math.min(Math.max(FLOATING_GAP, top), maxTop),
+  };
+};
+
+/**
+ * ==========================================================
  * COMPONENT
  * ==========================================================
  */
@@ -329,6 +359,10 @@ const FaithAssistant = () => {
 
   const [messages, setMessages] = useState([getWelcomeMessage()]);
 
+  const [floatingPosition, setFloatingPosition] = useState(null);
+
+  const [isDragging, setIsDragging] = useState(false);
+
   /**
    * ========================================================
    * REF
@@ -338,6 +372,23 @@ const FaithAssistant = () => {
   const messagesEndRef = useRef(null);
 
   const inputRef = useRef(null);
+
+  const floatingRef = useRef(null);
+
+  /**
+   * ========================================================
+   * DRAG REF
+   * ========================================================
+   */
+
+  const dragRef = useRef({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startLeft: 0,
+    startTop: 0,
+    moved: false,
+  });
 
   /**
    * ========================================================
@@ -370,12 +421,6 @@ const FaithAssistant = () => {
 
       return;
     }
-
-    console.log("");
-    console.log("============================================================");
-    console.log("       LOAD FAITH ASSISTANT HISTORY");
-    console.log("============================================================");
-    console.log("USER ID:", userId);
 
     const restoredMessages = loadAssistantMessages(user);
 
@@ -465,6 +510,283 @@ const FaithAssistant = () => {
 
   /**
    * ========================================================
+   * LOAD FLOATING POSITION
+   * ========================================================
+   */
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(FLOATING_POSITION_KEY);
+
+      if (!saved) {
+        return;
+      }
+
+      const parsed = JSON.parse(saved);
+
+      if (typeof parsed?.left !== "number" || typeof parsed?.top !== "number") {
+        return;
+      }
+
+      const safePosition = clampFloatingPosition(parsed.left, parsed.top);
+
+      setFloatingPosition(safePosition);
+    } catch (error) {
+      console.warn("[FaithAssistant] Không thể load vị trí floating:", error);
+    }
+  }, []);
+
+  /**
+   * ========================================================
+   * SAVE FLOATING POSITION
+   * ========================================================
+   */
+
+  useEffect(() => {
+    if (!floatingPosition) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        FLOATING_POSITION_KEY,
+        JSON.stringify(floatingPosition),
+      );
+    } catch (error) {
+      console.warn("[FaithAssistant] Không thể lưu vị trí floating:", error);
+    }
+  }, [floatingPosition]);
+
+  /**
+   * ========================================================
+   * KEEP FLOATING INSIDE VIEWPORT
+   * ========================================================
+   */
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!floatingPosition) {
+        return;
+      }
+
+      const nextPosition = clampFloatingPosition(
+        floatingPosition.left,
+        floatingPosition.top,
+      );
+
+      if (
+        nextPosition.left !== floatingPosition.left ||
+        nextPosition.top !== floatingPosition.top
+      ) {
+        setFloatingPosition(nextPosition);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [floatingPosition]);
+
+  /**
+   * ========================================================
+   * POINTER DOWN
+   * ========================================================
+   */
+
+  const handleFloatingPointerDown = (event) => {
+    const element = floatingRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    /**
+     * Chỉ nhận chuột trái.
+     */
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    /**
+     * Ngăn browser xử lý native drag/select.
+     */
+    event.preventDefault();
+
+    const rect = element.getBoundingClientRect();
+
+    dragRef.current = {
+      pointerId: event.pointerId,
+
+      startX: event.clientX,
+
+      startY: event.clientY,
+
+      startLeft: rect.left,
+
+      startTop: rect.top,
+
+      moved: false,
+    };
+
+    try {
+      element.setPointerCapture(event.pointerId);
+    } catch (error) {}
+
+    setIsDragging(false);
+  };
+
+  /**
+   * ========================================================
+   * POINTER MOVE
+   * ========================================================
+   */
+
+  const handleFloatingPointerMove = (event) => {
+    const element = floatingRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const drag = dragRef.current;
+
+    if (drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - drag.startX;
+
+    const deltaY = event.clientY - drag.startY;
+
+    /**
+     * Chống rung khi click.
+     */
+    if (!drag.moved && Math.abs(deltaX) < 5 && Math.abs(deltaY) < 5) {
+      return;
+    }
+
+    drag.moved = true;
+
+    setIsDragging(true);
+
+    const nextPosition = clampFloatingPosition(
+      drag.startLeft + deltaX,
+      drag.startTop + deltaY,
+    );
+
+    setFloatingPosition(nextPosition);
+
+    /**
+     * Cực kỳ quan trọng:
+     * không cho browser scroll / native drag.
+     */
+    event.preventDefault();
+  };
+
+  /**
+   * ========================================================
+   * POINTER UP
+   * ========================================================
+   */
+
+  const handleFloatingPointerUp = (event) => {
+    const element = floatingRef.current;
+
+    const drag = dragRef.current;
+
+    if (drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (drag.moved) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    try {
+      element?.releasePointerCapture?.(event.pointerId);
+    } catch (error) {}
+
+    /**
+     * Giữ moved=true trong một nhịp
+     * để click tiếp theo bị chặn.
+     */
+    const wasMoved = drag.moved;
+
+    dragRef.current = {
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      startLeft: 0,
+      startTop: 0,
+      moved: wasMoved,
+    };
+
+    setIsDragging(false);
+  };
+
+  /**
+   * ========================================================
+   * POINTER CANCEL
+   * ========================================================
+   */
+
+  const handleFloatingPointerCancel = (event) => {
+    const drag = dragRef.current;
+
+    if (drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    dragRef.current = {
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      startLeft: 0,
+      startTop: 0,
+      moved: false,
+    };
+
+    setIsDragging(false);
+  };
+
+  /**
+   * ========================================================
+   * CLICK FLOATING
+   * ========================================================
+   */
+
+  const handleFloatingClick = (event) => {
+    /**
+     * Vừa kéo xong:
+     * không được mở assistant.
+     */
+    if (dragRef.current.moved) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      dragRef.current.moved = false;
+
+      return;
+    }
+
+    handleOpen();
+  };
+
+  /**
+   * ========================================================
+   * NATIVE DRAG
+   * ========================================================
+   */
+
+  const handleFloatingDragStart = (event) => {
+    event.preventDefault();
+  };
+
+  /**
+   * ========================================================
    * RENDER TEXT
    * ========================================================
    */
@@ -506,13 +828,6 @@ const FaithAssistant = () => {
       return;
     }
 
-    console.log("");
-    console.log("============================================================");
-    console.log("       FAITH ASSISTANT");
-    console.log("============================================================");
-    console.log("USER ID:", userId);
-    console.log("MESSAGE:", cleanMessage);
-
     const userMessage = {
       id: `${Date.now()}-user`,
       role: "user",
@@ -530,27 +845,11 @@ const FaithAssistant = () => {
 
       const data = response || {};
 
-      console.log("[FaithAssistant] RESPONSE:", data);
-
-      /**
-       * ======================================================
-       * NORMALIZE DATA
-       * ======================================================
-       */
-
       const blocks = Array.isArray(data?.blocks) ? data.blocks : [];
 
       const suggestions = Array.isArray(data?.suggestions)
         ? data.suggestions
         : [];
-
-      /**
-       * Backend có thể trả:
-       *
-       * data: {}
-       * hoặc
-       * data: []
-       */
 
       const normalizedData = data?.data ?? null;
 
@@ -578,27 +877,31 @@ const FaithAssistant = () => {
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error("[FaithAssistant] CHAT ERROR:", error);
-
       const errorMessage = {
         id: `${Date.now()}-error`,
+
         role: "assistant",
+
         content:
           error?.response?.data?.message ||
           "Không thể kết nối với Trợ lý FaithEdu. Vui lòng thử lại.",
+
         blocks: [
           {
             type: "warning",
             data: {
               title: "Không thể kết nối",
+
               message:
                 "Trợ lý đang gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại sau.",
             },
           },
         ],
+
         suggestions: [
           {
             title: "Thử lại",
+
             message: cleanMessage,
           },
         ],
@@ -632,6 +935,7 @@ const FaithAssistant = () => {
 
   const handleOpen = () => {
     setOpen(true);
+
     setShowGreeting(false);
   };
 
@@ -801,6 +1105,7 @@ const FaithAssistant = () => {
           {studentCount !== undefined && (
             <div>
               <span>Số học sinh</span>
+
               <strong>{formatNumber(studentCount)}</strong>
             </div>
           )}
@@ -808,6 +1113,7 @@ const FaithAssistant = () => {
           {teacherName && (
             <div>
               <span>Giáo lý viên</span>
+
               <strong>{teacherName}</strong>
             </div>
           )}
@@ -815,6 +1121,7 @@ const FaithAssistant = () => {
           {data.attendance_rate !== undefined && (
             <div>
               <span>Chuyên cần</span>
+
               <strong>{formatPercent(data.attendance_rate)}</strong>
             </div>
           )}
@@ -836,11 +1143,17 @@ const FaithAssistant = () => {
 
     const entries = [
       ["Tổng số", data.total ?? data.total_students ?? data.total_count],
+
       ["Có mặt", data.present ?? data.present_count],
+
       ["Đi muộn", data.late ?? data.late_count],
+
       ["Vắng", data.absent ?? data.absent_count],
+
       ["Có phép", data.excused ?? data.excused_count],
+
       ["Chưa điểm danh", data.not_attended ?? data.not_attended_count],
+
       ["Chuyên cần", data.attendance_rate],
     ].filter(([, value]) => value !== undefined && value !== null);
 
@@ -912,18 +1225,21 @@ const FaithAssistant = () => {
         value: data.present ?? data.present_count ?? 0,
         icon: <CheckCircleOutlined />,
       },
+
       {
         key: "late",
         label: "Đi muộn",
         value: data.late ?? data.late_count ?? 0,
         icon: <ClockCircleOutlined />,
       },
+
       {
         key: "absent",
         label: "Vắng",
         value: data.absent ?? data.absent_count ?? 0,
         icon: <ExclamationCircleOutlined />,
       },
+
       {
         key: "excused",
         label: "Có phép",
@@ -976,7 +1292,7 @@ const FaithAssistant = () => {
 
   /**
    * ========================================================
-   * BLOCK: LIST
+   * BLOCK: ATTENDANCE LIST
    * ========================================================
    */
 
@@ -1434,11 +1750,24 @@ const FaithAssistant = () => {
       {!open && userId && (
         <>
           {showGreeting && (
-            <div className="faith-assistant-greeting">
+            <div
+              className="faith-assistant-greeting"
+              style={
+                floatingPosition
+                  ? {
+                      left: `${floatingPosition.left - 300}px`,
+                      top: `${Math.max(8, floatingPosition.top - 92)}px`,
+                      right: "auto",
+                      bottom: "auto",
+                    }
+                  : undefined
+              }
+            >
               <button
                 type="button"
                 className="faith-assistant-greeting-close"
                 onClick={(event) => {
+                  event.preventDefault();
                   event.stopPropagation();
 
                   setShowGreeting(false);
@@ -1464,24 +1793,49 @@ const FaithAssistant = () => {
             </div>
           )}
 
-          <button
-            type="button"
-            className="faith-assistant-floating"
-            onClick={handleOpen}
-            aria-label="Mở Trợ lý FaithEdu"
+          <div
+            ref={floatingRef}
+            className={`faith-assistant-floating-wrapper ${
+              isDragging ? "is-dragging" : ""
+            }`}
+            style={
+              floatingPosition
+                ? {
+                    left: `${floatingPosition.left}px`,
+                    top: `${floatingPosition.top}px`,
+                    right: "auto",
+                    bottom: "auto",
+                  }
+                : undefined
+            }
+            onPointerDown={handleFloatingPointerDown}
+            onPointerMove={handleFloatingPointerMove}
+            onPointerUp={handleFloatingPointerUp}
+            onPointerCancel={handleFloatingPointerCancel}
+            onClick={handleFloatingClick}
+            onDragStart={handleFloatingDragStart}
           >
-            <div className="faith-assistant-floating-ring" />
+            <button
+              type="button"
+              className="faith-assistant-floating"
+              aria-label="Mở Trợ lý FaithEdu"
+              tabIndex={0}
+              onDragStart={handleFloatingDragStart}
+            >
+              <div className="faith-assistant-floating-ring" />
 
-            <img
-              src={BOT_AVATAR}
-              alt="Trợ lý FaithEdu"
-              className="faith-assistant-floating-image"
-            />
+              <img
+                src={BOT_AVATAR}
+                alt="Trợ lý FaithEdu"
+                className="faith-assistant-floating-image"
+                draggable={false}
+              />
 
-            <span className="faith-assistant-floating-badge">
-              <RobotOutlined />
-            </span>
-          </button>
+              <span className="faith-assistant-floating-badge">
+                <RobotOutlined />
+              </span>
+            </button>
+          </div>
         </>
       )}
 

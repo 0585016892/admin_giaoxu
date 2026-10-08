@@ -2168,64 +2168,143 @@ export default function StudentManagement() {
 
   const columns = useMemo(
     () => [
+      // ============================================================
+      // ẢNH
+      // ============================================================
       {
-        title: "HỌC SINH",
-        key: "student",
-        width: 220,
+        title: "ẢNH",
+        key: "avatar",
+        width: 90,
+        align: "center",
 
         render: (_, record) => (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              minWidth: 0,
-            }}
-          >
+          <div className="student-avatar-cell">
             <Image
-              size={38}
               src={record.avatar || student_defaut}
-              icon={<UserOutlined />}
+              fallback={student_defaut}
+              preview={false}
+              className="student-table-avatar"
               style={{
-                background: COLORS.navyLight,
-                border: `1px solid ${COLORS.border}`,
-                height: 50,
                 width: 50,
+                height: 50,
                 borderRadius: "50%",
+                objectFit: "cover",
+                background: COLORS.navyLight,
+                border: `2px solid ${COLORS.border}`,
               }}
             />
+          </div>
+        ),
+      },
 
-            <div
-              style={{
-                minWidth: 0,
-                flex: 1,
-              }}
-            >
+      // ============================================================
+      // TÊN THÁNH
+      // ============================================================
+      {
+        title: "TÊN THÁNH",
+        key: "saint_name",
+        width: 135,
+
+        render: (_, record) => (
+          <div className="student-saint-cell">
+            {record.saint_name ? (
               <Text
                 strong
                 ellipsis
+                className="student-saint-name"
                 style={{
                   display: "block",
                   maxWidth: "100%",
                   cursor: "pointer",
                   color: COLORS.navy,
+                  fontSize: 13,
                 }}
                 onClick={() => handleOpenDetail(record)}
               >
-                {record.saint_name} {record.name}
+                {record.saint_name}
               </Text>
+            ) : (
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: 12,
+                }}
+              >
+                Chưa cập nhật
+              </Text>
+            )}
+          </div>
+        ),
+      },
+
+      // ============================================================
+      // HỌ VÀ TÊN
+      // ============================================================
+      {
+        title: "HỌ VÀ TÊN",
+        key: "name",
+        width: 230,
+
+        render: (_, record) => (
+          <div
+            style={{
+              minWidth: 0,
+              cursor: "pointer",
+            }}
+            onClick={() => handleOpenDetail(record)}
+          >
+            <Text
+              strong
+              ellipsis
+              style={{
+                display: "block",
+                maxWidth: "100%",
+                color: COLORS.navy,
+                fontSize: 14,
+                lineHeight: "20px",
+              }}
+            >
+              {record.name || "Chưa cập nhật"}
+            </Text>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginTop: 2,
+                minWidth: 0,
+              }}
+            >
+              <Text
+                type="secondary"
+                ellipsis
+                style={{
+                  fontSize: 11,
+                  color: COLORS.textSecondary,
+                  maxWidth: 90,
+                }}
+              >
+                {record.code || "—"}
+              </Text>
+
+              <span
+                style={{
+                  width: 3,
+                  height: 3,
+                  flexShrink: 0,
+                  borderRadius: "50%",
+                  background: COLORS.muted,
+                }}
+              />
 
               <Text
                 type="secondary"
                 style={{
-                  display: "block",
                   fontSize: 11,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  color: COLORS.textSecondary,
                 }}
               >
-                {record.code} •{" "}
                 {record.gender === "Nam"
                   ? "Nam"
                   : record.gender === "Nữ"
@@ -2237,69 +2316,120 @@ export default function StudentManagement() {
         ),
       },
 
+      // ============================================================
+      // NGÀY SINH
+      // ============================================================
       {
         title: "NGÀY SINH",
         dataIndex: "date_of_birth",
-        width: 95,
+        key: "date_of_birth",
+        width: 110,
         align: "center",
 
-        render: (value) => formatDate(value),
+        render: (value) => (
+          <span
+            style={{
+              color: value ? COLORS.text : COLORS.muted,
+              fontSize: 13,
+              fontWeight: value ? 500 : 400,
+            }}
+          >
+            {value ? formatDate(value) : "—"}
+          </span>
+        ),
       },
 
+      // ============================================================
+      // LỚP
+      // ============================================================
       {
         title: "LỚP",
         key: "class",
-        width: 125,
+        width: 150,
 
-        render: (_, record) =>
-          record.classId ? (
+        render: (_, record) => {
+          if (!record.classId) {
+            return (
+              <Tag
+                style={{
+                  margin: 0,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 8,
+                  background: COLORS.grayBg,
+                  color: COLORS.textSecondary,
+                  fontSize: 11,
+                  padding: "2px 8px",
+                }}
+              >
+                Chưa xếp lớp
+              </Tag>
+            );
+          }
+
+          return (
             <Tag
               icon={<BookOutlined />}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+
                 margin: 0,
-                borderRadius: 6,
-                maxWidth: 110,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                maxWidth: 135,
+
+                padding: "4px 9px",
+
+                borderRadius: 8,
+
                 background: COLORS.navyLight,
                 borderColor: COLORS.border,
                 color: COLORS.navy,
-              }}
-            >
-              {record.className}
-            </Tag>
-          ) : (
-            <Text
-              type="secondary"
-              style={{
+
                 fontSize: 12,
-                whiteSpace: "nowrap",
+                fontWeight: 600,
               }}
             >
-              Chưa xếp lớp
-            </Text>
-          ),
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {record.className || "Chưa xác định"}
+              </span>
+            </Tag>
+          );
+        },
       },
 
+      // ============================================================
+      // TRẠNG THÁI
+      // ============================================================
       {
         title: "TRẠNG THÁI",
         dataIndex: "status",
-        width: 110,
+        key: "status",
+        width: 120,
         align: "center",
 
         render: (value) => renderStatus(value),
       },
 
+      // ============================================================
+      // ACTION
+      // ============================================================
       {
         title: "",
         key: "action",
-        width: 135,
+        width: 145,
         fixed: "right",
+        align: "center",
 
         render: (_, record) => (
-          <Space size={1}>
-            <Tooltip title="Xem QR">
+          <Space size={4} className="student-table-actions">
+            {/* QR */}
+            <Tooltip title="Xem mã QR">
               <AppButton
                 variant="secondary"
                 size="small"
@@ -2308,7 +2438,8 @@ export default function StudentManagement() {
               />
             </Tooltip>
 
-            <Tooltip title="Xem">
+            {/* XEM */}
+            <Tooltip title="Xem chi tiết">
               <AppButton
                 variant="secondary"
                 size="small"
@@ -2317,7 +2448,8 @@ export default function StudentManagement() {
               />
             </Tooltip>
 
-            <Tooltip title="Sửa">
+            {/* SỬA */}
+            <Tooltip title="Chỉnh sửa">
               <AppButton
                 variant="secondary"
                 size="small"
@@ -2326,8 +2458,10 @@ export default function StudentManagement() {
               />
             </Tooltip>
 
+            {/* MORE */}
             <Dropdown
               trigger={["click"]}
+              placement="bottomRight"
               menu={{
                 items: [
                   {

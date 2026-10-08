@@ -28,6 +28,7 @@ import ProtectedRoute, { RoleGuard } from "../components/ProtectedRoute";
 import CatechistManagement from "../pages/catechist/CatechistManagement/CatechistManagement";
 import CatechistDashboard from "../pages/catechist/Dashboard/CatechistDashboard";
 import ClassManagementDashboard from "../pages/catechist/Class/ClassManagement";
+import AcademicYearPage from "../pages/catechist/Class/AcademicYearPage";
 import StudentManagement from "../pages/catechist/Students/StudentManagement";
 import GameManagementPage from "../pages/catechist/GameManagementPage";
 import ResultsPage from "../pages/catechist/ResultsPage/ResultsPage";
@@ -188,7 +189,10 @@ export default function AppRoutes() {
               path="/catechist/classes-teacher"
               element={<TeacherClassesPage />}
             />
-
+            <Route
+              path="/catechist/classes-promotions"
+              element={<AcademicYearPage />}
+            />
             {/* ================= STUDENTS ================= */}
 
             <Route path="/catechist/students" element={<StudentManagement />} />

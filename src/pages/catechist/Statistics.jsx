@@ -499,40 +499,22 @@ const Statistics = () => {
       setLoading(true);
       setError("");
 
-      console.log("");
-      console.log("=================================================");
-      console.log("📊 LOAD STATISTICS");
-      console.log("=================================================");
-
-      console.log("Attendance params:", attendanceParams);
-
-      console.log("Attendance type:", attendanceType);
-
-      console.log("Class ID:", attendanceParams.class_id || "ALL");
-
       const result = await getAllStatistics(attendanceParams);
 
-      console.log("📊 ALL STATISTICS RESULT:", result);
-
       /* ----------------------------------------------------
-           NORMALIZE
-        ---------------------------------------------------- */
+       NORMALIZE
+    ---------------------------------------------------- */
 
       const overviewData = unwrapData(result?.overview);
-
       const studentsData = unwrapData(result?.students);
-
       const classesData = unwrapData(result?.classes);
-
       const attendanceData = unwrapData(result?.attendance);
-
       const catechistsData = unwrapData(result?.catechists);
-
       const studentAttendanceData = unwrapData(result?.studentAttendance);
 
       /* ----------------------------------------------------
-           SET STATE
-        ---------------------------------------------------- */
+       SET STATE
+    ---------------------------------------------------- */
 
       setOverview(overviewData);
 
@@ -551,21 +533,16 @@ const Statistics = () => {
       );
 
       setStudentAttendance(studentAttendanceData);
-
-      console.log("✅ STATISTICS UPDATED");
     } catch (err) {
-      console.error("❌ LOAD STATISTICS ERROR:", err);
+      const errorMessage = err?.message || "Không thể tải dữ liệu thống kê.";
 
-      const message = err?.message || "Không thể tải dữ liệu thống kê.";
+      setError(errorMessage);
 
-      setError(message);
-
-      notify.error(message);
+      notify.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [attendanceParams, attendanceType, notify]);
-
+  }, [attendanceParams, notify]);
   /* ==========================================================
      INITIAL / FILTER LOAD
   ========================================================== */
@@ -902,13 +879,6 @@ const Statistics = () => {
 
       setError("");
 
-      console.log("");
-      console.log("=================================================");
-      console.log("📥 EXPORT ATTENDANCE REPORT");
-      console.log("=================================================");
-
-      console.log("Export params:", attendanceParams);
-
       const response = await exportAttendanceReport(attendanceParams);
 
       const blob = response?.data;
@@ -954,12 +924,8 @@ const Statistics = () => {
 
       window.URL.revokeObjectURL(url);
 
-      console.log("✅ EXPORT SUCCESS:", fileName);
-
       notify.success("Xuất báo cáo điểm danh thành công.");
     } catch (err) {
-      console.error("❌ EXPORT ERROR:", err);
-
       const message = err?.message || "Không thể xuất báo cáo điểm danh.";
 
       setError(message);
