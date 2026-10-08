@@ -6,7 +6,7 @@ import { useUser } from "../context/UserContext";
 // AUTH
 // ============================================================
 
-import CatechistLogin from "../pages/catechist/CatechistLogin";
+import CatechistLogin from "../pages/catechist/login/CatechistLogin";
 
 // ============================================================
 // LAYOUT
@@ -28,7 +28,7 @@ import ProtectedRoute, { RoleGuard } from "../components/ProtectedRoute";
 import CatechistManagement from "../pages/catechist/CatechistManagement/CatechistManagement";
 import CatechistDashboard from "../pages/catechist/Dashboard/CatechistDashboard";
 import ClassManagementDashboard from "../pages/catechist/Class/ClassManagement";
-import AcademicYearPage from "../pages/catechist/Class/AcademicYearPage";
+import ClassPromotionPage from "../pages/catechist/Class/AcademicYearPage";
 import StudentManagement from "../pages/catechist/Students/StudentManagement";
 import GameManagementPage from "../pages/catechist/GameManagementPage";
 import ResultsPage from "../pages/catechist/ResultsPage/ResultsPage";
@@ -191,7 +191,7 @@ export default function AppRoutes() {
             />
             <Route
               path="/catechist/classes-promotions"
-              element={<AcademicYearPage />}
+              element={<ClassPromotionPage />}
             />
             {/* ================= STUDENTS ================= */}
 

@@ -1,13 +1,60 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+}
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+}
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+/* =========================================================
+   MOBILE INPUT ZOOM FIX
+   Safari iOS tự zoom input nếu font-size < 16px
+========================================================= */
+
+@media screen and (max-width: 768px) {
+  input,
+  textarea,
+  select,
+  button,
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-input-number,
+  .ant-input-number-input,
+  .ant-picker,
+  .ant-picker-input > input,
+  .ant-select-selector,
+  .ant-select-selection-search-input,
+  .ant-cascader-picker,
+  .ant-mentions {
+    font-size: 16px !important;
+  }
+
+  .ant-input-affix-wrapper input {
+    font-size: 16px !important;
+  }
+
+  .ant-select-selection-search-input {
+    font-size: 16px !important;
+  }
+
+  .ant-picker-input > input {
+    font-size: 16px !important;
+  }
 }

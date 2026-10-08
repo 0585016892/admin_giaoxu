@@ -155,11 +155,6 @@ const ProfileSidebar = memo(
         <Divider style={{ margin: "20px 0", borderColor: COLORS.border }} />
 
         <Descriptions column={1} size="small" className="custom-quick-desc">
-          <Descriptions.Item label="ID Hệ thống">
-            <strong style={{ color: COLORS.gold }}>
-              #{profileData?.id || "—"}
-            </strong>
-          </Descriptions.Item>
           <Descriptions.Item label="Chức danh">
             <span style={{ color: COLORS.text, fontWeight: 700 }}>
               {profileData?.position || "Chưa cập nhật"}
@@ -681,7 +676,7 @@ export default function ProfilePageCate() {
                           type="primary"
                           loading={submitLoading}
                           onClick={handleUpdateProfile}
-                          size="middle"
+                          size="small"
                         >
                           Lưu Thay Đổi ✨
                         </AppButton>
@@ -762,7 +757,7 @@ export default function ProfilePageCate() {
                           type="primary"
                           loading={passwordLoading}
                           onClick={handleChangePassword}
-                          size="middle"
+                          size="small"
                         >
                           Cập Nhật Mật Khẩu 🔐
                         </AppButton>
