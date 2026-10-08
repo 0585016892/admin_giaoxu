@@ -60,19 +60,22 @@ import catechistApi from "../../../api/catechistApi";
 const { Text } = Typography;
 
 /* =========================================================
-   FAITHEDU COLORS
+   COLORS
 ========================================================= */
 
 const COLORS = {
   navy: "#173B5E",
   navyHover: "#244F78",
+
   gold: "#D9A441",
+
   background: "#F7F9FC",
   white: "#FFFFFF",
 
   text: "#173B5E",
   textSecondary: "#64748B",
   muted: "#94A3B8",
+
   border: "#E2E8F0",
 
   navyLight: "#EEF3F7",
@@ -92,7 +95,7 @@ const COLORS = {
 };
 
 /* =========================================================
-   CONSTANTS
+   DAY
 ========================================================= */
 
 const DAY_NAMES = {
@@ -114,9 +117,33 @@ const DAY_SHORT_NAMES = {
   6: "T7",
   7: "CN",
 };
-
 /* =========================================================
-   NORMALIZE RESPONSE
+   CURRENT ACADEMIC YEAR
+========================================================= */
+
+const getCurrentAcademicYear = () => {
+  const now = dayjs();
+
+  const year = now.year();
+
+  /*
+   * Quy ước:
+   *
+   * Tháng 9 -> bắt đầu năm học mới
+   *
+   * Ví dụ:
+   * 08/2026 -> 2025-2026
+   * 09/2026 -> 2026-2027
+   */
+
+  if (now.month() + 1 >= 9) {
+    return `${year}-${year + 1}`;
+  }
+
+  return `${year - 1}-${year}`;
+};
+/* =========================================================
+   RESPONSE NORMALIZE
 ========================================================= */
 
 const normalizeListResponse = (response) => {
@@ -130,17 +157,29 @@ const normalizeListResponse = (response) => {
     return data.data;
   }
 
+  if (Array.isArray(data?.rows)) {
+    return data.rows;
+  }
+
+  if (Array.isArray(data?.items)) {
+    return data.items;
+  }
+
   return [];
 };
 
 const normalizeObjectResponse = (response) => {
   const data = response?.data;
 
+  if (!data) {
+    return null;
+  }
+
   if (data?.data && !Array.isArray(data.data)) {
     return data.data;
   }
 
-  return data || null;
+  return data;
 };
 
 /* =========================================================
@@ -156,9 +195,15 @@ const normalizeSchedules = (schedules) => {
     .map((schedule) => ({
       ...schedule,
 
-      id: schedule?.id ? Number(schedule.id) : undefined,
+      id:
+        schedule?.id !== undefined && schedule?.id !== null
+          ? Number(schedule.id)
+          : undefined,
 
-      class_id: schedule?.class_id ? Number(schedule.class_id) : undefined,
+      class_id:
+        schedule?.class_id !== undefined && schedule?.class_id !== null
+          ? Number(schedule.class_id)
+          : undefined,
 
       day_of_week: Number(schedule?.day_of_week),
 
@@ -186,7 +231,7 @@ const normalizeSchedules = (schedules) => {
 };
 
 /* =========================================================
-   FORMATTERS
+   FORMAT
 ========================================================= */
 
 const formatTime = (time) => {
@@ -212,28 +257,8 @@ const formatDate = (date) => {
 };
 
 const getDayName = (day) => {
-  const numericDay = Number(day);
-
-  return DAY_NAMES[numericDay] || "Chưa cập nhật";
+  return DAY_NAMES[Number(day)] || "Chưa cập nhật";
 };
-
-// const getScheduleLabel = (schedule) => {
-//   if (!schedule) {
-//     return "Chưa cập nhật";
-//   }
-
-//   const day = getDayName(schedule.day_of_week);
-
-//   const time = `${formatTime(schedule.start_time)} - ${formatTime(
-//     schedule.end_time,
-//   )}`;
-
-//   if (schedule.room) {
-//     return `${day} • ${time} • ${schedule.room}`;
-//   }
-
-//   return `${day} • ${time}`;
-// };
 
 /* =========================================================
    STATUS
@@ -300,7 +325,7 @@ const StatusTag = ({ status }) => {
 };
 
 /* =========================================================
-   SCHEDULE DISPLAY
+   SCHEDULE ITEM
 ========================================================= */
 
 const ScheduleItem = ({ schedule, compact = false }) => {
@@ -436,7 +461,7 @@ const ScheduleList = ({ schedules = [], compact = false }) => {
 };
 
 /* =========================================================
-   SKELETON CARD
+   CLASS SKELETON
 ========================================================= */
 
 const ClassCardSkeleton = () => {
@@ -562,8 +587,6 @@ const ClassCardSkeleton = () => {
 ========================================================= */
 
 const CatechistItem = ({ catechist, index, onRemove, removing }) => {
-  // const catechistId = catechist?.catechist_id ?? catechist?.id;
-
   return (
     <div
       style={{
@@ -846,6 +869,10 @@ const ClassManagement = () => {
 
   const { canCreateClass, canEditClass, canDeleteClass } = usePermission();
 
+  /* =====================================================
+     STATE
+  ===================================================== */
+
   const [classesList, setClassesList] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -871,9 +898,11 @@ const ClassManagement = () => {
   const [removingCatechistId, setRemovingCatechistId] = useState(null);
 
   const [form] = Form.useForm();
-
+  const [academicYearFilter, setAcademicYearFilter] = useState(
+    getCurrentAcademicYear(),
+  );
   /* =====================================================
-     FETCH CLASSES
+     LOAD CLASSES
   ===================================================== */
 
   const fetchClasses = useCallback(
@@ -889,6 +918,14 @@ const ClassManagement = () => {
           ...item,
 
           id: Number(item.id),
+
+          church_id:
+            item.church_id !== undefined ? Number(item.church_id) : undefined,
+
+          level_order:
+            item.level_order !== null && item.level_order !== undefined
+              ? Number(item.level_order)
+              : null,
 
           studentsCount: Number(item.studentsCount || 0),
 
@@ -913,12 +950,20 @@ const ClassManagement = () => {
     [notify],
   );
 
+  /* =====================================================
+     INITIAL LOAD
+  ===================================================== */
+
   useEffect(() => {
+    if (!churchId) {
+      return;
+    }
+
     fetchClasses();
-  }, [fetchClasses]);
+  }, [churchId, fetchClasses]);
 
   /* =====================================================
-     FORM VALUES
+     FORM INIT
   ===================================================== */
 
   useEffect(() => {
@@ -930,7 +975,9 @@ const ClassManagement = () => {
       form.setFieldsValue({
         name: editingClass.name || "",
 
-        category: editingClass.category || "Giáo lý Hôn Nhân",
+        category: editingClass.category || "Giáo lý Thiếu Nhi",
+
+        academic_year: editingClass.academic_year || "",
 
         description: editingClass.description || "",
 
@@ -962,8 +1009,8 @@ const ClassManagement = () => {
       form.resetFields();
 
       form.setFieldsValue({
-        category: "Giáo lý Hôn Nhân",
-
+        category: "Giáo lý Thiếu Nhi",
+        academic_year: getCurrentAcademicYear(),
         status: "active",
 
         schedules: [],
@@ -975,27 +1022,43 @@ const ClassManagement = () => {
      STATISTICS
   ===================================================== */
 
-  const statistics = useMemo(() => {
-    const totalClasses = classesList.length;
+  /* =====================================================
+   STATISTICS
+===================================================== */
 
-    const activeClasses = classesList.filter(
+  const statistics = useMemo(() => {
+    /*
+     * Thống kê theo đúng năm học đang được chọn.
+     */
+
+    const statisticClasses = classesList.filter((item) => {
+      if (academicYearFilter === "all") {
+        return true;
+      }
+
+      return String(item.academic_year || "").trim() === academicYearFilter;
+    });
+
+    const totalClasses = statisticClasses.length;
+
+    const activeClasses = statisticClasses.filter(
       (item) => item.status === "active",
     ).length;
 
-    const completedClasses = classesList.filter(
+    const completedClasses = statisticClasses.filter(
       (item) => item.status === "completed",
     ).length;
 
-    const cancelledClasses = classesList.filter(
+    const cancelledClasses = statisticClasses.filter(
       (item) => item.status === "cancelled",
     ).length;
 
-    const totalStudents = classesList.reduce(
+    const totalStudents = statisticClasses.reduce(
       (total, item) => total + Number(item.studentsCount || 0),
       0,
     );
 
-    const totalCatechists = classesList.reduce(
+    const totalCatechists = statisticClasses.reduce(
       (total, item) => total + Number(item.catechists?.length || 0),
       0,
     );
@@ -1008,16 +1071,69 @@ const ClassManagement = () => {
       totalStudents,
       totalCatechists,
     };
-  }, [classesList]);
-
+  }, [classesList, academicYearFilter]);
   /* =====================================================
      FILTER
   ===================================================== */
+
+  /* =====================================================
+   ACADEMIC YEARS
+===================================================== */
+
+  const academicYears = useMemo(() => {
+    const currentYear = getCurrentAcademicYear();
+
+    const years = classesList
+      .map((item) => item.academic_year)
+      .filter(Boolean)
+      .map((year) => String(year).trim())
+      .filter(Boolean);
+
+    /*
+     * Luôn đảm bảo năm học hiện tại xuất hiện
+     * trong bộ lọc, kể cả giáo xứ chưa có lớp.
+     */
+
+    const uniqueYears = Array.from(new Set([currentYear, ...years]));
+
+    return uniqueYears.sort((a, b) => {
+      const startA = Number(String(a).split("-")[0]);
+      const startB = Number(String(b).split("-")[0]);
+
+      return startB - startA;
+    });
+  }, [classesList]);
+
+  /* =====================================================
+   FILTER
+===================================================== */
 
   const filteredClasses = useMemo(() => {
     const keyword = searchText.toLowerCase().trim();
 
     return classesList.filter((item) => {
+      /*
+       * ===================================================
+       * YEAR FILTER
+       * ===================================================
+       *
+       * Mặc định:
+       * getCurrentAcademicYear()
+       *
+       * Khi user chọn năm khác:
+       * chỉ hiện lớp của năm đó.
+       */
+
+      const matchAcademicYear =
+        academicYearFilter === "all" ||
+        String(item.academic_year || "").trim() === academicYearFilter;
+
+      /*
+       * ===================================================
+       * SEARCH
+       * ===================================================
+       */
+
       const schedules = normalizeSchedules(item.schedules);
 
       const scheduleSearchText = schedules
@@ -1037,15 +1153,22 @@ const ClassManagement = () => {
         item.name?.toLowerCase().includes(keyword) ||
         item.code?.toLowerCase().includes(keyword) ||
         item.category?.toLowerCase().includes(keyword) ||
+        item.academic_year?.toLowerCase().includes(keyword) ||
+        String(item.level_order || "").includes(keyword) ||
         scheduleSearchText.includes(keyword);
+
+      /*
+       * ===================================================
+       * STATUS
+       * ===================================================
+       */
 
       const matchStatus =
         statusFilter === "all" || item.status === statusFilter;
 
-      return matchSearch && matchStatus;
+      return matchAcademicYear && matchSearch && matchStatus;
     });
-  }, [classesList, searchText, statusFilter]);
-
+  }, [classesList, searchText, statusFilter, academicYearFilter]);
   /* =====================================================
      CREATE
   ===================================================== */
@@ -1076,7 +1199,7 @@ const ClassManagement = () => {
   );
 
   /* =====================================================
-     CLOSE MODAL
+     CLOSE FORM
   ===================================================== */
 
   const closeModal = useCallback(() => {
@@ -1085,12 +1208,68 @@ const ClassManagement = () => {
     }
 
     setIsModalOpen(false);
+
     setEditingClass(null);
+
     form.resetFields();
   }, [form, saving]);
 
   /* =====================================================
-     SAVE
+     NORMALIZE FORM SCHEDULES
+  ===================================================== */
+
+  const buildSchedulesPayload = (schedules) => {
+    if (!Array.isArray(schedules)) {
+      return [];
+    }
+
+    return schedules
+      .filter(
+        (schedule) =>
+          schedule &&
+          schedule.day_of_week &&
+          schedule.start_time &&
+          schedule.end_time,
+      )
+      .map((schedule) => ({
+        day_of_week: Number(schedule.day_of_week),
+
+        start_time: schedule.start_time.format("HH:mm:ss"),
+
+        end_time: schedule.end_time.format("HH:mm:ss"),
+
+        room: schedule.room?.trim() || null,
+      }));
+  };
+
+  /* =====================================================
+     VALIDATE SCHEDULES
+  ===================================================== */
+
+  const validateSchedules = (schedules) => {
+    for (const schedule of schedules) {
+      if (schedule.day_of_week < 1 || schedule.day_of_week > 7) {
+        return "Thứ trong tuần không hợp lệ";
+      }
+
+      if (schedule.start_time >= schedule.end_time) {
+        return "Giờ kết thúc phải lớn hơn giờ bắt đầu";
+      }
+    }
+
+    const keys = schedules.map(
+      (schedule) => `${schedule.day_of_week}-${schedule.start_time}`,
+    );
+
+    if (new Set(keys).size !== keys.length) {
+      return "Lịch học bị trùng thứ và giờ bắt đầu";
+    }
+
+    return null;
+  };
+
+  /* =====================================================
+     SAVE CLASS
   ===================================================== */
 
   const handleSave = useCallback(
@@ -1108,74 +1287,34 @@ const ClassManagement = () => {
       try {
         setSaving(true);
 
-        /* ---------------------------------------------
-             NORMALIZE SCHEDULES
-          --------------------------------------------- */
+        const schedules = buildSchedulesPayload(values.schedules);
 
-        const schedules = Array.isArray(values.schedules)
-          ? values.schedules
-              .filter(
-                (schedule) =>
-                  schedule &&
-                  schedule.day_of_week &&
-                  schedule.start_time &&
-                  schedule.end_time,
-              )
-              .map((schedule) => ({
-                day_of_week: Number(schedule.day_of_week),
+        const scheduleError = validateSchedules(schedules);
 
-                start_time: schedule.start_time.format("HH:mm:ss"),
-
-                end_time: schedule.end_time.format("HH:mm:ss"),
-
-                room: schedule.room?.trim() || null,
-              }))
-          : [];
-
-        /* ---------------------------------------------
-             VALIDATE SCHEDULE
-          --------------------------------------------- */
-
-        for (const schedule of schedules) {
-          if (schedule.day_of_week < 1 || schedule.day_of_week > 7) {
-            notify.error("Thứ trong tuần không hợp lệ");
-
-            return;
-          }
-
-          if (schedule.start_time >= schedule.end_time) {
-            notify.error("Giờ kết thúc phải lớn hơn giờ bắt đầu");
-
-            return;
-          }
-        }
-
-        /* ---------------------------------------------
-             CHECK DUPLICATE SCHEDULE
-          --------------------------------------------- */
-
-        const scheduleKeys = schedules.map(
-          (schedule) => `${schedule.day_of_week}-${schedule.start_time}`,
-        );
-
-        const uniqueKeys = new Set(scheduleKeys);
-
-        if (uniqueKeys.size !== scheduleKeys.length) {
-          notify.error("Lịch học bị trùng thứ và giờ bắt đầu");
+        if (scheduleError) {
+          notify.error(scheduleError);
 
           return;
         }
 
-        /* ---------------------------------------------
-             PAYLOAD
-          --------------------------------------------- */
+        /*
+         * IMPORTANT:
+         *
+         * KHÔNG gửi level_order.
+         *
+         * Backend tự sinh level_order
+         * để đảm bảo toàn hệ thống
+         * nhất quán.
+         */
 
         const payload = {
           name: values.name?.trim(),
 
           church_id: churchId,
 
-          category: values.category || "Giáo lý Hôn Nhân",
+          category: values.category || "Giáo lý Thiếu Nhi",
+
+          academic_year: values.academic_year || null,
 
           description: values.description?.trim() || null,
 
@@ -1188,13 +1327,13 @@ const ClassManagement = () => {
             : null,
 
           status: values.status || "active",
-          academic_year: values.academic_year,
+
           schedules,
         };
 
-        /* ---------------------------------------------
-             CREATE
-          --------------------------------------------- */
+        /* =================================================
+           CREATE
+        ================================================= */
 
         if (!editingClass) {
           const response = await classApi.create(payload);
@@ -1203,24 +1342,38 @@ const ClassManagement = () => {
 
           const generatedCode = createdData?.code;
 
-          if (generatedCode) {
-            notify.success(`Tạo lớp thành công • Mã lớp: ${generatedCode}`);
-          } else {
-            notify.success("Tạo lớp học thành công");
-          }
+          notify.success(
+            generatedCode
+              ? `Tạo lớp thành công • Mã lớp: ${generatedCode}`
+              : "Tạo lớp học thành công",
+          );
         } else {
-          /* ---------------------------------------------
+          /* ===============================================
              UPDATE
-          --------------------------------------------- */
+          =============================================== */
+
           await classApi.update(editingClass.id, payload);
 
           notify.success("Cập nhật lớp học thành công");
         }
 
+        /*
+         * ĐÓNG FORM
+         */
+
         setIsModalOpen(false);
+
         setEditingClass(null);
 
         form.resetFields();
+
+        /*
+         * QUAN TRỌNG:
+         *
+         * Sau CREATE / UPDATE
+         * luôn lấy lại dữ liệu thật
+         * từ database.
+         */
 
         await fetchClasses();
       } catch (error) {
@@ -1229,7 +1382,7 @@ const ClassManagement = () => {
         setSaving(false);
       }
     },
-    [editingClass, fetchClasses, form, saving, churchId, notify],
+    [saving, churchId, notify, editingClass, form, fetchClasses],
   );
 
   /* =====================================================
@@ -1238,7 +1391,7 @@ const ClassManagement = () => {
 
   const handleDelete = useCallback(
     (item) => {
-      if (deletingId) {
+      if (deletingId !== null) {
         return;
       }
 
@@ -1278,13 +1431,15 @@ const ClassManagement = () => {
                   color: COLORS.danger,
                 }}
               >
-                Lịch học của lớp cũng sẽ được xóa theo lớp.
+                Lịch học và các dữ liệu liên quan sẽ được xử lý theo chính sách
+                xóa của hệ thống.
               </Text>
             </div>
           </div>
         ),
 
         okText: "Xóa lớp",
+
         cancelText: "Hủy",
 
         danger: true,
@@ -1297,11 +1452,37 @@ const ClassManagement = () => {
 
         onConfirm: async () => {
           try {
-            setDeletingId(item.id);
+            setDeletingId(Number(item.id));
 
-            await classApi.remove(item.id);
+            /*
+             * GỌI DELETE API
+             */
+
+            await classApi.remove(Number(item.id));
 
             notify.success("Đã xóa lớp học thành công");
+
+            /*
+             * ĐÓNG DETAIL NẾU ĐANG MỞ
+             * VÀ DETAIL ĐANG LÀ LỚP VỪA XÓA
+             */
+
+            if (Number(classDetail?.id) === Number(item.id)) {
+              setDetailOpen(false);
+              setClassDetail(null);
+            }
+
+            /*
+             * QUAN TRỌNG NHẤT:
+             *
+             * KHÔNG:
+             *
+             * setClassesList(prev =>
+             *   prev.filter(...)
+             * )
+             *
+             * Mà load lại từ DATABASE.
+             */
 
             await fetchClasses();
           } catch (error) {
@@ -1314,7 +1495,7 @@ const ClassManagement = () => {
         },
       });
     },
-    [deletingId, fetchClasses, notify],
+    [deletingId, notify, classDetail, fetchClasses],
   );
 
   /* =====================================================
@@ -1325,7 +1506,9 @@ const ClassManagement = () => {
     async (item) => {
       try {
         setDetailOpen(true);
+
         setDetailLoading(true);
+
         setClassDetail(null);
 
         const response = await classApi.getById(item.id);
@@ -1333,6 +1516,13 @@ const ClassManagement = () => {
         const detail = normalizeObjectResponse(response);
 
         if (detail) {
+          detail.id = Number(detail.id);
+
+          detail.level_order =
+            detail.level_order !== null && detail.level_order !== undefined
+              ? Number(detail.level_order)
+              : null;
+
           detail.schedules = normalizeSchedules(detail.schedules);
 
           detail.catechists = Array.isArray(detail.catechists)
@@ -1424,6 +1614,7 @@ const ClassManagement = () => {
         ),
 
         okText: "Xóa khỏi lớp",
+
         cancelText: "Hủy",
 
         okButtonProps: {
@@ -1453,6 +1644,10 @@ const ClassManagement = () => {
 
             notify.success(`Đã xóa ${catechist.full_name} khỏi lớp`);
 
+            /*
+             * LOAD LẠI DETAIL
+             */
+
             const response = await classApi.getById(classId);
 
             const updatedDetail = normalizeObjectResponse(response);
@@ -1468,6 +1663,10 @@ const ClassManagement = () => {
             }
 
             setClassDetail(updatedDetail);
+
+            /*
+             * LOAD LẠI DANH SÁCH
+             */
 
             await fetchClasses();
           } catch (error) {
@@ -1494,6 +1693,7 @@ const ClassManagement = () => {
     }
 
     setDetailOpen(false);
+
     setClassDetail(null);
   }, [detailLoading]);
 
@@ -1517,7 +1717,7 @@ const ClassManagement = () => {
         icon={<BookOutlined />}
         badgeText="QUẢN LÝ GIÁO LÝ"
         title="Quản lý lớp học"
-        description="Theo dõi lớp học, lịch học hàng tuần, học viên và Giáo lý viên phụ trách."
+        description="Theo dõi lớp học, năm học, lịch học hàng tuần, học viên và Giáo lý viên phụ trách."
         onRefresh={() => fetchClasses(true)}
         refreshLoading={loading}
         primaryButtonText={canCreateClass ? "Tạo lớp mới" : undefined}
@@ -1593,6 +1793,10 @@ const ClassManagement = () => {
           SEARCH / FILTER
       ================================================= */}
 
+      {/* =================================================
+    SEARCH / FILTER
+================================================= */}
+
       <Card
         bordered={false}
         style={{
@@ -1609,15 +1813,73 @@ const ClassManagement = () => {
         }}
       >
         <Row gutter={[12, 12]} align="middle">
-          <Col xs={24} lg={15}>
+          {/* =================================================
+        SEARCH
+    ================================================= */}
+
+          <Col xs={24} lg={10}>
             <AppSearchInput
               value={searchText}
-              onChange={(value) => setSearchText(value)}
-              placeholder="Tìm tên lớp, mã lớp, chương trình, thứ học hoặc phòng học..."
+              onChange={setSearchText}
+              placeholder="Tìm tên lớp, mã lớp, cấp lớp, chương trình, phòng học..."
             />
           </Col>
 
-          <Col xs={24} lg={9}>
+          {/* =================================================
+        ACADEMIC YEAR
+    ================================================= */}
+
+          <Col xs={24} sm={12} lg={7}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                height: 40,
+                padding: "0 12px",
+                borderRadius: 9,
+                background: COLORS.background,
+                border: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <CalendarOutlined
+                style={{
+                  color: COLORS.gold,
+                  fontSize: 15,
+                }}
+              />
+
+              <select
+                value={academicYearFilter}
+                onChange={(e) => setAcademicYearFilter(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: 36,
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  color: COLORS.navy,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {academicYears.map((year) => (
+                  <option key={year} value={year}>
+                    Năm học {year}
+                  </option>
+                ))}
+
+                <option value="all">Tất cả năm học</option>
+              </select>
+            </div>
+          </Col>
+
+          {/* =================================================
+        STATUS
+    ================================================= */}
+
+          <Col xs={24} sm={12} lg={7}>
             <Segmented
               block
               value={statusFilter}
@@ -1649,6 +1911,62 @@ const ClassManagement = () => {
             />
           </Col>
         </Row>
+
+        {/* =================================================
+      CURRENT FILTER INFO
+  ================================================= */}
+
+        <div
+          style={{
+            marginTop: 12,
+            paddingTop: 10,
+            borderTop: `1px solid ${COLORS.border}`,
+          }}
+        >
+          <Space wrap size={[8, 6]}>
+            <Text
+              style={{
+                fontSize: 11,
+                color: COLORS.muted,
+                fontWeight: 600,
+              }}
+            >
+              Đang xem:
+            </Text>
+
+            <Tag
+              style={{
+                margin: 0,
+                borderRadius: 7,
+                background: COLORS.goldLight,
+                border: "1px solid #EBD9A8",
+                color: COLORS.navy,
+                fontSize: 11,
+                fontWeight: 800,
+                padding: "3px 9px",
+              }}
+            >
+              {academicYearFilter === "all"
+                ? "Tất cả năm học"
+                : `Năm học ${academicYearFilter}`}
+            </Tag>
+
+            <Tag
+              style={{
+                margin: 0,
+                borderRadius: 7,
+                background: COLORS.navyLight,
+                border: `1px solid ${COLORS.border}`,
+                color: COLORS.navy,
+                fontSize: 11,
+                fontWeight: 700,
+                padding: "3px 9px",
+              }}
+            >
+              {filteredClasses.length} lớp
+            </Tag>
+          </Space>
+        </div>
       </Card>
 
       {/* =================================================
@@ -1797,7 +2115,7 @@ const ClassManagement = () => {
       )}
 
       {/* =================================================
-          CREATE / EDIT
+          FORM
       ================================================= */}
 
       <AppFormModal
@@ -1816,7 +2134,7 @@ const ClassManagement = () => {
       </AppFormModal>
 
       {/* =================================================
-          DETAIL DRAWER
+          DETAIL
       ================================================= */}
 
       <Drawer
@@ -1851,22 +2169,44 @@ const ClassManagement = () => {
                 {classDetail?.name || "Chi tiết lớp học"}
               </Text>
 
-              {classDetail?.code && (
-                <Tag
-                  style={{
-                    margin: 0,
-                    marginTop: 3,
-                    borderRadius: 6,
-                    background: COLORS.goldLight,
-                    color: COLORS.navy,
-                    border: "1px solid #EBD9A8",
-                    fontSize: 10,
-                    fontWeight: 800,
-                  }}
-                >
-                  {classDetail.code}
-                </Tag>
-              )}
+              <Space
+                size={5}
+                style={{
+                  marginTop: 3,
+                }}
+              >
+                {classDetail?.code && (
+                  <Tag
+                    style={{
+                      margin: 0,
+                      borderRadius: 6,
+                      background: COLORS.goldLight,
+                      color: COLORS.navy,
+                      border: "1px solid #EBD9A8",
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {classDetail.code}
+                  </Tag>
+                )}
+
+                {classDetail?.academic_year && (
+                  <Tag
+                    style={{
+                      margin: 0,
+                      borderRadius: 6,
+                      background: COLORS.navyLight,
+                      color: COLORS.navy,
+                      border: `1px solid ${COLORS.border}`,
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}
+                  >
+                    Năm học {classDetail.academic_year}
+                  </Tag>
+                )}
+              </Space>
             </div>
           </Space>
         }
@@ -1891,7 +2231,7 @@ const ClassManagement = () => {
         ) : classDetail ? (
           <div>
             {/* =========================================
-                THÔNG TIN TỔNG QUAN
+                OVERVIEW
             ========================================= */}
 
             <SectionTitle
@@ -1899,6 +2239,7 @@ const ClassManagement = () => {
               title="Thông tin tổng quan"
               description="Thông tin cơ bản của lớp học"
             />
+
             <Descriptions
               column={{
                 xs: 1,
@@ -1916,6 +2257,17 @@ const ClassManagement = () => {
                 overflow: "hidden",
               }}
             >
+              <Descriptions.Item label="Năm học">
+                {classDetail.academic_year || "Chưa cập nhật"}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Cấp lớp">
+                {classDetail.level_order !== null &&
+                classDetail.level_order !== undefined
+                  ? `Cấp ${classDetail.level_order}`
+                  : "Chưa xác định"}
+              </Descriptions.Item>
+
               <Descriptions.Item label="Chương trình">
                 {classDetail.category || "Chưa cập nhật"}
               </Descriptions.Item>
@@ -1933,13 +2285,23 @@ const ClassManagement = () => {
               </Descriptions.Item>
 
               <Descriptions.Item label="Học viên">
-                <Text strong style={{ color: COLORS.navy }}>
+                <Text
+                  strong
+                  style={{
+                    color: COLORS.navy,
+                  }}
+                >
                   {Number(classDetail.studentsCount || 0)} học viên
                 </Text>
               </Descriptions.Item>
 
               <Descriptions.Item label="Giáo lý viên">
-                <Text strong style={{ color: COLORS.navy }}>
+                <Text
+                  strong
+                  style={{
+                    color: COLORS.navy,
+                  }}
+                >
                   {classDetail.catechists?.length || 0} người
                 </Text>
               </Descriptions.Item>
@@ -1950,8 +2312,9 @@ const ClassManagement = () => {
                 </Descriptions.Item>
               )}
             </Descriptions>
+
             {/* =========================================
-                LỊCH HỌC
+                SCHEDULES
             ========================================= */}
 
             <SectionTitle
@@ -2001,7 +2364,7 @@ const ClassManagement = () => {
             </div>
 
             {/* =========================================
-                GIÁO LÝ VIÊN
+                CATECHISTS
             ========================================= */}
 
             <SectionTitle
@@ -2062,7 +2425,7 @@ const ClassManagement = () => {
       </Drawer>
 
       {/* =================================================
-          LOCAL STYLE
+          STYLE
       ================================================= */}
 
       <style>

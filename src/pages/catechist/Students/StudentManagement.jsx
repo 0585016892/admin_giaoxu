@@ -105,6 +105,13 @@ const COLORS = {
 
 const EMPTY_VALUE = "-";
 
+// Năm học hiện tại: từ tháng 8 trở đi tính là năm học mới.
+const getCurrentAcademicYear = () => {
+  const now = dayjs();
+  const year = now.month() >= 7 ? now.year() : now.year() - 1;
+  return `${year}-${year + 1}`;
+};
+
 /* =====================================================
    HELPERS
 ===================================================== */
@@ -128,7 +135,22 @@ const getResponseData = (response, keys = []) => {
 
   return [];
 };
+const getLatestAcademicYear = (classes = []) => {
+  const validYears = classes
+    .map((item) => String(item?.academic_year || "").trim())
+    .filter((year) => /^\d{4}-\d{4}$/.test(year));
 
+  if (!validYears.length) {
+    return null;
+  }
+
+  return validYears.reduce((latest, current) => {
+    const latestStart = Number(latest.split("-")[0]);
+    const currentStart = Number(current.split("-")[0]);
+
+    return currentStart > latestStart ? current : latest;
+  });
+};
 const displayValue = (value) => {
   return value === null ||
     value === undefined ||
@@ -165,7 +187,7 @@ const getAvatarUrl = (avatar) => {
     return null;
   }
 
-  const value = String(avatar).trim();
+  let value = String(avatar).trim();
 
   if (!value) {
     return null;
@@ -179,6 +201,15 @@ const getAvatarUrl = (avatar) => {
   // Backend trả protocol-relative URL
   if (value.startsWith("//")) {
     return `https:${value}`;
+  }
+
+  // Một số API có thể trả đường dẫn Windows:
+  // C:\\Users\\...\\uploads\\students\\student.png
+  // Chỉ lấy phần /uploads/... để trình duyệt gọi qua backend.
+  value = value.replace(/\\/g, "/");
+  const uploadIndex = value.toLowerCase().indexOf("/uploads/");
+  if (uploadIndex >= 0) {
+    value = value.slice(uploadIndex);
   }
 
   const origin = getApiOrigin();
@@ -201,6 +232,10 @@ export default function StudentManagement() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
 
+  // Năm học đang xem. Mặc định là năm học hiện tại.
+  const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
+  const [academicYearOptions, setAcademicYearOptions] = useState([]);
+
   /* ===================================================
      LOADING
   =================================================== */
@@ -216,7 +251,6 @@ export default function StudentManagement() {
     changeClass: null,
   });
 
-  const didInitialFetch = useRef(false);
   const mountedRef = useRef(true);
 
   /* ===================================================
@@ -780,7 +814,11 @@ export default function StudentManagement() {
      * nên xử lý cả 2 trường hợp.
      */
 
-    let classId = student?.class_id ?? student?.classId ?? null;
+    let classId =
+      student?.class_id ??
+      student?.classId ??
+      student?.current_class_id ??
+      null;
 
     let className = student?.class_name ?? student?.className ?? null;
 
@@ -864,7 +902,12 @@ export default function StudentManagement() {
 
       name: student.name || "Chưa có tên",
 
-      gender: student.gender || "Khác",
+      gender:
+        student.gender === "male" || student.gender === "Nam"
+          ? "Nam"
+          : student.gender === "female" || student.gender === "Nữ"
+            ? "Nữ"
+            : "Khác",
 
       date_of_birth: student.date_of_birth || null,
 
@@ -926,11 +969,24 @@ export default function StudentManagement() {
 
       status: student.status || "active",
 
-      avatar: getAvatarUrl(student.avatar),
+      // Giữ cả URL gốc để các modal/form có thể dùng lại.
+      avatar_url: student.avatar_url || null,
+      avatar: getAvatarUrl(student.avatar_url || student.avatar),
 
       created_at: student.created_at || null,
-
       updated_at: student.updated_at || null,
+
+      // Các field lớp/học tập do API trả về.
+      class_student_id: student.class_student_id ?? null,
+      class_code: student.class_code || null,
+      class_category: student.class_category || null,
+      class_status: student.class_status || null,
+      class_academic_year:
+        student.class_academic_year || student.academic_year || null,
+      current_class_id: student.current_class_id ?? finalClassId,
+      enrollment_status: student.enrollment_status || null,
+      joined_at: student.joined_at || null,
+      left_at: student.left_at || null,
 
       /*
        * =======================================================
@@ -939,69 +995,123 @@ export default function StudentManagement() {
        */
 
       classId: finalClassId,
-
       className: finalClassName,
+
+      academicYear:
+        matchedClass?.academic_year ||
+        student.academic_year ||
+        student.class_academic_year ||
+        null,
     };
   }, []);
   /* ===================================================
      LOAD DATA
   =================================================== */
 
+  /* ===================================================
+   LOAD DATA
+=================================================== */
+
   const fetchStudents = useCallback(
     async (options = {}) => {
       const { silent = false } = options;
-
       try {
-        if (silent) {
-          setRefreshing(true);
-        } else {
-          setLoading(true);
-        }
-
-        const [studentRes, classRes] = await Promise.all([
-          studentApi.getAll({
-            page: 1,
-            pageSize: 10000,
-          }),
-          classApi.getAll(),
-        ]);
-        if (!mountedRef.current) {
-          return;
-        }
-
-        const studentData = getResponseData(studentRes, ["students"]);
-
+        if (silent) setRefreshing(true);
+        else setLoading(true);
+        const classRes = await classApi.getAll();
+        if (!mountedRef.current) return;
         const classData = getResponseData(classRes, ["classes"]);
-
-        const formattedClasses = Array.isArray(classData)
-          ? classData.map((item) => ({
-              id: item.id,
-
-              name: item.name || item.className || `Lớp #${item.id}`,
-
-              code: item.code || null,
-            }))
-          : [];
-
-        setClasses(formattedClasses);
-
-        if (!Array.isArray(studentData)) {
+        if (!Array.isArray(classData) || !classData.length) {
+          setClasses([]);
           setStudents([]);
+          setAcademicYearOptions([]);
           setSelectedRowKeys([]);
+          setActiveClassTab("all");
           return;
         }
-
-        const formattedStudents = studentData.map((student) => {
-          return formatStudent(student, formattedClasses);
+        const formattedClasses = classData.map((item) => ({
+          id: item.id,
+          name: item.name || item.className || `Lớp #${item.id}`,
+          code: item.code || null,
+          academic_year: item.academic_year || null,
+          category: item.category || null,
+          status: item.status || null,
+          studentsCount: Number(item.studentsCount || 0),
+          start_date: item.start_date || null,
+          end_date: item.end_date || null,
+          level_order: item.level_order ?? null,
+        }));
+        setClasses(formattedClasses);
+        const academicYears = [
+          ...new Set(
+            formattedClasses
+              .map((item) => String(item.academic_year || "").trim())
+              .filter((year) => /^\d{4}-\d{4}$/.test(year)),
+          ),
+        ].sort((a, b) => Number(b.split("-")[0]) - Number(a.split("-")[0]));
+        setAcademicYearOptions(academicYears);
+        const latestAcademicYear = getLatestAcademicYear(formattedClasses);
+        setAcademicYear((currentYear) => {
+          const current = String(currentYear || "").trim();
+          return current && academicYears.includes(current)
+            ? current
+            : latestAcademicYear || "";
         });
+        const validClassIds = formattedClasses.map((item) => String(item.id));
+        setActiveClassTab((currentTab) => {
+          if (
+            currentTab !== "all" &&
+            currentTab !== "unassigned" &&
+            !validClassIds.includes(String(currentTab))
+          )
+            return "all";
+          return currentTab;
+        });
+        const classStudentResults = await Promise.all(
+          formattedClasses.map(async (classItem) => {
+            try {
+              const response = await classStudentApi.getByClass(classItem.id);
+              const studentsInClass =
+                response?.data?.data?.students ||
+                response?.data?.students ||
+                [];
 
-        if (!mountedRef.current) {
-          return;
-        }
-
+              return {
+                classItem,
+                students: Array.isArray(studentsInClass) ? studentsInClass : [],
+              };
+            } catch (error) {
+              return { classItem, students: [] };
+            }
+          }),
+        );
+        const studentMap = new Map();
+        classStudentResults.forEach(
+          ({ classItem, students: studentsInClass }) => {
+            studentsInClass.forEach((student) => {
+              if (!student?.id) return;
+              const studentWithClass = {
+                ...student,
+                class_id:
+                  student.class_id ?? student.current_class_id ?? classItem.id,
+                class_name: student.class_name ?? classItem.name,
+                academic_year:
+                  student.academic_year ??
+                  student.class_academic_year ??
+                  classItem.academic_year,
+              };
+              const studentId = String(student.id);
+              if (!studentMap.has(studentId))
+                studentMap.set(studentId, studentWithClass);
+            });
+          },
+        );
+        const mergedStudents = Array.from(studentMap.values());
+        const formattedStudents = mergedStudents.map((student) =>
+          formatStudent(student, formattedClasses),
+        );
+        if (!mountedRef.current) return;
         setStudents(formattedStudents);
-
-        // Chỉ giữ lại những ID vẫn còn tồn tại
         setSelectedRowKeys((prev) =>
           prev.filter((id) =>
             formattedStudents.some(
@@ -1010,12 +1120,12 @@ export default function StudentManagement() {
           ),
         );
       } catch (error) {
-        if (mountedRef.current) {
+        if (mountedRef.current)
           notify.error(
             error?.response?.data?.message ||
+              error?.response?.data?.error ||
               "Không thể tải danh sách học sinh!",
           );
-        }
       } finally {
         if (mountedRef.current) {
           setLoading(false);
@@ -1032,17 +1142,24 @@ export default function StudentManagement() {
 
   useEffect(() => {
     mountedRef.current = true;
-
-    if (!didInitialFetch.current) {
-      didInitialFetch.current = true;
-
-      fetchStudents();
-    }
+    fetchStudents();
 
     return () => {
       mountedRef.current = false;
     };
   }, [fetchStudents]);
+
+  /* ===================================================
+     ACADEMIC YEAR
+  =================================================== */
+
+  const handleAcademicYearChange = useCallback((value) => {
+    setAcademicYear(value);
+    setActiveClassTab("all");
+    setCurrentPage(1);
+    setSelectedRowKeys([]);
+    setSearchText("");
+  }, []);
 
   /* ===================================================
      FILTER
@@ -1052,8 +1169,25 @@ export default function StudentManagement() {
     return parts[parts.length - 1] || "";
   };
 
+  const filteredClasses = useMemo(() => {
+    const year = String(academicYear || "").trim();
+    if (!year) return classes;
+    return classes.filter(
+      (item) => String(item.academic_year || "").trim() === year,
+    );
+  }, [classes, academicYear]);
+
   const filteredStudents = useMemo(() => {
     let result = [...students];
+
+    // Lọc theo năm học
+    if (academicYear) {
+      result = result.filter(
+        (student) =>
+          String(student.academicYear || "").trim() ===
+          String(academicYear).trim(),
+      );
+    }
 
     // Lọc theo lớp
     if (activeClassTab === "unassigned") {
@@ -1082,47 +1216,48 @@ export default function StudentManagement() {
       result = result.filter((student) => student.status === selectedStatus);
     }
 
-    // =========================
-    // SẮP XẾP ALPHABET
-    // =========================
+    // Sắp xếp
     result.sort((a, b) => {
       const nameA = String(a.name || "").trim();
       const nameB = String(b.name || "").trim();
 
       const emptyA = !nameA || nameA === "Chưa có tên";
+
       const emptyB = !nameB || nameB === "Chưa có tên";
 
-      // Người chưa có tên đưa xuống cuối
       if (emptyA && !emptyB) return 1;
       if (!emptyA && emptyB) return -1;
       if (emptyA && emptyB) return 0;
 
-      // Lấy tên gọi cuối cùng
-      const givenNameA = getVietnameseGivenName(nameA);
-      const givenNameB = getVietnameseGivenName(nameB);
+      const ga = getVietnameseGivenName(nameA);
+      const gb = getVietnameseGivenName(nameB);
 
-      const compareGivenName = givenNameA.localeCompare(givenNameB, "vi", {
+      const cg = ga.localeCompare(gb, "vi", {
         sensitivity: "base",
         numeric: true,
       });
 
-      if (compareGivenName !== 0) {
-        return sortOrder === "az" ? compareGivenName : -compareGivenName;
+      if (cg !== 0) {
+        return sortOrder === "az" ? cg : -cg;
       }
 
-      // Nếu trùng tên gọi thì sort tiếp theo toàn bộ họ tên
-      const compareFullName = nameA.localeCompare(nameB, "vi", {
+      const cf = nameA.localeCompare(nameB, "vi", {
         sensitivity: "base",
         numeric: true,
       });
 
-      return sortOrder === "az" ? compareFullName : -compareFullName;
+      return sortOrder === "az" ? cf : -cf;
     });
 
     return result;
-  }, [students, activeClassTab, searchText, selectedStatus, sortOrder]);
-
-  console.log("students:::", students);
+  }, [
+    students,
+    academicYear,
+    activeClassTab,
+    searchText,
+    selectedStatus,
+    sortOrder,
+  ]);
 
   /* ===================================================
      PAGINATION
@@ -1139,25 +1274,18 @@ export default function StudentManagement() {
   =================================================== */
 
   const statistics = useMemo(() => {
-    const total = students.length;
-
-    const active = students.filter(
+    const total = filteredStudents.length;
+    const active = filteredStudents.filter(
       (student) => student.status === "active",
     ).length;
-
-    const inactive = students.filter(
+    const inactive = filteredStudents.filter(
       (student) => student.status !== "active",
     ).length;
-
-    const unassigned = students.filter((student) => !student.classId).length;
-
-    return {
-      total,
-      active,
-      inactive,
-      unassigned,
-    };
-  }, [students]);
+    const unassigned = filteredStudents.filter(
+      (student) => !student.classId,
+    ).length;
+    return { total, active, inactive, unassigned };
+  }, [filteredStudents]);
 
   /* ===================================================
      TAB
@@ -1202,21 +1330,10 @@ export default function StudentManagement() {
       return;
     }
 
-    console.log("========== IMPORT EXCEL START ==========");
-    console.log("Tên file:", file.name);
-    console.log("Dung lượng:", file.size);
-    console.log("Loại file:", file.type);
-
-    console.time("IMPORT_EXCEL");
-
     setImporting(true);
 
     try {
-      console.log("[1] Bắt đầu gửi file lên API");
-
       const response = await studentApi.importExcel(file);
-
-      console.log("[2] API trả về:", response);
 
       const result = response?.data;
 
@@ -1224,29 +1341,17 @@ export default function StudentManagement() {
         throw new Error(result?.message || "Import học sinh thất bại!");
       }
 
-      console.log("[3] Import thành công");
-
       notify.success(
         result?.message ||
           result?.data?.message ||
           "Import học sinh thành công!",
       );
 
-      console.log("[4] Bắt đầu tải lại danh sách");
-
       await fetchStudents({ silent: true });
-
-      console.log("[5] Đã tải lại danh sách");
 
       setSelectedRowKeys([]);
       setCurrentPage(1);
     } catch (error) {
-      console.error("========== IMPORT EXCEL ERROR ==========");
-      console.error("Message:", error?.message);
-      console.error("Response:", error?.response?.data);
-      console.error("Status:", error?.response?.status);
-      console.error("Stack:", error?.stack);
-
       notify.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||
@@ -1254,9 +1359,6 @@ export default function StudentManagement() {
           "Không thể import học sinh!",
       );
     } finally {
-      console.timeEnd("IMPORT_EXCEL");
-      console.log("========== IMPORT EXCEL END ==========");
-
       setImporting(false);
     }
   };
@@ -1299,7 +1401,7 @@ export default function StudentManagement() {
     form.resetFields();
 
     form.setFieldsValue({
-      gender: "Nam",
+      gender: "male",
       nationality: "Việt Nam",
       status: "active",
       catechism_status: "new",
@@ -1400,7 +1502,9 @@ export default function StudentManagement() {
 
         note: value(student.note),
 
-        avatar: student.avatar || null,
+        avatar: student.avatar_url
+          ? getAvatarUrl(student.avatar_url)
+          : student.avatar || null,
       });
 
       setIsFormModalOpen(true);
@@ -1416,7 +1520,12 @@ export default function StudentManagement() {
     return {
       name: values.name?.trim() || "",
 
-      gender: values.gender || "Khác",
+      gender:
+        values.gender === "Nam"
+          ? "male"
+          : values.gender === "Nữ"
+            ? "female"
+            : values.gender || "other",
 
       date_of_birth: formatDateForApi(values.date_of_birth),
 
@@ -1856,7 +1965,12 @@ export default function StudentManagement() {
         const values = {
           name: student.name,
 
-          gender: student.gender,
+          gender:
+            student.gender === "Nam"
+              ? "male"
+              : student.gender === "Nữ"
+                ? "female"
+                : student.gender,
 
           date_of_birth: student.date_of_birth,
 
@@ -2542,76 +2656,58 @@ export default function StudentManagement() {
   =================================================== */
 
   const classTabs = useMemo(() => {
+    const yearStudents = students.filter(
+      (student) =>
+        String(student.academicYear || "").trim() ===
+        String(academicYear || "").trim(),
+    );
     const items = [
       {
         key: "all",
-
         label: (
           <Space size={6}>
             <TeamOutlined />
-
             <span>Tất cả</span>
-
             <Badge
-              count={statistics.total}
+              count={yearStudents.length}
               overflowCount={999}
-              style={{
-                background: COLORS.navy,
-              }}
+              style={{ background: COLORS.navy }}
             />
           </Space>
         ),
       },
     ];
-
-    classes.forEach((classItem) => {
-      const count = students.filter(
+    filteredClasses.forEach((classItem) => {
+      const count = yearStudents.filter(
         (student) => String(student.classId) === String(classItem.id),
       ).length;
-
       items.push({
         key: String(classItem.id),
-
         label: (
           <Space size={6}>
             <BookOutlined />
-
             <span>{classItem.name}</span>
-
-            <Badge
-              count={count}
-              showZero
-              style={{
-                background: COLORS.gold,
-              }}
-            />
+            <Badge count={count} showZero style={{ background: COLORS.gold }} />
           </Space>
         ),
       });
     });
-
     items.push({
       key: "unassigned",
-
       label: (
         <Space size={6}>
           <IdcardOutlined />
-
           <span>Chưa xếp lớp</span>
-
           <Badge
-            count={statistics.unassigned}
+            count={yearStudents.filter((student) => !student.classId).length}
             showZero
-            style={{
-              background: COLORS.gold,
-            }}
+            style={{ background: COLORS.gold }}
           />
         </Space>
       ),
     });
-
     return items;
-  }, [classes, students, statistics]);
+  }, [filteredClasses, students, academicYear]);
 
   /* ===================================================
      DETAIL TABS
@@ -3551,6 +3647,25 @@ export default function StudentManagement() {
             }}
           >
             {/* =====================================================
+      NĂM HỌC
+  ===================================================== */}
+            <Col xs={24} md={12} lg={5}>
+              <Select
+                className="student-filter-control"
+                size="large"
+                value={academicYear}
+                loading={loading && academicYearOptions.length === 0}
+                disabled={loading || bulkDeleting}
+                onChange={handleAcademicYearChange}
+                style={{ width: "100%" }}
+                options={academicYearOptions.map((year) => ({
+                  value: year,
+                  label: `Năm học ${year}`,
+                }))}
+              />
+            </Col>
+
+            {/* =====================================================
       TÌM KIẾM
   ===================================================== */}
             <Col xs={24} md={12} lg={8}>
@@ -3611,7 +3726,7 @@ export default function StudentManagement() {
             {/* =====================================================
       SỬA DANH SÁCH LỚP
   ===================================================== */}
-            <Col xs={24} md={12} lg={10}>
+            <Col xs={24} md={6} lg={5}>
               {activeClassTab !== "all" && (
                 <AppButton
                   type="primary"
@@ -3902,7 +4017,9 @@ export default function StudentManagement() {
               ? `Thông tin chi tiết học sinh #${detailStudent.id}`
               : undefined
           }
-          avatar={detailStudent?.avatar}
+          avatar={
+            detailStudent?.avatar || getAvatarUrl(detailStudent?.avatar_url)
+          }
           loading={saving || bulkDeleting}
           onCancel={() => setIsDetailModalOpen(false)}
           onEdit={() => {

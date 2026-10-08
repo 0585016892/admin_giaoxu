@@ -368,9 +368,24 @@ export default function StudentBulkEditPage() {
           return false;
         }
 
-        const serverStudents = Array.isArray(result.data) ? result.data : [];
+        // Backend trả về:
+        // {
+        //   success: true,
+        //   data: {
+        //     class: {...},
+        //     schedules: [...],
+        //     students: [...],
+        //     total: number
+        //   }
+        // }
+        //
+        // Tuyệt đối không dùng result.data ở đây vì
+        // result.data là OBJECT, không phải ARRAY.
+        const serverStudents = Array.isArray(result?.data?.students)
+          ? result.data.students
+          : [];
 
-        setClassInfo(result.class || null);
+        setClassInfo(result?.data?.class || null);
 
         /**
          * =====================================================

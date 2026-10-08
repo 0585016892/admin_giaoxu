@@ -329,13 +329,13 @@ export default function CatechistSidebar({
       ],
     });
 
-    // if (permission.canViewClass) {
-    //   items.push({
-    //     key: MENU_PATHS.classPromotions,
-    //     label: "Lên lớp cuối năm",
-    //     icon: <GraduationCap size={18} strokeWidth={2.2} />,
-    //   });
-    // }
+    if (permission.canViewClass) {
+      items.push({
+        key: MENU_PATHS.classPromotions,
+        label: "Lên lớp cuối năm",
+        icon: <GraduationCap size={18} strokeWidth={2.2} />,
+      });
+    }
     /* =======================================================
       6. BẰNG & CHỨNG CHỈ
     ======================================================= */
