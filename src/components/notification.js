@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useMemo,
 } from "react";
 import {
   CheckCircleFilled,
@@ -206,19 +207,32 @@ export function AppNotificationProvider({
     [],
   );
 
-  const value = {
-    show,
-    success,
-    error,
-    warning,
-    info,
-    loading,
-    update,
-    remove,
-    destroy,
-    confirm: confirmDialog,
-  };
-
+  const value = useMemo(
+    () => ({
+      show,
+      success,
+      error,
+      warning,
+      info,
+      loading,
+      update,
+      remove,
+      destroy,
+      confirm: confirmDialog,
+    }),
+    [
+      show,
+      success,
+      error,
+      warning,
+      info,
+      loading,
+      update,
+      remove,
+      destroy,
+      confirmDialog,
+    ],
+  );
   return (
     <NotificationContext.Provider value={value}>
       {children}

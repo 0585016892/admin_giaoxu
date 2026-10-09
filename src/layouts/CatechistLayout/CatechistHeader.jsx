@@ -139,6 +139,14 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
      PAGE TITLE
   ========================================================= */
 
+  const userRoleCode = String(user?.role || "")
+    .trim()
+    .toLowerCase();
+
+  const canAccessChurchSettings = ["admin_catechist", "catechist"].includes(
+    userRoleCode,
+  );
+
   useEffect(() => {
     const path = location.pathname;
 
@@ -691,12 +699,16 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
       icon: <SettingOutlined />,
       label: "Thiết lập giáo xứ",
     },
-    {
-      key: "settings_church",
-      icon: <SettingOutlined />,
-      label: "Thiết lập hệ thống",
-    },
 
+    ...(canAccessChurchSettings
+      ? [
+          {
+            key: "settings_church",
+            icon: <SettingOutlined />,
+            label: "Thiết lập hệ thống",
+          },
+        ]
+      : []),
     {
       type: "divider",
     },

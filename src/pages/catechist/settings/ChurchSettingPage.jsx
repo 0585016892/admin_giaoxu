@@ -25,6 +25,7 @@ import {
   PlusOutlined,
   SaveOutlined,
   SettingOutlined,
+  ApiOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -294,6 +295,10 @@ export default function ChurchSettingPage() {
       attendance_auto_absent: Boolean(settings.attendance_auto_absent),
 
       attendance_late_enabled: Boolean(settings.attendance_late_enabled),
+      bot_enabled:
+        settings.bot_enabled === undefined
+          ? true
+          : settings.bot_enabled === true || Number(settings.bot_enabled) === 1,
     });
   }, [settings, form]);
 
@@ -304,37 +309,6 @@ export default function ChurchSettingPage() {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-
-      console.log("");
-      console.log(
-        "============================================================",
-      );
-      console.log("              SAVE CHURCH SETTINGS");
-      console.log(
-        "============================================================",
-      );
-
-      console.log(
-        "[LOGO FILE]:",
-        logoFile
-          ? {
-              name: logoFile.name,
-              type: logoFile.type,
-              size: logoFile.size,
-            }
-          : "Không thay đổi",
-      );
-
-      console.log(
-        "[COVER FILE]:",
-        coverImageFile
-          ? {
-              name: coverImageFile.name,
-              type: coverImageFile.type,
-              size: coverImageFile.size,
-            }
-          : "Không thay đổi",
-      );
 
       // ========================================================
       // PAYLOAD
@@ -400,9 +374,8 @@ export default function ChurchSettingPage() {
         attendance_auto_absent: Boolean(values.attendance_auto_absent),
 
         attendance_late_enabled: Boolean(values.attendance_late_enabled),
+        bot_enabled: Boolean(values.bot_enabled),
       };
-
-      console.log("[SAVE PAYLOAD]:", payload);
 
       // ========================================================
       // SAVE
@@ -524,6 +497,7 @@ export default function ChurchSettingPage() {
           attendance_auto_absent: false,
 
           attendance_late_enabled: true,
+          bot_enabled: true,
         }}
       >
         <Row gutter={[14, 14]}>
@@ -802,6 +776,62 @@ export default function ChurchSettingPage() {
             </Card>
           </Col>
 
+          {/* ==================================================
+    CẤU HÌNH BOT
+================================================== */}
+
+          <Col xs={24} lg={12}>
+            <Card className="church-setting-card setting-card-height">
+              <div className="setting-section-header">
+                <div className="setting-section-icon">
+                  <ApiOutlined />
+                </div>
+
+                <div>
+                  <Title level={4}>Cấu hình ChatBot</Title>
+                  <Text type="secondary">
+                    Quản lý trạng thái hoạt động của Bot giáo xứ
+                  </Text>
+                </div>
+              </div>
+
+              <Divider />
+
+              <Form.Item
+                name="bot_enabled"
+                valuePropName="checked"
+                style={{ marginBottom: 16 }}
+              >
+                <Switch checkedChildren="Bật" unCheckedChildren="Tắt" />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, current) =>
+                  prev.bot_enabled !== current.bot_enabled
+                }
+              >
+                {({ getFieldValue }) => {
+                  const enabled = getFieldValue("bot_enabled");
+
+                  return (
+                    <Alert
+                      showIcon
+                      type={enabled ? "success" : "warning"}
+                      message={
+                        enabled ? "Bot đang được bật" : "Bot đang bị tắt"
+                      }
+                      description={
+                        enabled
+                          ? "Bot được phép hoạt động theo cấu hình của hệ thống."
+                          : "Bot sẽ bị vô hiệu hóa."
+                      }
+                    />
+                  );
+                }}
+              </Form.Item>
+            </Card>
+          </Col>
           {/* ==================================================
               NOTICE
           ================================================== */}

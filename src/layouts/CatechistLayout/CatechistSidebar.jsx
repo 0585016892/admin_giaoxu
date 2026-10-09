@@ -398,13 +398,12 @@ export default function CatechistSidebar({
         icon: <Package size={18} strokeWidth={2.2} />,
       });
     }
-    if (permission.canViewCatechists) {
-      items.push({
-        key: MENU_PATHS.help,
-        label: "Trung tâm trợ giúp",
-        icon: <HelpCircle size={18} strokeWidth={2.2} />,
-      });
-    }
+
+    items.push({
+      key: MENU_PATHS.help,
+      label: "Trung tâm trợ giúp",
+      icon: <HelpCircle size={18} strokeWidth={2.2} />,
+    });
     return items;
   }, [permission]);
 

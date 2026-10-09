@@ -533,6 +533,7 @@ const AttendancePage = () => {
       } else {
         response = await classApi.getAll();
       }
+      console.log("repon:::", response);
 
       const list = normalizeClasses(response);
 

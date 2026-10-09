@@ -231,27 +231,7 @@ const LicenseGuard = ({ children }) => {
   // =========================================================
 
   if (checking) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100vh",
-
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-
-          background: "#F7F9FC",
-
-          color: "#173B5E",
-
-          fontSize: 15,
-          fontWeight: 600,
-        }}
-      >
-        <LoadingLogo progress={progress} />
-      </div>
-    );
+    return <LoadingLogo progress={progress} />;
   }
 
   // =========================================================
