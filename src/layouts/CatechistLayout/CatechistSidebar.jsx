@@ -33,6 +33,7 @@ import {
   LibraryBig,
   Package,
   HelpCircle,
+  Map,
 } from "lucide-react";
 
 import imgSidebar from "../../assets/images/logosidebar.png";
@@ -109,6 +110,7 @@ const MENU_PATHS = {
   license: "/catechist/license",
 
   help: "/catechist/help",
+  catechismJourney: "/catechist/catechism-journey",
 };
 
 /* =========================================================
@@ -317,8 +319,13 @@ export default function CatechistSidebar({
           icon: <LibraryBig size={16} strokeWidth={2.2} />,
         },
         {
+          key: MENU_PATHS.catechismJourney,
+          label: "Kế hoạch giảng dạy",
+          icon: <Map size={16} strokeWidth={2.2} />,
+        },
+        {
           key: MENU_PATHS.questions,
-          label: "Ngân hàng câu hỏi",
+          label: "Cấu hình bài học",
           icon: <CircleHelp size={16} strokeWidth={2.2} />,
         },
         {

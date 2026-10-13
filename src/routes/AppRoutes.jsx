@@ -53,6 +53,8 @@ import QuestionPage from "../pages/catechist/QuestionPage";
 import StudentBulkEditPage from "../pages/catechist/Students/StudentBulkEditPage";
 import ChurchSettingPage from "../pages/catechist/settings/ChurchSettingPage";
 import HelpCenterPage from "../pages/catechist/help/HelpCenterPage";
+
+import CatechismJourney from "../pages/catechist/catechism-journey/CatechismJourney";
 // ============================================================
 // PARENTS
 // ============================================================
@@ -295,6 +297,10 @@ export default function AppRoutes() {
               element={<GradingRulePage />}
             />
 
+            <Route
+              path="/catechist/catechism-journey"
+              element={<CatechismJourney />}
+            />
             {/* ================= LICENSE ================= */}
 
             <Route path="/catechist/license" element={<LicensePage />} />
