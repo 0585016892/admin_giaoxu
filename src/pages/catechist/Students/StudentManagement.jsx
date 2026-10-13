@@ -235,6 +235,10 @@ export default function StudentManagement() {
   // Năm học đang xem. Mặc định là năm học hiện tại.
   const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
   const [academicYearOptions, setAcademicYearOptions] = useState([]);
+  const academicYearRef = useRef(academicYear);
+  useEffect(() => {
+    academicYearRef.current = academicYear;
+  }, [academicYear]);
 
   /* ===================================================
      LOADING
@@ -1014,22 +1018,19 @@ export default function StudentManagement() {
 
   const fetchStudents = useCallback(
     async (options = {}) => {
-      const { silent = false } = options;
+      const { silent = false, year: requestedYear } = options;
+
       try {
         if (silent) setRefreshing(true);
         else setLoading(true);
+
         const classRes = await classApi.getAll();
         if (!mountedRef.current) return;
+
         const classData = getResponseData(classRes, ["classes"]);
-        if (!Array.isArray(classData) || !classData.length) {
-          setClasses([]);
-          setStudents([]);
-          setAcademicYearOptions([]);
-          setSelectedRowKeys([]);
-          setActiveClassTab("all");
-          return;
-        }
-        const formattedClasses = classData.map((item) => ({
+        const formattedClasses = (
+          Array.isArray(classData) ? classData : []
+        ).map((item) => ({
           id: item.id,
           name: item.name || item.className || `Lớp #${item.id}`,
           code: item.code || null,
@@ -1041,7 +1042,9 @@ export default function StudentManagement() {
           end_date: item.end_date || null,
           level_order: item.level_order ?? null,
         }));
+
         setClasses(formattedClasses);
+
         const academicYears = [
           ...new Set(
             formattedClasses
@@ -1049,68 +1052,69 @@ export default function StudentManagement() {
               .filter((year) => /^\d{4}-\d{4}$/.test(year)),
           ),
         ].sort((a, b) => Number(b.split("-")[0]) - Number(a.split("-")[0]));
+
         setAcademicYearOptions(academicYears);
+
         const latestAcademicYear = getLatestAcademicYear(formattedClasses);
-        setAcademicYear((currentYear) => {
-          const current = String(currentYear || "").trim();
-          return current && academicYears.includes(current)
-            ? current
-            : latestAcademicYear || "";
-        });
+        const currentYear = String(
+          requestedYear ?? academicYearRef.current ?? "",
+        ).trim();
+        const targetYear =
+          currentYear &&
+          (!academicYears.length || academicYears.includes(currentYear))
+            ? currentYear
+            : latestAcademicYear || currentYear || getCurrentAcademicYear();
+
+        setAcademicYear(targetYear);
+
         const validClassIds = formattedClasses.map((item) => String(item.id));
         setActiveClassTab((currentTab) => {
           if (
             currentTab !== "all" &&
             currentTab !== "unassigned" &&
             !validClassIds.includes(String(currentTab))
-          )
+          ) {
             return "all";
+          }
           return currentTab;
         });
-        const classStudentResults = await Promise.all(
-          formattedClasses.map(async (classItem) => {
-            try {
-              const response = await classStudentApi.getByClass(classItem.id);
-              const studentsInClass =
-                response?.data?.data?.students ||
-                response?.data?.students ||
-                [];
 
-              return {
-                classItem,
-                students: Array.isArray(studentsInClass) ? studentsInClass : [],
-              };
-            } catch (error) {
-              return { classItem, students: [] };
-            }
-          }),
-        );
-        const studentMap = new Map();
-        classStudentResults.forEach(
-          ({ classItem, students: studentsInClass }) => {
-            studentsInClass.forEach((student) => {
-              if (!student?.id) return;
-              const studentWithClass = {
-                ...student,
-                class_id:
-                  student.class_id ?? student.current_class_id ?? classItem.id,
-                class_name: student.class_name ?? classItem.name,
-                academic_year:
-                  student.academic_year ??
-                  student.class_academic_year ??
-                  classItem.academic_year,
-              };
-              const studentId = String(student.id);
-              if (!studentMap.has(studentId))
-                studentMap.set(studentId, studentWithClass);
-            });
-          },
-        );
-        const mergedStudents = Array.from(studentMap.values());
-        const formattedStudents = mergedStudents.map((student) =>
-          formatStudent(student, formattedClasses),
-        );
+        // Lấy toàn bộ học sinh của giáo xứ theo năm học, gồm cả học sinh chưa xếp lớp.
+        const studentRes = await classStudentApi.getByChurch(targetYear);
+        console.log(studentRes);
+
         if (!mountedRef.current) return;
+
+        const responseData = studentRes?.data;
+        let churchStudents = [];
+
+        if (Array.isArray(responseData)) {
+          churchStudents = responseData;
+        } else if (Array.isArray(responseData?.data)) {
+          churchStudents = responseData.data;
+        } else if (Array.isArray(responseData?.students)) {
+          churchStudents = responseData.students;
+        } else if (Array.isArray(responseData?.data?.students)) {
+          churchStudents = responseData.data.students;
+        } else if (Array.isArray(responseData?.data?.data)) {
+          churchStudents = responseData.data.data;
+        }
+
+        const formattedStudents = churchStudents
+          .filter((student) => student && student.id != null)
+          .map((student) =>
+            formatStudent(
+              {
+                ...student,
+                academic_year:
+                  student.academic_year ||
+                  student.class_academic_year ||
+                  targetYear,
+              },
+              formattedClasses,
+            ),
+          );
+
         setStudents(formattedStudents);
         setSelectedRowKeys((prev) =>
           prev.filter((id) =>
@@ -1120,12 +1124,14 @@ export default function StudentManagement() {
           ),
         );
       } catch (error) {
-        if (mountedRef.current)
+        if (mountedRef.current) {
           notify.error(
             error?.response?.data?.message ||
               error?.response?.data?.error ||
+              error?.message ||
               "Không thể tải danh sách học sinh!",
           );
+        }
       } finally {
         if (mountedRef.current) {
           setLoading(false);
@@ -1153,13 +1159,17 @@ export default function StudentManagement() {
      ACADEMIC YEAR
   =================================================== */
 
-  const handleAcademicYearChange = useCallback((value) => {
-    setAcademicYear(value);
-    setActiveClassTab("all");
-    setCurrentPage(1);
-    setSelectedRowKeys([]);
-    setSearchText("");
-  }, []);
+  const handleAcademicYearChange = useCallback(
+    (value) => {
+      setAcademicYear(value);
+      setActiveClassTab("all");
+      setCurrentPage(1);
+      setSelectedRowKeys([]);
+      setSearchText("");
+      fetchStudents({ silent: true, year: value });
+    },
+    [fetchStudents],
+  );
 
   /* ===================================================
      FILTER
@@ -1719,28 +1729,21 @@ export default function StudentManagement() {
         String(changeClassStudent.classId) === String(newClassId)
       ) {
         notify.info("Học sinh đã ở lớp này.");
-
         return;
       }
 
-      try {
-        if (changeClassStudent.classId) {
-          await classStudentApi.changeClass(
-            changeClassStudent.classId,
-            studentId,
-            newClassId,
-          );
-        } else {
-          await classStudentApi.add({
-            class_id: newClassId,
-
-            student_id: studentId,
-
-            status: "studying",
-          });
-        }
-      } finally {
-        setBulkChangeClassLoading(false);
+      if (changeClassStudent.classId) {
+        await classStudentApi.changeClass(
+          changeClassStudent.classId,
+          studentId,
+          newClassId,
+        );
+      } else {
+        await classStudentApi.add({
+          class_id: newClassId,
+          student_id: studentId,
+          status: "studying",
+        });
       }
 
       notify.success(
@@ -1803,34 +1806,32 @@ export default function StudentManagement() {
       return;
     }
 
-    if (bulkChangeClassLoading) {
-      return;
-    }
+    if (bulkChangeClassLoading) return;
 
-    // =====================================================
-    // LẤY LỚP MỚI
-    // =====================================================
+    // 1. Kiểm tra lớp đích
+    const rawNewClassId = values?.new_class_id;
 
-    const newClassId = values?.new_class_id;
-
-    if (newClassId === undefined || newClassId === null || newClassId === "") {
+    if (
+      rawNewClassId === undefined ||
+      rawNewClassId === null ||
+      rawNewClassId === ""
+    ) {
       notify.warning("Vui lòng chọn lớp mới!");
       return;
     }
 
-    const parsedNewClassId = Number(newClassId);
+    const parsedNewClassId = Number(rawNewClassId);
 
     if (!Number.isInteger(parsedNewClassId) || parsedNewClassId <= 0) {
       notify.error("Lớp mới không hợp lệ!");
       return;
     }
 
-    // =====================================================
-    // LẤY HỌC SINH
-    // =====================================================
+    // 2. Lấy học sinh được chọn
+    const selectedKeySet = new Set(selectedRowKeys.map(String));
 
     const selectedStudents = students.filter((student) =>
-      selectedRowKeys.includes(student.id),
+      selectedKeySet.has(String(student.id)),
     );
 
     if (!selectedStudents.length) {
@@ -1838,10 +1839,7 @@ export default function StudentManagement() {
       return;
     }
 
-    // =====================================================
-    // TÌM LỚP MỚI
-    // =====================================================
-
+    // 3. Tìm lớp đích
     const newClass = classes.find(
       (item) => String(item.id) === String(parsedNewClassId),
     );
@@ -1851,94 +1849,93 @@ export default function StudentManagement() {
       return;
     }
 
-    // =====================================================
-    // KIỂM TRA NHỮNG HỌC SINH ĐÃ Ở LỚP MỚI
-    // =====================================================
-
-    const alreadyInNewClass = selectedStudents.filter(
+    // 4. Loại học sinh đã ở lớp đích
+    const studentsToMove = selectedStudents.filter(
       (student) =>
-        student.classId !== null &&
-        student.classId !== undefined &&
-        String(student.classId) === String(parsedNewClassId),
+        student.classId == null ||
+        student.classId === "" ||
+        String(student.classId) !== String(parsedNewClassId),
     );
 
-    /*
-     * Nếu tất cả học sinh đã ở lớp mới
-     */
-    if (alreadyInNewClass.length === selectedStudents.length) {
+    if (!studentsToMove.length) {
       notify.info("Tất cả học sinh được chọn đã ở lớp này.");
       return;
     }
 
-    // =====================================================
-    // DANH SÁCH ID GỬI BE
-    // =====================================================
+    // 5. Kiểm tra ID học sinh
+    const studentIds = studentsToMove.map((student) => Number(student.id));
 
-    const studentIds = selectedStudents
-      .map((student) => Number(student.id))
-      .filter((id) => Number.isInteger(id) && id > 0);
-
-    if (!studentIds.length) {
+    if (
+      studentIds.some((id) => !Number.isInteger(id) || id <= 0) ||
+      new Set(studentIds).size !== studentIds.length
+    ) {
       notify.error("Danh sách học sinh không hợp lệ!");
       return;
     }
 
-    // =====================================================
-    // GỌI API
-    // =====================================================
+    // 6. Gọi API chuyển lớp hàng loạt
+    setBulkChangeClassLoading(true);
 
     try {
-      setBulkChangeClassLoading(true);
-
-      try {
-        /*
-         * ===================================================
-         * QUAN TRỌNG
-         *
-         * BE ROUTE:
-         *
-         * PUT /class-students/classes/:classId/change-students
-         *
-         * :classId = LỚP MỚI
-         *
-         * Body:
-         * {
-         *   studentIds: [...]
-         * }
-         * ===================================================
-         */
-
-        await classStudentApi.changeClassStudents(parsedNewClassId, studentIds);
-      } finally {
-        setBulkChangeClassLoading(false);
-      }
-
-      // =====================================================
-      // SUCCESS
-      // =====================================================
-
-      notify.success(
-        `Đã chuyển ${studentIds.length} học sinh sang ${newClass.name}!`,
+      /*
+       * Backend:
+       * PUT /class-students/classes/:classId/change-students
+       *
+       * classId trên URL = ID LỚP ĐÍCH.
+       * Body = { studentIds: [...] }
+       *
+       * Backend tự tìm lớp hiện tại của từng học sinh.
+       */
+      const response = await classStudentApi.changeClassStudents(
+        parsedNewClassId,
+        studentIds,
       );
 
-      // =====================================================
-      // RESET MODAL
-      // =====================================================
+      const responseData = response?.data;
 
+      if (responseData?.success !== true) {
+        throw new Error(responseData?.message || "Không thể chuyển lớp!");
+      }
+
+      // 7. Đọc kết quả thực tế từ backend
+      const resultData = responseData?.data;
+      const summary = resultData?.summary;
+
+      const successCount = Number(summary?.success ?? 0);
+      const alreadyCount = Number(summary?.already_in_target ?? 0);
+      const failedCount = Number(summary?.failed ?? 0);
+
+      if (summary) {
+        if (failedCount > 0) {
+          notify.warning(
+            `Chuyển thành công ${successCount} học sinh; ` +
+              `${alreadyCount} học sinh đã ở lớp đích; ` +
+              `${failedCount} học sinh thất bại.`,
+          );
+        } else {
+          notify.success(
+            `Đã chuyển ${successCount} học sinh sang lớp ${newClass.name}` +
+              (alreadyCount > 0
+                ? `; ${alreadyCount} học sinh đã ở lớp này.`
+                : "."),
+          );
+        }
+      } else {
+        // Không tự khẳng định số lượng thành công nếu backend
+        // không trả về thống kê chi tiết.
+        notify.success(responseData?.message || "Đã xử lý yêu cầu chuyển lớp.");
+      }
+
+      // 8. Đóng modal và xóa lựa chọn
       setIsBulkChangeClassModalOpen(false);
-
       bulkChangeClassForm.resetFields();
-
       setSelectedRowKeys([]);
 
-      // =====================================================
-      // LOAD LẠI
-      // =====================================================
-
-      await fetchStudents({
-        silent: true,
-      });
+      // 9. Tải lại dữ liệu từ backend
+      await fetchStudents({ silent: true });
     } catch (error) {
+      console.error("BULK CHANGE CLASS ERROR:", error);
+
       notify.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||

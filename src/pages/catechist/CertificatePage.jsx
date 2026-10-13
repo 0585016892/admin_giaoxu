@@ -35,7 +35,7 @@ import { getIssuedDateParts } from "../../utils/dateUtils";
 
 import classApi from "../../api/classApi";
 import studentApi from "../../api/studentApi";
-
+import classStudentApi from "../../api/classStudentApi";
 import "../../components/certificates/certificate.css";
 
 /* =========================================================
@@ -1349,6 +1349,7 @@ const CertificatePage = () => {
           onClose={handleCloseClassModal}
           classApi={classApi}
           studentApi={studentApi}
+          classStudentApi={classStudentApi}
           excelStudents={excelStudents}
           onClearExcel={clearExcelStudents}
           onPreviewStudent={handlePreviewStudent}

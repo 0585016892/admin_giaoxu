@@ -533,7 +533,6 @@ const AttendancePage = () => {
       } else {
         response = await classApi.getAll();
       }
-      console.log("repon:::", response);
 
       const list = normalizeClasses(response);
 
@@ -930,8 +929,6 @@ const AttendancePage = () => {
       if (attendanceType === "catechism") {
         payload.class_id = Number(selectedClassId);
       }
-
-      console.log("[QR ATTENDANCE] Finish payload:", payload);
 
       await attendanceApi.finishAttendance(payload);
 

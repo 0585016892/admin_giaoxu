@@ -12,9 +12,8 @@ import {
 } from "@ant-design/icons";
 
 import classApi from "../../../api/classApi";
-import studentApi from "../../../api/studentApi";
 import resultApi from "../../../api/resultApi";
-
+import classStudentApi from "../../../api/classStudentApi";
 import ResultsHeader from "./components/ResultsHeader";
 import ResultsOverview from "./components/ResultsOverview";
 import ResultsFilters from "./components/ResultsFilters";
@@ -164,6 +163,7 @@ const ResultsPage = () => {
 
       const response = await classApi.getClassTeacher();
       const data = unwrap(response);
+      console.log(data);
 
       const list = extractList(data)
         .map((item) => ({
@@ -194,6 +194,10 @@ const ResultsPage = () => {
      LOAD STUDENTS
   ========================================================== */
 
+  /* ==========================================================
+   LOAD STUDENTS BY SELECTED CLASS
+========================================================== */
+
   const loadStudents = useCallback(
     async (classId) => {
       if (!classId) {
@@ -204,12 +208,24 @@ const ResultsPage = () => {
       try {
         setStudentLoading(true);
 
-        const response = await studentApi.getAll({
-          class_id: classId,
-        });
+        // Xóa danh sách cũ để tránh hiển thị nhầm học sinh lớp trước
+        setStudents([]);
 
+        // Gọi API lấy học sinh theo đúng lớp được chọn
+        const response = await classStudentApi.getByClass(classId);
         const data = unwrap(response);
-        const list = extractList(data);
+
+        if (data?.success === false) {
+          throw new Error(data?.message || "Không thể tải danh sách học viên");
+        }
+
+        // API có thể trả về danh sách ở data.students
+        // hoặc data.data.students
+        const list =
+          (Array.isArray(data?.data?.students) && data.data.students) ||
+          (Array.isArray(data?.students) && data.students) ||
+          (Array.isArray(data?.data) && data.data) ||
+          [];
 
         setStudents(list);
 
@@ -218,7 +234,9 @@ const ResultsPage = () => {
         setStudents([]);
 
         notify.error(
-          error?.response?.data?.message || "Không thể tải danh sách học viên",
+          error?.response?.data?.message ||
+            error?.message ||
+            "Không thể tải danh sách học viên",
         );
 
         return [];

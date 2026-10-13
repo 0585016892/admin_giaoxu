@@ -1,8 +1,8 @@
 import React from "react";
 import { Table, Select, Tag, Empty, Tooltip } from "antd";
-import { EyeOutlined, UserOutlined } from "@ant-design/icons";
+import { EyeOutlined } from "@ant-design/icons";
 import AppButton from "../../components/common/AppButton";
-
+import student_defaut from "../../assets/images/student-default.png";
 const COLORS = {
   navy: "#173B5E",
   navyHover: "#244F78",
@@ -60,16 +60,31 @@ const StudentCertificateTable = ({
               width: 32,
               height: 32,
               borderRadius: 6,
-              background: COLORS.navyLight,
-              color: COLORS.navy,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 14,
+              overflow: "hidden",
               flexShrink: 0,
             }}
           >
-            <UserOutlined />
+            <img
+              src={
+                !record.avatar_url
+                  ? student_defaut
+                  : `${process.env.REACT_APP_API_URL}${record.avatar_url}`
+              }
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = student_defaut;
+              }}
+            />
           </div>
           <div>
             <div style={{ fontWeight: 600, color: COLORS.text, fontSize: 13 }}>

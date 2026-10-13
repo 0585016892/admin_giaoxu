@@ -33,29 +33,17 @@ const COLORS = {
 ========================================================= */
 
 const getResponseData = (response) => {
-  if (!response) return [];
+  const result = response?.data ?? response;
 
-  if (Array.isArray(response)) return response;
-
-  if (Array.isArray(response.data)) return response.data;
-
-  if (Array.isArray(response.data?.data)) {
-    return response.data.data;
-  }
-
-  if (Array.isArray(response.rows)) return response.rows;
-
-  if (Array.isArray(response.students)) {
-    return response.students;
-  }
-
-  if (Array.isArray(response.data?.students)) {
-    return response.data.students;
-  }
+  if (Array.isArray(result)) return result;
+  if (Array.isArray(result?.students)) return result.students;
+  if (Array.isArray(result?.data?.students)) return result.data.students;
+  if (Array.isArray(result?.data)) return result.data;
+  if (Array.isArray(result?.rows)) return result.rows;
+  if (Array.isArray(result?.classes)) return result.classes;
 
   return [];
 };
-
 /* =========================================================
    VALUE
 ========================================================= */
@@ -190,6 +178,7 @@ const ClassCertificateModal = ({
   onClose,
   classApi,
   studentApi,
+  classStudentApi,
   onPreviewStudent,
   onBatchExport,
   exporting = false,
@@ -304,50 +293,56 @@ const ClassCertificateModal = ({
 
   const handleClassChange = async (classId) => {
     if (!classId) {
+      setSelectedClassId(null);
+      setStudents([]);
+      setSelectedStudentKey(null);
       return;
     }
 
     const nextClassId = String(classId);
-
     const currentClassId =
       selectedClassId !== null && selectedClassId !== undefined
         ? String(selectedClassId)
         : null;
 
-    /*
-     * Nếu click lại đúng lớp hiện tại
-     * => không gọi API lại
-     * => giữ nguyên danh sách + xếp loại
-     */
+    // Chọn lại lớp hiện tại thì giữ nguyên danh sách và xếp loại.
     if (currentClassId === nextClassId && students.length > 0) {
       return;
     }
 
-    /*
-     * Đây thực sự là chọn lớp khác.
-     */
     setSelectedClassId(classId);
-
     setSelectedStudentKey(null);
-
+    setStudents([]);
     setLoading(true);
 
     try {
-      const response = await studentApi.getStudentClass(classId);
+      if (!classStudentApi?.getByClass) {
+        throw new Error("Chưa cấu hình API lấy học sinh theo lớp.");
+      }
 
-      const data = getResponseData(response);
+      // Gọi API theo ID lớp đang chọn.
+      const response = await classStudentApi.getByClass(classId);
 
-      const list = Array.isArray(data)
-        ? data
-        : data?.rows || data?.students || [];
+      if (response?.data?.success === false) {
+        throw new Error(
+          response.data.message || "Không thể tải học sinh của lớp.",
+        );
+      }
 
+      const list = getResponseData(response);
       const normalizedStudents = list.map(normalizeStudent);
 
       setStudents(normalizedStudents);
     } catch (error) {
-      message.error("Không thể tải học sinh của lớp.");
+      console.error("Lỗi tải học sinh theo lớp:", error);
 
       setStudents([]);
+
+      message.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Không thể tải học sinh của lớp.",
+      );
     } finally {
       setLoading(false);
     }
