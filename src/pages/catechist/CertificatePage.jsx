@@ -1152,7 +1152,6 @@ const CertificatePage = () => {
       <style>
         {`
           .certificate-page {
-            background: ${COLORS.background};
             padding: 24px;
             min-height: 100vh;
             box-sizing: border-box;

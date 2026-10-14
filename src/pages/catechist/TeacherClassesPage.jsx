@@ -2,26 +2,36 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Avatar,
   Card,
-  Col,
   Empty,
-  Row,
+  Input,
   Select,
   Skeleton,
   Space,
   Tag,
   Typography,
+  Row,
+  Col,
+  Tooltip,
+  Button,
 } from "antd";
 import {
+  AppstoreOutlined,
+  ArrowRightOutlined,
   BookOutlined,
   CalendarOutlined,
-  CheckCircleOutlined,
+  CheckCircleFilled,
   ClockCircleOutlined,
   EnvironmentOutlined,
+  FieldTimeOutlined,
+  FilterOutlined,
   IdcardOutlined,
-  PauseCircleOutlined,
+  PauseCircleFilled,
   ReadOutlined,
-  StopOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
   TeamOutlined,
+  UnorderedListOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -31,35 +41,50 @@ import { useUser } from "../../context/UserContext";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
 import StatCard from "../../components/common/StatCard";
 import ErrorPage from "./ErrorPage";
-import AppSearchInput from "../../components/common/SearchInput";
 
 const { Title, Text } = Typography;
 
 /* =========================================================
-   DESIGN SYSTEM COLORS (Navy & Gold Professional Theme)
+   COLORS
 ========================================================= */
 
 const COLORS = {
-  primary: "#173B5E", // Navy chủ đạo
-  primaryDark: "#0F2942", // Navy đậm
-  primaryLight: "#F0F4F8", // Nền phụ Navy nhạt
-  primaryBorder: "#D9E2EC", // Viền xám ánh Navy
-
-  gold: "#D9A441", // Vàng Gold điểm nhấn
-  goldLight: "#FDF8ED", // Nền Gold nhạt
-
-  green: "#10B981",
-  greenLight: "#ECFDF5",
-
-  amber: "#F59E0B",
-  amberLight: "#FEF3C7",
-
+  navy: "#173B5E",
+  navyDark: "#102A43",
+  navyLight: "#F0F5FA",
+  border: "#E4EAF1",
+  gold: "#D9A441",
+  goldLight: "#FFF8E8",
+  green: "#15966A",
+  greenLight: "#EAF8F1",
+  amber: "#D99013",
+  amberLight: "#FFF5DF",
   slate: "#64748B",
-  slateLight: "#F8FAFC",
+  slateLight: "#F1F5F9",
+  text: "#182B43",
+  muted: "#718096",
+  white: "#FFFFFF",
+};
 
-  textMain: "#1E293B",
-  textMuted: "#64748B",
-  cardBg: "#FFFFFF",
+const STATUS = {
+  active: {
+    label: "Đang học",
+    color: COLORS.green,
+    bg: COLORS.greenLight,
+    icon: <CheckCircleFilled />,
+  },
+  paused: {
+    label: "Tạm dừng",
+    color: COLORS.amber,
+    bg: COLORS.amberLight,
+    icon: <PauseCircleFilled />,
+  },
+  completed: {
+    label: "Đã hoàn thành",
+    color: COLORS.slate,
+    bg: COLORS.slateLight,
+    icon: <CheckCircleFilled />,
+  },
 };
 
 /* =========================================================
@@ -68,12 +93,19 @@ const COLORS = {
 
 const normalizeListResponse = (response) => {
   const data = response?.data;
+
   if (Array.isArray(data?.data)) return data.data;
   if (Array.isArray(data)) return data;
+
   return [];
 };
 
 const formatTime = (time) => (time ? String(time).slice(0, 5) : "—");
+
+const formatDate = (date) =>
+  date && dayjs(date).isValid()
+    ? dayjs(date).format("DD/MM/YYYY")
+    : "Chưa cập nhật";
 
 const getDayName = (day) => {
   const days = {
@@ -93,279 +125,208 @@ const getDayName = (day) => {
     friday: "Thứ Sáu",
     saturday: "Thứ Bảy",
   };
-  return days[day] || day || "Chưa cập nhật";
+
+  if (day === null || day === undefined || day === "") {
+    return "Chưa xếp lịch";
+  }
+
+  return days[String(day).toLowerCase()] ?? String(day);
 };
 
 const getStatusConfig = (status) => {
-  const configs = {
-    active: {
-      label: "Đang học",
-      color: COLORS.green,
-      bg: COLORS.greenLight,
-      icon: <CheckCircleOutlined />,
-    },
-    paused: {
-      label: "Tạm dừng",
-      color: COLORS.amber,
-      bg: COLORS.amberLight,
-      icon: <PauseCircleOutlined />,
-    },
-    completed: {
-      label: "Đã hoàn thành",
-      color: COLORS.slate,
-      bg: COLORS.slateLight,
-      icon: <StopOutlined />,
-    },
-  };
-  return configs[status] || configs.active;
+  const key = String(status || "active").toLowerCase();
+  return STATUS[key] || STATUS.active;
+};
+
+const getInitials = (name) => {
+  if (!name?.trim()) return "GL";
+
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase();
 };
 
 /* =========================================================
-   SUB-COMPONENTS
+   DETAIL ITEM
 ========================================================= */
 
-// Item hiển thị thông tin chi tiết trong thẻ lớp học
-const InfoBlock = ({ icon, label, value }) => (
-  <div
-    style={{
-      padding: "12px 14px",
-      borderRadius: 14,
-      background: COLORS.primaryLight,
-      border: `1.5px solid ${COLORS.primaryBorder}`,
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-    }}
-  >
-    <div
-      style={{
-        fontSize: 16,
-        color: COLORS.primary,
-        display: "flex",
-        alignItems: "center",
-      }}
-    >
+const DetailItem = ({ icon, label, value, accent }) => (
+  <div className="tc-detail-item">
+    <div className="tc-detail-icon" style={{ color: accent || COLORS.navy }}>
       {icon}
     </div>
-    <div style={{ minWidth: 0, flex: 1 }}>
-      <Text
-        style={{
-          display: "block",
-          fontSize: 10,
-          color: COLORS.textMuted,
-          fontWeight: 700,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </Text>
-      <Text strong ellipsis style={{ fontSize: 13, color: COLORS.textMain }}>
-        {value}
+
+    <div className="tc-detail-content">
+      <Text className="tc-detail-label">{label}</Text>
+      <Text className="tc-detail-value" title={String(value ?? "")}>
+        {value || "Chưa cập nhật"}
       </Text>
     </div>
   </div>
 );
 
 /* =========================================================
-   CLASS CARD COMPONENT
+   CLASS CARD
 ========================================================= */
+const getClassSchedule = (classData) => {
+  const schedules = Array.isArray(classData?.schedules)
+    ? classData.schedules
+    : [];
+
+  return schedules[0] || null;
+};
 
 const ClassCard = ({ classData }) => {
-  const statusCfg = getStatusConfig(classData?.status);
+  const status = getStatusConfig(classData?.status);
+  const schedule = getClassSchedule(classData);
+
+  const role = classData?.catechist_role || "Giáo lý viên";
+
   const isMainRole =
-    classData?.catechist_role?.toLowerCase()?.includes("chủ nhiệm") ||
-    classData?.catechist_role?.toLowerCase()?.includes("trưởng");
+    role.toLowerCase().includes("chủ nhiệm") ||
+    role.toLowerCase().includes("trưởng");
+
+  const studentCount = Number(classData?.studentsCount || 0);
+
+  const hasSchedule = Boolean(schedule);
 
   return (
-    <Card
-      bordered={false}
-      style={{
-        borderRadius: 20,
-        background: COLORS.cardBg,
-        border: `1.5px solid ${COLORS.primaryBorder}`,
-        boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.06)",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-      }}
-      styles={{ body: { padding: "20px 24px" } }}
-    >
-      {/* HEADER LỚP HỌC */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
-        <Space size={12} align="start">
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              background: "linear-gradient(135deg, #173B5E 0%, #204E7A 100%)",
-              color: "#FFFFFF",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 22,
-              flexShrink: 0,
-              boxShadow: "0 4px 12px rgba(23, 59, 94, 0.2)",
-            }}
-          >
+    <Card className="tc-class-card" bordered={false}>
+      {/* HEADER */}
+      <div className="tc-card-header">
+        <div className="tc-class-identity">
+          <div className="tc-class-icon">
             <ReadOutlined />
           </div>
-          <div>
-            <Space size={8} wrap style={{ marginBottom: 4 }}>
-              <Tag
-                bordered={false}
-                style={{
-                  borderRadius: 6,
-                  fontWeight: 800,
-                  color: COLORS.primaryDark,
-                  background: COLORS.primaryLight,
-                  border: `1px solid ${COLORS.primaryBorder}`,
-                  margin: 0,
-                }}
-              >
-                MÃ: {classData?.code || "N/A"}
-              </Tag>
-              {classData?.category && (
-                <Tag
-                  bordered={false}
-                  style={{
-                    borderRadius: 6,
-                    fontWeight: 700,
-                    color: "#9A6B1F",
-                    background: COLORS.goldLight,
-                    border: "1px solid #F3E2C2",
-                    margin: 0,
-                  }}
-                >
-                  {classData.category}
-                </Tag>
+
+          <div className="tc-class-heading">
+            <Space size={6} wrap className="tc-tags">
+              <span className="tc-code">
+                MÃ LỚP: {classData?.code || "N/A"}
+              </span>
+
+              {classData?.academic_year && (
+                <span className="tc-category">{classData.academic_year}</span>
               )}
             </Space>
-            <Title
-              level={4}
-              style={{ margin: 0, color: COLORS.textMain, fontWeight: 800 }}
-            >
-              {classData?.name || "Chưa đặt tên lớp"}
+
+            <Title level={4} className="tc-class-name">
+              {classData?.name || "Lớp học chưa đặt tên"}
             </Title>
+
+            <Text className="tc-class-category">
+              {classData?.category || "Chưa phân loại"}
+            </Text>
           </div>
-        </Space>
+        </div>
 
         <Tag
           bordered={false}
+          className="tc-status"
           style={{
-            margin: 0,
-            borderRadius: 20,
-            padding: "4px 12px",
-            fontSize: 12,
-            fontWeight: 700,
-            color: statusCfg.color,
-            background: statusCfg.bg,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
+            color: status.color,
+            background: status.bg,
           }}
         >
-          {statusCfg.icon}
-          {statusCfg.label}
+          {status.icon}
+          {status.label}
         </Tag>
       </div>
 
-      {/* GRID LỊCH HỌC VÀ ĐỊA ĐIỂM */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={12} sm={6}>
-          <InfoBlock
-            icon={<CalendarOutlined />}
-            label="Thứ học"
-            value={getDayName(classData?.day_of_week)}
-          />
-        </Col>
-        <Col xs={12} sm={6}>
-          <InfoBlock
-            icon={<ClockCircleOutlined />}
-            label="Giờ học"
-            value={`${formatTime(classData?.start_time)} - ${formatTime(classData?.end_time)}`}
-          />
-        </Col>
-        <Col xs={12} sm={6}>
-          <InfoBlock
-            icon={<EnvironmentOutlined />}
-            label="Phòng học"
-            value={classData?.room || "Chưa xếp"}
-          />
-        </Col>
-        <Col xs={12} sm={6}>
-          <InfoBlock
-            icon={<TeamOutlined />}
-            label="Sĩ số lớp"
-            value={`${classData?.studentsCount || 0} Học viên`}
-          />
-        </Col>
-      </Row>
-
-      {/* FOOTER CHỨA THỜI GIAN VÀ VAI TRÒ */}
-      <div
-        style={{
-          padding: "10px 16px",
-          borderRadius: 14,
-          background: COLORS.primaryLight,
-          border: `1.5px solid ${COLORS.primaryBorder}`,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 10,
-        }}
-      >
-        <Space size={6}>
-          <CalendarOutlined style={{ color: COLORS.primary }} />
-          <Text style={{ fontSize: 12, color: COLORS.slate, fontWeight: 600 }}>
-            Thời gian:{" "}
-            <span style={{ color: COLORS.textMain, fontWeight: 700 }}>
-              {classData?.start_date
-                ? dayjs(classData.start_date).format("DD/MM/YYYY")
-                : "—"}
-              {" đến "}
-              {classData?.end_date
-                ? dayjs(classData.end_date).format("DD/MM/YYYY")
-                : "—"}
-            </span>
-          </Text>
-        </Space>
-
-        <Tag
-          bordered={false}
-          style={{
-            margin: 0,
-            borderRadius: 8,
-            fontWeight: 700,
-            color: isMainRole ? "#9A6B1F" : COLORS.primary,
-            background: isMainRole ? COLORS.goldLight : "#E2E8F0",
-            padding: "3px 10px",
-          }}
-        >
-          Vai trò: {classData?.catechist_role || "Giáo lý viên"}
-        </Tag>
+      {/* NĂM HỌC */}
+      <div className="tc-academic-year">
+        <CalendarOutlined />
+        <span>Năm học</span>
+        <strong>{classData?.academic_year || "Chưa cập nhật"}</strong>
       </div>
 
-      {classData?.description && (
-        <Text
-          type="secondary"
-          style={{
-            display: "block",
-            fontSize: 12,
-            marginTop: 10,
-            paddingLeft: 4,
-            fontStyle: "italic",
-          }}
-        >
-          💬 {classData.description}
-        </Text>
+      {/* LỊCH HỌC TỪ schedules[0] */}
+      <div className="tc-schedule">
+        <div className="tc-schedule-main">
+          <div className="tc-schedule-icon">
+            <CalendarOutlined />
+          </div>
+
+          <div>
+            <Text className="tc-eyebrow">LỊCH SINH HOẠT</Text>
+
+            <div className="tc-schedule-day">
+              {hasSchedule ? getDayName(schedule.day_of_week) : "Chưa xếp lịch"}
+            </div>
+          </div>
+        </div>
+
+        <div className="tc-time-pill">
+          <ClockCircleOutlined />
+
+          <span>
+            {hasSchedule
+              ? `${formatTime(schedule.start_time)} – ${formatTime(
+                  schedule.end_time,
+                )}`
+              : "Chưa có giờ học"}
+          </span>
+        </div>
+      </div>
+
+      {/* THÔNG TIN LỚP */}
+      <div className="tc-details-grid">
+        <DetailItem
+          icon={<EnvironmentOutlined />}
+          label="Phòng học"
+          value={schedule?.room || classData?.room || "Chưa xếp phòng"}
+        />
+
+        <DetailItem
+          icon={<TeamOutlined />}
+          label="Sĩ số học viên"
+          value={`${studentCount} học viên`}
+          accent={COLORS.green}
+        />
+      </div>
+
+      {/* THỜI GIAN KHÓA HỌC */}
+      <div className="tc-duration">
+        <div className="tc-duration-heading">
+          <FieldTimeOutlined />
+          <Text>Thời gian khóa học</Text>
+        </div>
+
+        <div className="tc-duration-dates">
+          <span>{formatDate(classData?.start_date)}</span>
+          <ArrowRightOutlined />
+          <span>{formatDate(classData?.end_date)}</span>
+        </div>
+      </div>
+
+      {/* GIÁO LÝ VIÊN */}
+      <div className="tc-card-footer">
+        <div className="tc-role-avatar">
+          <SafetyCertificateOutlined />
+        </div>
+
+        <div className="tc-role-info">
+          <Text className="tc-role-label">Vai trò được phân công</Text>
+          <Text className="tc-role-value">{role}</Text>
+        </div>
+
+        {isMainRole && (
+          <Tag bordered={false} className="tc-role-badge">
+            Phụ trách chính
+          </Tag>
+        )}
+      </div>
+
+      {/* GHI CHÚ */}
+      {(classData?.description || classData?.notes) && (
+        <div className="tc-description">
+          <span className="tc-description-mark">“</span>
+          <Text>{classData.description || classData.notes}</Text>
+        </div>
       )}
     </Card>
   );
@@ -381,18 +342,20 @@ const TeacherClassesPage = () => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Filters
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("grid");
 
   const fetchClasses = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+
       const response = await classApi.getClassTeacher();
+
       const list = normalizeListResponse(response);
-      setClasses(Array.isArray(list) ? list : []);
+
+      setClasses(list);
     } catch (err) {
       setClasses([]);
       setError(
@@ -408,29 +371,56 @@ const TeacherClassesPage = () => {
     fetchClasses();
   }, [fetchClasses]);
 
-  // Lọc danh sách lớp học
   const filteredClasses = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+
     return classes.filter((item) => {
+      const name = String(item?.name || "").toLowerCase();
+      const code = String(item?.code || "").toLowerCase();
+      const category = String(item?.category || "").toLowerCase();
+
       const matchSearch =
-        !searchText.trim() ||
-        item?.name?.toLowerCase().includes(searchText.trim().toLowerCase()) ||
-        item?.code?.toLowerCase().includes(searchText.trim().toLowerCase());
+        !keyword ||
+        name.includes(keyword) ||
+        code.includes(keyword) ||
+        category.includes(keyword);
 
       const matchStatus =
-        statusFilter === "all" || (item?.status || "active") === statusFilter;
+        statusFilter === "all" ||
+        String(item?.status || "active")
+          .trim()
+          .toLowerCase() === statusFilter;
 
       return matchSearch && matchStatus;
     });
   }, [classes, searchText, statusFilter]);
 
-  // Tính tổng sĩ số học viên
-  const totalStudents = useMemo(() => {
-    return classes.reduce(
-      (sum, item) => sum + Number(item?.studentsCount || 0),
-      0,
-    );
-  }, [classes]);
+  const totalStudents = useMemo(
+    () =>
+      classes.reduce((sum, item) => sum + Number(item?.studentsCount || 0), 0),
+    [classes],
+  );
 
+  const statusCounts = useMemo(() => {
+    const normalizeStatus = (status) =>
+      String(status || "active")
+        .trim()
+        .toLowerCase();
+
+    return {
+      active: classes.filter(
+        (item) => normalizeStatus(item?.status) === "active",
+      ).length,
+
+      paused: classes.filter(
+        (item) => normalizeStatus(item?.status) === "paused",
+      ).length,
+
+      completed: classes.filter(
+        (item) => normalizeStatus(item?.status) === "completed",
+      ).length,
+    };
+  }, [classes]);
   if (error) {
     return (
       <ErrorPage
@@ -442,45 +432,983 @@ const TeacherClassesPage = () => {
   }
 
   return (
-    <div
-      style={{
-        maxWidth: 1250,
-        margin: "0 auto",
-        paddingBottom: 40,
-        fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
-      }}
-    >
-      {/* PAGE HERO HEADER */}
+    <div className="teacher-classes-page">
+      <style>{`
+        .teacher-classes-page {
+          --tc-navy: #173B5E;
+          --tc-border: #E4EAF1;
+          max-width: 1440px;
+          margin: 0 auto;
+          padding-bottom: 40px;
+          color: #182B43;
+          font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .teacher-classes-page * {
+          box-sizing: border-box;
+        }
+
+        /* PROFILE */
+        .tc-profile {
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          padding: 20px 24px;
+          margin-top: 20px;
+          border: 1px solid #E5EAF1;
+          border-radius: 20px;
+          background:
+            radial-gradient(circle at 95% 0%, rgba(217,164,65,.13), transparent 30%),
+            linear-gradient(120deg, #FFFFFF, #F7FAFD);
+        }
+
+        .tc-profile-left {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          min-width: 0;
+          position: relative;
+          z-index: 1;
+        }
+
+        .tc-profile-avatar {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          width: 58px;
+          height: 58px;
+          border: 3px solid #FFFFFF;
+          border-radius: 18px;
+          background: linear-gradient(145deg, #173B5E, #285A84);
+          box-shadow: 0 5px 15px rgba(23,59,94,.16);
+          color: #F4D28B;
+          font-size: 19px;
+          font-weight: 800;
+        }
+
+        .tc-profile-kicker {
+          display: block;
+          margin-bottom: 4px;
+          color: #A77A2D;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 1px;
+        }
+
+        .tc-profile-name {
+          margin: 0 !important;
+          color: #173B5E !important;
+          font-size: 18px !important;
+          font-weight: 800 !important;
+        }
+
+        .tc-profile-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+          margin-top: 8px;
+        }
+
+        .tc-profile-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 9px;
+          border: 1px solid #E3EAF2;
+          border-radius: 8px;
+          background: #FFFFFF;
+          color: #52677F;
+          font-size: 11px;
+          font-weight: 600;
+        }
+
+        .tc-profile-chip strong {
+          color: #173B5E;
+        }
+
+        .tc-profile-decoration {
+          position: absolute;
+          right: 20px;
+          bottom: -48px;
+          color: rgba(23,59,94,.035);
+          font-size: 170px;
+          pointer-events: none;
+        }
+
+        /* SECTION HEADING */
+        .tc-section-heading {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin: 26px 0 14px;
+        }
+
+        .tc-section-title {
+          margin: 0 !important;
+          color: #182B43 !important;
+          font-size: 19px !important;
+          font-weight: 800 !important;
+          letter-spacing: -.3px;
+        }
+
+        .tc-section-subtitle {
+          display: block;
+          margin-top: 4px;
+          color: #8290A3;
+          font-size: 12px;
+        }
+
+        .tc-count-pill {
+          padding: 7px 11px;
+          border: 1px solid #DCE6F0;
+          border-radius: 9px;
+          background: #F0F5FA;
+          color: #173B5E;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        /* TOOLBAR */
+        .tc-toolbar {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px;
+          margin-bottom: 16px;
+          border: 1px solid #E5EAF1;
+          border-radius: 15px;
+          background: #FFFFFF;
+          box-shadow: 0 3px 12px rgba(23,59,94,.025);
+        }
+
+        .tc-search {
+          flex: 1;
+          min-width: 150px;
+        }
+
+        .tc-search .ant-input-affix-wrapper {
+          min-height: 42px;
+          border-color: #E5EAF1;
+          border-radius: 10px;
+          background: #F9FBFD;
+          box-shadow: none;
+        }
+
+        .tc-search .ant-input-affix-wrapper:hover,
+        .tc-search .ant-input-affix-wrapper-focused {
+          border-color: #9CB4CA;
+        }
+
+        .tc-search .ant-input {
+          background: transparent;
+          font-size: 12px;
+        }
+
+        .tc-filter {
+          width: 200px;
+          flex-shrink: 0;
+        }
+
+        .tc-filter .ant-select-selector {
+          min-height: 42px !important;
+          align-items: center;
+          border-color: #E5EAF1 !important;
+          border-radius: 10px !important;
+          background: #F9FBFD !important;
+          box-shadow: none !important;
+        }
+
+        .tc-filter .ant-select-selection-item {
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .tc-view-switch {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          flex-shrink: 0;
+          padding: 4px;
+          border: 1px solid #E4EAF1;
+          border-radius: 10px;
+          background: #F5F8FB;
+        }
+
+        .tc-view-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 32px;
+          padding: 0;
+          border: none;
+          border-radius: 7px;
+          background: transparent;
+          color: #8190A3;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all .18s ease;
+        }
+
+        .tc-view-btn:hover {
+          background: #E8EEF5;
+          color: #173B5E;
+        }
+
+        .tc-view-btn.active {
+          background: #173B5E;
+          color: #FFFFFF;
+          box-shadow: 0 2px 6px rgba(23,59,94,.16);
+        }
+
+        .tc-refresh {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          height: 42px;
+          padding: 0 12px;
+          border: 1px solid #D9E3ED;
+          border-radius: 10px;
+          background: #FFFFFF;
+          color: #173B5E;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all .18s ease;
+        }
+
+        .tc-refresh:hover:not(:disabled) {
+          border-color: #173B5E;
+          background: #F0F5FA;
+        }
+
+        .tc-refresh:disabled {
+          opacity: .55;
+          cursor: not-allowed;
+        }
+
+        /* GRID AND LIST */
+        .tc-class-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .tc-class-grid.list-mode {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 9px;
+        }
+
+        /* CLASS CARD */
+        .tc-class-card {
+          height: 100%;
+          overflow: hidden;
+          border: 1px solid #E3EAF2 !important;
+          border-radius: 18px !important;
+          background: #FFFFFF;
+          box-shadow: 0 4px 16px rgba(23,59,94,.035);
+          transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .tc-class-card:hover {
+          transform: translateY(-2px);
+          border-color: #B8CADD !important;
+          box-shadow: 0 10px 25px rgba(23,59,94,.075);
+        }
+
+        .tc-class-card .ant-card-body {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          padding: 18px;
+        }
+
+        .tc-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .tc-class-identity {
+          display: flex;
+          align-items: flex-start;
+          gap: 11px;
+          min-width: 0;
+        }
+.tc-class-category {
+  display: block;
+  margin-top: 4px;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.tc-academic-year {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+  color: #718096;
+  font-size: 11px;
+}
+
+.tc-academic-year .anticon {
+  color: #B58A39;
+}
+
+.tc-academic-year strong {
+  color: #173B5E;
+  font-weight: 800;
+}
+
+/* List mode */
+.tc-class-grid.list-mode .tc-academic-year {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+        .tc-class-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 43px;
+          height: 43px;
+          flex-shrink: 0;
+          border: 1px solid #DCE7F2;
+          border-radius: 13px;
+          background: linear-gradient(145deg, #F0F5FA, #E5EEF7);
+          color: #173B5E;
+          font-size: 20px;
+        }
+
+        .tc-class-heading {
+          min-width: 0;
+        }
+
+        .tc-tags {
+          margin-bottom: 5px;
+        }
+
+        .tc-code,
+        .tc-category {
+          display: inline-flex;
+          align-items: center;
+          max-width: 180px;
+          overflow: hidden;
+          padding: 4px 7px;
+          border-radius: 6px;
+          font-size: 9px;
+          font-weight: 800;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .tc-code {
+          border: 1px solid #DFE8F1;
+          background: #F3F7FB;
+          color: #526B85;
+        }
+
+        .tc-category {
+          border: 1px solid #F0E0BB;
+          background: #FFF8E8;
+          color: #956B20;
+        }
+
+        .tc-class-name {
+          margin: 0 !important;
+          color: #182B43 !important;
+          font-size: 16px !important;
+          font-weight: 800 !important;
+          line-height: 1.4 !important;
+          overflow-wrap: anywhere;
+        }
+
+        .tc-status {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          flex-shrink: 0;
+          margin: 0 !important;
+          padding: 5px 8px;
+          border-radius: 7px;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        /* SCHEDULE */
+        .tc-schedule {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 17px;
+          padding: 12px;
+          border: 1px solid #E4EBF3;
+          border-radius: 13px;
+          background: linear-gradient(110deg, #F7FAFD, #F1F6FB);
+        }
+
+        .tc-schedule-main {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          min-width: 0;
+        }
+
+        .tc-schedule-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          flex-shrink: 0;
+          border-radius: 10px;
+          background: #FFFFFF;
+          box-shadow: 0 2px 7px rgba(23,59,94,.06);
+          color: #173B5E;
+          font-size: 16px;
+        }
+
+        .tc-eyebrow {
+          display: block;
+          color: #8796A8;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: .7px;
+        }
+
+        .tc-schedule-day {
+          margin-top: 3px;
+          color: #173B5E;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .tc-time-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 9px;
+          border: 1px solid #E6D5B3;
+          border-radius: 8px;
+          background: #FFFFFF;
+          color: #8B692A;
+          font-size: 10px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        /* DETAILS */
+        .tc-details-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 9px;
+          margin-top: 12px;
+        }
+
+        .tc-detail-item {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          min-width: 0;
+          padding: 10px;
+          border: 1px solid #E9EEF4;
+          border-radius: 11px;
+          background: #FFFFFF;
+        }
+
+        .tc-detail-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 31px;
+          height: 31px;
+          flex-shrink: 0;
+          border-radius: 9px;
+          background: #F2F6FA;
+          font-size: 15px;
+        }
+
+        .tc-detail-content {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          gap: 3px;
+        }
+
+        .tc-detail-label {
+          color: #8A97A8;
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        .tc-detail-value {
+          overflow: hidden;
+          color: #253B53;
+          font-size: 11px;
+          font-weight: 800;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        /* DURATION */
+        .tc-duration {
+          margin-top: 12px;
+          padding: 11px 0;
+          border-top: 1px dashed #E2E8F0;
+          border-bottom: 1px dashed #E2E8F0;
+        }
+
+        .tc-duration-heading {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: #8290A3;
+          font-size: 10px;
+          font-weight: 700;
+        }
+
+        .tc-duration-heading .anticon {
+          color: #B58A39;
+        }
+
+        .tc-duration-dates {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 7px;
+          color: #334A63;
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .tc-duration-dates .anticon {
+          color: #A2AFBD;
+          font-size: 10px;
+        }
+
+        /* ROLE */
+        .tc-card-footer {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          margin-top: auto;
+          padding-top: 13px;
+        }
+
+        .tc-role-avatar {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 33px;
+          height: 33px;
+          flex-shrink: 0;
+          border: 1px solid #F0DFB9;
+          border-radius: 10px;
+          background: #FFF8E8;
+          color: #A57B2E;
+          font-size: 15px;
+        }
+
+        .tc-role-info {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          gap: 3px;
+        }
+
+        .tc-role-label {
+          color: #8A97A8;
+          font-size: 10px;
+        }
+
+        .tc-role-value {
+          color: #253B53;
+          font-size: 11px;
+          font-weight: 800;
+          overflow-wrap: anywhere;
+        }
+
+        .tc-role-badge {
+          margin: 0 0 0 auto !important;
+          border: 1px solid #F0DFB9 !important;
+          border-radius: 7px;
+          background: #FFF8E8;
+          color: #956B20;
+          font-size: 9px;
+          font-weight: 800;
+        }
+
+        .tc-description {
+          display: flex;
+          align-items: flex-start;
+          gap: 7px;
+          margin-top: 11px;
+          padding: 9px 11px;
+          border-radius: 9px;
+          background: #FAFBFC;
+          color: #718096;
+          font-size: 11px;
+          line-height: 1.6;
+        }
+
+        .tc-description .ant-typography {
+          color: #718096;
+          font-size: 11px;
+        }
+
+        .tc-description-mark {
+          color: #D9A441;
+          font-family: Georgia, serif;
+          font-size: 23px;
+          font-weight: 800;
+          line-height: 1;
+        }
+
+        /* LIST MODE: THẺ NGANG GỌN */
+        .tc-class-grid.list-mode .tc-class-card .ant-card-body {
+          display: grid;
+          grid-template-columns: minmax(170px, 1.2fr) minmax(175px, .9fr) minmax(135px, .75fr);
+          align-items: center;
+          gap: 10px 18px;
+          padding: 13px 16px;
+        }
+
+        .tc-class-grid.list-mode .tc-card-header {
+          grid-column: 1;
+          align-items: center;
+        }
+
+        .tc-class-grid.list-mode .tc-class-icon {
+          width: 39px;
+          height: 39px;
+          border-radius: 11px;
+          font-size: 17px;
+        }
+
+        .tc-class-grid.list-mode .tc-class-name {
+          font-size: 13px !important;
+        }
+
+        .tc-class-grid.list-mode .tc-status {
+          display: none;
+        }
+
+        .tc-class-grid.list-mode .tc-schedule {
+          grid-column: 2;
+          margin-top: 0;
+          padding: 9px;
+          gap: 7px;
+        }
+
+        .tc-class-grid.list-mode .tc-schedule-icon {
+          width: 29px;
+          height: 29px;
+          font-size: 14px;
+        }
+
+        .tc-class-grid.list-mode .tc-schedule-day {
+          font-size: 11px;
+        }
+
+        .tc-class-grid.list-mode .tc-eyebrow {
+          font-size: 8px;
+        }
+
+        .tc-class-grid.list-mode .tc-time-pill {
+          padding: 6px 7px;
+          font-size: 9px;
+        }
+
+        .tc-class-grid.list-mode .tc-details-grid {
+          grid-column: 3;
+          grid-template-columns: 1fr;
+          gap: 5px;
+          margin-top: 0;
+        }
+
+        .tc-class-grid.list-mode .tc-detail-item {
+          padding: 5px 7px;
+          border: none;
+          background: #F7F9FC;
+        }
+
+        .tc-class-grid.list-mode .tc-detail-icon {
+          width: 26px;
+          height: 26px;
+          font-size: 13px;
+        }
+
+        .tc-class-grid.list-mode .tc-detail-label {
+          font-size: 9px;
+        }
+
+        .tc-class-grid.list-mode .tc-detail-value {
+          font-size: 10px;
+        }
+
+        .tc-class-grid.list-mode .tc-duration,
+        .tc-class-grid.list-mode .tc-card-footer,
+        .tc-class-grid.list-mode .tc-description {
+          grid-column: 1 / -1;
+        }
+
+        .tc-class-grid.list-mode .tc-duration {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-top: 0;
+          padding: 9px 0 0;
+          border-bottom: none;
+        }
+
+        .tc-class-grid.list-mode .tc-duration-dates {
+          margin-top: 0;
+        }
+
+        .tc-class-grid.list-mode .tc-card-footer {
+          padding-top: 8px;
+          border-top: 1px dashed #E4EAF1;
+        }
+
+        .tc-class-grid.list-mode .tc-description {
+          margin-top: 0;
+        }
+
+        /* EMPTY STATE */
+        .tc-empty-card {
+          padding: 35px 20px;
+          border: 1px dashed #CCD8E5;
+          border-radius: 18px;
+          background: #FFFFFF;
+          text-align: center;
+        }
+
+        .tc-empty-title {
+          margin-top: 12px;
+          color: #253B53;
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .tc-empty-subtitle {
+          margin-top: 6px;
+          color: #8796A8;
+          font-size: 12px;
+        }
+
+        .tc-clear-filter {
+          margin-top: 15px;
+          padding: 8px 13px;
+          border: 1px solid #D9E3ED;
+          border-radius: 9px;
+          background: #FFFFFF;
+          color: #173B5E;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        @media (max-width: 1050px) {
+          .tc-class-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .tc-class-grid.list-mode .tc-class-card .ant-card-body {
+            grid-template-columns: minmax(160px, 1fr) minmax(170px, 1fr);
+          }
+
+          .tc-class-grid.list-mode .tc-card-header,
+          .tc-class-grid.list-mode .tc-schedule {
+            grid-column: auto;
+          }
+
+          .tc-class-grid.list-mode .tc-details-grid {
+            grid-column: 1 / -1;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 720px) {
+          .tc-toolbar {
+            flex-wrap: wrap;
+          }
+
+          .tc-search {
+            flex: 1 1 100%;
+          }
+
+          .tc-filter {
+            flex: 1 1 160px;
+            width: auto;
+          }
+
+          .tc-refresh {
+            flex: 0 0 auto;
+          }
+
+          .tc-class-grid.list-mode .tc-class-card .ant-card-body {
+            grid-template-columns: 1fr;
+            gap: 11px;
+            padding: 14px;
+          }
+
+          .tc-class-grid.list-mode .tc-card-header,
+          .tc-class-grid.list-mode .tc-schedule,
+          .tc-class-grid.list-mode .tc-details-grid,
+          .tc-class-grid.list-mode .tc-duration,
+          .tc-class-grid.list-mode .tc-card-footer,
+          .tc-class-grid.list-mode .tc-description {
+            grid-column: 1;
+          }
+
+          .tc-class-grid.list-mode .tc-schedule {
+            align-items: flex-start;
+          }
+
+          .tc-class-grid.list-mode .tc-duration {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .tc-profile {
+            padding: 14px;
+          }
+
+          .tc-profile-left {
+            gap: 10px;
+          }
+
+          .tc-profile-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 13px;
+            font-size: 15px;
+          }
+
+          .tc-profile-name {
+            font-size: 15px !important;
+          }
+
+          .tc-profile-meta {
+            gap: 5px;
+          }
+
+          .tc-profile-chip {
+            padding: 4px 6px;
+            font-size: 9px;
+          }
+
+          .tc-section-title {
+            font-size: 17px !important;
+          }
+
+          .tc-class-card .ant-card-body {
+            padding: 14px;
+          }
+
+          .tc-card-header {
+            flex-direction: column;
+          }
+
+          .tc-status {
+            margin-left: 54px !important;
+          }
+
+          .tc-schedule {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .tc-time-pill {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .tc-details-grid {
+            gap: 7px;
+          }
+
+          .tc-detail-item {
+            gap: 6px;
+            padding: 8px;
+          }
+
+          .tc-detail-icon {
+            width: 27px;
+            height: 27px;
+            font-size: 13px;
+          }
+
+          .tc-detail-value {
+            font-size: 10px;
+          }
+
+          .tc-role-badge {
+            max-width: 105px;
+            white-space: normal;
+          }
+
+          .tc-view-btn {
+            width: 31px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .tc-class-card,
+          .tc-view-btn,
+          .tc-refresh {
+            transition: none;
+          }
+        }
+      `}</style>
+
+      {/* HEADER */}
       <PageHeroHeader
         icon={<BookOutlined />}
-        title="Lớp Học Phụ Trách"
-        description="Danh sách các lớp Giáo lý được phân công quản lý và giảng dạy"
+        title="Lớp học phụ trách"
+        description="Theo dõi lịch học, sĩ số và các lớp Giáo lý được phân công."
         onRefresh={fetchClasses}
         refreshLoading={loading}
       />
 
-      {/* STAT CARDS ROW */}
-      <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
+      {/* THỐNG KÊ */}
+      <Row gutter={[14, 14]} style={{ marginTop: 20 }}>
         <Col xs={24} sm={8}>
           <StatCard
             title="Tổng số lớp"
             value={classes.length}
             suffix="lớp"
             icon={<BookOutlined />}
-            color={COLORS.primary}
-            bg={COLORS.primaryLight}
+            color={COLORS.navy}
+            bg={COLORS.navyLight}
           />
         </Col>
+
         <Col xs={24} sm={8}>
           <StatCard
             title="Tổng sĩ số"
             value={totalStudents}
             suffix="học viên"
             icon={<TeamOutlined />}
-            color="#2563EB"
-            bg="#EFF6FF"
+            color={COLORS.green}
+            bg={COLORS.greenLight}
           />
         </Col>
+
         <Col xs={24} sm={8}>
           <StatCard
             title="Sĩ số trung bình"
@@ -489,169 +1417,195 @@ const TeacherClassesPage = () => {
             }
             suffix="em / lớp"
             icon={<IdcardOutlined />}
-            color={COLORS.gold}
+            color="#B58A39"
             bg={COLORS.goldLight}
           />
         </Col>
       </Row>
 
-      {/* CATECHIST PROFILE BANNER */}
-      <Card
-        bordered={false}
-        style={{
-          borderRadius: 20,
-          background: "linear-gradient(135deg, #173B5E 0%, #204E7A 100%)",
-          border: `1.5px solid ${COLORS.primaryBorder}`,
-          boxShadow: "0 10px 30px -5px rgba(23, 59, 94, 0.1)",
-          marginTop: 20,
-        }}
-        styles={{ body: { padding: "20px 24px" } }}
-      >
-        <Row align="middle" justify="space-between" gutter={[16, 16]}>
-          <Col xs={24} sm={18}>
-            <Space size={16} align="center">
-              <Avatar
-                size={54}
-                icon={<UserOutlined />}
-                style={{
-                  backgroundColor: COLORS.gold,
-                  color: "#173B5E",
-                  boxShadow: "0 4px 12px rgba(217, 164, 65, 0.3)",
-                  border: "2px solid #FFFFFF",
-                  fontWeight: 700,
-                }}
-              />
-              <div>
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: COLORS.gold,
-                    fontWeight: 800,
-                    letterSpacing: 0.8,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  GIÁO LÝ VIÊN PHỤ TRÁCH
-                </Text>
-                <Title
-                  level={4}
-                  style={{
-                    margin: "2px 0 4px",
-                    color: "#FFFFFF",
-                    fontWeight: 800,
-                  }}
-                >
-                  {user?.full_name || "Khánh Hưng"}
-                </Title>
-                <Space wrap size={8}>
-                  <Tag
-                    bordered={false}
-                    style={{
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      margin: 0,
-                      background: "rgba(255,255,255,0.15)",
-                      color: "#FFFFFF",
-                    }}
-                  >
-                    Thánh danh: {user?.holy_name || "Chưa cập nhật"}
-                  </Tag>
-                  <Tag
-                    bordered={false}
-                    style={{
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      margin: 0,
-                      background: COLORS.gold,
-                      color: "#173B5E",
-                    }}
-                  >
-                    Mã GLV: {user?.catechist_code || "N/A"}
-                  </Tag>
-                </Space>
-              </div>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      {/* HỒ SƠ GIÁO LÝ VIÊN */}
+      <div className="tc-profile">
+        <div className="tc-profile-left">
+          <Avatar className="tc-profile-avatar" icon={<UserOutlined />}>
+            {getInitials(user?.full_name)}
+          </Avatar>
 
-      {/* FILTER & SEARCH BAR */}
-      <Row
-        gutter={[16, 16]}
-        align="middle"
-        style={{ marginTop: 20, marginBottom: 20 }}
-      >
-        <Col xs={24} sm={14} md={16}>
-          <AppSearchInput
+          <div style={{ minWidth: 0 }}>
+            <Text className="tc-profile-kicker">HỒ SƠ GIÁO LÝ VIÊN</Text>
+
+            <Title level={4} className="tc-profile-name">
+              {user?.full_name || "Giáo lý viên"}
+            </Title>
+
+            <div className="tc-profile-meta">
+              <span className="tc-profile-chip">
+                <SafetyCertificateOutlined />
+                Thánh danh:
+                <strong>{user?.holy_name || "Chưa cập nhật"}</strong>
+              </span>
+
+              <span className="tc-profile-chip">
+                <IdcardOutlined />
+                Mã GLV:
+                <strong>{user?.catechist_code || "N/A"}</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <ReadOutlined className="tc-profile-decoration" />
+      </div>
+
+      {/* TIÊU ĐỀ DANH SÁCH */}
+      <div className="tc-section-heading">
+        <div>
+          <Title level={4} className="tc-section-title">
+            Danh sách lớp học
+          </Title>
+
+          <Text className="tc-section-subtitle">
+            Các lớp học được phân công cho bạn trong hệ thống.
+          </Text>
+        </div>
+
+        <div className="tc-count-pill">
+          {filteredClasses.length} / {classes.length} lớp
+        </div>
+      </div>
+
+      {/* TÌM KIẾM, LỌC VÀ CHUYỂN KIỂU */}
+      <div className="tc-toolbar">
+        <div className="tc-search">
+          <Input
+            allowClear
+            prefix={
+              <SearchOutlined style={{ color: "#8290A3", fontSize: 16 }} />
+            }
+            placeholder="Tìm tên lớp, mã lớp hoặc khối lớp..."
             value={searchText}
-            onChange={(value) => {
-              setSearchText(value);
-            }}
-            placeholder="Tìm kiếm theo tên lớp hoặc mã lớp..."
+            onChange={(event) => setSearchText(event.target.value)}
           />
-        </Col>
-        <Col xs={24} sm={10} md={8}>
-          <Select
-            value={statusFilter}
-            onChange={(val) => setStatusFilter(val)}
-            style={{ width: "100%" }}
-            size="large"
-            options={[
-              { value: "all", label: "🔍 Tất cả trạng thái" },
-              { value: "active", label: "🟢 Đang học" },
-              { value: "paused", label: "🟠 Tạm dừng" },
-              { value: "completed", label: "⚪ Đã hoàn thành" },
-            ]}
-          />
-        </Col>
-      </Row>
+        </div>
 
-      {/* CLASS CARDS GRID */}
-      {loading ? (
-        <Row gutter={[16, 16]}>
-          {[1, 2].map((k) => (
-            <Col span={24} key={k}>
-              <Card
-                style={{
-                  borderRadius: 20,
-                  border: `1.5px solid ${COLORS.primaryBorder}`,
-                }}
-              >
-                <Skeleton active paragraph={{ rows: 4 }} />
-              </Card>
-            </Col>
+        <Select
+          className="tc-filter"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          suffixIcon={<FilterOutlined />}
+          options={[
+            { value: "all", label: "Tất cả trạng thái" },
+            {
+              value: "active",
+              label: `Đang học (${statusCounts.active})`,
+            },
+            {
+              value: "paused",
+              label: `Tạm dừng (${statusCounts.paused})`,
+            },
+            {
+              value: "completed",
+              label: `Đã hoàn thành (${statusCounts.completed})`,
+            },
+          ]}
+        />
+
+        {/* GRID / LIST */}
+        <div className="tc-view-switch" aria-label="Kiểu hiển thị">
+          <Tooltip title="Hiển thị dạng lưới">
+            <button
+              type="button"
+              className={`tc-view-btn ${viewMode === "grid" ? "active" : ""}`}
+              onClick={() => setViewMode("grid")}
+              aria-label="Hiển thị dạng lưới"
+              aria-pressed={viewMode === "grid"}
+            >
+              <AppstoreOutlined />
+            </button>
+          </Tooltip>
+
+          <Tooltip title="Hiển thị dạng danh sách">
+            <button
+              type="button"
+              className={`tc-view-btn ${viewMode === "list" ? "active" : ""}`}
+              onClick={() => setViewMode("list")}
+              aria-label="Hiển thị dạng danh sách"
+              aria-pressed={viewMode === "list"}
+            >
+              <UnorderedListOutlined />
+            </button>
+          </Tooltip>
+        </div>
+
+        <Tooltip title="Tải lại danh sách lớp học">
+          <Button
+            className="tc-refresh"
+            icon={<ReloadOutlined spin={loading} />}
+            onClick={fetchClasses}
+            disabled={loading}
+          >
+            Làm mới
+          </Button>
+        </Tooltip>
+      </div>
+
+      {/* DANH SÁCH LỚP */}
+      {loading && classes.length === 0 ? (
+        <div className="tc-class-grid">
+          {[1, 2, 3, 4].map((item) => (
+            <Card key={item} className="tc-class-card" bordered={false}>
+              <Skeleton active paragraph={{ rows: 5 }} />
+            </Card>
           ))}
-        </Row>
+        </div>
       ) : filteredClasses.length > 0 ? (
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <div
+          className={`tc-class-grid ${viewMode === "list" ? "list-mode" : ""}`}
+        >
           {filteredClasses.map((item, index) => (
             <ClassCard
               key={item?.assignment_id || item?.id || index}
               classData={item}
             />
           ))}
-        </Space>
+        </div>
       ) : (
-        <Card
-          bordered={false}
-          style={{
-            borderRadius: 20,
-            border: `1.5px solid ${COLORS.primaryBorder}`,
-            textAlign: "center",
-          }}
-          styles={{ body: { padding: "40px 20px" } }}
+        <div className="tc-empty-card">
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={null} />
+
+          <div className="tc-empty-title">
+            {searchText || statusFilter !== "all"
+              ? "Không tìm thấy lớp học phù hợp"
+              : "Chưa có lớp học được phân công"}
+          </div>
+
+          <div className="tc-empty-subtitle">
+            {searchText || statusFilter !== "all"
+              ? "Hãy thử thay đổi từ khóa hoặc trạng thái lọc."
+              : "Các lớp học được phân công sẽ xuất hiện tại đây."}
+          </div>
+
+          {(searchText || statusFilter !== "all") && (
+            <button
+              type="button"
+              className="tc-clear-filter"
+              onClick={() => {
+                setSearchText("");
+                setStatusFilter("all");
+              }}
+            >
+              Xóa bộ lọc
+            </button>
+          )}
+        </div>
+      )}
+
+      {loading && classes.length > 0 && (
+        <Text
+          type="secondary"
+          style={{ display: "block", marginTop: 14, fontSize: 11 }}
         >
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Text style={{ color: COLORS.textMuted, fontWeight: 600 }}>
-                {searchText || statusFilter !== "all"
-                  ? "Không tìm thấy lớp học phù hợp với bộ lọc"
-                  : "Bạn chưa được phân công quản lý lớp học nào ✝"}
-              </Text>
-            }
-          />
-        </Card>
+          <ReloadOutlined spin /> Đang cập nhật dữ liệu lớp học...
+        </Text>
       )}
     </div>
   );

@@ -36,6 +36,9 @@ export const getLessonTypes = () => {
   return axios.get("/lessons/types");
 };
 
+export const getLessonPrograms = () => {
+  return axios.get("/lessons/programs");
+};
 // =========================================================
 // LESSON RESOURCE API
 // =========================================================

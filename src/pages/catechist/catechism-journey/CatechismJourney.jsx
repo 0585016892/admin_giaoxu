@@ -90,11 +90,6 @@ export default function CatechismJourney() {
 
             return mapApiClassToJourneyClass(item, journeyResponse.data);
           } catch (err) {
-            console.error(
-              `[CatechismJourney] Không tải được lớp ${item.id}:`,
-              err,
-            );
-
             return mapApiClassToJourneyClass(item);
           }
         }),
@@ -106,8 +101,6 @@ export default function CatechismJourney() {
         setNotice("Giáo xứ hiện chưa có lớp giáo lý đang hoạt động.");
       }
     } catch (err) {
-      console.error("[CatechismJourney] loadJourney:", err);
-
       setError(
         err?.response?.data?.message ||
           err?.message ||

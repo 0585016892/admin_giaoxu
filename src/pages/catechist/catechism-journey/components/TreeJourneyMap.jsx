@@ -96,7 +96,6 @@ export default function TreeJourneyMap({ classes = [], onSelectLesson }) {
   const [nodePositions, setNodePositions] = useState({});
   const dragRef = useRef(null);
   const suppressClickRef = useRef(false);
-  console.log(settings);
 
   useEffect(() => {
     const syncFullscreen = () =>

@@ -8,6 +8,7 @@ import React, {
 
 import {
   Alert,
+  Image,
   Avatar,
   Button,
   Card,
@@ -28,6 +29,8 @@ import {
 import {
   CalendarOutlined,
   CameraOutlined,
+  DownOutlined,
+  FilterOutlined,
   CheckCircleFilled,
   CheckOutlined,
   ClockCircleOutlined,
@@ -36,6 +39,8 @@ import {
   ExclamationCircleOutlined,
   HistoryOutlined,
   QrcodeOutlined,
+  AppstoreOutlined,
+  RightOutlined,
   SearchOutlined,
   StopOutlined,
   UserOutlined,
@@ -50,13 +55,12 @@ import { useNotification } from "../../../components/notification";
 
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
 import QRCodeScanner from "./QRCodeScanner";
-import StatCard from "../../../components/common/StatCard";
 import AppSearchInput from "../../../components/common/SearchInput";
 import AppButton from "../../../components/common/AppButton";
 import attendanceApi from "../../../api/attendanceApi";
 import classApi from "../../../api/classApi";
 import { useChurchSettings } from "../../../context/ChurchSettingsContext";
-
+import student_defaut from "../../../assets/images/student-default.png";
 const { Text, Title } = Typography;
 
 /* =========================================================
@@ -399,6 +403,8 @@ const AttendancePage = () => {
 
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
   const [page, setPage] = useState(1);
 
   const [pageSize, setPageSize] = useState(10);
@@ -416,6 +422,7 @@ const AttendancePage = () => {
   const [saving, setSaving] = useState(false);
 
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [attendanceMode, setAttendanceMode] = useState(null);
 
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -638,8 +645,6 @@ const AttendancePage = () => {
       setStatistics(nextStatistics);
     } catch (error) {
       if (requestId === requestIdRef.current) {
-        console.error("[ATTENDANCE] Load error:", error);
-
         const responseData = error?.response?.data;
 
         notify.error(
@@ -942,8 +947,6 @@ const AttendancePage = () => {
 
       await loadAttendance();
     } catch (error) {
-      console.error("[QR ATTENDANCE] Finish error:", error);
-
       notify.error(
         error?.response?.data?.message || "Không thể kết thúc điểm danh",
       );
@@ -1227,10 +1230,16 @@ const AttendancePage = () => {
 
           return (
             <div className="student-cell">
-              <Avatar
-                size={36}
-                src={avatar}
-                icon={<UserOutlined />}
+              <Image
+                width={36}
+                height={36}
+                src={
+                  avatar
+                    ? `${process.env.REACT_APP_API_URL}${avatar}`
+                    : student_defaut
+                }
+                fallback={student_defaut}
+                preview={false}
                 className="student-avatar"
               />
 
@@ -1270,100 +1279,107 @@ const AttendancePage = () => {
         },
       },
 
-      {
-        title: "GIỜ",
-        key: "check_in_time",
-        width: 70,
-        align: "center",
+      ...(attendanceMode === "manual"
+        ? [
+            {
+              title: "GIỜ",
+              key: "check_in_time",
+              width: 70,
+              align: "center",
 
-        render: (_, record) => {
-          if (!record.check_in_time) {
-            return <Text type="secondary">—</Text>;
-          }
+              render: (_, record) => {
+                if (!record.check_in_time) {
+                  return <Text type="secondary">—</Text>;
+                }
 
-          return <Text strong>{String(record.check_in_time).slice(0, 5)}</Text>;
-        },
-      },
+                return (
+                  <Text strong>{String(record.check_in_time).slice(0, 5)}</Text>
+                );
+              },
+            },
 
-      {
-        title: "ĐIỂM DANH",
-        key: "actions",
-        width: 190,
-        align: "center",
+            {
+              title: "ĐIỂM DANH",
+              key: "actions",
+              width: 190,
+              align: "center",
 
-        render: (_, record) => {
-          const current = record.currentStatus || "not_attended";
+              render: (_, record) => {
+                const current = record.currentStatus || "not_attended";
 
-          const disabled = isLocked || saving || !manualEnabled;
+                const disabled = isLocked || saving || !manualEnabled;
 
-          return (
-            <div className="manual-attendance-actions">
-              {/* CÓ MẶT */}
-              <Tooltip title="Có mặt">
-                <Button
-                  className="manual-action-btn manual-present"
-                  size="small"
-                  shape="circle"
-                  icon={<CheckOutlined />}
-                  disabled={disabled || current === "present"}
-                  onClick={() => updateAttendance(record, "present")}
-                />
-              </Tooltip>
+                return (
+                  <div className="manual-attendance-actions">
+                    {/* CÓ MẶT */}
+                    <Tooltip title="Có mặt">
+                      <Button
+                        className="manual-action-btn manual-present"
+                        size="small"
+                        shape="circle"
+                        icon={<CheckOutlined />}
+                        disabled={disabled || current === "present"}
+                        onClick={() => updateAttendance(record, "present")}
+                      />
+                    </Tooltip>
 
-              {/* ĐI MUỘN */}
-              {lateEnabled && (
-                <Tooltip title={`Đi muộn (sau ${lateMinutes} phút)`}>
-                  <Button
-                    className="manual-action-btn manual-late"
-                    size="small"
-                    shape="circle"
-                    icon={<ClockCircleOutlined />}
-                    disabled={disabled || current === "late"}
-                    onClick={() => updateAttendance(record, "late")}
-                  />
-                </Tooltip>
-              )}
+                    {/* ĐI MUỘN */}
+                    {lateEnabled && (
+                      <Tooltip title={`Đi muộn (sau ${lateMinutes} phút)`}>
+                        <Button
+                          className="manual-action-btn manual-late"
+                          size="small"
+                          shape="circle"
+                          icon={<ClockCircleOutlined />}
+                          disabled={disabled || current === "late"}
+                          onClick={() => updateAttendance(record, "late")}
+                        />
+                      </Tooltip>
+                    )}
 
-              {/* VẮNG */}
-              <Tooltip title="Vắng">
-                <Button
-                  className="manual-action-btn manual-absent"
-                  size="small"
-                  shape="circle"
-                  icon={<CloseOutlined />}
-                  disabled={disabled || current === "absent"}
-                  onClick={() => updateAttendance(record, "absent")}
-                />
-              </Tooltip>
+                    {/* VẮNG */}
+                    <Tooltip title="Vắng">
+                      <Button
+                        className="manual-action-btn manual-absent"
+                        size="small"
+                        shape="circle"
+                        icon={<CloseOutlined />}
+                        disabled={disabled || current === "absent"}
+                        onClick={() => updateAttendance(record, "absent")}
+                      />
+                    </Tooltip>
 
-              {/* CÓ PHÉP */}
-              <Tooltip title="Có phép">
-                <Button
-                  className="manual-action-btn manual-excused"
-                  size="small"
-                  shape="circle"
-                  icon={<ExclamationCircleOutlined />}
-                  disabled={disabled || current === "excused"}
-                  onClick={() => updateAttendance(record, "excused")}
-                />
-              </Tooltip>
+                    {/* CÓ PHÉP */}
+                    <Tooltip title="Có phép">
+                      <Button
+                        className="manual-action-btn manual-excused"
+                        size="small"
+                        shape="circle"
+                        icon={<ExclamationCircleOutlined />}
+                        disabled={disabled || current === "excused"}
+                        onClick={() => updateAttendance(record, "excused")}
+                      />
+                    </Tooltip>
 
-              {/* LỊCH SỬ */}
-              <Tooltip title="Xem lịch sử">
-                <Button
-                  className="manual-action-btn manual-history"
-                  size="small"
-                  shape="circle"
-                  icon={<HistoryOutlined />}
-                  onClick={() => openHistory(record)}
-                />
-              </Tooltip>
-            </div>
-          );
-        },
-      },
+                    {/* LỊCH SỬ */}
+                    <Tooltip title="Xem lịch sử">
+                      <Button
+                        className="manual-action-btn manual-history"
+                        size="small"
+                        shape="circle"
+                        icon={<HistoryOutlined />}
+                        onClick={() => openHistory(record)}
+                      />
+                    </Tooltip>
+                  </div>
+                );
+              },
+            },
+          ]
+        : []),
     ],
     [
+      attendanceMode,
       isLocked,
       saving,
       manualEnabled,
@@ -1503,38 +1519,36 @@ const AttendancePage = () => {
         />
 
         {/* =================================================
-            FILTER
+            ATTENDANCE SETUP + METHODS
         ================================================= */}
 
-        <Card bordered={false} className="attendance-filter-card">
+        <Card
+          bordered={false}
+          className="attendance-filter-card attendance-setup-card"
+        >
           <div className="filter-header">
             <div>
               <Title level={5} className="filter-title">
-                Bộ lọc điểm danh
+                {attendanceType
+                  ? "Thiết lập điểm danh"
+                  : "Chưa chọn loại điểm danh"}
               </Title>
-
-              <Text type="secondary">Chọn ngày và loại điểm danh</Text>
+              <Text type="secondary">
+                Chọn loại điểm danh, thiết lập bộ lọc và phương thức thực hiện
+              </Text>
             </div>
 
             <div className="filter-header-icon">
-              <SearchOutlined />
+              <FilterOutlined />
             </div>
           </div>
 
-          <div className="attendance-filter">
-            {/* =================================================
-                TYPE
-            ================================================= */}
-
-            <div className="filter-item type-filter">
-              <Text className="filter-label">
-                Loại điểm danh
-                <span className="required">*</span>
-              </Text>
-
+          <div className="filter-quick-row">
+            <div className="filter-quick-type">
+              <Text className="filter-label">Loại điểm danh</Text>
               <Select
                 value={attendanceType}
-                placeholder="Chọn loại điểm danh"
+                placeholder="Chọn Giáo lý hoặc Thánh lễ"
                 className="attendance-type-select"
                 allowClear
                 disabled={
@@ -1544,19 +1558,10 @@ const AttendancePage = () => {
                 onChange={(value) => {
                   const nextType = value || null;
 
-                  /*
-                   * Mass:
-                   * Không sử dụng class_id.
-                   */
                   if (nextType === "mass") {
                     setSelectedClassId(null);
                   }
 
-                  /*
-                   * Giáo lý:
-                   * nếu chưa có lớp thì lấy
-                   * lớp đầu tiên.
-                   */
                   if (
                     nextType === "catechism" &&
                     !selectedClassId &&
@@ -1566,35 +1571,29 @@ const AttendancePage = () => {
                   }
 
                   setAttendanceType(nextType);
-
+                  setAttendanceMode(null);
                   setPage(1);
-
                   setIsQrOpen(false);
                 }}
                 options={[
                   {
                     value: "catechism",
-
                     label: (
                       <div className="type-option">
                         <span className="type-option-icon catechism">
                           <BookOutlined />
                         </span>
-
                         <span>Học Giáo lý</span>
                       </div>
                     ),
                   },
-
                   {
                     value: "mass",
-
                     label: (
                       <div className="type-option">
                         <span className="type-option-icon mass">
                           <HeartOutlined />
                         </span>
-
                         <span>Tham dự Thánh lễ</span>
                       </div>
                     ),
@@ -1602,18 +1601,11 @@ const AttendancePage = () => {
                 ]}
               />
             </div>
-
-            {/* =================================================
-                CLASS - CHỈ GIÁO LÝ
-            ================================================= */}
-
             {attendanceType === "catechism" && (
               <div className="filter-item class-filter">
                 <Text className="filter-label">
-                  Lớp học
-                  <span className="required">*</span>
+                  Lớp học <span className="required">*</span>
                 </Text>
-
                 <Select
                   value={selectedClassId}
                   loading={loadingClasses}
@@ -1621,9 +1613,7 @@ const AttendancePage = () => {
                   className="attendance-select"
                   onChange={(value) => {
                     setSelectedClassId(value);
-
                     setPage(1);
-
                     setIsQrOpen(false);
                   }}
                   options={classes.map((item) => ({
@@ -1633,96 +1623,156 @@ const AttendancePage = () => {
                 />
               </div>
             )}
+            <Button
+              className={`filter-advanced-toggle ${showAdvancedFilters ? "is-open" : ""}`}
+              icon={<FilterOutlined />}
+              onClick={() => setShowAdvancedFilters((value) => !value)}
+            >
+              Bộ lọc nâng cao
+              <DownOutlined className="filter-toggle-chevron" />
+            </Button>
+          </div>
 
-            {/* =================================================
-                DATE
-            ================================================= */}
+          {showAdvancedFilters && (
+            <div className="filter-advanced-panel">
+              <div className="filter-item status-filter">
+                <Text className="filter-label">Trạng thái điểm danh</Text>
+                <div className="attendance-status-chips">
+                  {[
+                    { value: "all", label: "Tất cả" },
+                    { value: "present", label: "Có mặt" },
+                    { value: "late", label: "Đi muộn" },
+                    { value: "absent", label: "Vắng mặt" },
+                    { value: "excused", label: "Có phép" },
+                    { value: "not_attended", label: "Chưa điểm danh" },
+                  ].map((item) => (
+                    <Button
+                      key={item.value}
+                      size="middle"
+                      className={`attendance-status-chip ${statusFilter === item.value ? "active" : ""} status-${item.value}`}
+                      onClick={() => {
+                        setStatusFilter(item.value);
+                        setPage(1);
+                      }}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
 
-            <div className="filter-item date-filter">
-              <Text className="filter-label">Ngày điểm danh</Text>
-
-              <DatePicker
-                value={selectedDate}
-                format="DD/MM/YYYY"
-                allowClear={false}
-                className="attendance-date"
-                suffixIcon={<CalendarOutlined />}
-                onChange={(date) => {
-                  if (!date) {
-                    return;
-                  }
-
-                  setSelectedDate(date);
-
-                  setPage(1);
-                }}
-              />
+              <div className="filter-item date-filter">
+                <Text className="filter-label">Ngày điểm danh</Text>
+                <DatePicker
+                  value={selectedDate}
+                  format="DD/MM/YYYY"
+                  allowClear={false}
+                  className="attendance-date"
+                  suffixIcon={<CalendarOutlined />}
+                  onChange={(date) => {
+                    if (!date) return;
+                    setSelectedDate(date);
+                    setPage(1);
+                  }}
+                />
+              </div>
             </div>
+          )}
 
-            {/* =================================================
-                SEARCH
-            ================================================= */}
-
-            <div className="filter-item search-filter">
-              <Text className="filter-label">Tìm học sinh</Text>
-
-              <AppSearchInput
-                value={searchInput}
-                onChange={(value) => {
-                  setSearchInput(value);
-                }}
-                placeholder="Tên hoặc mã học viên..."
-              />
+          <div className="attendance-methods-heading">
+            <div>
+              <Text strong>Phương thức điểm danh</Text>
+              <Text type="secondary" size="sm">
+                {attendanceType
+                  ? "Chọn cách ghi nhận học viên"
+                  : "Chọn loại điểm danh trước khi bắt đầu"}
+              </Text>
             </div>
+            {isQrOpen && (
+              <Tag color="processing" className="method-active-tag">
+                QR đang hoạt động
+              </Tag>
+            )}
+          </div>
 
-            {/* =================================================
-                STATUS
-            ================================================= */}
+          <div className="attendance-method-cards">
+            <button
+              type="button"
+              className={`attendance-method-card view-method-card ${attendanceMode === "list" ? "selected" : ""}`}
+              disabled={!attendanceType}
+              onClick={() => {
+                setAttendanceMode("list");
+                setIsQrOpen(false);
+              }}
+            >
+              <div className="attendance-method-icon view">
+                <TeamOutlined />
+              </div>
+              <div className="attendance-method-copy">
+                <strong>Xem danh sách</strong>
+                <span>
+                  Chỉ xem trạng thái có mặt, vắng, đi muộn và có phép.
+                </span>
+              </div>
+              <span className="method-select-indicator">
+                {attendanceMode === "list" ? (
+                  <CheckCircleFilled />
+                ) : (
+                  <RightOutlined />
+                )}
+              </span>
+            </button>
 
-            <div className="filter-item status-filter">
-              <Text className="filter-label">Trạng thái</Text>
+            <button
+              type="button"
+              className={`attendance-method-card manual-method-card ${attendanceMode === "manual" ? "selected" : ""} ${!manualEnabled ? "disabled" : ""}`}
+              disabled={!attendanceType || !manualEnabled || !attendanceEnabled}
+              onClick={() => {
+                setAttendanceMode("manual");
+                setIsQrOpen(false);
+              }}
+            >
+              <div className="attendance-method-icon manual">
+                <CheckCircleFilled />
+              </div>
+              <div className="attendance-method-copy">
+                <strong>Điểm danh thủ công</strong>
+                <span>
+                  Mở danh sách có nút để cập nhật trạng thái học viên.
+                </span>
+                {!manualEnabled && <small>Đã tắt trong cài đặt giáo xứ</small>}
+              </div>
+              <span className="method-select-indicator">
+                {attendanceMode === "manual" ? (
+                  <CheckCircleFilled />
+                ) : (
+                  <RightOutlined />
+                )}
+              </span>
+            </button>
 
-              <Select
-                value={statusFilter}
-                className="attendance-status-filter"
-                onChange={(value) => {
-                  setStatusFilter(value);
-
-                  setPage(1);
-                }}
-                options={[
-                  {
-                    value: "all",
-                    label: "Tất cả",
-                  },
-
-                  {
-                    value: "present",
-                    label: "Có mặt",
-                  },
-
-                  {
-                    value: "absent",
-                    label: "Vắng",
-                  },
-
-                  {
-                    value: "late",
-                    label: "Đi muộn",
-                  },
-
-                  {
-                    value: "excused",
-                    label: "Có phép",
-                  },
-
-                  {
-                    value: "not_attended",
-                    label: "Chưa điểm danh",
-                  },
-                ]}
-              />
-            </div>
+            <button
+              type="button"
+              className={`attendance-method-card qr-method-card ${attendanceMode === "qr" ? "selected" : ""} ${!qrEnabled ? "disabled" : ""}`}
+              disabled={!attendanceType || !qrEnabled || !attendanceEnabled}
+              onClick={() => setAttendanceMode("qr")}
+            >
+              <div className="attendance-method-icon qr">
+                <QrcodeOutlined />
+              </div>
+              <div className="attendance-method-copy">
+                <strong>Điểm danh QR</strong>
+                <span>Mở giao diện camera để quét mã QR học viên.</span>
+                {!qrEnabled && <small>Đã tắt trong cài đặt giáo xứ</small>}
+              </div>
+              <span className="method-select-indicator">
+                {attendanceMode === "qr" ? (
+                  <CheckCircleFilled />
+                ) : (
+                  <RightOutlined />
+                )}
+              </span>
+            </button>
           </div>
         </Card>
 
@@ -1776,18 +1826,7 @@ const AttendancePage = () => {
               />
             )}
           </div>
-        ) : (
-          <Alert
-            style={{
-              marginTop: 16,
-              borderRadius: 14,
-            }}
-            type="info"
-            showIcon
-            message="Chưa chọn loại điểm danh"
-            description="Vui lòng chọn Học Giáo lý hoặc Tham dự Thánh lễ để bắt đầu."
-          />
-        )}
+        ) : null}
 
         {/* =================================================
             LOCK
@@ -1803,376 +1842,382 @@ const AttendancePage = () => {
           />
         )}
 
-        {/* =================================================
-            STATISTICS
-        ================================================= */}
+        {/* THỐNG KÊ ĐIỂM DANH - DẠNG MỘT DÒNG GỌN */}
+        <div
+          className="attendance-summary-line"
+          aria-label="Thống kê điểm danh"
+        >
+          <span className="attendance-summary-item">
+            <i className="summary-dot total" />
+            Tổng <strong>{loadingAttendance ? "…" : total}</strong>
+          </span>
 
-        <Row gutter={[16, 16]} className="attendance-stat-row">
-          <Col xs={12} sm={8} lg={4}>
-            <StatCard
-              title="Tổng"
-              value={total}
-              loading={loadingAttendance}
-              icon={<TeamOutlined />}
-              iconColor={COLORS.navy}
-              description={
-                attendanceType === "mass" ? "Học sinh" : "Học sinh trong lớp"
-              }
-            />
-          </Col>
+          <span className="attendance-summary-item">
+            <i className="summary-dot present" />
+            Có mặt <strong>{loadingAttendance ? "…" : present}</strong>
+          </span>
 
-          <Col xs={12} sm={8} lg={4}>
-            <StatCard
-              title="Có mặt"
-              value={present}
-              loading={loadingAttendance}
-              icon={<CheckCircleFilled />}
-              iconColor={COLORS.success}
-              description="Học sinh có mặt"
-            />
-          </Col>
+          <span className="attendance-summary-item">
+            <i className="summary-dot late" />
+            Đi muộn <strong>{loadingAttendance ? "…" : late}</strong>
+          </span>
 
-          <Col xs={12} sm={8} lg={4}>
-            <StatCard
-              title="Đi muộn"
-              value={late}
-              loading={loadingAttendance}
-              icon={<ClockCircleOutlined />}
-              iconColor={COLORS.gold}
-              description="Học sinh đi muộn"
-            />
-          </Col>
+          <span className="attendance-summary-item">
+            <i className="summary-dot absent" />
+            Vắng <strong>{loadingAttendance ? "…" : absent}</strong>
+          </span>
 
-          <Col xs={12} sm={8} lg={4}>
-            <StatCard
-              title="Vắng"
-              value={absent}
-              loading={loadingAttendance}
-              icon={<CloseCircleFilled />}
-              iconColor={COLORS.danger}
-              description="Học sinh vắng mặt"
-            />
-          </Col>
+          <span className="attendance-summary-item">
+            <i className="summary-dot excused" />
+            Có phép <strong>{loadingAttendance ? "…" : excused}</strong>
+          </span>
 
-          <Col xs={12} sm={8} lg={4}>
-            <StatCard
-              title="Có phép"
-              value={excused}
-              loading={loadingAttendance}
-              icon={<ExclamationCircleOutlined />}
-              iconColor="#7C5AC2"
-              description="Học sinh có phép"
-            />
-          </Col>
+          <span className="attendance-summary-item">
+            <i className="summary-dot unmarked" />
+            Chưa điểm danh{" "}
+            <strong>{loadingAttendance ? "…" : statistics.not_attended}</strong>
+          </span>
 
-          <Col xs={12} sm={8} lg={4}>
-            <StatCard
-              title="Tỷ lệ tham dự"
-              value={attendanceRate}
-              loading={loadingAttendance}
-              icon={<CheckCircleFilled />}
-              iconColor={COLORS.navy}
-              description="Tỷ lệ tham dự"
-              suffix="%"
-            />
-          </Col>
-        </Row>
+          <span className="attendance-summary-rate">
+            {loadingAttendance ? "…" : `${attendanceRate}%`} tham dự
+          </span>
+        </div>
 
         {/* =================================================
             MAIN
         ================================================= */}
 
         <Row gutter={[18, 18]} className="attendance-main-row">
+          {!attendanceMode && attendanceType && (
+            <Col span={24}>
+              <Card bordered={false} className="attendance-mode-empty">
+                <div className="attendance-mode-empty-icon">
+                  <AppstoreOutlined />
+                </div>
+                <Title level={5}>Chọn phương thức để tiếp tục</Title>
+                <Text type="secondary">
+                  Chọn “Xem danh sách” để xem trạng thái, “Điểm danh thủ công”
+                  để cập nhật học viên, hoặc “Điểm danh QR” để mở giao diện quét
+                  mã.
+                </Text>
+              </Card>
+            </Col>
+          )}
+
           {/* =================================================
               STUDENT LIST
           ================================================= */}
 
-          <Col xs={24} xl={16}>
-            <Card bordered={false} className="student-list-card">
-              <div className="student-list-header">
-                <div className="student-list-heading">
-                  <div className="section-heading-icon">
-                    <TeamOutlined />
+          {(attendanceMode === "list" || attendanceMode === "manual") && (
+            <Col xs={24} xl={24}>
+              <Card bordered={false} className="student-list-card">
+                <div className="student-list-header">
+                  <div className="student-list-heading">
+                    <div className="section-heading-icon">
+                      <TeamOutlined />
+                    </div>
+
+                    <div>
+                      <Title level={4} className="section-title">
+                        Danh sách học sinh
+                      </Title>
+
+                      <Text type="secondary">
+                        {attendanceType === "mass"
+                          ? "Hệ thống tự xác định lớp"
+                          : selectedClass?.name || "Chưa chọn lớp"}
+
+                        {" • "}
+
+                        {currentTypeConfig.shortLabel}
+
+                        {" • "}
+
+                        {dayjs(dateString).format("DD/MM/YYYY")}
+                      </Text>
+                    </div>
                   </div>
 
-                  <div>
-                    <Title level={4} className="section-title">
-                      Danh sách học sinh
-                    </Title>
+                  <div className="total-student-tag">
+                    <strong>{pagination.total || 0}</strong>
 
-                    <Text type="secondary">
-                      {attendanceType === "mass"
-                        ? "Hệ thống tự xác định lớp"
-                        : selectedClass?.name || "Chưa chọn lớp"}
-
-                      {" • "}
-
-                      {currentTypeConfig.shortLabel}
-
-                      {" • "}
-
-                      {dayjs(dateString).format("DD/MM/YYYY")}
-                    </Text>
+                    <span>học sinh</span>
                   </div>
                 </div>
 
-                <div className="total-student-tag">
-                  <strong>{pagination.total || 0}</strong>
+                <div className="student-list-search-row">
+                  <div className="student-list-search">
+                    <AppSearchInput
+                      value={searchInput}
+                      onChange={(value) => {
+                        setSearchInput(value);
+                        setPage(1);
+                      }}
+                      placeholder="Tìm theo tên hoặc mã học viên..."
+                    />
+                  </div>
 
-                  <span>học sinh</span>
+                  <div className="student-list-search-hint">
+                    <SearchOutlined />
+                    <span>Tìm trong danh sách điểm danh</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="table-toolbar">
-                <div className="table-toolbar-left">
-                  <span className="toolbar-dot" />
+                <div className="table-toolbar">
+                  <div className="table-toolbar-left">
+                    <span className="toolbar-dot" />
 
-                  <span>Nhấn vào nút trạng thái để điểm danh thủ công</span>
+                    <span>
+                      {attendanceMode === "manual"
+                        ? "Chọn nút trạng thái để cập nhật điểm danh"
+                        : "Chế độ xem — không thể chỉnh sửa trạng thái"}
+                    </span>
+                  </div>
+
+                  <div className="toolbar-legend">
+                    <span>
+                      <i className="legend-dot present" />
+                      Có mặt
+                    </span>
+
+                    <span>
+                      <i className="legend-dot late" />
+                      Đi muộn
+                    </span>
+
+                    <span>
+                      <i className="legend-dot absent" />
+                      Vắng
+                    </span>
+                  </div>
                 </div>
 
-                <div className="toolbar-legend">
-                  <span>
-                    <i className="legend-dot present" />
-                    Có mặt
-                  </span>
-
-                  <span>
-                    <i className="legend-dot late" />
-                    Đi muộn
-                  </span>
-
-                  <span>
-                    <i className="legend-dot absent" />
-                    Vắng
-                  </span>
+                <div className="attendance-table-wrap">
+                  <Table
+                    rowKey={(record) => record.id ?? record.student_id}
+                    columns={columns}
+                    dataSource={tableData}
+                    loading={loadingAttendance}
+                    pagination={false}
+                    size="small"
+                    locale={{
+                      emptyText: (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description="Không có học sinh"
+                        />
+                      ),
+                    }}
+                    scroll={{
+                      x: 605,
+                    }}
+                  />
                 </div>
-              </div>
 
-              <div className="attendance-table-wrap">
-                <Table
-                  rowKey={(record) => record.id ?? record.student_id}
-                  columns={columns}
-                  dataSource={tableData}
-                  loading={loadingAttendance}
-                  pagination={false}
-                  size="small"
-                  locale={{
-                    emptyText: (
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="Không có học sinh"
-                      />
-                    ),
-                  }}
-                  scroll={{
-                    x: 605,
-                  }}
-                />
-              </div>
-
-              <div className="attendance-pagination">
-                <Pagination
-                  current={pagination.page || page}
-                  pageSize={pagination.limit || pageSize}
-                  total={pagination.total || 0}
-                  showSizeChanger
-                  pageSizeOptions={["10", "20", "30", "50"]}
-                  showTotal={(totalCount, range) =>
-                    `${range[0]}-${range[1]} / ${totalCount} học sinh`
-                  }
-                  onChange={(nextPage, nextPageSize) => {
-                    if (nextPageSize !== pageSize) {
-                      setPageSize(nextPageSize);
-
-                      setPage(1);
-                    } else {
-                      setPage(nextPage);
+                <div className="attendance-pagination">
+                  <Pagination
+                    current={pagination.page || page}
+                    pageSize={pagination.limit || pageSize}
+                    total={pagination.total || 0}
+                    showSizeChanger
+                    pageSizeOptions={["10", "20", "30", "50"]}
+                    showTotal={(totalCount, range) =>
+                      `${range[0]}-${range[1]} / ${totalCount} học sinh`
                     }
-                  }}
-                />
-              </div>
-            </Card>
-          </Col>
+                    onChange={(nextPage, nextPageSize) => {
+                      if (nextPageSize !== pageSize) {
+                        setPageSize(nextPageSize);
 
-          {/* =================================================
-              QR PANEL
-          ================================================= */}
-
-          <Col xs={24} xl={8}>
-            <Card bordered={false} className="qr-panel-card">
-              <div className="qr-modern-header">
-                <div className="qr-modern-title">
-                  <div className="qr-modern-icon">
-                    <QrcodeOutlined />
-                  </div>
-
-                  <div className="qr-modern-heading">
-                    <span className="qr-modern-title-text">Điểm danh QR</span>
-
-                    <span className="qr-modern-title-sub">
-                      Quét mã QR học viên
-                    </span>
-                  </div>
+                        setPage(1);
+                      } else {
+                        setPage(nextPage);
+                      }
+                    }}
+                  />
                 </div>
+              </Card>
+            </Col>
+          )}
 
-                <div
-                  className={`qr-live-status ${
-                    isQrOpen ? "active" : "inactive"
-                  }`}
-                >
-                  <span className="qr-live-dot" />
+          {/* QR panel only appears when QR mode is selected */}
 
-                  {isQrOpen ? "Đang quét" : "Chưa bật"}
-                </div>
-              </div>
-
-              <div className="qr-class-card">
-                <div className="qr-class-left">
-                  <div className="qr-class-icon">
-                    <TeamOutlined />
-                  </div>
-
-                  <div className="qr-class-info">
-                    <span className="qr-class-label">
-                      {attendanceType === "mass"
-                        ? "Lớp điểm danh"
-                        : "Lớp đang điểm danh"}
-                    </span>
-
-                    <strong className="qr-class-name">
-                      {attendanceType === "mass"
-                        ? "Tự động xác định lớp"
-                        : selectedClass?.name || "Chưa chọn lớp"}
-                    </strong>
-                  </div>
-                </div>
-
-                <Tag className="qr-modern-type-tag">
-                  {currentTypeConfig.shortLabel}
-                </Tag>
-              </div>
-
-              <div className="qr-date-info">
-                <CalendarOutlined />
-
-                <span>{dayjs(dateString).format("dddd, DD/MM/YYYY")}</span>
-              </div>
-              <div className="qr-settings-summary">
-                <span>
-                  <ClockCircleOutlined />
-                  Thời lượng: <strong>{durationMinutes} phút</strong>
-                </span>
-
-                <span>
-                  <CheckCircleFilled />
-                  {autoAbsent ? "Tự chuyển vắng: Bật" : "Tự chuyển vắng: Tắt"}
-                </span>
-
-                <span>
-                  <StopOutlined />
-                  {autoLock ? "Tự khóa: Bật" : "Tự khóa: Tắt"}
-                </span>
-              </div>
-              <div
-                className={`qr-scanner-box ${isQrOpen ? "scanner-active" : ""}`}
-              >
-                <QRCodeScanner
-                  open={isQrOpen}
-                  classId={
-                    attendanceType === "catechism" ? selectedClassId : null
-                  }
-                  attendanceType={attendanceType}
-                  onSuccess={handleQRSuccess}
-                  onFinishAttendance={handleFinishQRAttendance}
-                />
-
-                {!isQrOpen && (
-                  <div className="qr-scanner-placeholder">
-                    <div className="qr-placeholder-icon">
+          {attendanceMode === "qr" && (
+            <Col xs={24} xl={24}>
+              <Card bordered={false} className="qr-panel-card">
+                <div className="qr-modern-header">
+                  <div className="qr-modern-title">
+                    <div className="qr-modern-icon">
                       <QrcodeOutlined />
                     </div>
 
-                    <strong>Sẵn sàng điểm danh</strong>
+                    <div className="qr-modern-heading">
+                      <span className="qr-modern-title-text">Điểm danh QR</span>
 
-                    <span>Bật camera để bắt đầu quét mã QR</span>
+                      <span className="qr-modern-title-sub">
+                        Quét mã QR học viên
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <AppButton
-                block
-                size="large"
-                type={isQrOpen ? "default" : "primary"}
-                danger={isQrOpen}
-                icon={isQrOpen ? <StopOutlined /> : <CameraOutlined />}
-                className={`qr-main-button ${isQrOpen ? "qr-stop-button" : ""}`}
-                loading={saving && isQrOpen}
-                disabled={
-                  !attendanceType ||
-                  !attendanceEnabled ||
-                  !qrEnabled ||
-                  isLocked ||
-                  (attendanceType === "catechism" && !selectedClassId)
-                }
-                onClick={handleToggleQR}
-              >
-                {isQrOpen ? "Kết thúc điểm danh" : "Bật camera điểm danh"}
-              </AppButton>
+                  <div
+                    className={`qr-live-status ${
+                      isQrOpen ? "active" : "inactive"
+                    }`}
+                  >
+                    <span className="qr-live-dot" />
 
-              <div className="qr-attendance-note">
-                <div className="qr-note-icon">
-                  <ExclamationCircleOutlined />
+                    {isQrOpen ? "Đang quét" : "Chưa bật"}
+                  </div>
                 </div>
 
-                <div className="qr-note-content">
-                  <strong>Lưu ý</strong>
+                <div className="qr-class-card">
+                  <div className="qr-class-left">
+                    <div className="qr-class-icon">
+                      <TeamOutlined />
+                    </div>
+
+                    <div className="qr-class-info">
+                      <span className="qr-class-label">
+                        {attendanceType === "mass"
+                          ? "Lớp điểm danh"
+                          : "Lớp đang điểm danh"}
+                      </span>
+
+                      <strong className="qr-class-name">
+                        {attendanceType === "mass"
+                          ? "Tự động xác định lớp"
+                          : selectedClass?.name || "Chưa chọn lớp"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <Tag className="qr-modern-type-tag">
+                    {currentTypeConfig.shortLabel}
+                  </Tag>
+                </div>
+
+                <div className="qr-date-info">
+                  <CalendarOutlined />
+
+                  <span>{dayjs(dateString).format("dddd, DD/MM/YYYY")}</span>
+                </div>
+                <div className="qr-settings-summary">
+                  <span>
+                    <ClockCircleOutlined />
+                    Thời lượng: <strong>{durationMinutes} phút</strong>
+                  </span>
 
                   <span>
-                    Khi kết thúc điểm danh, học sinh chưa được ghi nhận sẽ tự
-                    động chuyển thành Vắng.
+                    <CheckCircleFilled />
+                    {autoAbsent ? "Tự chuyển vắng: Bật" : "Tự chuyển vắng: Tắt"}
+                  </span>
+
+                  <span>
+                    <StopOutlined />
+                    {autoLock ? "Tự khóa: Bật" : "Tự khóa: Tắt"}
                   </span>
                 </div>
-              </div>
+                <div
+                  className={`qr-scanner-box ${isQrOpen ? "scanner-active" : ""}`}
+                >
+                  <QRCodeScanner
+                    open={isQrOpen}
+                    classId={
+                      attendanceType === "catechism" ? selectedClassId : null
+                    }
+                    attendanceType={attendanceType}
+                    onSuccess={handleQRSuccess}
+                    onFinishAttendance={handleFinishQRAttendance}
+                  />
 
-              <div className="qr-guide">
-                <div className="qr-guide-title">Trạng thái điểm danh</div>
+                  {!isQrOpen && (
+                    <div className="qr-scanner-placeholder">
+                      <div className="qr-placeholder-icon">
+                        <QrcodeOutlined />
+                      </div>
 
-                <div className="qr-guide-list">
-                  <div className="qr-guide-item">
-                    <span className="qr-guide-icon present">
-                      <CheckOutlined />
-                    </span>
+                      <strong>Sẵn sàng điểm danh</strong>
 
-                    <span>Có mặt</span>
+                      <span>Bật camera để bắt đầu quét mã QR</span>
+                    </div>
+                  )}
+                </div>
+
+                <AppButton
+                  block
+                  size="large"
+                  type={isQrOpen ? "default" : "primary"}
+                  danger={isQrOpen}
+                  icon={isQrOpen ? <StopOutlined /> : <CameraOutlined />}
+                  className={`qr-main-button ${isQrOpen ? "qr-stop-button" : ""}`}
+                  loading={saving && isQrOpen}
+                  disabled={
+                    !attendanceType ||
+                    !attendanceEnabled ||
+                    !qrEnabled ||
+                    isLocked ||
+                    (attendanceType === "catechism" && !selectedClassId)
+                  }
+                  onClick={handleToggleQR}
+                >
+                  {isQrOpen ? "Kết thúc điểm danh" : "Bật camera điểm danh"}
+                </AppButton>
+
+                <div className="qr-attendance-note">
+                  <div className="qr-note-icon">
+                    <ExclamationCircleOutlined />
                   </div>
 
-                  <div className="qr-guide-item">
-                    <span className="qr-guide-icon late">
-                      <ClockCircleOutlined />
+                  <div className="qr-note-content">
+                    <strong>Lưu ý</strong>
+
+                    <span>
+                      Khi kết thúc điểm danh, học sinh chưa được ghi nhận sẽ tự
+                      động chuyển thành Vắng.
                     </span>
-
-                    <span>Đi muộn</span>
-                  </div>
-
-                  <div className="qr-guide-item">
-                    <span className="qr-guide-icon absent">
-                      <CloseOutlined />
-                    </span>
-
-                    <span>Vắng</span>
-                  </div>
-
-                  <div className="qr-guide-item">
-                    <span className="qr-guide-icon excused">
-                      <ExclamationCircleOutlined />
-                    </span>
-
-                    <span>Có phép</span>
                   </div>
                 </div>
-              </div>
-            </Card>
-          </Col>
+
+                <div className="qr-guide">
+                  <div className="qr-guide-title">Trạng thái điểm danh</div>
+
+                  <div className="qr-guide-list">
+                    <div className="qr-guide-item">
+                      <span className="qr-guide-icon present">
+                        <CheckOutlined />
+                      </span>
+
+                      <span>Có mặt</span>
+                    </div>
+
+                    <div className="qr-guide-item">
+                      <span className="qr-guide-icon late">
+                        <ClockCircleOutlined />
+                      </span>
+
+                      <span>Đi muộn</span>
+                    </div>
+
+                    <div className="qr-guide-item">
+                      <span className="qr-guide-icon absent">
+                        <CloseOutlined />
+                      </span>
+
+                      <span>Vắng</span>
+                    </div>
+
+                    <div className="qr-guide-item">
+                      <span className="qr-guide-icon excused">
+                        <ExclamationCircleOutlined />
+                      </span>
+
+                      <span>Có phép</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </Col>
+          )}
         </Row>
 
         {/* =================================================
@@ -2247,7 +2292,6 @@ const AttendancePage = () => {
         .attendance-page {
           min-height: 100%;
           padding: 0 0 40px;
-          background: ${COLORS.background};
         }
 
         .required {
@@ -2290,23 +2334,273 @@ const AttendancePage = () => {
           font-size: 17px;
         }
 
-        .attendance-filter {
-          display: grid;
-          grid-template-columns:
-            1.15fr
-            1.15fr
-            0.95fr
-            1.5fr
-            0.9fr;
-          gap: 14px;
-          align-items: end;
+        .attendance-methods-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-top: 22px;
+          margin-bottom: 12px;
         }
 
-        .filter-item {
+        .attendance-methods-heading > div {
           display: flex;
           flex-direction: column;
-          gap: 7px;
+          gap: 3px;
+        }
+
+        .attendance-method-cards {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .attendance-method-card {
+          appearance: none;
+          width: 100%;
+          text-align: left;
+          font: inherit;
+          cursor: pointer;
+          color: inherit;
+          display: flex;
+          align-items: center;
+          gap: 13px;
           min-width: 0;
+          padding: 16px;
+          border: 1px solid ${COLORS.border};
+          border-radius: 14px;
+          background: #FFFFFF;
+          transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .attendance-method-card:hover {
+          border-color: #B9CBE0;
+          box-shadow: 0 5px 16px rgba(23, 59, 94, 0.06);
+        }
+
+        .attendance-method-card.selected {
+          border-color: ${COLORS.navy};
+          background: ${COLORS.navyLight};
+          box-shadow: inset 0 0 0 1px ${COLORS.navy};
+        }
+
+        .attendance-method-card.disabled {
+          opacity: 0.62;
+          background: #F8FAFC;
+        }
+
+        .attendance-method-icon {
+          display: flex;
+          flex: 0 0 44px;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          font-size: 20px;
+        }
+
+        .attendance-method-icon.qr {
+          color: #245A91;
+          background: #EAF2FC;
+        }
+
+        .attendance-method-icon.manual {
+          color: #16845B;
+          background: #E7F7EF;
+        }
+
+        .attendance-method-copy {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          min-width: 0;
+          gap: 4px;
+        }
+
+        .attendance-method-copy strong {
+          color: ${COLORS.text};
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .attendance-method-copy span {
+          color: ${COLORS.textSecondary};
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .attendance-method-copy small {
+          color: ${COLORS.danger};
+          font-size: 11px;
+        }
+
+        .method-active-tag {
+          margin: 0;
+          border-radius: 999px;
+        }
+
+        .attendance-method-card:focus-visible {
+          outline: 3px solid rgba(35, 79, 132, 0.25);
+          outline-offset: 2px;
+        }
+
+        .method-select-indicator {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 26px;
+          width: 26px;
+          height: 26px;
+          color: ${COLORS.textSecondary};
+          font-size: 16px;
+        }
+
+        .attendance-method-card.selected .method-select-indicator {
+          color: ${COLORS.navy};
+        }
+
+        .attendance-method-icon.view {
+          color: #6750A4;
+          background: #F0EBFA;
+        }
+
+        .attendance-mode-empty {
+          text-align: center;
+          padding: 26px 18px;
+          border: 1px dashed ${COLORS.border} !important;
+          background: #FAFBFD !important;
+          border-radius: 16px !important;
+        }
+
+        .attendance-mode-empty-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 46px;
+          height: 46px;
+          margin-bottom: 10px;
+          border-radius: 14px;
+          color: ${COLORS.navy};
+          background: ${COLORS.navyLight};
+          font-size: 22px;
+        }
+
+        .attendance-mode-empty .ant-typography {
+          display: block;
+          margin-bottom: 5px;
+        }
+
+        .filter-quick-row {
+            display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(260px, 1.2fr) auto;
+  align-items: end;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 20px;
+        }
+
+        .filter-quick-search,
+        .filter-quick-type,
+        .filter-item {
+            display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+        }
+
+        .filter-advanced-toggle {
+          min-height: 42px !important;
+          border-radius: 10px !important;
+          border-color: ${COLORS.border} !important;
+          color: ${COLORS.navy} !important;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: none !important;
+        }
+
+        .filter-advanced-toggle:hover,
+        .filter-advanced-toggle.is-open {
+          border-color: ${COLORS.navy} !important;
+          background: ${COLORS.navyLight} !important;
+          color: ${COLORS.navy} !important;
+        }
+
+        .filter-toggle-chevron {
+          font-size: 10px;
+          transition: transform 0.2s ease;
+        }
+
+        .filter-advanced-toggle.is-open .filter-toggle-chevron {
+          transform: rotate(180deg);
+        }
+
+        .filter-status-section {
+          display: flex;
+          flex-direction: column;
+          gap: 9px;
+          margin-top: 18px;
+        }
+
+        .attendance-status-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .attendance-status-chip {
+          min-height: 34px !important;
+          padding: 0 13px !important;
+          border-radius: 999px !important;
+          border-color: ${COLORS.border} !important;
+          background: #FFFFFF !important;
+          color: ${COLORS.textSecondary} !important;
+          font-weight: 600;
+          box-shadow: none !important;
+          transition: all 0.18s ease;
+        }
+
+        .attendance-status-chip:hover {
+          border-color: ${COLORS.navy} !important;
+          color: ${COLORS.navy} !important;
+          background: ${COLORS.navyLight} !important;
+        }
+
+        .attendance-status-chip.active {
+          border-color: ${COLORS.navy} !important;
+          background: ${COLORS.navy} !important;
+          color: #FFFFFF !important;
+          box-shadow: 0 3px 8px rgba(23, 59, 94, 0.16) !important;
+        }
+
+        .filter-advanced-panel {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(190px, 1fr));
+          gap: 14px;
+          align-items: end;
+          margin-top: 16px;
+          padding: 16px;
+          border: 1px solid ${COLORS.border};
+          border-radius: 12px;
+          background: ${COLORS.background};
+          animation: filterPanelIn 0.18s ease-out;
+        }
+
+        @keyframes filterPanelIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-filter {
+          grid-column: 1 / -1;
+          padding-bottom: 14px;
+          border-bottom: 1px solid ${COLORS.border};
+        }
+
+        .status-filter .attendance-status-chips {
+          align-items: center;
         }
 
         .filter-label {
@@ -2474,8 +2768,66 @@ const AttendancePage = () => {
           border-radius: 13px;
         }
 
-        .attendance-stat-row {
-          margin-top: 18px;
+        .attendance-summary-line {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 10px 20px;
+          margin-top: 14px;
+          padding: 11px 14px;
+          border: 1px solid ${COLORS.border};
+          border-radius: 10px;
+          background: ${COLORS.white};
+          color: ${COLORS.textSecondary};
+          font-size: 12px;
+          line-height: 1.4;
+        }
+
+        .attendance-summary-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+        }
+
+        .attendance-summary-item strong {
+          color: ${COLORS.navy};
+          font-size: 13px;
+          font-weight: 800;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .summary-dot {
+          width: 7px;
+          height: 7px;
+          flex: 0 0 7px;
+          border-radius: 50%;
+        }
+
+        .summary-dot.total { background: ${COLORS.navy}; }
+        .summary-dot.present { background: ${COLORS.success}; }
+        .summary-dot.late { background: ${COLORS.gold}; }
+        .summary-dot.absent { background: ${COLORS.danger}; }
+        .summary-dot.excused { background: #7C5AC2; }
+        .summary-dot.unmarked { background: #94A3B8; }
+
+        .attendance-summary-rate {
+          margin-left: auto;
+          color: ${COLORS.navy};
+          font-size: 11px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+          .attendance-summary-line {
+            gap: 9px 14px;
+            padding: 10px 12px;
+          }
+
+          .attendance-summary-rate {
+            margin-left: 0;
+          }
         }
 
         .attendance-main-row {
@@ -2570,6 +2922,42 @@ const AttendancePage = () => {
           font-weight: 600;
         }
 
+        .student-list-search-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          margin: 18px 0 12px;
+          padding: 12px;
+          border: 1px solid ${COLORS.border};
+          border-radius: 14px;
+          background: #F8FAFC;
+        }
+
+        .student-list-search {
+          width: min(100%, 420px);
+          min-width: 220px;
+        }
+
+        .student-list-search .ant-input-affix-wrapper,
+        .student-list-search .ant-input,
+        .student-list-search .ant-input-group-wrapper {
+          border-radius: 10px !important;
+        }
+
+        .student-list-search-hint {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: ${COLORS.textSecondary};
+          font-size: 12px;
+          white-space: nowrap;
+        }
+
+        .student-list-search-hint .anticon {
+          color: ${COLORS.navy};
+        }
+
         .table-toolbar {
           display: flex;
           align-items: center;
@@ -2661,10 +3049,45 @@ const AttendancePage = () => {
           gap: 11px;
         }
 
-        .student-avatar {
-          flex-shrink: 0;
-          border: 2px solid ${COLORS.navyLight};
-        }
+      .student-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+  border-radius: 50% !important;
+  overflow: hidden;
+  border: 2px solid #ffffff;
+  background: #eef3f8;
+  box-shadow: 0 2px 6px rgba(23, 59, 94, 0.14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Ảnh bên trong */
+.student-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Icon mặc định khi không có ảnh */
+.student-avatar .anticon {
+  font-size: 18px;
+  color: #173b5e;
+}
+
+/* Hiệu ứng hover */
+.student-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 10px rgba(23, 59, 94, 0.22);
+}
 
         .student-info {
           display: flex;
@@ -3199,22 +3622,71 @@ const AttendancePage = () => {
         }
 
         @media (max-width: 1200px) {
-          .attendance-filter {
-            grid-template-columns: repeat(3, 1fr);
+          .filter-quick-row {
+            grid-template-columns: minmax(190px, 1fr) auto;
           }
 
-          .search-filter {
-            grid-column: span 2;
+          .filter-advanced-toggle {
+            grid-column: 1 / -1;
+            justify-self: start;
           }
         }
 
         @media (max-width: 767px) {
-          .attendance-filter {
+          .attendance-method-cards {
             grid-template-columns: 1fr;
           }
 
-          .search-filter {
+          .attendance-method-card {
+            flex-wrap: wrap;
+            align-items: flex-start;
+          }
+
+          .attendance-method-copy {
+            flex-basis: calc(100% - 60px);
+          }
+
+          .attendance-methods-heading {
+            align-items: flex-start;
+          }
+
+          .student-list-search-row {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+          }
+
+          .student-list-search {
+            width: 100%;
+            min-width: 0;
+          }
+
+          .student-list-search-hint {
+            white-space: normal;
+          }
+
+          .filter-quick-row {
+            grid-template-columns: 1fr;
+          }
+
+          .filter-advanced-toggle {
             grid-column: auto;
+            justify-self: stretch;
+            justify-content: center;
+          }
+
+          .filter-advanced-panel {
+            grid-template-columns: 1fr;
+            padding: 12px;
+          }
+
+          .attendance-status-chips {
+            gap: 7px;
+          }
+
+          .attendance-status-chip {
+            padding: 0 11px !important;
           }
 
           .attendance-type-banner {
@@ -3278,7 +3750,718 @@ const AttendancePage = () => {
           }
         }
 
-      `}</style>
+
+        /* =====================================================
+           RESPONSIVE REFINEMENT — DESKTOP / TABLET / MOBILE
+        ===================================================== */
+
+        .attendance-page,
+        .attendance-page * {
+          box-sizing: border-box;
+        }
+
+        .attendance-page {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          overflow-x: clip;
+        }
+
+        .attendance-page .ant-row,
+        .attendance-page .ant-col,
+        .attendance-page .ant-card,
+        .attendance-page .ant-card-body {
+          min-width: 0;
+        }
+
+        .attendance-filter-card,
+        .student-list-card,
+        .qr-panel-card {
+          overflow: hidden;
+        }
+
+        .attendance-method-card {
+          min-height: 112px;
+        }
+
+        .attendance-method-card:disabled {
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+
+        .attendance-method-card:disabled:hover {
+          border-color: ${COLORS.border};
+        }
+
+        .attendance-method-copy strong {
+          line-height: 1.4;
+          overflow-wrap: anywhere;
+        }
+
+        .attendance-method-copy span,
+        .attendance-method-copy small {
+          line-height: 1.55;
+          overflow-wrap: anywhere;
+        }
+
+        .attendance-type-banner {
+          min-width: 0;
+          gap: 14px;
+        }
+
+        .type-banner-left,
+        .type-banner-content,
+        .type-banner-meta,
+        .banner-class,
+        .banner-date {
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+
+        .attendance-summary-line {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px 18px;
+          min-width: 0;
+        }
+
+        .attendance-summary-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          min-width: 0;
+          white-space: nowrap;
+        }
+
+        .attendance-summary-rate {
+          white-space: nowrap;
+        }
+
+        .student-list-card,
+        .qr-panel-card {
+          width: 100%;
+        }
+
+        .student-list-card .ant-card-body,
+        .qr-panel-card .ant-card-body {
+          padding: 0;
+        }
+
+        .student-list-header {
+          min-width: 0;
+        }
+
+        .student-list-heading,
+        .student-list-heading > div:last-child {
+          min-width: 0;
+        }
+
+        .student-list-heading .section-title {
+          overflow-wrap: anywhere;
+        }
+
+        .student-list-search-row,
+        .table-toolbar,
+        .attendance-pagination {
+          min-width: 0;
+        }
+
+        .student-list-search-row > *,
+        .table-toolbar > *,
+        .table-toolbar-left,
+        .toolbar-legend {
+          min-width: 0;
+          max-width: 100%;
+        }
+
+        .attendance-table-wrap {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .attendance-table-wrap .ant-table-wrapper {
+          min-width: 0;
+          width: 100%;
+        }
+
+        .attendance-table-wrap .ant-table {
+          width: 100%;
+        }
+
+        .attendance-table-wrap .ant-table-container {
+          overflow: visible;
+        }
+
+        .attendance-table-wrap .ant-table-cell {
+          overflow-wrap: anywhere;
+        }
+
+        .attendance-table-wrap .ant-pagination {
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .manual-attendance-actions {
+          display: flex;
+          align-items: center;
+          flex-wrap: nowrap;
+          white-space: nowrap;
+        }
+
+        .attendance-mode-empty {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .attendance-mode-empty .ant-typography {
+          overflow-wrap: anywhere;
+        }
+
+        .qr-panel-card .qr-modern-header,
+        .qr-panel-card .qr-class-card,
+        .qr-panel-card .qr-date-info,
+        .qr-panel-card .qr-settings-summary,
+        .qr-panel-card .qr-scanner-box,
+        .qr-panel-card .qr-main-button,
+        .qr-panel-card .qr-attendance-note,
+        .qr-panel-card .qr-guide {
+          max-width: 100%;
+          min-width: 0;
+        }
+
+        .qr-scanner-box {
+          width: calc(100% - 32px);
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .qr-scanner-placeholder span,
+        .qr-note-content span {
+          overflow-wrap: anywhere;
+        }
+
+        @media (min-width: 1600px) {
+          .attendance-page {
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+
+          .attendance-method-cards {
+            gap: 16px;
+          }
+
+          .attendance-method-card {
+            padding: 18px;
+          }
+        }
+
+        @media (max-width: 1199px) {
+          .attendance-method-cards {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .attendance-method-card {
+            padding: 14px;
+            gap: 11px;
+          }
+
+          .attendance-main-row {
+            margin-top: 14px;
+          }
+
+          .qr-guide-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 767px) {
+          .attendance-page {
+            padding-bottom: 20px;
+          }
+
+          .attendance-filter-card {
+            margin-top: 12px;
+            border-radius: 14px !important;
+          }
+
+          .attendance-filter-card > .ant-card-body {
+            padding: 14px !important;
+          }
+
+          .filter-header {
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+          }
+
+          .filter-header-icon {
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+          }
+
+          .attendance-methods-heading {
+            gap: 8px;
+            margin-top: 18px;
+          }
+
+          .attendance-method-cards {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 9px;
+          }
+
+          .attendance-method-card {
+            min-height: 0;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 11px;
+            padding: 12px;
+            border-radius: 12px;
+          }
+
+          .attendance-method-icon {
+            flex: 0 0 40px;
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            font-size: 18px;
+          }
+
+          .attendance-method-copy {
+            flex: 1 1 auto;
+            min-width: 0;
+          }
+
+          .attendance-method-copy strong {
+            font-size: 13px;
+          }
+
+          .attendance-method-copy span {
+            font-size: 11px;
+          }
+
+          .method-select-indicator {
+            flex: 0 0 22px;
+            width: 22px;
+            height: 22px;
+          }
+
+          .attendance-type-banner {
+            margin-top: 12px;
+            padding: 14px;
+            border-radius: 13px;
+          }
+
+          .type-banner-left {
+            width: 100%;
+          }
+
+          .type-banner-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+
+          .attendance-summary-line {
+            gap: 9px 13px;
+            padding: 12px;
+            border-radius: 12px;
+          }
+
+          .attendance-summary-item {
+            font-size: 11px;
+          }
+
+          .attendance-summary-rate {
+            width: 100%;
+            margin-left: 0;
+            padding-top: 8px;
+            border-top: 1px solid ${COLORS.border};
+            font-size: 11px;
+          }
+
+          .student-list-card,
+          .qr-panel-card {
+            border-radius: 14px !important;
+          }
+
+          .student-list-header {
+            align-items: flex-start;
+            gap: 10px;
+            padding: 13px;
+          }
+
+          .student-list-heading {
+            gap: 9px;
+          }
+
+          .student-list-heading .section-heading-icon {
+            flex: 0 0 34px;
+            width: 34px;
+            height: 34px;
+          }
+
+          .student-list-heading .section-title {
+            font-size: 16px !important;
+            line-height: 1.35;
+          }
+
+          .student-list-header .ant-typography-secondary {
+            font-size: 11px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+          }
+
+          .student-list-search-row {
+            padding: 10px 12px;
+          }
+
+          .student-list-search,
+          .student-list-search .ant-input-affix-wrapper,
+          .student-list-search .ant-input-group-wrapper {
+            width: 100%;
+            min-width: 0;
+          }
+
+          .table-toolbar {
+            gap: 9px;
+            padding: 10px 12px;
+          }
+
+          .table-toolbar-left {
+            flex-wrap: wrap;
+            line-height: 1.5;
+          }
+
+          .toolbar-legend {
+            gap: 8px 11px;
+            font-size: 10px;
+          }
+
+          .attendance-table-wrap .ant-table {
+            font-size: 12px;
+          }
+
+          .attendance-table-wrap .ant-table-thead > tr > th {
+            height: auto;
+            padding: 10px 11px;
+            font-size: 10px;
+            white-space: nowrap;
+          }
+
+          .attendance-table-wrap .ant-table-tbody > tr > td {
+            padding: 10px 11px;
+          }
+
+          .student-cell {
+            gap: 8px;
+            min-width: 170px;
+          }
+
+          .student-avatar {
+            flex: 0 0 auto;
+          }
+
+          .student-name {
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
+          }
+
+          .student-code {
+            font-size: 10px;
+          }
+
+          .attendance-status-tag {
+            min-width: 0;
+            padding: 3px 7px;
+            white-space: nowrap;
+          }
+
+          .manual-attendance-actions {
+            min-width: 0;
+            gap: 4px;
+          }
+
+          .manual-action-btn {
+            width: 29px !important;
+            height: 29px !important;
+            min-width: 29px !important;
+            padding: 0 !important;
+          }
+
+          .attendance-pagination {
+            justify-content: center;
+            padding: 12px 8px;
+          }
+
+          .attendance-pagination .ant-pagination-options {
+            display: none;
+          }
+
+          .qr-modern-header {
+            gap: 10px;
+            padding: 14px;
+          }
+
+          .qr-modern-title {
+            font-size: 17px;
+            line-height: 1.35;
+          }
+
+          .qr-modern-title-sub {
+            font-size: 11px;
+            line-height: 1.5;
+          }
+
+          .qr-class-card {
+            margin: 12px;
+            padding: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+
+          .qr-class-left {
+            flex: 1 1 180px;
+            min-width: 0;
+          }
+
+          .qr-class-name {
+            overflow-wrap: anywhere;
+          }
+
+          .qr-date-info {
+            margin: 0 12px 10px;
+            flex-wrap: wrap;
+          }
+
+          .qr-settings-summary {
+            margin: 0 12px 12px;
+          }
+
+          .qr-scanner-box {
+            width: calc(100% - 24px);
+            min-height: 210px;
+            margin: 0 12px 12px;
+          }
+
+          .qr-scanner-placeholder {
+            padding: 18px 12px;
+          }
+
+          .qr-placeholder-icon {
+            width: 54px;
+            height: 54px;
+          }
+
+          .qr-main-button {
+            width: calc(100% - 24px);
+            margin: 0 12px 12px;
+          }
+
+          .qr-attendance-note,
+          .qr-guide {
+            margin-left: 12px;
+            margin-right: 12px;
+          }
+
+          .qr-guide-list {
+            grid-template-columns: repeat(4, minmax(0, 1fr))
+          }
+
+          .attendance-mode-empty {
+            padding: 22px 14px;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .attendance-method-card {
+            gap: 9px;
+            padding: 10px;
+          }
+
+          .attendance-method-icon {
+            flex-basis: 36px;
+            width: 36px;
+            height: 36px;
+            font-size: 17px;
+          }
+
+          .student-list-heading .section-title {
+            font-size: 15px !important;
+          }
+
+          .attendance-summary-line {
+            gap: 8px 10px;
+          }
+
+          .attendance-summary-item {
+            font-size: 10px;
+          }
+
+          .qr-scanner-box {
+            min-height: 190px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .attendance-method-card,
+          .qr-live-status.active .qr-live-dot {
+            transition: none !important;
+            animation: none !important;
+          }
+        }
+          /* Hàng bộ lọc nhanh */
+.filter-quick-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(260px, 1.2fr) auto;
+  align-items: end;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Các trường lọc */
+.filter-quick-type,
+.filter-item.class-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Nhãn */
+.filter-quick-row .filter-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* Làm nổi bật khu vực chọn lớp */
+.filter-item.class-filter {
+  padding: 12px 14px;
+  background: #f0f7ff;
+  border: 1px solid #b8d8ff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-item.class-filter:focus-within {
+  border-color: #3478f6;
+  box-shadow: 0 0 0 3px rgba(52, 120, 246, 0.12);
+}
+
+/* Nhãn lớp học nổi bật */
+.filter-item.class-filter .filter-label {
+  color: #174ea6;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.filter-item.class-filter .required {
+  color: #e5484d;
+  font-weight: 800;
+}
+
+/* Ô chọn lớp */
+.filter-item.class-filter .attendance-select {
+  width: 100%;
+}
+
+.filter-item.class-filter .attendance-select .ant-select-selector {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #c4d9f5 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.filter-item.class-filter .attendance-select.ant-select-focused
+  .ant-select-selector {
+  border-color: #3478f6 !important;
+}
+
+/* Nút bộ lọc nâng cao */
+.filter-advanced-toggle {
+  min-height: 42px;
+  white-space: nowrap;
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.filter-toggle-chevron {
+  margin-left: 6px;
+  transition: transform 0.2s ease;
+}
+
+.filter-advanced-toggle.is-open .filter-toggle-chevron {
+  transform: rotate(180deg);
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .filter-quick-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .filter-item.class-filter {
+    grid-column: span 1;
+  }
+
+  .filter-advanced-toggle {
+    align-self: end;
+    width: 100%;
+  }
+}
+
+/* Điện thoại */
+@media (max-width: 600px) {
+  .filter-quick-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .filter-quick-type,
+  .filter-item.class-filter {
+    width: 100%;
+  }
+
+  .filter-item.class-filter {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .filter-item.class-filter .filter-label {
+    font-size: 14px;
+  }
+
+  .filter-item.class-filter .attendance-select .ant-select-selector {
+    min-height: 44px;
+  }
+
+  .filter-advanced-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+            `}</style>
     </ConfigProvider>
   );
 };

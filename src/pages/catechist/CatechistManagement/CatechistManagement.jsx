@@ -3063,7 +3063,6 @@ export default function CatechistManagement() {
 
 .catechist-management-page {
   min-height: 100vh;
-  background: #F7F9FC;
   color: #173B5E;
   padding-bottom: 40px;
 }

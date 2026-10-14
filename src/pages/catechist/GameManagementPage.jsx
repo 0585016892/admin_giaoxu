@@ -1122,8 +1122,6 @@ const GameManagementPage = ({ teacherId }) => {
       style={{
         minHeight: "100vh",
 
-        background: COLORS.background,
-
         fontFamily:
           "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 

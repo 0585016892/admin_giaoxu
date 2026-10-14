@@ -1421,7 +1421,6 @@ const ClassManagement = () => {
                 marginTop: 12,
                 padding: 12,
                 borderRadius: 10,
-                background: COLORS.dangerBg,
                 border: "1px solid #F5C6C2",
               }}
             >
@@ -1705,7 +1704,6 @@ const ClassManagement = () => {
     <div
       style={{
         minHeight: "100vh",
-        background: COLORS.background,
         paddingBottom: 24,
       }}
     >

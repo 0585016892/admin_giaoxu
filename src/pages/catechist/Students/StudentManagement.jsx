@@ -1081,7 +1081,6 @@ export default function StudentManagement() {
 
         // Lấy toàn bộ học sinh của giáo xứ theo năm học, gồm cả học sinh chưa xếp lớp.
         const studentRes = await classStudentApi.getByChurch(targetYear);
-        console.log(studentRes);
 
         if (!mountedRef.current) return;
 
@@ -1934,8 +1933,6 @@ export default function StudentManagement() {
       // 9. Tải lại dữ liệu từ backend
       await fetchStudents({ silent: true });
     } catch (error) {
-      console.error("BULK CHANGE CLASS ERROR:", error);
-
       notify.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||
@@ -3252,6 +3249,94 @@ export default function StudentManagement() {
             gap: 10px;
           }
 
+          .student-qr-preview-content {
+            width: 100%;
+          }
+
+          .student-qr-preview-card {
+            position: relative;
+            width: min(100%, 330px);
+            aspect-ratio: 1252 / 1890;
+            margin: 0 auto 18px;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 10px 28px rgba(16, 42, 67, 0.16);
+            background: #fff;
+          }
+
+          .student-qr-preview-background {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            display: block;
+          }
+
+          .student-qr-preview-code {
+            position: absolute;
+            left: 60.54%;
+            top: 28.57%;
+            width: 55.91%;
+            aspect-ratio: 1;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+          }
+
+          .student-qr-preview-canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+          }
+
+          .student-qr-preview-student-name,
+          .student-qr-preview-class-name {
+            position: absolute;
+            left: 60.54%;
+            width: 55%;
+            transform: translateX(-50%);
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            line-height: 1.15;
+          }
+
+          .student-qr-preview-student-name {
+            top: 69.3%;
+            color: #17365D;
+            font-size: clamp(9px, 3.2vw, 14px);
+            font-weight: 800;
+          }
+
+          .student-qr-preview-class-name {
+            top: 72.75%;
+            color: #555;
+            font-size: clamp(8px, 2.7vw, 12px);
+            font-weight: 700;
+          }
+
+          .student-qr-preview-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            background: #F7F9FC;
+          }
+
+          .student-qr-preview-meta-text {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            overflow-wrap: anywhere;
+          }
+
           /* =====================================================
              MODAL
           ===================================================== */
@@ -3355,6 +3440,19 @@ export default function StudentManagement() {
                 calc(100vw - 16px)
                 !important;
               margin: 8px auto !important;
+            }
+
+            .student-qr-preview-card {
+              width: min(100%, 300px);
+            }
+
+            .student-qr-preview-meta {
+              padding: 10px;
+              gap: 9px;
+            }
+
+            .student-qr-preview-meta-text {
+              font-size: 12px;
             }
 
             .student-qr-card {
@@ -4386,116 +4484,59 @@ export default function StudentManagement() {
         ================================================= */}
 
         <Modal
-          className="student-responsive-modal"
+          className="student-responsive-modal student-qr-preview-modal"
           open={isQRModalOpen}
           onCancel={() => {
             setIsQRModalOpen(false);
-
             setQrStudent(null);
           }}
           footer={null}
           centered
-          width={430}
+          width={480}
           destroyOnClose
           title={
             <Space>
-              <QrcodeOutlined
-                style={{
-                  color: COLORS.navy,
-                  fontSize: 20,
-                }}
-              />
-
-              <span>Mã QR học sinh</span>
+              <QrcodeOutlined style={{ color: COLORS.navy, fontSize: 20 }} />
+              <span>Xem trước thẻ QR học sinh</span>
             </Space>
           }
         >
           {qrStudent && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "10px 0 20px",
-              }}
-            >
-              <Avatar
-                size={64}
-                src={qrStudent.avatar}
-                icon={<UserOutlined />}
-                style={{
-                  background: COLORS.navyLight,
-                  color: COLORS.navy,
-                  marginBottom: 12,
-                  border: `1px solid ${COLORS.border}`,
-                }}
-              />
-
-              <Typography.Title
-                level={4}
-                style={{
-                  margin: "0 0 4px",
-                  color: COLORS.navy,
-                  wordBreak: "break-word",
-                }}
-              >
-                {qrStudent.name}
-              </Typography.Title>
-
-              <Typography.Text
-                type="secondary"
-                style={{
-                  display: "block",
-                  marginBottom: 20,
-                }}
-              >
-                {qrStudent.code}
-              </Typography.Text>
-
-              <Card
-                className="student-qr-card"
-                bordered={false}
-                style={{
-                  background: COLORS.background,
-                  borderRadius: 16,
-                  border: `1px solid ${COLORS.border}`,
-                }}
-                bodyStyle={{
-                  padding: 20,
-                }}
-              >
-                <div
-                  className="student-qr-wrapper"
-                  style={{
-                    background: COLORS.white,
-                    padding: 16,
-                    borderRadius: 12,
-                    display: "inline-flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    maxWidth: "100%",
-                    boxSizing: "border-box",
-                    border: `1px solid ${COLORS.border}`,
-                  }}
-                >
+            <div className="student-qr-preview-content">
+              <div className="student-qr-preview-card">
+                <img
+                  className="student-qr-preview-background"
+                  src={backqr}
+                  alt="Mặt thẻ QR FaithEdu"
+                />
+                <div className="student-qr-preview-code">
                   <QRCodeCanvas
                     id={`student-qr-${qrStudent.id}`}
                     value={qrStudent.qr_token}
-                    size={260}
+                    size={520}
                     level="H"
                     includeMargin
-                    className="student-qr-canvas"
+                    className="student-qr-preview-canvas"
                   />
                 </div>
-              </Card>
+                <div className="student-qr-preview-student-name">
+                  {qrStudent.name || "Chưa có tên"}
+                </div>
+                <div className="student-qr-preview-class-name">
+                  {qrStudent.className || "Chưa xếp lớp"}
+                </div>
+              </div>
 
               <Typography.Text
                 type="secondary"
                 style={{
                   display: "block",
+                  textAlign: "center",
                   fontSize: 12,
-                  marginBottom: 20,
+                  margin: "12px 0 18px",
                 }}
               >
-                Mã này dùng để điểm danh bằng QR
+                Thẻ xem trước sẽ được tải xuống với bố cục như hình bên trên.
               </Typography.Text>
 
               <div className="student-qr-actions">
@@ -4513,14 +4554,12 @@ export default function StudentManagement() {
                     boxShadow: "0 8px 18px rgba(23, 59, 94, 0.18)",
                   }}
                 >
-                  Tải QR
+                  Tải thẻ QR
                 </AppButton>
-
                 <AppButton
                   size="small"
                   onClick={() => {
                     setIsQRModalOpen(false);
-
                     setQrStudent(null);
                   }}
                   style={{
@@ -4528,9 +4567,6 @@ export default function StudentManagement() {
                     height: 40,
                     padding: "0 16px",
                     fontWeight: 800,
-                    background: COLORS.navy,
-                    borderColor: COLORS.navy,
-                    boxShadow: "0 8px 18px rgba(23, 59, 94, 0.18)",
                   }}
                 >
                   Đóng

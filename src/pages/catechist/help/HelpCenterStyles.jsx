@@ -53,7 +53,6 @@ export const HELP_STYLES = `
 
   overflow-x: hidden;
 
-  background: var(--fh-bg);
   color: var(--fh-text);
 
   font-family:

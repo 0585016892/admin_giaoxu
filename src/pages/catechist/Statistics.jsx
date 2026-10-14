@@ -102,7 +102,6 @@ const COLORS = {
 const styles = {
   page: {
     minHeight: "100%",
-    background: COLORS.background,
     paddingBottom: 40,
   },
 

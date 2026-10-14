@@ -1,7 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
-  Button,
   Card,
   Col,
   Empty,
@@ -46,22 +51,27 @@ import { useNavigate } from "react-router-dom";
 
 import {
   getLessons,
-  getLessonTypes,
   getLessonResources,
   uploadLessonResource,
   deleteLessonResource,
   getQuestionsByLesson,
+  getLessonPrograms,
 } from "../../api/lessonApi";
 
 import "../../assets/css/LessonLibraryPage.css";
+import lessonCardCover from "../../assets/images/faith-library-card-cover.png";
 
 import AppFormModal from "../../components/common/AppFormModal";
+
 import AppButton from "../../components/common/AppButton";
+
 import { useNotification } from "../../components/notification";
 
 /* =========================================================
+
    CONSTANTS
-========================================================= */
+
+\========================================================= */
 
 const RESOURCE_VIEWER_BASE_PATH = "/catechist/resources";
 
@@ -71,56 +81,29 @@ const PAGE_SIZE_OPTIONS = ["12", "24", "48"];
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-const TYPE_LABELS = {
-  khai_tam: "Giáo lý Khai tâm",
-  du_tong: "Giáo lý Dự tòng",
-  hon_nhan: "Giáo lý Hôn nhân",
-  huynh_truong: "Giáo lý Huynh trưởng",
-  them_suc: "Giáo lý Thêm sức",
-  thanh_the: "Giáo lý Thánh Thể",
-  xung_toi: "Giáo lý Xưng tội",
-};
-
 const CATEGORY_LABELS = {
   presentation: "Bài trình chiếu",
+
   teacher_material: "Tài liệu giáo lý viên",
+
   lesson_plan: "Giáo án",
+
   worksheet: "Phiếu học tập",
+
   reference: "Tài liệu tham khảo",
+
   media: "Media",
+
   other: "Khác",
 };
 
-const CATEGORY_OPTIONS = [
-  {
-    value: "presentation",
-    label: "Bài trình chiếu",
-  },
-  {
-    value: "teacher_material",
-    label: "Tài liệu giáo lý viên",
-  },
-  {
-    value: "lesson_plan",
-    label: "Giáo án",
-  },
-  {
-    value: "worksheet",
-    label: "Phiếu học tập",
-  },
-  {
-    value: "reference",
-    label: "Tài liệu tham khảo",
-  },
-  {
-    value: "media",
-    label: "Media",
-  },
-  {
-    value: "other",
-    label: "Khác",
-  },
-];
+const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(
+  ([value, label]) => ({
+    value,
+
+    label,
+  }),
+);
 
 const IMAGE_TYPES = ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"];
 
@@ -129,36 +112,32 @@ const VIDEO_TYPES = ["mp4", "webm", "mov", "m4v"];
 const AUDIO_TYPES = ["mp3", "wav", "ogg", "m4a", "aac"];
 
 /* =========================================================
-   DEFAULT UPLOAD DATA
-========================================================= */
+
+   UPLOAD DEFAULTS
+
+\========================================================= */
 
 const getDefaultUploadData = (sortOrder = 0) => ({
   title: "",
+
   description: "",
+
   resource_category: "teacher_material",
+
   sort_order: sortOrder,
+
   visibility: "public",
+
   is_downloadable: true,
+
   external_url: "",
 });
 
 /* =========================================================
+
    HELPERS
-========================================================= */
 
-const getTypeLabel = (type) => {
-  if (!type) {
-    return "Chưa phân loại";
-  }
-
-  if (TYPE_LABELS[type]) {
-    return TYPE_LABELS[type];
-  }
-
-  return String(type)
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-};
+\========================================================= */
 
 const getArrayData = (response, keys = []) => {
   if (Array.isArray(response)) {
@@ -191,9 +170,7 @@ const getArrayData = (response, keys = []) => {
 };
 
 const getFileExtension = (resource) => {
-  if (!resource) {
-    return "";
-  }
+  if (!resource) return "";
 
   if (resource.resource_type === "link") {
     return "link";
@@ -224,17 +201,11 @@ const formatFileSize = (bytes) => {
 
   const size = Number(bytes);
 
-  if (!Number.isFinite(size)) {
-    return "";
-  }
+  if (!Number.isFinite(size)) return "";
 
-  if (size < 1024) {
-    return `${size} B`;
-  }
+  if (size < 1024) return `${size} B`;
 
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
 
   if (size < 1024 * 1024 * 1024) {
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
@@ -246,9 +217,7 @@ const formatFileSize = (bytes) => {
 const isHttpUrl = (value) => {
   const url = String(value || "").trim();
 
-  if (!url) {
-    return false;
-  }
+  if (!url) return false;
 
   try {
     const parsed = new URL(url);
@@ -259,120 +228,10 @@ const isHttpUrl = (value) => {
   }
 };
 
-const normalizeUrl = (value) => {
-  return String(value || "").trim();
-};
-
-const getResourceIcon = (resource, size = 28) => {
-  const extension = getFileExtension(resource);
-
-  const style = {
-    fontSize: size,
-  };
-
-  /* LINK */
-  if (resource?.resource_type === "link") {
-    return (
-      <LinkOutlined
-        style={{
-          ...style,
-          color: "#2563EB",
-        }}
-      />
-    );
-  }
-
-  if (extension === "pdf") {
-    return (
-      <FilePdfOutlined
-        style={{
-          ...style,
-          color: "#DC2626",
-        }}
-      />
-    );
-  }
-
-  if (["ppt", "pptx"].includes(extension)) {
-    return (
-      <FilePptOutlined
-        style={{
-          ...style,
-          color: "#EA580C",
-        }}
-      />
-    );
-  }
-
-  if (["doc", "docx"].includes(extension)) {
-    return (
-      <FileWordOutlined
-        style={{
-          ...style,
-          color: "#2563EB",
-        }}
-      />
-    );
-  }
-
-  if (["xls", "xlsx"].includes(extension)) {
-    return (
-      <FileExcelOutlined
-        style={{
-          ...style,
-          color: "#16A34A",
-        }}
-      />
-    );
-  }
-
-  if (IMAGE_TYPES.includes(extension)) {
-    return (
-      <FileImageOutlined
-        style={{
-          ...style,
-          color: "#9333EA",
-        }}
-      />
-    );
-  }
-
-  if (VIDEO_TYPES.includes(extension)) {
-    return (
-      <VideoCameraOutlined
-        style={{
-          ...style,
-          color: "#7C3AED",
-        }}
-      />
-    );
-  }
-
-  if (AUDIO_TYPES.includes(extension)) {
-    return (
-      <AudioOutlined
-        style={{
-          ...style,
-          color: "#0891B2",
-        }}
-      />
-    );
-  }
-
-  return (
-    <FileTextOutlined
-      style={{
-        ...style,
-        color: "#173B5E",
-      }}
-    />
-  );
-};
+const normalizeUrl = (value) => String(value || "").trim();
 
 const getResourceUrl = (resource) => {
-  if (!resource) {
-    return "";
-  }
+  if (!resource) return "";
 
   let url = "";
 
@@ -384,9 +243,7 @@ const getResourceUrl = (resource) => {
 
   url = normalizeUrl(url);
 
-  if (!url) {
-    return "";
-  }
+  if (!url) return "";
 
   if (/^https?:\/\//i.test(url)) {
     return url;
@@ -401,50 +258,95 @@ const getResourceUrl = (resource) => {
 };
 
 const isResourceActive = (resource) => {
-  if (!resource) {
-    return false;
-  }
+  if (!resource) return false;
 
   if (resource.is_active === undefined || resource.is_active === null) {
     return true;
   }
 
-  if (
-    resource.is_active === false ||
-    resource.is_active === 0 ||
-    resource.is_active === "0"
-  ) {
-    return false;
+  return ![false, 0, "0"].includes(resource.is_active);
+};
+
+const getResourceIcon = (resource, size = 28) => {
+  const extension = getFileExtension(resource);
+
+  const style = { fontSize: size };
+
+  if (resource?.resource_type === "link") {
+    return <LinkOutlined style={{ ...style, color: "#2563EB" }} />;
   }
 
-  return true;
+  if (extension === "pdf") {
+    return <FilePdfOutlined style={{ ...style, color: "#DC2626" }} />;
+  }
+
+  if (["ppt", "pptx"].includes(extension)) {
+    return <FilePptOutlined style={{ ...style, color: "#EA580C" }} />;
+  }
+
+  if (["doc", "docx"].includes(extension)) {
+    return <FileWordOutlined style={{ ...style, color: "#2563EB" }} />;
+  }
+
+  if (["xls", "xlsx"].includes(extension)) {
+    return <FileExcelOutlined style={{ ...style, color: "#16A34A" }} />;
+  }
+
+  if (IMAGE_TYPES.includes(extension)) {
+    return <FileImageOutlined style={{ ...style, color: "#9333EA" }} />;
+  }
+
+  if (VIDEO_TYPES.includes(extension)) {
+    return <VideoCameraOutlined style={{ ...style, color: "#7C3AED" }} />;
+  }
+
+  if (AUDIO_TYPES.includes(extension)) {
+    return <AudioOutlined style={{ ...style, color: "#0891B2" }} />;
+  }
+
+  return <FileTextOutlined style={{ ...style, color: "#173B5E" }} />;
 };
 
 /* =========================================================
+
    COMPONENT
-========================================================= */
+
+\========================================================= */
 
 const LessonLibraryPage = () => {
   const navigate = useNavigate();
+
   const notify = useNotification();
 
+  /*
+
+   * Dùng ref để callback không phụ thuộc identity của notify.
+
+   * Tránh effect gọi API lặp nếu useNotification trả object mới
+
+   * sau mỗi lần render.
+
+   */
+
+  const notifyRef = useRef(notify);
+
+  notifyRef.current = notify;
+
   /* =======================================================
-     STATE
-  ======================================================= */
 
-  const [loading, setLoading] = useState(true);
+     MAIN STATE
 
-  const [resourceLoading, setResourceLoading] = useState(false);
+  \======================================================= */
+
+  const [loading, setLoading] = useState(false);
+
+  const [programs, setPrograms] = useState([]);
+
+  const [selectedProgram, setSelectedProgram] = useState(null);
 
   const [lessons, setLessons] = useState([]);
 
-  const [lessonTypes, setLessonTypes] = useState([]);
-
-  const [selectedType, setSelectedType] = useState(null);
-
   const [selectedLesson, setSelectedLesson] = useState(null);
-
-  const [resources, setResources] = useState([]);
 
   const [searchText, setSearchText] = useState("");
 
@@ -457,8 +359,24 @@ const LessonLibraryPage = () => {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   /* =======================================================
+
+     RESOURCES & QUESTIONS
+
+  \======================================================= */
+
+  const [resourceLoading, setResourceLoading] = useState(false);
+
+  const [resources, setResources] = useState([]);
+
+  const [questions, setQuestions] = useState([]);
+
+  const [questionLoading, setQuestionLoading] = useState(false);
+
+  /* =======================================================
+
      UPLOAD
-  ======================================================= */
+
+  \======================================================= */
 
   const [uploadOpen, setUploadOpen] = useState(false);
 
@@ -471,181 +389,252 @@ const LessonLibraryPage = () => {
   const [menuLessonId, setMenuLessonId] = useState(null);
 
   /* =======================================================
-     QUESTIONS
-  ======================================================= */
 
-  const [questions, setQuestions] = useState([]);
+     LOAD PROGRAMS
 
-  const [questionLoading, setQuestionLoading] = useState(false);
+     Chỉ gọi khi mở thư viện, không tải danh sách bài học
+
+     khi người dùng chưa chọn chương trình.
+
+  \======================================================= */
+
+  const loadPrograms = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const response = await getLessonPrograms();
+
+      const data = getArrayData(response.data, ["programs"]);
+
+      setPrograms(data);
+    } catch (error) {
+      notifyRef.current.error(
+        error?.response?.data?.message ||
+          "Không thể tải danh sách chương trình giáo lý",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPrograms();
+  }, [loadPrograms]);
 
   /* =======================================================
-     LOAD LESSONS
-  ======================================================= */
 
-  const loadLessons = useCallback(async () => {
+     LOAD LESSONS BY PROGRAM
+
+     Không lọc theo catechism_type.
+
+  \======================================================= */
+
+  const loadLessons = useCallback(async (programId) => {
+    if (!programId) {
+      setLessons([]);
+
+      return;
+    }
+
     try {
       setLoading(true);
 
       const response = await getLessons({
-        catechism_type: selectedType || undefined,
+        program_id: programId,
       });
 
-      const data = getArrayData(response?.data, ["lessons"]);
+      const data = getArrayData(response.data.data, ["lessons"]);
 
       setLessons(data);
     } catch (error) {
-      notify.error(
+      setLessons([]);
+
+      notifyRef.current.error(
         error?.response?.data?.message || "Không thể tải danh sách bài học",
       );
     } finally {
       setLoading(false);
     }
-  }, [selectedType, notify]);
-
-  /* =======================================================
-     LOAD TYPES
-  ======================================================= */
-
-  const loadLessonTypes = useCallback(async () => {
-    try {
-      const response = await getLessonTypes();
-
-      const data = getArrayData(response?.data, ["types", "lessonTypes"]);
-
-      setLessonTypes(data);
-    } catch (error) {}
   }, []);
 
-  /* =======================================================
-     LOAD RESOURCES
-  ======================================================= */
-
-  const loadResources = useCallback(
-    async (lessonId) => {
-      if (!lessonId) {
-        setResources([]);
-        setQuestions([]);
-        return;
-      }
-
-      try {
-        setResourceLoading(true);
-        setQuestionLoading(true);
-
-        const [resourceResponse, questionResponse] = await Promise.all([
-          getLessonResources(lessonId),
-          getQuestionsByLesson(lessonId),
-        ]);
-
-        const resourceData = getArrayData(resourceResponse?.data, [
-          "resources",
-        ]);
-
-        const questionData = getArrayData(questionResponse?.data, [
-          "questions",
-        ]);
-
-        setResources(resourceData);
-        setQuestions(questionData);
-      } catch (error) {
-        notify.error(
-          error?.response?.data?.message || "Không thể tải dữ liệu bài học",
-        );
-
-        setResources([]);
-        setQuestions([]);
-      } finally {
-        setResourceLoading(false);
-        setQuestionLoading(false);
-      }
-    },
-    [notify],
-  );
-
-  /* =======================================================
-     INITIAL LOAD
-  ======================================================= */
-
   useEffect(() => {
-    loadLessons();
-  }, [loadLessons]);
+    if (!selectedProgram?.id) {
+      setLessons([]);
 
-  useEffect(() => {
-    loadLessonTypes();
-  }, [loadLessonTypes]);
+      return;
+    }
+
+    setCurrentPage(1);
+
+    setSearchText("");
+
+    setSelectedLesson(null);
+
+    setResources([]);
+
+    setQuestions([]);
+
+    setMenuLessonId(null);
+
+    loadLessons(selectedProgram.id);
+  }, [selectedProgram?.id, loadLessons]);
 
   /* =======================================================
-     LOAD RESOURCE WHEN SELECTED LESSON CHANGES
-  ======================================================= */
+
+     LOAD RESOURCES AND QUESTIONS
+
+  \======================================================= */
+
+  const loadResources = useCallback(async (lessonId) => {
+    if (!lessonId) {
+      setResources([]);
+
+      setQuestions([]);
+
+      return;
+    }
+
+    try {
+      setResourceLoading(true);
+
+      setQuestionLoading(true);
+
+      const [resourceResponse, questionResponse] = await Promise.all([
+        getLessonResources(lessonId),
+
+        getQuestionsByLesson(lessonId),
+      ]);
+
+      const resourceData = getArrayData(resourceResponse?.data?.data, [
+        "resources",
+      ]);
+
+      const questionData = getArrayData(questionResponse?.data, ["questions"]);
+
+      setResources(resourceData);
+
+      setQuestions(questionData);
+    } catch (error) {
+      setResources([]);
+
+      setQuestions([]);
+
+      notifyRef.current.error(
+        error?.response?.data?.message || "Không thể tải dữ liệu bài học",
+      );
+    } finally {
+      setResourceLoading(false);
+
+      setQuestionLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (selectedLesson?.id) {
       loadResources(selectedLesson.id);
     } else {
       setResources([]);
+
       setQuestions([]);
     }
   }, [selectedLesson?.id, loadResources]);
 
   /* =======================================================
-     RESET PAGE
-  ======================================================= */
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchText, selectedType, sortType]);
+     PROGRAM NAVIGATION
 
-  /* =======================================================
-     TYPE OPTIONS
-  ======================================================= */
+  \======================================================= */
 
-  const typeOptions = useMemo(() => {
-    if (lessonTypes.length) {
-      return lessonTypes
-        .map((item) => {
-          if (typeof item === "string") {
-            return {
-              value: item,
-              label: getTypeLabel(item),
-            };
-          }
+  const openProgram = (program) => {
+    if (!program?.id) {
+      notifyRef.current.warning("Chương trình giáo lý không hợp lệ");
 
-          const value =
-            item.value || item.type || item.catechism_type || item.key;
-
-          return {
-            value,
-            label: item.label || item.name || getTypeLabel(value),
-          };
-        })
-        .filter((item) => item.value);
+      return;
     }
 
-    const uniqueTypes = [
-      ...new Set(lessons.map((item) => item.catechism_type).filter(Boolean)),
-    ];
+    setSelectedProgram(program);
 
-    return uniqueTypes.map((type) => ({
-      value: type,
-      label: getTypeLabel(type),
-    }));
-  }, [lessonTypes, lessons]);
+    setSelectedLesson(null);
+
+    setLessons([]);
+
+    setResources([]);
+
+    setQuestions([]);
+
+    setSearchText("");
+
+    setCurrentPage(1);
+
+    setMenuLessonId(null);
+  };
+
+  const backToPrograms = () => {
+    setSelectedProgram(null);
+
+    setSelectedLesson(null);
+
+    setLessons([]);
+
+    setResources([]);
+
+    setQuestions([]);
+
+    setSearchText("");
+
+    setCurrentPage(1);
+
+    setMenuLessonId(null);
+  };
 
   /* =======================================================
-     FILTER + SORT
-  ======================================================= */
+
+     LESSON NAVIGATION
+
+  \======================================================= */
+
+  const openLesson = (lesson) => {
+    if (!lesson?.id) {
+      notifyRef.current.warning("Không xác định được bài học");
+
+      return;
+    }
+
+    setSelectedLesson(lesson);
+
+    setResources([]);
+
+    setQuestions([]);
+
+    setMenuLessonId(null);
+  };
+
+  const backToLibrary = () => {
+    setSelectedLesson(null);
+
+    setResources([]);
+
+    setQuestions([]);
+
+    setMenuLessonId(null);
+  };
+
+  /* =======================================================
+
+     SEARCH, SORT AND PAGINATION
+
+     Chỉ tìm kiếm trong danh sách bài học của chương trình
+
+     đang chọn. Không lọc catechism_type.
+
+  \======================================================= */
 
   const filteredLessons = useMemo(() => {
     let result = [...lessons];
 
-    if (selectedType) {
-      result = result.filter(
-        (lesson) => lesson.catechism_type === selectedType,
-      );
-    }
-
     const keyword = String(searchText || "")
       .trim()
+
       .toLowerCase();
 
     if (keyword) {
@@ -693,11 +682,7 @@ const LessonLibraryPage = () => {
     }
 
     return result;
-  }, [lessons, selectedType, searchText, sortType]);
-
-  /* =======================================================
-     PAGINATION
-  ======================================================= */
+  }, [lessons, searchText, sortType]);
 
   const paginatedLessons = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -705,38 +690,28 @@ const LessonLibraryPage = () => {
     return filteredLessons.slice(startIndex, startIndex + pageSize);
   }, [filteredLessons, currentPage, pageSize]);
 
-  /* =======================================================
-     LESSON
-  ======================================================= */
-
-  const openLesson = (lesson) => {
-    setSelectedLesson(lesson);
-    setResources([]);
-    setQuestions([]);
-    setMenuLessonId(null);
-  };
-
-  const backToLibrary = () => {
-    setSelectedLesson(null);
-    setResources([]);
-    setQuestions([]);
-    setMenuLessonId(null);
-  };
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, sortType, pageSize]);
 
   /* =======================================================
+
      RESOURCE VIEWER
-  ======================================================= */
+
+  \======================================================= */
 
   const openResourceViewer = (resource) => {
     if (!resource?.id) {
-      notify.warning("Không xác định được tài liệu");
+      notifyRef.current.warning("Không xác định được tài liệu");
+
       return;
     }
 
     const url = getResourceUrl(resource);
 
     if (resource.resource_type !== "link" && !url) {
-      notify.info("Tài liệu chưa có file");
+      notifyRef.current.info("Tài liệu chưa có file");
+
       return;
     }
 
@@ -744,12 +719,15 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
-     OPEN UPLOAD MODAL
-  ======================================================= */
+
+     UPLOAD MODAL
+
+  \======================================================= */
 
   const openUploadModal = () => {
     if (!selectedLesson) {
-      notify.info("Vui lòng mở một bài học trước");
+      notifyRef.current.info("Vui lòng mở một bài học trước");
+
       return;
     }
 
@@ -760,14 +738,8 @@ const LessonLibraryPage = () => {
     setUploadOpen(true);
   };
 
-  /* =======================================================
-     CLOSE UPLOAD MODAL
-  ======================================================= */
-
   const closeUploadModal = () => {
-    if (uploading) {
-      return;
-    }
+    if (uploading) return;
 
     setUploadOpen(false);
 
@@ -776,134 +748,88 @@ const LessonLibraryPage = () => {
     setUploadData(getDefaultUploadData());
   };
 
-  /* =======================================================
-     CHANGE EXTERNAL URL
-  ======================================================= */
-
   const handleExternalUrlChange = (event) => {
     const value = event?.target?.value || "";
 
     setUploadData((prev) => ({
       ...prev,
+
       external_url: value,
     }));
 
-    /*
-     * Nếu người dùng nhập link
-     * thì tự động bỏ file
-     */
     if (String(value).trim() && selectedFile) {
       setSelectedFile(null);
     }
   };
 
-  /* =======================================================
-     BEFORE UPLOAD
-  ======================================================= */
-
   const handleBeforeUpload = (file) => {
     const externalUrl = normalizeUrl(uploadData?.external_url);
 
-    /*
-     * Đang dùng link
-     */
     if (externalUrl) {
-      notify.info(
+      notifyRef.current.info(
         "Bạn đang sử dụng đường link. Hãy xóa đường link nếu muốn tải file.",
       );
 
       return Upload.LIST_IGNORE;
     }
 
-    /*
-     * Kiểm tra dung lượng
-     */
     if (Number(file?.size || 0) > MAX_FILE_SIZE) {
-      notify.error("File không được vượt quá 100MB");
+      notifyRef.current.error("File không được vượt quá 100MB");
 
       return Upload.LIST_IGNORE;
     }
 
-    /*
-     * Lưu file
-     */
     setSelectedFile(file);
 
-    /*
-     * Tự động lấy tên file
-     */
     if (!String(uploadData?.title || "").trim()) {
       const fileName = String(file?.name || "").replace(/\.[^/.]+$/, "");
 
       setUploadData((prev) => ({
         ...prev,
+
         title: fileName,
       }));
     }
 
+    // Không để Ant Design tự upload. File được gửi bằng handleUpload.
+
     return false;
   };
 
-  /* =======================================================
-     UPLOAD
-  ======================================================= */
-
   const handleUpload = async () => {
-    if (!selectedLesson) {
-      return;
-    }
+    if (!selectedLesson) return;
 
-    /*
-     * Luôn ép về string để tránh
-     * undefined.trim()
-     */
     const title = String(uploadData?.title || "").trim();
 
     const description = String(uploadData?.description || "").trim();
 
     const externalUrl = normalizeUrl(uploadData?.external_url);
 
-    /* =====================================================
-       TITLE
-    ===================================================== */
-
     if (!title) {
-      notify.warning("Vui lòng nhập tên tài liệu");
+      notifyRef.current.warning("Vui lòng nhập tên tài liệu");
+
       return;
     }
-
-    /* =====================================================
-       FILE OR LINK
-    ===================================================== */
 
     if (!selectedFile && !externalUrl) {
-      notify.warning("Vui lòng chọn file hoặc nhập đường link");
+      notifyRef.current.warning("Vui lòng chọn file hoặc nhập đường link");
+
       return;
     }
-
-    /* =====================================================
-       BOTH
-    ===================================================== */
 
     if (selectedFile && externalUrl) {
-      notify.warning("Vui lòng chỉ chọn file hoặc nhập đường link");
+      notifyRef.current.warning("Vui lòng chỉ chọn file hoặc nhập đường link");
+
       return;
     }
-
-    /* =====================================================
-       VALIDATE URL
-    ===================================================== */
 
     if (externalUrl && !isHttpUrl(externalUrl)) {
-      notify.error(
+      notifyRef.current.error(
         "Đường link không hợp lệ. Vui lòng sử dụng http:// hoặc https://",
       );
+
       return;
     }
-
-    /* =====================================================
-       FORM DATA
-    ===================================================== */
 
     const formData = new FormData();
 
@@ -913,6 +839,7 @@ const LessonLibraryPage = () => {
 
     formData.append(
       "resource_category",
+
       uploadData?.resource_category || "teacher_material",
     );
 
@@ -920,17 +847,11 @@ const LessonLibraryPage = () => {
 
     formData.append("visibility", uploadData?.visibility || "public");
 
-    /*
-     * Link thì không cho download
-     */
     formData.append(
       "is_downloadable",
+
       externalUrl ? "0" : uploadData?.is_downloadable ? "1" : "0",
     );
-
-    /* =====================================================
-       LINK
-    ===================================================== */
 
     if (externalUrl) {
       formData.append("resource_type", "link");
@@ -938,26 +859,18 @@ const LessonLibraryPage = () => {
       formData.append("external_url", externalUrl);
     }
 
-    /* =====================================================
-       FILE
-    ===================================================== */
-
     if (selectedFile) {
       formData.append("resource_type", "file");
 
       formData.append("file", selectedFile);
     }
 
-    /* =====================================================
-       REQUEST
-    ===================================================== */
-
     try {
       setUploading(true);
 
       await uploadLessonResource(selectedLesson.id, formData);
 
-      notify.success(
+      notifyRef.current.success(
         externalUrl
           ? "Đã thêm đường link thành công"
           : "Tải tài liệu thành công",
@@ -971,45 +884,58 @@ const LessonLibraryPage = () => {
 
       await loadResources(selectedLesson.id);
     } catch (error) {
-      notify.error(error?.response?.data?.message || "Không thể thêm tài liệu");
+      notifyRef.current.error(
+        error?.response?.data?.message || "Không thể thêm tài liệu",
+      );
     } finally {
       setUploading(false);
     }
   };
 
   /* =======================================================
-     DELETE
-  ======================================================= */
+
+     DELETE RESOURCE
+
+  \======================================================= */
 
   const handleDelete = async (resource) => {
+    if (!resource?.id || !selectedLesson?.id) {
+      notifyRef.current.warning("Không xác định được tài liệu cần xóa");
+
+      return;
+    }
+
     try {
       await deleteLessonResource(resource.id);
 
-      notify.success("Đã xóa tài liệu");
+      notifyRef.current.success("Đã xóa tài liệu");
 
       await loadResources(selectedLesson.id);
     } catch (error) {
-      notify.error(error?.response?.data?.message || "Không thể xóa tài liệu");
+      notifyRef.current.error(
+        error?.response?.data?.message || "Không thể xóa tài liệu",
+      );
     }
   };
 
   /* =======================================================
-     DOWNLOAD
-  ======================================================= */
+
+     DOWNLOAD RESOURCE
+
+  \======================================================= */
 
   const downloadResource = (resource) => {
-    /*
-     * Link không phải file download
-     */
     if (resource?.resource_type === "link") {
       openResourceViewer(resource);
+
       return;
     }
 
     const url = getResourceUrl(resource);
 
     if (!url) {
-      notify.info("Tài liệu chưa có file");
+      notifyRef.current.info("Tài liệu chưa có file");
+
       return;
     }
 
@@ -1017,8 +943,10 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
-     PAGINATION UI
-  ======================================================= */
+
+     PAGINATION
+
+  \======================================================= */
 
   const renderPagination = () => {
     if (filteredLessons.length <= pageSize) {
@@ -1039,7 +967,9 @@ const LessonLibraryPage = () => {
           onChange={(page, size) => {
             if (size !== pageSize) {
               setPageSize(size);
+
               setCurrentPage(1);
+
               return;
             }
 
@@ -1051,13 +981,13 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
+
      LESSON ACTION MENU
-  ======================================================= */
+
+  \======================================================= */
 
   const renderLessonMenu = (lesson) => {
-    if (menuLessonId !== lesson.id) {
-      return null;
-    }
+    if (menuLessonId !== lesson.id) return null;
 
     return (
       <div
@@ -1068,10 +998,12 @@ const LessonLibraryPage = () => {
           type="button"
           onClick={() => {
             setMenuLessonId(null);
+
             openLesson(lesson);
           }}
         >
           <EyeOutlined />
+
           <span>Xem chi tiết</span>
         </button>
 
@@ -1079,10 +1011,12 @@ const LessonLibraryPage = () => {
           type="button"
           onClick={() => {
             setMenuLessonId(null);
+
             openLesson(lesson);
           }}
         >
           <FolderOpenOutlined />
+
           <span>Mở bài học</span>
         </button>
 
@@ -1091,10 +1025,11 @@ const LessonLibraryPage = () => {
           onClick={() => {
             setMenuLessonId(null);
 
-            notify.info("Chức năng chỉnh sửa sẽ được bổ sung.");
+            notifyRef.current.info("Chức năng chỉnh sửa sẽ được bổ sung.");
           }}
         >
           <BookOutlined />
+
           <span>Chỉnh sửa</span>
         </button>
 
@@ -1103,10 +1038,11 @@ const LessonLibraryPage = () => {
           onClick={() => {
             setMenuLessonId(null);
 
-            notify.info("Chức năng sao chép sẽ được bổ sung.");
+            notifyRef.current.info("Chức năng sao chép sẽ được bổ sung.");
           }}
         >
           <BookOutlined />
+
           <span>Sao chép</span>
         </button>
 
@@ -1118,10 +1054,11 @@ const LessonLibraryPage = () => {
           onClick={() => {
             setMenuLessonId(null);
 
-            notify.info("Chức năng xóa sẽ được bổ sung.");
+            notifyRef.current.info("Chức năng xóa bài học chưa được cấu hình.");
           }}
         >
           <DeleteOutlined />
+
           <span>Xóa</span>
         </button>
       </div>
@@ -1129,8 +1066,10 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
-     LESSON GRID
-  ======================================================= */
+
+     LESSON LIST / GRID
+
+  \======================================================= */
 
   const renderLessonGrid = () => {
     if (!filteredLessons.length) {
@@ -1138,15 +1077,15 @@ const LessonLibraryPage = () => {
         <div className="ll-empty">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Không tìm thấy bài học"
+            description={
+              searchText
+                ? "Không tìm thấy bài học phù hợp"
+                : "Chương trình này chưa có bài học"
+            }
           />
         </div>
       );
     }
-
-    /* =====================================================
-       LIST
-    ===================================================== */
 
     if (viewMode === "list") {
       return (
@@ -1157,6 +1096,11 @@ const LessonLibraryPage = () => {
                 className="ll-list-item"
                 key={lesson.id}
                 onClick={() => openLesson(lesson)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") openLesson(lesson);
+                }}
               >
                 <div className="ll-list-icon">
                   <FolderOpenOutlined />
@@ -1168,18 +1112,19 @@ const LessonLibraryPage = () => {
                   </div>
 
                   <div className="ll-list-meta">
-                    FOLDER
+                    BÀI HỌC
                     <span>•</span>
-                    Tài liệu
+                    ID: {lesson.id}
                   </div>
                 </div>
 
                 <div className="ll-list-type">
-                  {getTypeLabel(lesson.catechism_type)}
+                  {selectedProgram?.name || "Chương trình giáo lý"}
                 </div>
 
                 <div className="ll-more-wrapper">
-                  <Button
+                  <AppButton
+                    size="small"
                     type="text"
                     className="ll-more-button"
                     icon={<MoreOutlined />}
@@ -1203,10 +1148,6 @@ const LessonLibraryPage = () => {
       );
     }
 
-    /* =====================================================
-       GRID
-    ===================================================== */
-
     return (
       <>
         <div className="ll-grid">
@@ -1215,6 +1156,11 @@ const LessonLibraryPage = () => {
               className="ll-file-card"
               key={lesson.id}
               onClick={() => openLesson(lesson)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") openLesson(lesson);
+              }}
             >
               <div className="ll-file-preview">
                 <div className="ll-folder-graphic">
@@ -1237,7 +1183,8 @@ const LessonLibraryPage = () => {
                   </div>
 
                   <div className="ll-more-wrapper">
-                    <Button
+                    <AppButton
+                      size="small"
                       type="text"
                       className="ll-more-button"
                       icon={<MoreOutlined />}
@@ -1255,9 +1202,11 @@ const LessonLibraryPage = () => {
                 </div>
 
                 <div className="ll-file-meta">
-                  <span>FOLDER</span>
+                  <span>BÀI HỌC</span>
+
                   <span>•</span>
-                  <span>Tài liệu</span>
+
+                  <span>ID: {lesson.id}</span>
                 </div>
               </div>
             </div>
@@ -1270,8 +1219,90 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
+
+     PROGRAM SELECTION
+
+  \======================================================= */
+
+  const renderProgramSelection = () => {
+    if (loading) {
+      return (
+        <div className="ll-resource-loading">
+          <Spin size="large" tip="Đang tải chương trình giáo lý..." />
+        </div>
+      );
+    }
+
+    if (!programs.length) {
+      return (
+        <div className="ll-empty">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="Chưa có chương trình giáo lý đang hoạt động"
+          >
+            <AppButton icon={<ReloadOutlined />} onClick={loadPrograms}>
+              Tải lại
+            </AppButton>
+          </Empty>
+        </div>
+      );
+    }
+
+    return (
+      <div className="ll-program-grid-redesigned">
+        {programs.map((program, index) => (
+          <Card
+            key={program.id}
+            hoverable
+            bordered={false}
+            className="ll-program-card-redesigned"
+            onClick={() => openProgram(program)}
+          >
+            <div className="ll-program-cover">
+              <img
+                src={lessonCardCover}
+                alt="Minh họa chương trình giáo lý"
+                loading="lazy"
+              />
+              <span className="ll-program-number">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+            </div>
+
+            <div className="ll-program-card-body">
+              <div className="ll-program-card-topline">
+                <span className="ll-program-kicker">CHƯƠNG TRÌNH GIÁO LÝ</span>
+                {program.code && <Tag color="blue">{program.code}</Tag>}
+              </div>
+
+              <h3>{program.name || "Chương trình chưa đặt tên"}</h3>
+
+              <p>
+                {program.description ||
+                  "Chọn để xem danh sách bài học và tài liệu."}
+              </p>
+
+              <div className="ll-program-card-footer">
+                <span>
+                  <FolderOpenOutlined />
+                  Xem bài học
+                </span>
+                <span className="ll-program-arrow">
+                  <ArrowLeftOutlined />
+                </span>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  /* =======================================================
+
      RESOURCES
-  ======================================================= */
+
+  \======================================================= */
 
   const renderResources = () => {
     if (resourceLoading) {
@@ -1312,13 +1343,11 @@ const LessonLibraryPage = () => {
         {resources.map((resource) => {
           const resourceUrl = getResourceUrl(resource);
 
-          const canView = Boolean(
-            resource.id && (resourceUrl || resource.resource_type === "link"),
-          );
+          const isLink = resource.resource_type === "link";
 
           const isActive = isResourceActive(resource);
 
-          const isLink = resource.resource_type === "link";
+          const canView = Boolean(resource.id && (resourceUrl || isLink));
 
           return (
             <div
@@ -1327,12 +1356,10 @@ const LessonLibraryPage = () => {
                 !isActive ? "ll-resource-disabled" : ""
               }`}
             >
-              {/* ICON */}
               <div className="ll-resource-icon">
                 {getResourceIcon(resource, 30)}
               </div>
 
-              {/* MAIN */}
               <div className="ll-resource-main">
                 <div className="ll-resource-title">
                   <span>
@@ -1367,7 +1394,6 @@ const LessonLibraryPage = () => {
                 </div>
               </div>
 
-              {/* ACTIONS */}
               <div className="ll-resource-actions">
                 {canView && (
                   <>
@@ -1402,9 +1428,7 @@ const LessonLibraryPage = () => {
                   }
                   okText="Xóa"
                   cancelText="Hủy"
-                  okButtonProps={{
-                    danger: true,
-                  }}
+                  okButtonProps={{ danger: true }}
                   onConfirm={() => handleDelete(resource)}
                 >
                   <Tooltip title="Xóa">
@@ -1420,121 +1444,148 @@ const LessonLibraryPage = () => {
   };
 
   /* =======================================================
+
      RENDER
-  ======================================================= */
+
+  \======================================================= */
 
   return (
-    <>
-      <div className="lesson-library-page">
-        {/* =================================================
-            LIBRARY HEADER
-        ================================================= */}
+    <div className="lesson-library-page">
+      {/* ===================================================
 
-        {!selectedLesson && (
-          <>
-            <div className="ll-topbar">
-              {/* SEARCH */}
+          SCREEN 1: CHỌN CHƯƠNG TRÌNH
 
-              <div className="ll-search-box">
-                <Input
-                  allowClear
-                  prefix={<SearchOutlined />}
-                  placeholder="Tìm kiếm bài học..."
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                />
-              </div>
+      \=================================================== */}
 
-              {/* SORT */}
+      {!selectedProgram && !selectedLesson && (
+        <>
+          <div className="ll-page-heading">
+            <div>
+              <h1>Thư viện giáo lý</h1>
 
-              <Select
-                className="ll-sort-select"
-                value={sortType}
-                onChange={setSortType}
-                options={[
-                  {
-                    value: "name",
-                    label: "Sắp xếp theo tên",
-                  },
-                  {
-                    value: "newest",
-                    label: "Mới nhất",
-                  },
-                  {
-                    value: "oldest",
-                    label: "Cũ nhất",
-                  },
-                ]}
-              />
+              <p>Chọn chương trình để xem các bài học và tài liệu.</p>
+            </div>
 
-              {/* TYPE */}
+            <AppButton
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={loadPrograms}
+              loading={loading}
+            >
+              Làm mới
+            </AppButton>
+          </div>
 
-              <Select
-                className="ll-type-filter"
-                allowClear
-                showSearch
-                optionFilterProp="label"
-                placeholder="Tất cả chương trình"
-                value={selectedType}
-                onChange={setSelectedType}
-                options={typeOptions}
-                suffixIcon={<BookOutlined />}
-              />
+          {renderProgramSelection()}
+        </>
+      )}
 
-              {/* VIEW */}
+      {/* ===================================================
 
-              <div className="ll-view-toggle">
-                <button
-                  type="button"
-                  className={`ll-view-button ${
-                    viewMode === "grid" ? "active" : ""
-                  }`}
-                  onClick={() => setViewMode("grid")}
-                >
-                  <AppstoreOutlined />
-                </button>
+          SCREEN 2: DANH SÁCH BÀI HỌC CỦA CHƯƠNG TRÌNH
 
-                <button
-                  type="button"
-                  className={`ll-view-button ${
-                    viewMode === "list" ? "active" : ""
-                  }`}
-                  onClick={() => setViewMode("list")}
-                >
-                  <MenuOutlined />
-                </button>
-              </div>
+      \=================================================== */}
 
-              {/* CREATE */}
-
+      {selectedProgram && !selectedLesson && (
+        <>
+          <div className="ll-page-heading">
+            <div>
               <AppButton
-                icon={<UploadOutlined />}
                 size="small"
-                onClick={() =>
-                  notify.info("Vui lòng mở một bài học để thêm tài liệu.")
-                }
+                icon={<ArrowLeftOutlined />}
+                onClick={backToPrograms}
+                style={{ paddingLeft: 0, marginBottom: 8 }}
               >
-                Thêm tài liệu
+                Chọn chương trình khác
               </AppButton>
+
+              <h1>{selectedProgram.name}</h1>
+
+              <p>
+                {selectedProgram.code
+                  ? `Mã chương trình: ${selectedProgram.code} · `
+                  : ""}
+                {filteredLessons.length} bài học
+              </p>
             </div>
 
-            {/* HEADING */}
+            <AppButton
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={() => loadLessons(selectedProgram.id)}
+              loading={loading}
+            >
+              Làm mới
+            </AppButton>
+          </div>
 
-            <div className="ll-page-heading">
-              <div>
-                <h1>Thư viện giáo lý</h1>
-
-                <p>{filteredLessons.length} bài học</p>
-              </div>
+          <div className="ll-topbar">
+            <div className="ll-search-box">
+              <Input
+                allowClear
+                prefix={<SearchOutlined />}
+                placeholder="Tìm kiếm bài học..."
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+              />
             </div>
-          </>
-        )}
 
-        {/* =================================================
-            DETAIL HEADER
-        ================================================= */}
+            <Select
+              className="ll-sort-select"
+              value={sortType}
+              onChange={setSortType}
+              options={[
+                { value: "name", label: "Sắp xếp theo tên" },
 
-        {selectedLesson && (
+                { value: "newest", label: "Mới nhất" },
+
+                { value: "oldest", label: "Cũ nhất" },
+              ]}
+            />
+
+            <div className="ll-view-toggle">
+              <button
+                type="button"
+                aria-label="Xem dạng lưới"
+                className={`ll-view-button ${
+                  viewMode === "grid" ? "active" : ""
+                }`}
+                onClick={() => setViewMode("grid")}
+              >
+                <AppstoreOutlined />
+              </button>
+
+              <button
+                type="button"
+                aria-label="Xem dạng danh sách"
+                className={`ll-view-button ${
+                  viewMode === "list" ? "active" : ""
+                }`}
+                onClick={() => setViewMode("list")}
+              >
+                <MenuOutlined />
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="ll-resource-loading">
+              <Spin size="large" tip="Đang tải bài học..." />
+            </div>
+          ) : (
+            renderLessonGrid()
+          )}
+        </>
+      )}
+
+      {/* ===================================================
+
+          SCREEN 3: CHI TIẾT BÀI HỌC
+
+      \=================================================== */}
+
+      {selectedLesson && (
+        <>
           <div className="ll-detail-header">
             <div className="ll-detail-left">
               <AppButton
@@ -1543,7 +1594,7 @@ const LessonLibraryPage = () => {
                 icon={<ArrowLeftOutlined />}
                 onClick={backToLibrary}
               >
-                Quay lại
+                Quay lại danh sách bài học
               </AppButton>
 
               <div className="ll-detail-info">
@@ -1553,7 +1604,7 @@ const LessonLibraryPage = () => {
 
                 <div>
                   <div className="ll-detail-type">
-                    {getTypeLabel(selectedLesson.catechism_type)}
+                    {selectedProgram?.name || "Chương trình giáo lý"}
                   </div>
 
                   <h2>{selectedLesson.title}</h2>
@@ -1570,29 +1621,7 @@ const LessonLibraryPage = () => {
               Thêm tài liệu
             </AppButton>
           </div>
-        )}
 
-        {/* =================================================
-            LESSON LIST
-        ================================================= */}
-
-        {!selectedLesson && (
-          <>
-            {loading ? (
-              <div className="ll-resource-loading">
-                <Spin size="large" />
-              </div>
-            ) : (
-              renderLessonGrid()
-            )}
-          </>
-        )}
-
-        {/* =================================================
-            RESOURCES
-        ================================================= */}
-
-        {selectedLesson && (
           <Card bordered={false} className="ll-resources-card">
             <div className="ll-resources-header">
               <div>
@@ -1613,9 +1642,7 @@ const LessonLibraryPage = () => {
 
             {renderResources()}
 
-            {/* =================================================
-                QUESTIONS
-            ================================================= */}
+            {/* QUESTIONS */}
 
             <div className="ll-knowledge-section">
               <div className="ll-knowledge-header">
@@ -1686,220 +1713,227 @@ const LessonLibraryPage = () => {
               </div>
             </div>
           </Card>
-        )}
+        </>
+      )}
 
-        {/* =================================================
-            UPLOAD MODAL
-        ================================================= */}
+      {/* ===================================================
 
-        <AppFormModal
-          title="Thêm tài liệu bài học"
-          subtitle="Thêm giáo trình, tài liệu hoặc đường link cho bài học"
-          onCancel={closeUploadModal}
-          onOk={handleUpload}
-          confirmLoading={uploading}
-          okText="Thêm tài liệu"
-          cancelText="Hủy"
-          width={600}
-          className="catechist-modal"
-          open={uploadOpen}
-        >
-          <div className="ll-upload-form">
-            {/* =================================================
-                TITLE
-            ================================================= */}
+          UPLOAD MODAL
 
-            <div className="ll-form-label">
-              Tên tài liệu
-              <span className="ll-required">*</span>
-            </div>
+      \=================================================== */}
 
-            <Input
-              size="large"
-              placeholder="VD: Giáo án Bài 1 - Hôn nhân"
-              value={uploadData.title}
-              onChange={(event) =>
-                setUploadData((prev) => ({
-                  ...prev,
-                  title: event.target.value,
-                }))
-              }
-            />
-
-            {/* =================================================
-                DESCRIPTION
-            ================================================= */}
-
-            <div className="ll-form-label">Mô tả</div>
-
-            <Input.TextArea
-              rows={3}
-              placeholder="Mô tả ngắn về tài liệu..."
-              value={uploadData.description}
-              onChange={(event) =>
-                setUploadData((prev) => ({
-                  ...prev,
-                  description: event.target.value,
-                }))
-              }
-            />
-
-            {/* =================================================
-                EXTERNAL URL
-            ================================================= */}
-
-            <div className="ll-form-label">
-              Đường link tài liệu / video
-              <span className="ll-form-label-optional">Không bắt buộc</span>
-            </div>
-
-            <Input
-              size="large"
-              placeholder="https://youtube.com/watch?v=... hoặc đường link tài liệu"
-              value={uploadData.external_url || ""}
-              onChange={handleExternalUrlChange}
-              prefix={<LinkOutlined />}
-              allowClear
-            />
-
-            <div className="ll-form-help">
-              Có thể nhập link YouTube, Google Drive hoặc website bên ngoài.
-              Không cần chọn file nếu sử dụng đường link.
-            </div>
-
-            {/* =================================================
-                CATEGORY + ORDER
-            ================================================= */}
-
-            <Row gutter={14}>
-              <Col xs={24} sm={16}>
-                <div className="ll-form-label">Loại tài liệu</div>
-
-                <Select
-                  size="large"
-                  style={{
-                    width: "100%",
-                  }}
-                  value={uploadData.resource_category}
-                  options={CATEGORY_OPTIONS}
-                  onChange={(value) =>
-                    setUploadData((prev) => ({
-                      ...prev,
-                      resource_category: value,
-                    }))
-                  }
-                />
-              </Col>
-
-              <Col xs={24} sm={8}>
-                <div className="ll-form-label">Thứ tự</div>
-
-                <Input
-                  size="large"
-                  type="number"
-                  min={0}
-                  value={uploadData.sort_order}
-                  onChange={(event) =>
-                    setUploadData((prev) => ({
-                      ...prev,
-                      sort_order: Number(event.target.value || 0),
-                    }))
-                  }
-                />
-              </Col>
-            </Row>
-
-            {/* =================================================
-                FILE
-            ================================================= */}
-
-            <div className="ll-form-label">
-              File tài liệu
-              <span className="ll-form-label-optional">
-                Không bắt buộc nếu đã có đường link
-              </span>
-            </div>
-
-            <Upload.Dragger
-              multiple={false}
-              maxCount={1}
-              disabled={Boolean(normalizeUrl(uploadData.external_url))}
-              accept={[
-                ".ppt",
-                ".pptx",
-                ".pdf",
-                ".doc",
-                ".docx",
-                ".xls",
-                ".xlsx",
-                ".jpg",
-                ".jpeg",
-                ".png",
-                ".gif",
-                ".webp",
-                ".svg",
-                ".bmp",
-                ".mp4",
-                ".webm",
-                ".mov",
-                ".m4v",
-                ".mp3",
-                ".wav",
-                ".ogg",
-                ".m4a",
-                ".aac",
-                ".zip",
-              ].join(",")}
-              fileList={
-                selectedFile
-                  ? [
-                      {
-                        uid: "-1",
-                        name: selectedFile.name,
-                        status: "done",
-                      },
-                    ]
-                  : []
-              }
-              beforeUpload={handleBeforeUpload}
-              onRemove={() => {
-                setSelectedFile(null);
-              }}
-            >
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-
-              <p className="ant-upload-text">
-                Kéo file vào đây hoặc click để chọn
-              </p>
-
-              <p className="ant-upload-hint">
-                PPT, PPTX, PDF, DOC, DOCX, XLS, XLSX, hình ảnh, video, audio,
-                ZIP
-              </p>
-
-              <p className="ant-upload-hint">Dung lượng tối đa: 100MB</p>
-
-              {normalizeUrl(uploadData.external_url) && (
-                <div className="ll-upload-disabled-note">
-                  Đang sử dụng đường link — không cần tải file.
-                </div>
-              )}
-            </Upload.Dragger>
-
-            {/* =================================================
-                NOTE
-            ================================================= */}
-
-            <div className="ll-upload-note">
-              <strong>Bài học:</strong>{" "}
-              {selectedLesson?.title || "Chưa chọn bài học"}
-            </div>
+      <AppFormModal
+        title="Thêm tài liệu bài học"
+        subtitle="Thêm giáo trình, tài liệu hoặc đường link cho bài học"
+        onCancel={closeUploadModal}
+        onOk={handleUpload}
+        confirmLoading={uploading}
+        okText="Thêm tài liệu"
+        cancelText="Hủy"
+        width={600}
+        className="catechist-modal"
+        open={uploadOpen}
+      >
+        <div className="ll-upload-form">
+          <div className="ll-form-label">
+            Tên tài liệu
+            <span className="ll-required">*</span>
           </div>
-        </AppFormModal>
-      </div>
-    </>
+
+          <Input
+            size="large"
+            placeholder="VD: Giáo án Bài 1 - Hôn nhân"
+            value={uploadData.title}
+            onChange={(event) =>
+              setUploadData((prev) => ({
+                ...prev,
+
+                title: event.target.value,
+              }))
+            }
+          />
+
+          <div className="ll-form-label">Mô tả</div>
+
+          <Input.TextArea
+            rows={3}
+            placeholder="Mô tả ngắn về tài liệu..."
+            value={uploadData.description}
+            onChange={(event) =>
+              setUploadData((prev) => ({
+                ...prev,
+
+                description: event.target.value,
+              }))
+            }
+          />
+
+          <div className="ll-form-label">
+            Đường link tài liệu / video
+            <span className="ll-form-label-optional">Không bắt buộc</span>
+          </div>
+
+          <Input
+            size="large"
+            placeholder="https://youtube.com/watch?v=..."
+            value={uploadData.external_url || ""}
+            onChange={handleExternalUrlChange}
+            prefix={<LinkOutlined />}
+            allowClear
+          />
+
+          <div className="ll-form-help">
+            Có thể nhập link YouTube, Google Drive hoặc website bên ngoài. Không
+            cần chọn file nếu sử dụng đường link.
+          </div>
+
+          <Row gutter={14}>
+            <Col xs={24} sm={16}>
+              <div className="ll-form-label">Loại tài liệu</div>
+
+              <Select
+                size="large"
+                style={{ width: "100%" }}
+                value={uploadData.resource_category}
+                options={CATEGORY_OPTIONS}
+                onChange={(value) =>
+                  setUploadData((prev) => ({
+                    ...prev,
+
+                    resource_category: value,
+                  }))
+                }
+              />
+            </Col>
+
+            <Col xs={24} sm={8}>
+              <div className="ll-form-label">Thứ tự</div>
+
+              <Input
+                size="large"
+                type="number"
+                min={0}
+                value={uploadData.sort_order}
+                onChange={(event) =>
+                  setUploadData((prev) => ({
+                    ...prev,
+
+                    sort_order: Number(event.target.value || 0),
+                  }))
+                }
+              />
+            </Col>
+          </Row>
+
+          <div className="ll-form-label">
+            File tài liệu
+            <span className="ll-form-label-optional">
+              Không bắt buộc nếu đã có đường link
+            </span>
+          </div>
+
+          <Upload.Dragger
+            multiple={false}
+            maxCount={1}
+            disabled={Boolean(normalizeUrl(uploadData.external_url))}
+            accept={[
+              ".ppt",
+
+              ".pptx",
+
+              ".pdf",
+
+              ".doc",
+
+              ".docx",
+
+              ".xls",
+
+              ".xlsx",
+
+              ".jpg",
+
+              ".jpeg",
+
+              ".png",
+
+              ".gif",
+
+              ".webp",
+
+              ".svg",
+
+              ".bmp",
+
+              ".mp4",
+
+              ".webm",
+
+              ".mov",
+
+              ".m4v",
+
+              ".mp3",
+
+              ".wav",
+
+              ".ogg",
+
+              ".m4a",
+
+              ".aac",
+
+              ".zip",
+            ].join(",")}
+            fileList={
+              selectedFile
+                ? [
+                    {
+                      uid: "-1",
+
+                      name: selectedFile.name,
+
+                      status: "done",
+                    },
+                  ]
+                : []
+            }
+            beforeUpload={handleBeforeUpload}
+            onRemove={() => {
+              setSelectedFile(null);
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+
+            <p className="ant-upload-text">
+              Kéo file vào đây hoặc click để chọn
+            </p>
+
+            <p className="ant-upload-hint">
+              PPT, PPTX, PDF, DOC, DOCX, XLS, XLSX, hình ảnh, video, audio, ZIP
+            </p>
+
+            <p className="ant-upload-hint">Dung lượng tối đa: 100MB</p>
+
+            {normalizeUrl(uploadData.external_url) && (
+              <div className="ll-upload-disabled-note">
+                Đang sử dụng đường link — không cần tải file.
+              </div>
+            )}
+          </Upload.Dragger>
+
+          <div className="ll-upload-note">
+            <strong>Chương trình:</strong>{" "}
+            {selectedProgram?.name || "Chưa chọn chương trình"}
+            <br />
+            <strong>Bài học:</strong>{" "}
+            {selectedLesson?.title || "Chưa chọn bài học"}
+          </div>
+        </div>
+      </AppFormModal>
+    </div>
   );
 };
 

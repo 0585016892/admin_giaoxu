@@ -163,7 +163,6 @@ const ResultsPage = () => {
 
       const response = await classApi.getClassTeacher();
       const data = unwrap(response);
-      console.log(data);
 
       const list = extractList(data)
         .map((item) => ({
@@ -672,8 +671,6 @@ const ResultsPage = () => {
 
       notify.success("Xuất bảng điểm Excel thành công");
     } catch (error) {
-      console.error("[ResultsPage] Export Excel error:", error);
-
       notify.error(
         error?.response?.data?.message || "Không thể xuất bảng điểm Excel",
       );
