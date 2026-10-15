@@ -1548,6 +1548,7 @@ const AttendancePage = () => {
               <Text className="filter-label">Loại điểm danh</Text>
               <Select
                 value={attendanceType}
+                style={{ height: 41 }}
                 placeholder="Chọn Giáo lý hoặc Thánh lễ"
                 className="attendance-type-select"
                 allowClear

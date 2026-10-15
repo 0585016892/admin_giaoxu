@@ -850,15 +850,11 @@ const FaithEduRegister = () => {
         pastor_name: payload?.pastor_name?.trim() || null,
       };
 
-      console.log("[REGISTER] PAYLOAD:", JSON.stringify(cleanPayload, null, 2));
-
       setLoadingProgress(30);
 
       const data = await registerRequest(cleanPayload);
 
       setLoadingProgress(80);
-
-      console.log("[REGISTER] RESPONSE:", data);
 
       if (!data?.success) {
         throw new Error(data?.message || "Không thể gửi mã xác thực.");
@@ -883,12 +879,6 @@ const FaithEduRegister = () => {
 
       notify.success("Mã xác thực đã được gửi đến email của bạn.");
     } catch (err) {
-      console.error("[REGISTER] STATUS:", err?.response?.status);
-
-      console.error("[REGISTER] RESPONSE:", err?.response?.data);
-
-      console.error("[REGISTER] ERROR:", err);
-
       const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -943,8 +933,6 @@ const FaithEduRegister = () => {
         },
       });
     } catch (err) {
-      console.error("[VERIFY OTP ERROR]", err);
-
       const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -980,16 +968,9 @@ const FaithEduRegister = () => {
 
       setLoadingProgress(15);
 
-      console.log(
-        "[REGISTER] RESEND PAYLOAD:",
-        JSON.stringify(lastRegisterPayload, null, 2),
-      );
-
       const data = await registerRequest(lastRegisterPayload);
 
       setLoadingProgress(85);
-
-      console.log("[REGISTER] RESEND RESPONSE:", data);
 
       if (!data?.success) {
         throw new Error(data?.message || "Không thể gửi lại mã xác thực.");
@@ -999,12 +980,6 @@ const FaithEduRegister = () => {
 
       notify.success("Mã xác thực mới đã được gửi đến email của bạn.");
     } catch (err) {
-      console.error("[RESEND] STATUS:", err?.response?.status);
-
-      console.error("[RESEND] RESPONSE:", err?.response?.data);
-
-      console.error("[RESEND] ERROR:", err);
-
       const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||

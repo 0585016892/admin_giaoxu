@@ -244,13 +244,6 @@ export default function ChurchSettingPage() {
       return;
     }
 
-    console.log("");
-    console.log("============================================================");
-    console.log("             LOAD CHURCH SETTINGS TO FORM");
-    console.log("============================================================");
-
-    console.log("[SETTINGS]:", settings);
-
     // Reset file mới khi load settings
     setLogoFile(null);
     setCoverImageFile(null);
@@ -392,8 +385,6 @@ export default function ChurchSettingPage() {
 
       message.success("Đã lưu cấu hình giáo xứ thành công");
     } catch (error) {
-      console.error("[SAVE CHURCH SETTINGS ERROR]:", error);
-
       if (error?.errorFields) {
         message.warning("Vui lòng kiểm tra lại thông tin cấu hình");
 

@@ -1384,6 +1384,7 @@ const AcademicYearPage = () => {
           <Col xs={24} md={6}>
             <AppButton
               block
+              size="small"
               icon={<ReloadOutlined />}
               loading={previewCreateLoading}
               disabled={currentStep === 2}

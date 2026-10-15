@@ -1,9 +1,18 @@
 // src/pages/auth/register/RegisterForm.jsx
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-import { Alert, Button, Checkbox, Col, Form, Input, Row, Select } from "antd";
-
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Col,
+  Form,
+  Input,
+  Row,
+  Select,
+  Spin,
+} from "antd";
 import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
@@ -23,7 +32,7 @@ import {
   CHURCH_TYPE_OPTIONS,
   REGISTER_FORM_INITIAL_VALUES,
 } from "./registerConstants";
-
+import { getProvinces, getCommunes } from "../../../api/locationApi";
 import "./RegisterForm.css";
 
 const fadeUp = {
@@ -71,6 +80,84 @@ const RegisterForm = ({
   onLogin,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
+  // ============================================================
+  // ĐỊA GIỚI HÀNH CHÍNH MỚI
+  // ============================================================
+
+  const [provinces, setProvinces] = useState([]);
+  const [communes, setCommunes] = useState([]);
+
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState(null);
+
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingCommunes, setLoadingCommunes] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProvinces = async () => {
+      setLoadingProvinces(true);
+
+      try {
+        const data = await getProvinces();
+
+        if (mounted) {
+          setProvinces(data);
+          console.info("[REGISTER] Đã tải tỉnh/thành phố:", data.length);
+        }
+      } catch (error) {
+        console.error("[REGISTER] Lỗi tải tỉnh/thành phố:", error);
+
+        if (mounted) {
+          setProvinces([]);
+        }
+      } finally {
+        if (mounted) {
+          setLoadingProvinces(false);
+        }
+      }
+    };
+
+    loadProvinces();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  const handleProvinceChange = async (provinceCode) => {
+    const province = provinces.find((item) => item.code === provinceCode);
+
+    console.info("[REGISTER] Chọn tỉnh/thành phố:", province || null);
+
+    setSelectedProvinceCode(province?.code ?? null);
+    setCommunes([]);
+
+    // Xóa xã/phường cũ khi thay đổi tỉnh
+    form.setFieldValue("ward", undefined);
+
+    // Lưu tên tỉnh vào trường address để tương thích backend
+    form.setFieldValue("address", province?.name || undefined);
+
+    if (!province) return;
+
+    setLoadingCommunes(true);
+
+    try {
+      const data = await getCommunes(province.code);
+
+      setCommunes(data);
+
+      console.info("[REGISTER] Danh sách xã/phường đã tải:", {
+        province: province.name,
+        count: data.length,
+      });
+    } catch (error) {
+      console.error("[REGISTER] Lỗi tải xã/phường:", error);
+      setCommunes([]);
+    } finally {
+      setLoadingCommunes(false);
+    }
+  };
 
   /**
    * ============================================================
@@ -574,17 +661,89 @@ const RegisterForm = ({
 
                     {/* DISTRICT */}
 
-                    <Col xs={24} sm={12}>
-                      <Form.Item label="Quận / Huyện" name="district">
-                        <Input size="small" placeholder="Quận / huyện" />
+                    {/* TỈNH / THÀNH PHỐ */}
+
+                    <Col span={24}>
+                      <Form.Item
+                        label="Tỉnh / Thành phố"
+                        name="address"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng chọn tỉnh/thành phố",
+                          },
+                        ]}
+                      >
+                        <Select
+                          size="small"
+                          showSearch
+                          allowClear
+                          placeholder="Chọn tỉnh/thành phố"
+                          loading={loadingProvinces}
+                          optionFilterProp="label"
+                          filterOption={(input, option) =>
+                            String(option?.label || "")
+                              .toLowerCase()
+                              .includes(input.toLowerCase())
+                          }
+                          options={provinces.map((province) => ({
+                            value: province.code,
+                            label: province.name,
+                          }))}
+                          onChange={handleProvinceChange}
+                          notFoundContent={
+                            loadingProvinces ? (
+                              <Spin size="small" />
+                            ) : (
+                              "Không có dữ liệu tỉnh/thành phố"
+                            )
+                          }
+                        />
                       </Form.Item>
                     </Col>
 
-                    {/* WARD */}
+                    {/* XÃ / PHƯỜNG */}
 
-                    <Col xs={24} sm={12}>
-                      <Form.Item label="Phường / Xã" name="ward">
-                        <Input size="small" placeholder="Phường / xã" />
+                    <Col span={24}>
+                      <Form.Item
+                        label="Phường / Xã"
+                        name="ward"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng chọn phường/xã",
+                          },
+                        ]}
+                      >
+                        <Select
+                          size="small"
+                          showSearch
+                          allowClear
+                          disabled={!selectedProvinceCode}
+                          loading={loadingCommunes}
+                          placeholder={
+                            selectedProvinceCode
+                              ? "Chọn phường/xã"
+                              : "Vui lòng chọn tỉnh/thành phố trước"
+                          }
+                          optionFilterProp="label"
+                          filterOption={(input, option) =>
+                            String(option?.label || "")
+                              .toLowerCase()
+                              .includes(input.toLowerCase())
+                          }
+                          options={communes.map((commune) => ({
+                            value: commune.name,
+                            label: commune.name,
+                          }))}
+                          notFoundContent={
+                            loadingCommunes ? (
+                              <Spin size="small" />
+                            ) : (
+                              "Không có dữ liệu phường/xã"
+                            )
+                          }
+                        />
                       </Form.Item>
                     </Col>
 

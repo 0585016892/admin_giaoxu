@@ -522,15 +522,11 @@ export default function CatechistManagement() {
 
       const payload = {
         catechist_id: assignCatechist.id,
-
         class_id: values.class_id,
-
         role: values.role,
-
         assigned_date: values.assigned_date
           ? values.assigned_date.format("YYYY-MM-DD")
           : null,
-
         notes: values.notes || null,
       };
 
@@ -539,14 +535,23 @@ export default function CatechistManagement() {
       notify.success("Phân công lớp thành công!");
 
       setIsAssignModalOpen(false);
-
       assignForm.resetFields();
 
       await fetchData();
     } catch (error) {
-      notify.error(
-        error?.response?.data?.message || "Không thể phân công lớp!",
-      );
+      const response = error?.response;
+      const errorData = response?.data;
+
+      const errorCode = errorData?.errorCode || error?.code || "UNKNOWN_ERROR";
+
+      const errorMessage =
+        errorData?.message || error?.message || "Không thể phân công lớp!";
+
+      if (errorCode === "CLASS_ALREADY_ASSIGNED") {
+        notify.error(errorMessage);
+      } else {
+        notify.error(errorMessage);
+      }
     } finally {
       setSaving(false);
     }
@@ -878,11 +883,11 @@ export default function CatechistManagement() {
     },
     {
       title: "Vai trò",
-      dataIndex: "role",
-      key: "role",
+      dataIndex: "account_role",
+      key: "account_role",
       align: "center",
 
-      render: (role) => {
+      render: (account_role) => {
         const roleConfig = {
           admin_catechist: {
             label: "Quản trị giáo lý",
@@ -906,8 +911,8 @@ export default function CatechistManagement() {
           },
         };
 
-        const config = roleConfig[role] || {
-          label: role || "Chưa xác định",
+        const config = roleConfig[account_role] || {
+          label: account_role || "Chưa xác định",
           color: "#64748B",
           bg: "#F1F5F9",
           border: "#CBD5E1",
@@ -952,7 +957,7 @@ export default function CatechistManagement() {
         // ROLE
         // =====================================================
 
-        const currentRole = record?.role;
+        const currentRole = record?.account_role;
 
         const isAdminCatechist = currentRole === "admin_catechist";
 
@@ -1395,6 +1400,7 @@ export default function CatechistManagement() {
             {/* NÚT THÊM GIÁO LÝ VIÊN */}
             <Col flex="none">
               <AppButton
+                type="primary"
                 size="small"
                 icon={<PlusOutlined />}
                 onClick={handleOpenCreateModal}
@@ -2450,13 +2456,13 @@ export default function CatechistManagement() {
 
                                 {
                                   title: "Vai trò",
-                                  dataIndex: "role",
-                                  key: "role",
+                                  dataIndex: "account_role",
+                                  key: "account_role",
                                   width: 180,
 
-                                  render: (role) => (
+                                  render: (account_role) => (
                                     <Tag className="role-tag">
-                                      {role || "Giáo lý viên"}
+                                      {account_role || "Giáo lý viên"}
                                     </Tag>
                                   ),
                                 },
@@ -2543,7 +2549,6 @@ export default function CatechistManagement() {
 
               <div>
                 <div className="modal-title-main">Phân công lớp giảng dạy</div>
-
                 <div className="modal-title-sub">
                   Thiết lập lớp và vai trò giảng dạy
                 </div>
@@ -2564,93 +2569,217 @@ export default function CatechistManagement() {
             layout="vertical"
             onFinish={handleAssignClass}
           >
-            <div className="assign-info-box">
-              <Avatar
-                size={48}
-                src={assignCatechist?.avatar}
-                icon={<UserOutlined />}
-              />
+            {/*
+      Lấy các lớp giáo viên đã được phân công.
+      Dùng String để tránh trường hợp ID là number ở nguồn này
+      nhưng string ở nguồn dữ liệu khác.
+    */}
+            {(() => {
+              const assignedClasses = Array.isArray(
+                assignCatechist?.assigned_classes,
+              )
+                ? assignCatechist.assigned_classes
+                : [];
 
-              <div>
-                <Text className="assign-label">Giáo lý viên</Text>
+              const assignedClassIds = new Set(
+                assignedClasses.map((item) => String(item.id)),
+              );
 
-                <Text className="assign-name">
-                  {assignCatechist?.holy_name
-                    ? `${assignCatechist.holy_name} `
-                    : ""}
+              return (
+                <>
+                  {/* THÔNG TIN GIÁO LÝ VIÊN */}
+                  <div className="assign-info-box">
+                    <Avatar
+                      size={48}
+                      src={assignCatechist?.avatar}
+                      icon={<UserOutlined />}
+                    />
 
-                  {assignCatechist?.full_name}
-                </Text>
+                    <div>
+                      <Text className="assign-label">Giáo lý viên</Text>
 
-                <Text className="assign-code">
-                  {assignCatechist?.catechist_code}
-                </Text>
-              </div>
-            </div>
+                      <Text className="assign-name">
+                        {assignCatechist?.holy_name
+                          ? `${assignCatechist.holy_name} `
+                          : ""}
+                        {assignCatechist?.full_name}
+                      </Text>
 
-            <Form.Item
-              name="class_id"
-              label="Lớp học"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng chọn lớp học!",
-                },
-              ]}
-            >
-              <Select
-                size="large"
-                placeholder="Chọn lớp học"
-                options={classes.map((c) => ({
-                  value: c.id,
-                  label: c.name,
-                }))}
-              />
-            </Form.Item>
+                      <Text className="assign-code">
+                        {assignCatechist?.catechist_code}
+                      </Text>
+                    </div>
+                  </div>
 
-            <Form.Item name="role" label="Vai trò">
-              <Select
-                size="large"
-                options={[
-                  {
-                    value: "Giáo lý viên",
-                    label: "Giáo lý viên Phụ trách",
-                  },
-                  {
-                    value: "Trợ tá",
-                    label: "Trợ tá",
-                  },
-                  {
-                    value: "Trưởng lớp",
-                    label: "Trưởng lớp",
-                  },
-                  {
-                    value: "Phó lớp",
-                    label: "Phó lớp",
-                  },
-                ]}
-              />
-            </Form.Item>
+                  {/* DANH SÁCH LỚP ĐÃ PHÂN */}
+                  <div
+                    style={{
+                      marginBottom: 20,
+                      padding: 14,
+                      border: "1px solid #E2E8F0",
+                      borderRadius: 12,
+                      background: "#F7F9FC",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text strong style={{ color: "#173B5E" }}>
+                        Lớp đã được phân công
+                      </Text>
 
-            <Form.Item name="assigned_date" label="Ngày bắt đầu">
-              <DatePicker
-                size="large"
-                format="DD/MM/YYYY"
-                style={{
-                  width: "100%",
-                }}
-              />
-            </Form.Item>
+                      <Tag color={assignedClasses.length ? "blue" : "default"}>
+                        {assignedClasses.length} lớp
+                      </Tag>
+                    </div>
 
-            <Form.Item name="notes" label="Ghi chú">
-              <Input.TextArea
-                rows={4}
-                placeholder="Ghi chú về việc phân công..."
-              />
-            </Form.Item>
+                    {assignedClasses.length > 0 ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        {assignedClasses.map((item) => (
+                          <div
+                            key={item.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 10,
+                              padding: "10px 12px",
+                              borderRadius: 8,
+                              background: "#FFFFFF",
+                              border: "1px solid #E2E8F0",
+                            }}
+                          >
+                            <CheckCircleOutlined
+                              style={{
+                                color: "#2E7D5B",
+                                marginTop: 3,
+                              }}
+                            />
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <Text
+                                strong
+                                style={{
+                                  display: "block",
+                                  color: "#243447",
+                                }}
+                              >
+                                {item.class_name}
+                              </Text>
+
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                Mã lớp: {item.class_code || "—"}
+                                {item.academic_year
+                                  ? ` · Năm học ${item.academic_year}`
+                                  : ""}
+                              </Text>
+                            </div>
+
+                            <Tag color="success">Đã phân công</Tag>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Text type="secondary">
+                        Giáo lý viên chưa được phân công lớp nào.
+                      </Text>
+                    )}
+                  </div>
+
+                  {/* CHỌN LỚP */}
+                  <Form.Item
+                    name="class_id"
+                    label="Lớp học cần phân công"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Vui lòng chọn lớp học!",
+                      },
+                    ]}
+                  >
+                    <Select
+                      size="large"
+                      showSearch
+                      optionFilterProp="label"
+                      placeholder="Chọn lớp học"
+                      options={classes.map((c) => {
+                        const isAssigned = assignedClassIds.has(String(c.id));
+
+                        return {
+                          value: c.id,
+                          label: isAssigned
+                            ? `${c.name} (Đã phân công)`
+                            : c.name,
+                          disabled: isAssigned,
+                        };
+                      })}
+                      notFoundContent="Không có lớp học"
+                    />
+                  </Form.Item>
+
+                  {/* VAI TRÒ */}
+                  <Form.Item
+                    name="role"
+                    label="Vai trò"
+                    initialValue="Giáo lý viên"
+                  >
+                    <Select
+                      size="large"
+                      options={[
+                        {
+                          value: "Giáo lý viên",
+                          label: "Giáo lý viên phụ trách",
+                        },
+                        {
+                          value: "Trợ tá",
+                          label: "Trợ tá",
+                        },
+                        {
+                          value: "Trưởng lớp",
+                          label: "Trưởng lớp",
+                        },
+                        {
+                          value: "Phó lớp",
+                          label: "Phó lớp",
+                        },
+                      ]}
+                    />
+                  </Form.Item>
+
+                  {/* NGÀY BẮT ĐẦU */}
+                  <Form.Item name="assigned_date" label="Ngày bắt đầu">
+                    <DatePicker
+                      size="large"
+                      format="DD/MM/YYYY"
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+
+                  {/* GHI CHÚ */}
+                  <Form.Item name="notes" label="Ghi chú">
+                    <Input.TextArea
+                      rows={3}
+                      placeholder="Ghi chú về việc phân công..."
+                      maxLength={500}
+                      showCount
+                    />
+                  </Form.Item>
+                </>
+              );
+            })()}
           </Form>
         </AppFormModal>
-
         <Modal
           open={resetModalOpen}
           onCancel={closeResetPassword}

@@ -4,7 +4,6 @@ import {
   Form,
   Input,
   Select,
-  Switch,
   Row,
   Col,
   Card,
@@ -36,6 +35,8 @@ import {
   FileTextOutlined,
   GlobalOutlined,
   EditOutlined,
+  CloseCircleOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 
 import PageHeroHeader from "../../components/common/PageHeroHeader";
@@ -43,7 +44,7 @@ import AppButton from "../../components/common/AppButton";
 import { useUser } from "../../context/UserContext";
 import { useChurch } from "../../hooks/useChurch";
 import { useNotification } from "../../components/notification";
-
+import { getProvinces, getCommunes } from "../../api/locationApi";
 const { Option } = Select;
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -220,7 +221,15 @@ const SummaryItem = ({ icon, label, value }) => {
     </div>
   );
 };
-
+const normalizeLocationName = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .replace(/^(tinh|thanh pho|tp\.?)\s+/i, "")
+    .trim();
 /* =========================================================
    COMPONENT
 ========================================================= */
@@ -257,6 +266,16 @@ const ParishSettingsPage = () => {
   const [loadingDioceses, setLoadingDioceses] = useState(false);
 
   const [loadingDeaneries, setLoadingDeaneries] = useState(false);
+
+  const [locationProvinces, setLocationProvinces] = useState([]);
+  const [locationCommunes, setLocationCommunes] = useState([]);
+
+  const [loadingLocationProvinces, setLoadingLocationProvinces] =
+    useState(false);
+
+  const [loadingLocationCommunes, setLoadingLocationCommunes] = useState(false);
+
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState(null);
   /* =======================================================
      CHURCH ID
   ======================================================= */
@@ -343,6 +362,52 @@ const ParishSettingsPage = () => {
 
       const parentDioceseId =
         data?.diocese?.parent_diocese_id || data?.parent_diocese_id || null;
+      // =====================================================
+      // LOAD ĐỊA GIỚI HÀNH CHÍNH MỚI
+      // =====================================================
+
+      let provinceList = [];
+
+      try {
+        setLoadingLocationProvinces(true);
+
+        provinceList = await getProvinces();
+
+        setLocationProvinces(provinceList);
+      } catch (error) {
+        notify.warning(
+          "Không tải được danh sách tỉnh/thành phố. Vui lòng thử lại sau.",
+        );
+      } finally {
+        setLoadingLocationProvinces(false);
+      }
+
+      const currentProvince = provinceList.find(
+        (item) =>
+          normalizeLocationName(item.name) ===
+          normalizeLocationName(data.address),
+      );
+
+      let communeList = [];
+
+      if (currentProvince) {
+        setSelectedProvinceCode(currentProvince.code);
+
+        try {
+          setLoadingLocationCommunes(true);
+
+          communeList = await getCommunes(currentProvince.code);
+
+          setLocationCommunes(communeList);
+        } catch (error) {
+          setLocationCommunes([]);
+        } finally {
+          setLoadingLocationCommunes(false);
+        }
+      } else {
+        setSelectedProvinceCode(null);
+        setLocationCommunes([]);
+      }
       setImageUrl(data.image || "");
 
       setChurchData(data);
@@ -489,6 +554,37 @@ const ParishSettingsPage = () => {
       }
     },
     [fetchDeaneriesByDiocese, form, notify],
+  );
+
+  const handleLocationProvinceChange = useCallback(
+    async (provinceName) => {
+      const province = locationProvinces.find(
+        (item) => item.name === provinceName,
+      );
+
+      setSelectedProvinceCode(province?.code ?? null);
+      setLocationCommunes([]);
+
+      // Xóa xã/phường cũ khi người dùng đổi tỉnh
+      form.setFieldValue("ward", undefined);
+
+      if (!province) {
+        return;
+      }
+
+      setLoadingLocationCommunes(true);
+
+      try {
+        const communes = await getCommunes(province.code);
+
+        setLocationCommunes(communes);
+      } catch (error) {
+        notify.error("Không tải được danh sách xã/phường!");
+      } finally {
+        setLoadingLocationCommunes(false);
+      }
+    },
+    [locationProvinces, form, notify],
   );
   /* =======================================================
      SAVE
@@ -886,8 +982,36 @@ const ParishSettingsPage = () => {
                       </Text>
                     </div>
 
-                    <Form.Item name="is_active" valuePropName="checked" noStyle>
-                      <Switch disabled />
+                    <Form.Item name="is_active" noStyle>
+                      {({ getFieldValue }) =>
+                        getFieldValue("is_active") ? (
+                          <Tag
+                            color="success"
+                            icon={<CheckCircleOutlined />}
+                            style={{
+                              borderRadius: 20,
+                              padding: "5px 12px",
+                              fontWeight: 600,
+                              marginInlineEnd: 0,
+                            }}
+                          >
+                            Đang hoạt động
+                          </Tag>
+                        ) : (
+                          <Tag
+                            color="default"
+                            icon={<CloseCircleOutlined />}
+                            style={{
+                              borderRadius: 20,
+                              padding: "5px 12px",
+                              fontWeight: 600,
+                              marginInlineEnd: 0,
+                            }}
+                          >
+                            Ngừng hoạt động
+                          </Tag>
+                        )
+                      }
                     </Form.Item>
                   </div>
                 </Card>
@@ -1089,30 +1213,71 @@ const ParishSettingsPage = () => {
     TỈNH / THÀNH PHỐ
 ===================================================== */}
 
-                            <Col xs={24}>
+                            {/* TỈNH / THÀNH PHỐ */}
+                            <Col xs={24} sm={12}>
                               <Form.Item
                                 label="Tỉnh / Thành phố"
                                 name="address"
                               >
-                                <Input
-                                  prefix={
-                                    <EnvironmentOutlined className="input-icon" />
+                                <Select
+                                  showSearch
+                                  allowClear
+                                  placeholder="Chọn tỉnh/thành phố"
+                                  loading={loadingLocationProvinces}
+                                  className="form-select"
+                                  optionFilterProp="label"
+                                  filterOption={(input, option) =>
+                                    String(option?.label || "")
+                                      .toLowerCase()
+                                      .includes(input.toLowerCase())
                                   }
-                                  placeholder="VD: Thái Bình"
-                                  className="form-input"
+                                  options={locationProvinces.map((item) => ({
+                                    value: item.name,
+                                    label: item.name,
+                                  }))}
+                                  onChange={handleLocationProvinceChange}
+                                  notFoundContent={
+                                    loadingLocationProvinces ? (
+                                      <Spin size="small" />
+                                    ) : (
+                                      "Không có dữ liệu"
+                                    )
+                                  }
                                 />
                               </Form.Item>
                             </Col>
 
-                            {/* =====================================================
-    PHƯỜNG / XÃ
-===================================================== */}
-
-                            <Col xs={24}>
-                              <Form.Item label="Phường / Xã" name="ward">
-                                <Input
-                                  placeholder="VD: Quang Trung"
-                                  className="form-input"
+                            {/* XÃ / PHƯỜNG */}
+                            <Col xs={24} sm={12}>
+                              <Form.Item label="Xã / Phường" name="ward">
+                                <Select
+                                  showSearch
+                                  allowClear
+                                  placeholder={
+                                    selectedProvinceCode
+                                      ? "Chọn xã/phường"
+                                      : "Vui lòng chọn tỉnh/thành phố trước"
+                                  }
+                                  disabled={!selectedProvinceCode}
+                                  loading={loadingLocationCommunes}
+                                  className="form-select"
+                                  optionFilterProp="label"
+                                  filterOption={(input, option) =>
+                                    String(option?.label || "")
+                                      .toLowerCase()
+                                      .includes(input.toLowerCase())
+                                  }
+                                  options={locationCommunes.map((item) => ({
+                                    value: item.name,
+                                    label: item.name,
+                                  }))}
+                                  notFoundContent={
+                                    loadingLocationCommunes ? (
+                                      <Spin size="small" />
+                                    ) : (
+                                      "Không có dữ liệu"
+                                    )
+                                  }
                                 />
                               </Form.Item>
                             </Col>

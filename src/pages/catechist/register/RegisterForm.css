@@ -991,3 +991,111 @@
     width: 100%;
   }
 }
+/* ============================================================
+   SELECT ĐỊA GIỚI HÀNH CHÍNH
+============================================================ */
+
+.register-form .ant-select {
+  width: 100%;
+  font-family: inherit;
+}
+
+.register-form .ant-select-single.ant-select-sm {
+  height: 36px;
+}
+
+.register-form .ant-select-single.ant-select-sm .ant-select-selector {
+  height: 36px !important;
+  padding: 0 11px !important;
+  border: 1px solid #d9e2ec !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease;
+}
+
+.register-form .ant-select-single.ant-select-sm .ant-select-selection-wrap {
+  align-self: center;
+}
+
+.register-form .ant-select-single.ant-select-sm .ant-select-selection-item,
+.register-form
+  .ant-select-single.ant-select-sm
+  .ant-select-selection-placeholder {
+  line-height: 34px !important;
+  font-size: 13px;
+}
+
+.register-form
+  .ant-select-single.ant-select-sm
+  .ant-select-selection-placeholder {
+  color: #94a3b8;
+}
+
+.register-form .ant-select-focused .ant-select-selector,
+.register-form .ant-select-open .ant-select-selector {
+  border-color: #173b5e !important;
+  box-shadow: 0 0 0 3px rgba(23, 59, 94, 0.08) !important;
+}
+
+.register-form
+  .ant-select:not(.ant-select-disabled):hover
+  .ant-select-selector {
+  border-color: #173b5e !important;
+}
+
+.register-form .ant-select-arrow {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.register-form .ant-select-clear {
+  color: #94a3b8;
+}
+
+.register-form .ant-select-disabled .ant-select-selector {
+  background: #f4f7fa !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed;
+}
+
+/* Dropdown danh sách tỉnh, xã/phường */
+
+.ant-select-dropdown {
+  padding: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(16, 42, 67, 0.12);
+}
+
+.ant-select-dropdown .ant-select-item {
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.ant-select-dropdown
+  .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: #eef3f7;
+}
+
+.ant-select-dropdown
+  .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: #eaf1f8;
+  color: #173b5e;
+  font-weight: 600;
+}
+
+.ant-select-dropdown
+  .ant-select-item-option-selected
+  .ant-select-item-option-state {
+  color: #173b5e;
+}
+
+/* Ô tìm kiếm trong dropdown */
+
+.ant-select-dropdown .ant-select-selection-search-input {
+  font-size: 13px;
+}
