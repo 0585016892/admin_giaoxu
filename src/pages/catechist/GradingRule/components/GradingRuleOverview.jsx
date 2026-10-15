@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
-
-import { Col, Row, Tag } from "antd";
+import { Card, Col, Row, Tag } from "antd";
 
 import {
   CalculatorOutlined,
@@ -8,8 +7,6 @@ import {
   NumberOutlined,
   PercentageOutlined,
 } from "@ant-design/icons";
-
-import StatCard from "../../../../components/common/StatCard";
 
 import {
   getCalculationLabel,
@@ -27,71 +24,120 @@ const GradingRuleOverview = ({ rule, itemCount = 0, loading = false }) => {
 
   const isActive = rule?.status === "active";
 
+  const statistics = [
+    {
+      title: "Thành phần điểm",
+      value: itemCount,
+      icon: <NumberOutlined />,
+      color: "#173B5E",
+    },
+    {
+      title: "Tổng trọng số",
+      value: formatWeight(totalWeight),
+      icon: <PercentageOutlined />,
+      color: "#B7791F",
+    },
+    {
+      title: "Điểm đạt",
+      value: rule?.pass_score ?? 5,
+      icon: <CheckCircleOutlined />,
+      color: "#2E7D5B",
+    },
+    {
+      title: "Phương pháp tính",
+      value: calculationLabel || "—",
+      icon: <CalculatorOutlined />,
+      color: "#7C3AED",
+      status: (
+        <Tag
+          color={isActive ? "success" : "default"}
+          style={{
+            margin: 0,
+            fontSize: 10,
+            lineHeight: "18px",
+            padding: "0 5px",
+          }}
+        >
+          {isActive ? "Đang áp dụng" : "Tạm ngưng"}
+        </Tag>
+      ),
+    },
+  ];
+
   return (
     <section className="grading-rule-overview">
-      <Row gutter={[16, 16]}>
-        {/* =====================================================
-            THÀNH PHẦN ĐIỂM
-        ===================================================== */}
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Thành phần điểm"
-            value={itemCount}
-            loading={loading}
-            icon={<NumberOutlined />}
-            iconColor="#173B5E"
-            description="Thành phần"
-          />
-        </Col>
+      <Card
+        size="small"
+        style={{
+          marginBottom: 20,
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 2px 8px rgba(16, 42, 67, 0.04)",
+        }}
+        styles={{
+          body: {
+            padding: "12px 16px",
+          },
+        }}
+      >
+        <Row align="middle" gutter={[20, 12]}>
+          {statistics.map((item) => (
+            <Col
+              key={item.title}
+              xs={12}
+              sm={12}
+              lg={6}
+              style={{ minWidth: 0 }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  minWidth: 0,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    fontSize: 15,
+                    color: item.color,
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.icon}
+                </span>
 
-        {/* =====================================================
-            TỔNG TRỌNG SỐ
-        ===================================================== */}
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Tổng trọng số"
-            value={formatWeight(totalWeight)}
-            loading={loading}
-            icon={<PercentageOutlined />}
-            iconColor="#D9A441"
-            description="Tổng hệ số"
-          />
-        </Col>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "#64748B",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {item.title}
+                </span>
 
-        {/* =====================================================
-            ĐIỂM ĐẠT
-        ===================================================== */}
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Điểm đạt"
-            value={rule?.pass_score ?? 5}
-            loading={loading}
-            icon={<CheckCircleOutlined />}
-            iconColor="#16A34A"
-            description="tối thiểu để đạt"
-          />
-        </Col>
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: item.color,
+                    flexShrink: 0,
+                  }}
+                >
+                  {loading ? "..." : item.value}
+                </span>
 
-        {/* =====================================================
-            PHƯƠNG PHÁP TÍNH
-        ===================================================== */}
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Phương pháp tính"
-            value={calculationLabel || "—"}
-            loading={loading}
-            icon={<CalculatorOutlined />}
-            iconColor="#7C3AED"
-            description={
-              isActive ? (
-                <Tag color="success">Đang áp dụng</Tag>
-              ) : (
-                <Tag>Tạm ngưng</Tag>
-              )
-            }
-          />
-        </Col>
-      </Row>
+                {!loading && item.status}
+              </div>
+            </Col>
+          ))}
+        </Row>
+      </Card>
     </section>
   );
 };

@@ -1,6 +1,7 @@
 import React from "react";
 import { Row, Col, Typography, Tooltip, Button, Popconfirm } from "antd";
 import { ReloadOutlined, DeleteOutlined } from "@ant-design/icons";
+
 import "../../assets/css/PageHeroHeader.css";
 import AppButton from "./AppButton";
 
@@ -12,71 +13,48 @@ const PageHeroHeader = ({
   title,
   description,
 
-  // =====================================================
-  // BULK DELETE
-  // =====================================================
+  // Bulk delete
   selectedCount = 0,
   onBulkDelete,
   bulkDeleting = false,
   bulkDeleteTitle,
   bulkDeleteConfirmText = "Dữ liệu sau khi xóa không thể khôi phục.",
 
-  // =====================================================
-  // REFRESH
-  // =====================================================
+  // Refresh
   onRefresh,
   refreshLoading = false,
   refreshTooltip = "Làm mới dữ liệu",
 
-  // =====================================================
-  // SECONDARY ACTION
-  // =====================================================
+  // Secondary action
   secondaryButtonText,
   secondaryButtonIcon,
   onSecondaryClick,
   secondaryButtonDisabled = false,
   secondaryButtonLoading = false,
 
-  // =====================================================
-  // PRIMARY ACTION
-  // =====================================================
+  // Primary action
   primaryButtonText,
   primaryButtonIcon,
   onPrimaryClick,
   primaryDisabled = false,
   primaryLoading = false,
 
-  // =====================================================
-  // EXTRA
-  // =====================================================
+  // Extra
   extra,
 }) => {
   const hasBulkDelete = selectedCount > 0 && typeof onBulkDelete === "function";
 
   const hasSecondary = Boolean(secondaryButtonText);
-
   const hasPrimary = Boolean(primaryButtonText);
 
-  const hasActions =
-    hasBulkDelete || onRefresh || hasSecondary || hasPrimary || extra;
+  const hasActions = Boolean(
+    hasBulkDelete || onRefresh || hasSecondary || hasPrimary || extra,
+  );
 
   return (
     <section className="page-hero-header">
-      {/* =====================================================
-          DECORATION
-          ===================================================== */}
-
-      <div className="page-hero-decoration page-hero-decoration-one" />
-
-      <div className="page-hero-decoration page-hero-decoration-two" />
-
-      <div className="page-hero-sparkle">✦</div>
-
-      <Row gutter={[24, 20]} align="middle" className="page-hero-row">
-        {/* =====================================================
-            LEFT
-            ===================================================== */}
-
+      <Row gutter={[16, 12]} align="middle" className="page-hero-row">
+        {/* Nội dung tiêu đề */}
         <Col xs={24} lg={hasActions ? 15 : 24} xl={hasActions ? 16 : 24}>
           <div className="page-hero-content">
             {icon && <div className="page-hero-icon">{icon}</div>}
@@ -85,12 +63,12 @@ const PageHeroHeader = ({
               {badgeText && (
                 <div className="page-hero-badge">
                   <span className="page-hero-badge-dot" />
-                  {badgeText}
+                  <span>{badgeText}</span>
                 </div>
               )}
 
               {title && (
-                <Title level={2} className="page-hero-title">
+                <Title level={3} className="page-hero-title">
                   {title}
                 </Title>
               )}
@@ -102,17 +80,10 @@ const PageHeroHeader = ({
           </div>
         </Col>
 
-        {/* =====================================================
-            RIGHT - ACTIONS
-            ===================================================== */}
-
+        {/* Các nút thao tác */}
         {hasActions && (
           <Col xs={24} lg={9} xl={8} className="page-hero-actions-col">
             <div className="page-hero-actions">
-              {/* ===============================================
-                  BULK DELETE
-                  =============================================== */}
-
               {hasBulkDelete && (
                 <Popconfirm
                   title={bulkDeleteTitle || `Xóa ${selectedCount} mục đã chọn?`}
@@ -132,9 +103,10 @@ const PageHeroHeader = ({
                   <Button
                     danger
                     type="primary"
+                    size="small"
                     icon={<DeleteOutlined />}
                     loading={bulkDeleting}
-                    disabled={primaryDisabled || bulkDeleting}
+                    disabled={bulkDeleting}
                     className="page-hero-delete-button"
                   >
                     {bulkDeleting ? "Đang xóa..." : `Xóa (${selectedCount})`}
@@ -142,14 +114,11 @@ const PageHeroHeader = ({
                 </Popconfirm>
               )}
 
-              {/* ===============================================
-                  REFRESH
-                  =============================================== */}
-
               {onRefresh && (
                 <Tooltip title={refreshTooltip}>
                   <Button
                     type="default"
+                    size="small"
                     icon={<ReloadOutlined />}
                     loading={refreshLoading}
                     disabled={bulkDeleting}
@@ -160,12 +129,9 @@ const PageHeroHeader = ({
                 </Tooltip>
               )}
 
-              {/* ===============================================
-                  SECONDARY
-                  =============================================== */}
-
               {hasSecondary && (
                 <Button
+                  size="small"
                   icon={secondaryButtonIcon}
                   loading={secondaryButtonLoading}
                   disabled={secondaryButtonDisabled || bulkDeleting}
@@ -175,10 +141,6 @@ const PageHeroHeader = ({
                   {secondaryButtonText}
                 </Button>
               )}
-
-              {/* ===============================================
-                  PRIMARY - APP BUTTON
-                  =============================================== */}
 
               {hasPrimary && (
                 <AppButton
@@ -193,10 +155,6 @@ const PageHeroHeader = ({
                   {primaryButtonText}
                 </AppButton>
               )}
-
-              {/* ===============================================
-                  EXTRA
-                  =============================================== */}
 
               {extra && <div className="page-hero-extra">{extra}</div>}
             </div>

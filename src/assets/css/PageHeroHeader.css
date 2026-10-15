@@ -1,413 +1,193 @@
-/* =========================================================
-   PAGE HERO HEADER
-   FaithEdu / Catholic Parish Admin
-   ========================================================= */
+/* =====================================================
+   PAGE HERO HEADER — RESPONSIVE
+   ===================================================== */
 
 .page-hero-header {
   position: relative;
-
+  isolation: isolate;
   width: 100%;
-
-  margin-bottom: 24px;
-  padding: 22px 24px;
-
+  min-width: 0;
+  margin-bottom: 16px;
+  padding: 16px 20px;
   overflow: hidden;
-
-  background: linear-gradient(135deg, #ffffff 0%, #f9fbfd 55%, #f1f5f9 100%);
-
-  border: 1px solid #dce5ee;
-  border-radius: 22px;
-
-  box-shadow: 0 8px 24px rgba(23, 59, 94, 0.055);
-
-  font-family:
-    "Be Vietnam Pro",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.04);
+  box-sizing: border-box;
 }
 
-/* =========================================================
-   DECORATION
-   ========================================================= */
-
-.page-hero-decoration {
-  position: absolute;
-
-  pointer-events: none;
-
-  border-radius: 50%;
+.page-hero-header *,
+.page-hero-header *::before,
+.page-hero-header *::after {
+  box-sizing: border-box;
 }
-
-.page-hero-decoration-one {
-  width: 220px;
-  height: 220px;
-
-  right: -80px;
-  top: -100px;
-
-  background: radial-gradient(
-    circle,
-    rgba(217, 164, 65, 0.13) 0%,
-    rgba(217, 164, 65, 0.04) 42%,
-    transparent 72%
-  );
-}
-
-.page-hero-decoration-two {
-  width: 150px;
-  height: 150px;
-
-  left: 38%;
-  bottom: -105px;
-
-  background: radial-gradient(
-    circle,
-    rgba(23, 59, 94, 0.045) 0%,
-    transparent 70%
-  );
-}
-
-.page-hero-sparkle {
-  position: absolute;
-
-  right: 28px;
-  bottom: 12px;
-
-  color: #d9a441;
-
-  font-size: 15px;
-  font-weight: 700;
-
-  opacity: 0.55;
-
-  pointer-events: none;
-}
-
-/* =========================================================
-   ROW
-   ========================================================= */
 
 .page-hero-row {
   position: relative;
-  z-index: 2;
+  z-index: 1;
+  min-width: 0;
 }
-
-/* =========================================================
-   LEFT CONTENT
-   ========================================================= */
 
 .page-hero-content {
   display: flex;
   align-items: center;
-
+  gap: 12px;
+  width: 100%;
   min-width: 0;
-
-  gap: 15px;
 }
 
 .page-hero-icon {
-  width: 52px;
-  height: 52px;
-
-  flex: 0 0 52px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  color: #d9a441;
-
-  background: linear-gradient(135deg, #173b5e 0%, #24537e 100%);
-
-  border: 2px solid #ffffff;
-  border-radius: 15px;
-
-  font-size: 23px;
-
-  box-shadow: 0 6px 16px rgba(23, 59, 94, 0.18);
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  color: #173b5e;
+  font-size: 21px;
+  background: #eef3f7;
+  border-radius: 11px;
 }
 
 .page-hero-text {
-  min-width: 0;
-
   display: flex;
+  flex: 1;
   flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-/* =========================================================
-   BADGE
-   ========================================================= */
-
 .page-hero-badge {
-  width: fit-content;
-
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   gap: 6px;
-
-  margin-bottom: 5px;
-  padding: 3px 9px;
-
-  color: #173b5e;
-
-  background: rgba(217, 164, 65, 0.13);
-
-  border: 1px solid rgba(217, 164, 65, 0.28);
-  border-radius: 7px;
-
-  font-size: 10px;
-  font-weight: 800;
-
-  letter-spacing: 0.5px;
+  max-width: 100%;
+  margin-bottom: 1px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
   line-height: 1.4;
-
-  text-transform: uppercase;
 }
 
 .page-hero-badge-dot {
-  width: 5px;
-  height: 5px;
-
-  flex: 0 0 5px;
-
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
   background: #d9a441;
-
   border-radius: 50%;
 }
 
-/* =========================================================
-   TITLE
-   ========================================================= */
-
-.page-hero-title {
+.page-hero-title.ant-typography {
   margin: 0 !important;
-
-  color: #173b5e !important;
-
-  font-size: clamp(1.2rem, 1.7vw, 1.5rem) !important;
-
-  font-weight: 800 !important;
-
-  line-height: 1.3 !important;
-
-  letter-spacing: -0.35px;
-
-  word-break: break-word;
+  color: #173b5e;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
-/* =========================================================
-   DESCRIPTION
-   ========================================================= */
-
-.page-hero-description {
+.page-hero-description.ant-typography {
   display: block;
-
-  margin-top: 4px;
-
-  color: #64748b !important;
-
-  font-size: 13px;
-
-  font-weight: 500;
-
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
-/* =========================================================
-   ACTION AREA
-   ========================================================= */
+/* =====================================================
+   ACTIONS — DESKTOP
+   ===================================================== */
 
 .page-hero-actions-col {
   display: flex;
-
+  min-width: 0;
   justify-content: flex-end;
 }
 
 .page-hero-actions {
-  width: 100%;
-
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-
-  flex-wrap: wrap;
-
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
-
-/* =========================================================
-   COMMON BUTTON
-   ========================================================= */
 
 .page-hero-actions .ant-btn {
-  height: 40px;
-
-  border-radius: 10px;
-
-  font-size: 13px;
-  font-weight: 700;
-
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
 }
 
-.page-hero-actions .ant-btn:not(:disabled):hover {
-  transform: translateY(-1px);
+.page-hero-actions .page-hero-refresh-button {
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
 }
 
-/* =========================================================
-   REFRESH
-   ========================================================= */
-
-.page-hero-refresh-button {
-  width: 40px;
-  min-width: 40px;
-
-  padding: 0 !important;
-
-  color: #173b5e !important;
-
-  background: #ffffff !important;
-
-  border: 1px solid #d7e0e9 !important;
-
-  box-shadow: 0 3px 8px rgba(23, 59, 94, 0.045);
+.page-hero-actions .page-hero-primary-button {
+  max-width: 100%;
+  border-radius: 8px;
 }
-
-.page-hero-refresh-button:hover {
-  color: #173b5e !important;
-
-  background: #f8fafc !important;
-
-  border-color: #173b5e !important;
-
-  box-shadow: 0 5px 12px rgba(23, 59, 94, 0.08);
-}
-
-.page-hero-refresh-button .anticon {
-  font-size: 15px;
-}
-
-/* =========================================================
-   SECONDARY
-   ========================================================= */
-
-.page-hero-secondary-button {
-  padding: 0 14px !important;
-
-  color: #173b5e !important;
-
-  background: #ffffff !important;
-
-  border: 1px solid #d7e0e9 !important;
-
-  box-shadow: 0 3px 8px rgba(23, 59, 94, 0.045);
-}
-
-.page-hero-secondary-button:hover {
-  color: #173b5e !important;
-
-  background: #f7f9fc !important;
-
-  border-color: #173b5e !important;
-
-  box-shadow: 0 5px 12px rgba(23, 59, 94, 0.08);
-}
-
-/* =========================================================
-   PRIMARY - APP BUTTON
-   ========================================================= */
-
-/*
- * Quan trọng:
- * AppButton cần nhận className.
- */
-
-.page-hero-primary-button {
-  min-width: 120px;
-
-  height: 40px !important;
-
-  padding: 0 17px !important;
-
-  color: #ffffff !important;
-
-  background: linear-gradient(135deg, #d9a441 0%, #c28d2b 100%) !important;
-
-  border: 0 !important;
-
-  border-radius: 10px !important;
-
-  font-weight: 700 !important;
-
-  box-shadow: 0 5px 14px rgba(217, 164, 65, 0.25) !important;
-
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease !important;
-}
-
-.page-hero-primary-button:hover:not(:disabled) {
-  color: #ffffff !important;
-
-  background: linear-gradient(135deg, #e0af51 0%, #d9a441 100%) !important;
-
-  transform: translateY(-1px);
-
-  box-shadow: 0 7px 18px rgba(217, 164, 65, 0.34) !important;
-}
-
-/* =========================================================
-   BULK DELETE
-   ========================================================= */
-
-.page-hero-delete-button {
-  height: 40px;
-
-  padding: 0 14px !important;
-
-  border-radius: 10px !important;
-
-  font-weight: 700 !important;
-
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.16);
-}
-
-.page-hero-delete-button:hover:not(:disabled) {
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.22);
-}
-
-/* =========================================================
-   EXTRA
-   ========================================================= */
 
 .page-hero-extra {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 
-/* =========================================================
-   DISABLED
-   ========================================================= */
-
-.page-hero-actions .ant-btn:disabled,
-.page-hero-actions .ant-btn[disabled] {
-  cursor: not-allowed;
-
-  transform: none !important;
+/* Ẩn các chi tiết trang trí cũ */
+.page-hero-decoration,
+.page-hero-sparkle {
+  display: none !important;
 }
 
-/* =========================================================
-   TABLET
-   ========================================================= */
+/* =====================================================
+   LAPTOP NHỎ / TABLET NGANG
+   ===================================================== */
+
+@media (max-width: 1199px) {
+  .page-hero-header {
+    padding: 15px 16px;
+  }
+
+  .page-hero-title.ant-typography {
+    font-size: 20px;
+  }
+
+  .page-hero-actions {
+    gap: 6px;
+  }
+}
+
+/* =====================================================
+   TABLET DỌC
+   Tiêu đề một hàng, nhóm nút bên dưới
+   ===================================================== */
 
 @media (max-width: 991px) {
+  .page-hero-header {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
   .page-hero-actions-col {
     justify-content: flex-start;
   }
@@ -417,119 +197,115 @@
   }
 }
 
-/* =========================================================
+/* =====================================================
    MOBILE
-   ========================================================= */
+   ===================================================== */
 
-@media (max-width: 767px) {
+@media (max-width: 575px) {
   .page-hero-header {
-    padding: 17px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 12px;
+  }
 
-    margin-bottom: 18px;
-
-    border-radius: 17px;
+  .page-hero-row {
+    row-gap: 10px !important;
   }
 
   .page-hero-content {
     align-items: flex-start;
-
-    gap: 12px;
-  }
-
-  .page-hero-icon {
-    width: 45px;
-    height: 45px;
-
-    flex-basis: 45px;
-
-    border-radius: 12px;
-
-    font-size: 20px;
-  }
-
-  .page-hero-title {
-    font-size: 19px !important;
-  }
-
-  .page-hero-description {
-    font-size: 12px;
-  }
-
-  .page-hero-actions {
-    justify-content: flex-start;
-
-    gap: 7px;
-  }
-
-  .page-hero-primary-button {
-    min-width: 110px;
-  }
-}
-
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
-@media (max-width: 480px) {
-  .page-hero-header {
-    padding: 14px;
-
-    border-radius: 15px;
-  }
-
-  .page-hero-content {
     gap: 10px;
   }
 
   .page-hero-icon {
-    width: 42px;
-    height: 42px;
-
-    flex-basis: 42px;
-
-    border-radius: 11px;
-
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
     font-size: 18px;
+    border-radius: 9px;
+  }
+
+  .page-hero-text {
+    padding-top: 1px;
+  }
+
+  .page-hero-title.ant-typography {
+    font-size: 18px;
+    line-height: 1.35;
+  }
+
+  .page-hero-description.ant-typography {
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   .page-hero-badge {
-    font-size: 9px;
+    font-size: 10px;
   }
 
-  .page-hero-title {
-    font-size: 17px !important;
-  }
-
-  .page-hero-description {
-    font-size: 11px;
-  }
-
-  .page-hero-actions {
+  .page-hero-actions-col {
     width: 100%;
   }
 
+  .page-hero-actions {
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
   .page-hero-actions .ant-btn {
-    height: 38px;
-
-    font-size: 12px;
+    min-width: 0;
+    height: 30px;
+    padding: 0 9px;
+    font-size: 11px;
+    border-radius: 7px;
   }
 
-  .page-hero-refresh-button {
-    width: 38px;
-    min-width: 38px;
+  .page-hero-actions .page-hero-refresh-button {
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    padding: 0;
   }
 
-  .page-hero-secondary-button {
-    padding: 0 11px !important;
+  .page-hero-actions .page-hero-primary-button {
+    max-width: 100%;
   }
 
-  .page-hero-primary-button {
-    min-width: 105px;
+  .page-hero-extra {
+    gap: 6px;
+  }
+}
 
-    padding: 0 13px !important;
+/* =====================================================
+   MOBILE RẤT NHỎ
+   ===================================================== */
+
+@media (max-width: 360px) {
+  .page-hero-header {
+    padding: 10px;
   }
 
-  .page-hero-delete-button {
-    padding: 0 11px !important;
+  .page-hero-content {
+    gap: 8px;
+  }
+
+  .page-hero-icon {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .page-hero-title.ant-typography {
+    font-size: 16px;
+  }
+
+  .page-hero-actions {
+    gap: 5px;
+  }
+
+  .page-hero-actions .ant-btn {
+    padding: 0 7px;
+    font-size: 10px;
   }
 }

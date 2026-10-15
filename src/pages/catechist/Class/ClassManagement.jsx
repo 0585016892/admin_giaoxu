@@ -48,7 +48,6 @@ import { useNotification } from "../../../components/notification";
 
 import AppFormModal from "../../../components/common/AppFormModal";
 import ClassForm from "./components/ClassForm";
-import StatCard from "../../../components/common/StatCard";
 import ClassCard from "./components/ClassCard";
 import ClassDetailSkeleton from "./components/ClassDetailSkeleton";
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
@@ -56,6 +55,7 @@ import AppSearchInput from "../../../components/common/SearchInput";
 
 import classApi from "../../../api/classApi";
 import catechistApi from "../../../api/catechistApi";
+import AppButton from "../../../components/common/AppButton";
 
 const { Text } = Typography;
 
@@ -1710,7 +1710,6 @@ const ClassManagement = () => {
       {/* =================================================
           HERO
       ================================================= */}
-
       <PageHeroHeader
         icon={<BookOutlined />}
         badgeText="QUẢN LÝ GIÁO LÝ"
@@ -1718,75 +1717,133 @@ const ClassManagement = () => {
         description="Theo dõi lớp học, năm học, lịch học hàng tuần, học viên và Giáo lý viên phụ trách."
         onRefresh={() => fetchClasses(true)}
         refreshLoading={loading}
-        primaryButtonText={canCreateClass ? "Tạo lớp mới" : undefined}
-        primaryButtonIcon={canCreateClass ? <PlusOutlined /> : undefined}
-        onPrimaryClick={canCreateClass ? handleCreate : undefined}
-        primaryDisabled={loading || saving || !canCreateClass}
       />
 
-      {/* =================================================
-          STATISTICS
-      ================================================= */}
-
-      <Row
-        gutter={[16, 16]}
+      {/* THỐNG KÊ LỚP HỌC */}
+      <Card
+        size="small"
         style={{
           marginBottom: 20,
+          borderRadius: 12,
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 2px 8px rgba(16, 42, 67, 0.04)",
+        }}
+        styles={{
+          body: {
+            padding: "12px 16px",
+          },
         }}
       >
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Tổng số lớp"
-            value={statistics.totalClasses}
-            loading={loading}
-            icon={<BookOutlined />}
-            iconColor={COLORS.navy}
-            description="Tất cả lớp học"
-          />
-        </Col>
+        <Row align="middle" gutter={[12, 12]} wrap={false}>
+          {/* CÁC CHỈ SỐ */}
+          <Col flex="1 1 auto" style={{ minWidth: 0 }}>
+            <Row align="middle" gutter={[16, 10]}>
+              {[
+                {
+                  title: "Tổng số lớp",
+                  value: statistics.totalClasses,
+                  icon: <BookOutlined />,
+                  color: COLORS.navy,
+                },
+                {
+                  title: "Đang hoạt động",
+                  value: statistics.activeClasses,
+                  icon: <CheckCircleOutlined />,
+                  color: "#2E7D5B",
+                  suffix: `${
+                    statistics.totalClasses
+                      ? Math.round(
+                          (statistics.activeClasses / statistics.totalClasses) *
+                            100,
+                        )
+                      : 0
+                  }%`,
+                },
+                {
+                  title: "Tổng học viên",
+                  value: statistics.totalStudents,
+                  icon: <TeamOutlined />,
+                  color: COLORS.gold,
+                  suffix: "bé",
+                },
+                {
+                  title: "Giáo lý viên",
+                  value: statistics.totalCatechists,
+                  icon: <UserSwitchOutlined />,
+                  color: COLORS.navy,
+                },
+              ].map((item) => (
+                <Col key={item.title}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        fontSize: 15,
+                        color: item.color,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.icon}
+                    </span>
 
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Đang hoạt động"
-            value={statistics.activeClasses}
-            loading={loading}
-            icon={<CheckCircleOutlined />}
-            iconColor={COLORS.navyHover}
-            description={`${
-              statistics.totalClasses
-                ? Math.round(
-                    (statistics.activeClasses / statistics.totalClasses) * 100,
-                  )
-                : 0
-            }% tổng số lớp`}
-          />
-        </Col>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "#64748B",
+                      }}
+                    >
+                      {item.title}
+                    </span>
 
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Tổng học viên"
-            value={statistics.totalStudents}
-            loading={loading}
-            suffix="bé"
-            icon={<TeamOutlined />}
-            iconColor={COLORS.gold}
-            description="Đang được quản lý"
-          />
-        </Col>
+                    <span
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: item.color,
+                      }}
+                    >
+                      {loading ? "..." : item.value}
+                    </span>
 
-        <Col xs={24} sm={12} xl={6}>
-          <StatCard
-            title="Giáo lý viên"
-            value={statistics.totalCatechists}
-            loading={loading}
-            suffix="phụ trách"
-            icon={<UserSwitchOutlined />}
-            iconColor={COLORS.navy}
-            description="Được phân công"
-          />
-        </Col>
-      </Row>
+                    {!loading && item.suffix && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "#64748B",
+                        }}
+                      >
+                        {item.suffix}
+                      </span>
+                    )}
+                  </div>
+                </Col>
+              ))}
+            </Row>
+          </Col>
 
+          {/* NÚT TẠO LỚP */}
+          {canCreateClass && (
+            <Col flex="none">
+              <AppButton
+                size="small"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+                disabled={loading || saving}
+              >
+                Tạo lớp
+              </AppButton>
+            </Col>
+          )}
+        </Row>
+      </Card>
       {/* =================================================
           SEARCH / FILTER
       ================================================= */}

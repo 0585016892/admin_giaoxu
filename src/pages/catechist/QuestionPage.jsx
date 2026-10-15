@@ -40,7 +40,6 @@ import AppButton from "../../components/common/AppButton";
 import AppFormModal from "../../components/common/AppFormModal";
 import AppDetailModal from "../../components/common/AppDetailModal";
 import PageHeroHeader from "../../components/common/PageHeroHeader";
-import StatCard from "../../components/common/StatCard";
 import AppTable from "../../components/common/AppTable";
 import { useNotification } from "../../components/notification";
 
@@ -916,30 +915,100 @@ const LessonQuestionPage = () => {
         icon={<BookOutlined />}
       />
 
-      <Row gutter={[14, 14]} style={{ marginTop: 20, marginBottom: 20 }}>
-        <Col xs={24} sm={12} xl={8}>
-          <StatCard
-            title="Tổng bài học"
-            value={lessonPagination.total}
-            icon={<BookOutlined />}
-          />
-        </Col>
-        <Col xs={24} sm={12} xl={8}>
-          <StatCard
-            title="Tổng câu hỏi"
-            value={questionPagination.total}
-            icon={<QuestionCircleOutlined />}
-          />
-        </Col>
-        <Col xs={24} sm={12} xl={8}>
-          <StatCard
-            title="Chương trình giáo lý"
-            value={programOptions.length}
-            icon={<AppstoreOutlined />}
-          />
-        </Col>
-      </Row>
+      <Card
+        size="small"
+        bordered={false}
+        style={{
+          marginTop: 20,
+          marginBottom: 20,
+          borderRadius: 14,
+          background: "#FFFFFF",
+          boxShadow: "0 2px 10px rgba(16, 42, 67, 0.05)",
+        }}
+        styles={{
+          body: {
+            padding: "12px 16px",
+          },
+        }}
+      >
+        <Row gutter={[16, 8]} align="middle">
+          <Col xs={24} sm={8}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <BookOutlined style={{ fontSize: 17, color: "#173B5E" }} />
+              <span style={{ fontSize: 13, color: "#6B7280" }}>
+                Tổng bài học
+              </span>
+              <span
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#173B5E",
+                }}
+              >
+                {lessonPagination.total ?? 0}
+              </span>
+            </div>
+          </Col>
 
+          <Col xs={24} sm={8}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <QuestionCircleOutlined
+                style={{ fontSize: 17, color: "#B7791F" }}
+              />
+              <span style={{ fontSize: 13, color: "#6B7280" }}>
+                Tổng câu hỏi
+              </span>
+              <span
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#173B5E",
+                }}
+              >
+                {questionPagination.total ?? 0}
+              </span>
+            </div>
+          </Col>
+
+          <Col xs={24} sm={8}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <AppstoreOutlined style={{ fontSize: 17, color: "#2E7D5B" }} />
+              <span style={{ fontSize: 13, color: "#6B7280" }}>
+                Chương trình giáo lý
+              </span>
+              <span
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#173B5E",
+                }}
+              >
+                {programOptions.length}
+              </span>
+            </div>
+          </Col>
+        </Row>
+      </Card>
       <Card
         bordered={false}
         style={{

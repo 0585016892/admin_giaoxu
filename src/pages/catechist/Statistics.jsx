@@ -51,7 +51,6 @@ import {
 } from "recharts";
 
 import PageHeroHeader from "../../components/common/PageHeroHeader";
-import StatCard from "../../components/common/StatCard";
 import { useNotification } from "../../components/notification";
 
 import {
@@ -1530,35 +1529,105 @@ const Statistics = () => {
                 STAT CARDS
             ================================================== */}
 
-            <div style={styles.section}>
-              <div className="statistics-card-grid">
-                <StatCard
-                  title="Giáo lý viên"
-                  value={numberFormat(overview?.total_catechists)}
-                  icon={<UserCheck size={21} />}
-                  description="Tổng số giáo lý viên"
-                />
+            <div style={{ margin: 20 }} c>
+              <div
+                className="statistics-card-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                  gap: 12,
+                  padding: "14px 16px",
+                  background: "#FFFFFF",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: 14,
+                }}
+              >
+                {[
+                  {
+                    title: "Giáo lý viên",
+                    value: numberFormat(overview?.total_catechists),
+                    icon: <UserCheck size={17} />,
+                    color: "#173B5E",
+                    background: "#EEF3F7",
+                  },
+                  {
+                    title: "Lớp học",
+                    value: numberFormat(overview?.total_classes),
+                    icon: <BookOpen size={17} />,
+                    color: "#B7791F",
+                    background: "#FFF7E0",
+                  },
+                  {
+                    title: "Học viên",
+                    value: numberFormat(overview?.total_students),
+                    icon: <GraduationCap size={17} />,
+                    color: "#2E7D5B",
+                    background: "#E8F5EE",
+                  },
+                  {
+                    title: "Tỷ lệ chuyên cần",
+                    value: percentFormat(selectedAttendanceRate),
+                    icon: <ClipboardCheck size={17} />,
+                    color: "#6D5BD0",
+                    background: "#F0EDFF",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      minWidth: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 34,
+                        height: 34,
+                        flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 9,
+                        color: item.color,
+                        background: item.background,
+                      }}
+                    >
+                      {item.icon}
+                    </div>
 
-                <StatCard
-                  title="Lớp học"
-                  value={numberFormat(overview?.total_classes)}
-                  icon={<BookOpen size={21} />}
-                  description="Tổng số lớp"
-                />
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        flexWrap: "wrap",
+                        gap: "3px 7px",
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "#6B7280",
+                        }}
+                      >
+                        {item.title}
+                      </span>
 
-                <StatCard
-                  title="Học viên"
-                  value={numberFormat(overview?.total_students)}
-                  icon={<GraduationCap size={21} />}
-                  description="Tổng số học viên"
-                />
-
-                <StatCard
-                  title="Tỷ lệ chuyên cần"
-                  value={percentFormat(selectedAttendanceRate)}
-                  icon={<ClipboardCheck size={21} />}
-                  description="Theo bộ lọc hiện tại"
-                />
+                      <span
+                        style={{
+                          fontSize: 17,
+                          fontWeight: 700,
+                          lineHeight: 1.3,
+                          color: "#173B5E",
+                        }}
+                      >
+                        {item.value}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

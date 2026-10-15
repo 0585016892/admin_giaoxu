@@ -30,7 +30,10 @@ import {
 } from "antd";
 
 import {
+  AppstoreOutlined,
   BookOutlined,
+  CloseCircleOutlined,
+  ClearOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
@@ -44,6 +47,7 @@ import {
   UserOutlined,
   UserSwitchOutlined,
   QrcodeOutlined,
+  ReloadOutlined,
   DownloadOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
@@ -58,7 +62,6 @@ import classApi from "../../../api/classApi";
 import AppFormModal from "../../../components/common/AppFormModal";
 import StudentForm from "./components/StudentForm";
 import StudentExportModal from "./components/StudentExportModal";
-import StatCard from "../../../components/common/StatCard";
 import AppDetailModal from "../../../components/common/AppDetailModal";
 import AppTable from "../../../components/common/AppTable";
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
@@ -2959,6 +2962,9 @@ export default function StudentManagement() {
      RENDER
   =================================================== */
 
+  const hasSelectedStudents = selectedRowKeys.length > 0;
+  const actionsBusy = loading || saving || importing || bulkDeleting;
+
   return (
     <>
       <style>
@@ -2973,6 +2979,79 @@ export default function StudentManagement() {
             overflow-x: hidden;
             background: #F7F9FC;
             color: #173B5E;
+          }
+
+          .student-function-card {
+            margin: 0 0 14px;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 2px 10px rgba(23, 59, 94, 0.04);
+          }
+
+          .student-function-card .ant-card-body {
+            padding: 10px 12px;
+          }
+
+          .student-function-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            padding-bottom: 2px;
+          }
+
+          .student-function-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            flex: 0 0 auto;
+            padding-right: 10px;
+            margin-right: 2px;
+            border-right: 1px solid #E2E8F0;
+            color: #173B5E;
+            font-size: 13px;
+            font-weight: 750;
+          }
+
+          .student-function-title-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            flex: 0 0 28px;
+            border-radius: 8px;
+            color: #173B5E;
+            background: #EAF1F8;
+            font-size: 15px;
+          }
+
+          .student-function-toolbar .ant-btn,
+          .student-function-toolbar button {
+            flex: 0 0 auto;
+            white-space: nowrap;
+          }
+
+          .student-function-status {
+            flex: 0 0 auto;
+            margin-inline: 2px 4px;
+          }
+
+          @media (max-width: 600px) {
+            .student-function-card .ant-card-body {
+              padding: 8px;
+            }
+
+            .student-function-toolbar {
+              gap: 6px;
+            }
+
+            .student-function-title {
+              padding-right: 8px;
+            }
           }
 
           /* =====================================================
@@ -3592,48 +3671,169 @@ export default function StudentManagement() {
           badgeText="QUẢN LÝ HỌC SINH"
           title="Quản lý học sinh"
           description="Quản lý thông tin, lớp học và quá trình giáo lý của học sinh"
-          selectedCount={selectedRowKeys.length}
-          onBulkDelete={handleBulkDelete}
-          bulkDeleting={bulkDeleting}
-          onRefresh={() =>
-            fetchStudents({
-              silent: true,
-            })
-          }
-          refreshLoading={refreshing}
-          secondaryButtonText={importing ? "Đang import..." : "Import Excel"}
-          secondaryButtonIcon={<UploadOutlined />}
-          onSecondaryClick={() => {
-            if (importing || loading || saving || bulkDeleting) return;
+        />
 
-            const input = document.getElementById("student-excel-input");
+        {/* =================================================
+            TRUNG TÂM CHỨC NĂNG
+        ================================================= */}
+        <Card className="student-function-card" bordered>
+          <div className="student-function-toolbar">
+            <div className="student-function-title">
+              <span className="student-function-title-icon">
+                <AppstoreOutlined />
+              </span>
+              Chức năng
+            </div>
+            <Tag
+              className="student-function-status"
+              color={hasSelectedStudents ? "blue" : "default"}
+            >
+              {hasSelectedStudents
+                ? `Đã chọn ${selectedRowKeys.length}`
+                : "Chưa chọn"}
+            </Tag>
 
-            if (input) {
-              input.click();
-            }
-          }}
-          secondaryButtonLoading={importing}
-          secondaryButtonDisabled={loading || saving || bulkDeleting}
-          primaryButtonText={
-            saving && !editingStudent ? "Đang thêm..." : "Thêm học sinh"
-          }
-          primaryButtonIcon={<PlusOutlined />}
-          onPrimaryClick={handleOpenCreateModal}
-          primaryLoading={saving && !editingStudent}
-          primaryDisabled={loading || saving || importing}
-          extra={
+            <AppButton
+              type="primary"
+              size="small"
+              icon={<PlusOutlined />}
+              disabled={loading || saving || importing || bulkDeleting}
+              loading={saving && !editingStudent}
+              onClick={handleOpenCreateModal}
+            >
+              Thêm học sinh
+            </AppButton>
+
             <AppButton
               size="small"
-              type="button"
-              icon={<DownloadOutlined />}
-              onClick={handleDownloadExcelTemplate}
+              icon={<UploadOutlined />}
+              loading={importing}
               disabled={loading || saving || importing || bulkDeleting}
-              className="hero-btn-template"
+              onClick={() =>
+                document.getElementById("student-excel-input")?.click()
+              }
+            >
+              Import Excel
+            </AppButton>
+            <AppButton
+              size="small"
+              icon={<DownloadOutlined />}
+              disabled={loading || saving || importing || bulkDeleting}
+              onClick={handleDownloadExcelTemplate}
             >
               Tải Excel mẫu
             </AppButton>
-          }
-        />
+            <AppButton
+              size="small"
+              icon={<DownloadOutlined />}
+              disabled={!hasSelectedStudents || actionsBusy}
+              onClick={() => setExportModalOpen(true)}
+            >
+              Xuất danh sách
+            </AppButton>
+            <AppButton
+              icon={<QrcodeOutlined />}
+              size="small"
+              loading={bulkQRDownloading}
+              disabled={
+                !hasSelectedStudents ||
+                loading ||
+                saving ||
+                bulkDeleting ||
+                bulkChangeClassLoading ||
+                bulkQRDownloading
+              }
+              onClick={handleDownloadBulkQR}
+            >
+              Tải QR đã chọn
+            </AppButton>
+            <AppButton
+              icon={<SwapOutlined />}
+              size="small"
+              loading={bulkChangeClassLoading}
+              disabled={
+                !hasSelectedStudents ||
+                loading ||
+                saving ||
+                bulkDeleting ||
+                bulkQRDownloading ||
+                bulkChangeClassLoading
+              }
+              onClick={handleOpenBulkChangeClass}
+            >
+              Chuyển lớp hàng loạt
+            </AppButton>
+            <Popconfirm
+              title={`Xóa ${selectedRowKeys.length} học sinh đã chọn?`}
+              description="Dữ liệu đã xóa không thể khôi phục."
+              okText="Xóa học sinh"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true, loading: bulkDeleting }}
+              onConfirm={handleBulkDelete}
+              disabled={
+                !hasSelectedStudents || bulkDeleting || loading || saving
+              }
+            >
+              <AppButton
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                disabled={
+                  !hasSelectedStudents || bulkDeleting || loading || saving
+                }
+                loading={bulkDeleting}
+              >
+                Xóa đã chọn
+              </AppButton>
+            </Popconfirm>
+            <AppButton
+              size="small"
+              icon={<CloseCircleOutlined />}
+              disabled={
+                !hasSelectedStudents ||
+                loading ||
+                saving ||
+                bulkDeleting ||
+                bulkChangeClassLoading ||
+                bulkQRDownloading
+              }
+              onClick={() => setSelectedRowKeys([])}
+            >
+              Bỏ chọn
+            </AppButton>
+            <AppButton
+              size="small"
+              icon={<EditOutlined />}
+              disabled={
+                activeClassTab === "all" || loading || saving || bulkDeleting
+              }
+              onClick={() =>
+                navigate(`/catechist/students/bulk-edit/${activeClassTab}`)
+              }
+            >
+              Sửa danh sách lớp
+            </AppButton>
+            <AppButton
+              icon={<ReloadOutlined />}
+              size="small"
+              disabled={
+                loading || saving || importing || bulkDeleting || refreshing
+              }
+              loading={refreshing}
+              onClick={() => fetchStudents({ silent: true })}
+            >
+              Làm mới
+            </AppButton>
+            <AppButton
+              size="small"
+              icon={<ClearOutlined />}
+              disabled={loading || saving || bulkDeleting || importing}
+              onClick={resetFilters}
+            >
+              Đặt lại lọc
+            </AppButton>
+          </div>
+        </Card>
 
         <input
           id="student-excel-input"
@@ -3657,57 +3857,88 @@ export default function StudentManagement() {
             STATISTICS
         ================================================= */}
 
-        <Row
-          gutter={[18, 18]}
+        <Card
+          size="small"
           style={{
-            marginBottom: 26,
+            marginBottom: 20,
+            borderRadius: 12,
+            border: "1px solid #E2E8F0",
+            boxShadow: "0 2px 8px rgba(16, 42, 67, 0.04)",
+          }}
+          styles={{
+            body: {
+              padding: "12px 16px",
+            },
           }}
         >
-          <Col xs={24} sm={12} lg={6}>
-            <StatCard
-              title="Tổng học sinh"
-              value={statistics.total}
-              loading={loading}
-              icon={<TeamOutlined />}
-              iconColor={COLORS.navy}
-              description="Tất cả học sinh"
-            />
-          </Col>
+          <Row
+            gutter={[16, 8]}
+            align="middle"
+            wrap={true}
+            style={{ display: "flex", justifyContent: "space-around" }}
+          >
+            {[
+              {
+                title: "Tổng học sinh",
+                value: statistics.total,
+                icon: <TeamOutlined />,
+                color: COLORS.navy,
+              },
+              {
+                title: "Đang hoạt động",
+                value: statistics.active,
+                icon: <UserSwitchOutlined />,
+                color: "#2E7D5B",
+              },
+              {
+                title: "Tạm khóa",
+                value: statistics.inactive,
+                icon: <LockOutlined />,
+                color: "#B7791F",
+              },
+              {
+                title: "Chưa xếp lớp",
+                value: statistics.unassigned,
+                icon: <BookOutlined />,
+                color: "#64748B",
+              },
+            ].map((item) => (
+              <Col key={item.title}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span style={{ color: item.color, fontSize: 15 }}>
+                    {item.icon}
+                  </span>
 
-          <Col xs={24} sm={12} lg={6}>
-            <StatCard
-              title="Đang hoạt động"
-              value={statistics.active}
-              loading={loading}
-              icon={<UserSwitchOutlined />}
-              iconColor={COLORS.navyHover}
-              description="Học sinh đang hoạt động"
-            />
-          </Col>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "#64748B",
+                    }}
+                  >
+                    {item.title}
+                  </span>
 
-          <Col xs={24} sm={12} lg={6}>
-            <StatCard
-              title="Tạm khóa"
-              value={statistics.inactive}
-              loading={loading}
-              icon={<LockOutlined />}
-              iconColor={COLORS.gold}
-              description="Học sinh tạm khóa"
-            />
-          </Col>
-
-          <Col xs={24} sm={12} lg={6}>
-            <StatCard
-              title="Chưa xếp lớp"
-              value={statistics.unassigned}
-              loading={loading}
-              icon={<BookOutlined />}
-              iconColor={COLORS.gold}
-              description="Chưa được phân lớp"
-            />
-          </Col>
-        </Row>
-
+                  <span
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: item.color,
+                    }}
+                  >
+                    {loading ? "..." : item.value}
+                  </span>
+                </div>
+              </Col>
+            ))}
+          </Row>
+        </Card>
         {/* =================================================
             MAIN
         ================================================= */}
@@ -3799,48 +4030,6 @@ export default function StudentManagement() {
                 ]}
               />
             </Col>
-
-            {/* =====================================================
-      ĐẶT LẠI
-  ===================================================== */}
-            <Col xs={24} md={6} lg={3}>
-              <AppButton
-                size="small"
-                type="button"
-                block
-                disabled={loading || saving || bulkDeleting}
-                onClick={resetFilters}
-                style={{
-                  borderRadius: 10,
-                }}
-              >
-                Đặt lại
-              </AppButton>
-            </Col>
-
-            {/* =====================================================
-      SỬA DANH SÁCH LỚP
-  ===================================================== */}
-            <Col xs={24} md={6} lg={5}>
-              {activeClassTab !== "all" && (
-                <AppButton
-                  type="primary"
-                  size="small"
-                  block
-                  icon={<EditOutlined />}
-                  disabled={loading || saving || bulkDeleting}
-                  onClick={() => {
-                    navigate(`/catechist/students/bulk-edit/${activeClassTab}`);
-                  }}
-                  style={{
-                    borderRadius: 10,
-                    fontWeight: 600,
-                  }}
-                >
-                  Sửa theo danh sách lớp
-                </AppButton>
-              )}
-            </Col>
           </Row>
 
           <Divider
@@ -3848,97 +4037,6 @@ export default function StudentManagement() {
               margin: "0 0 18px",
             }}
           />
-          {selectedRowKeys.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                flexWrap: "wrap",
-                marginBottom: 18,
-                padding: "12px 16px",
-                borderRadius: 12,
-                background: COLORS.navyLight,
-                border: `1px solid ${COLORS.border}`,
-              }}
-            >
-              <Text
-                strong
-                style={{
-                  color: COLORS.navy,
-                }}
-              >
-                Đã chọn {selectedRowKeys.length} học sinh
-              </Text>
-
-              <Space wrap>
-                {/* TẢI QR */}
-                <AppButton
-                  icon={<QrcodeOutlined />}
-                  loading={bulkQRDownloading}
-                  type="button"
-                  disabled={
-                    loading || saving || bulkDeleting || bulkChangeClassLoading
-                  }
-                  onClick={handleDownloadBulkQR}
-                  style={{
-                    borderRadius: 10,
-                    borderColor: COLORS.gold,
-                    color: COLORS.navy,
-                    fontWeight: 700,
-                  }}
-                >
-                  {bulkQRDownloading ? "Đang tạo QR..." : "Tải QR đã chọn"}
-                </AppButton>
-
-                {/* CHUYỂN LỚP */}
-                <AppButton
-                  icon={<SwapOutlined />}
-                  loading={bulkChangeClassLoading}
-                  disabled={
-                    loading || saving || bulkDeleting || bulkQRDownloading
-                  }
-                  onClick={handleOpenBulkChangeClass}
-                  style={{
-                    borderRadius: 10,
-                    borderColor: COLORS.navy,
-                    color: COLORS.navy,
-                    fontWeight: 700,
-                  }}
-                >
-                  Chuyển lớp
-                </AppButton>
-                <AppButton
-                  icon={<DownloadOutlined />}
-                  disabled={selectedRowKeys.length === 0}
-                  onClick={() => setExportModalOpen(true)}
-                >
-                  Xuất danh sách
-                  {selectedRowKeys.length > 0
-                    ? ` (${selectedRowKeys.length})`
-                    : ""}
-                </AppButton>
-                {/* BỎ CHỌN */}
-                <AppButton
-                  size="small"
-                  disabled={
-                    loading ||
-                    saving ||
-                    bulkDeleting ||
-                    bulkChangeClassLoading ||
-                    bulkQRDownloading
-                  }
-                  onClick={() => setSelectedRowKeys([])}
-                  style={{
-                    borderRadius: 10,
-                  }}
-                >
-                  Bỏ chọn
-                </AppButton>
-              </Space>
-            </div>
-          )}
           {/* =================================================
               TABLE
           ================================================= */}

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Col, Modal, Row, Tag } from "antd";
-
+import { Card, Col, Modal, Row, Tag } from "antd";
 import {
   CalculatorOutlined,
   CheckCircleOutlined,
@@ -9,7 +8,6 @@ import {
   TrophyOutlined,
 } from "@ant-design/icons";
 
-import StatCard from "../../../../components/common/StatCard";
 import AppButton from "../../../../components/common/AppButton";
 
 import { CALCULATION_LABELS } from "../../../../utils/resultsUtils";
@@ -139,77 +137,132 @@ const ResultsOverview = ({ statistics, rule, loading = false }) => {
               Thống kê kết quả học tập của lớp
             </div>
           </div>
-
-          {rule && (
-            <AppButton
-              type="default"
-              size="small"
-              icon={<CalculatorOutlined />}
-              onClick={() => setFormulaModalOpen(true)}
-            >
-              Công thức tính điểm
-            </AppButton>
-          )}
         </div>
 
         {/* =====================================================
             STATISTICS
         ===================================================== */}
 
-        <Row gutter={[16, 16]}>
-          <Col xs={12} sm={12} lg={6}>
-            <StatCard
-              title="Tổng học viên"
-              value={stats.totalStudents}
-              loading={loading}
-              icon={<TeamOutlined />}
-              iconColor="#173B5E"
-              description="Học viên trong lớp"
-            />
-          </Col>
+        {/* =====================================================
+    STATISTICS
+===================================================== */}
 
-          <Col xs={12} sm={12} lg={6}>
-            <StatCard
-              title="Đã đủ điểm"
-              value={stats.completedStudents}
-              loading={loading}
-              icon={<TrophyOutlined />}
-              iconColor="#D9A441"
-              description="Đã hoàn thành"
-            />
-          </Col>
+        <Card
+          size="small"
+          style={{
+            marginBottom: 20,
+            borderRadius: 12,
+            border: "1px solid #E2E8F0",
+            boxShadow: "0 2px 8px rgba(16, 42, 67, 0.04)",
+          }}
+          styles={{
+            body: {
+              padding: "12px 16px",
+            },
+          }}
+        >
+          <Row align="middle" gutter={[16, 12]} wrap={false}>
+            {/* CÁC CHỈ SỐ */}
+            <Col flex="1 1 auto" style={{ minWidth: 0 }}>
+              <Row align="middle" gutter={[20, 12]}>
+                {[
+                  {
+                    title: "Tổng học viên",
+                    value: stats.totalStudents,
+                    icon: <TeamOutlined />,
+                    color: "#173B5E",
+                  },
+                  {
+                    title: "Đã đủ điểm",
+                    value: stats.completedStudents,
+                    icon: <TrophyOutlined />,
+                    color: "#B7791F",
+                  },
+                  {
+                    title: "Điểm TB lớp",
+                    value: averageScore,
+                    icon: <RiseOutlined />,
+                    color: "#2E7D5B",
+                    suffix: "/10",
+                  },
+                  {
+                    title: "Tỷ lệ đạt",
+                    value: `${passRate}%`,
+                    icon: <CheckCircleOutlined />,
+                    color: "#2563EB",
+                  },
+                ].map((item) => (
+                  <Col key={item.title}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 7,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          fontSize: 15,
+                          color: item.color,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {item.icon}
+                      </span>
 
-          <Col xs={12} sm={12} lg={6}>
-            <StatCard
-              title="Điểm TB lớp"
-              value={averageScore}
-              loading={loading}
-              icon={<RiseOutlined />}
-              iconColor="#16A34A"
-              description={
-                <>
-                  {calculationLabel}
-                  <span className="results-stat-suffix"> /10</span>
-                </>
-              }
-            />
-          </Col>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "#64748B",
+                        }}
+                      >
+                        {item.title}
+                      </span>
 
-          <Col xs={12} sm={12} lg={6}>
-            <StatCard
-              title="Tỷ lệ đạt"
-              value={`${passRate}%`}
-              loading={loading}
-              icon={<CheckCircleOutlined />}
-              iconColor="#2563EB"
-              description={
-                <>
-                  Đạt từ <strong>{passScore.toFixed(1)}</strong> điểm
-                </>
-              }
-            />
-          </Col>
-        </Row>
+                      <span
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: item.color,
+                        }}
+                      >
+                        {loading ? "..." : item.value}
+                      </span>
+
+                      {!loading && item.suffix && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: "#64748B",
+                          }}
+                        >
+                          {item.suffix}
+                        </span>
+                      )}
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            </Col>
+
+            {/* NÚT CÔNG THỨC */}
+            {rule && (
+              <Col flex="none">
+                <AppButton
+                  type="default"
+                  size="small"
+                  icon={<CalculatorOutlined />}
+                  onClick={() => setFormulaModalOpen(true)}
+                >
+                  Công thức tính điểm
+                </AppButton>
+              </Col>
+            )}
+          </Row>
+        </Card>
       </section>
 
       {/* =====================================================

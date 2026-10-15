@@ -1,0 +1,344 @@
+/* =====================================================
+   APP DETAIL MODAL
+   ===================================================== */
+
+.navy-gold-detail-modal {
+  max-width: calc(100vw - 32px);
+}
+
+.navy-gold-detail-modal,
+.navy-gold-detail-modal * {
+  box-sizing: border-box;
+}
+
+/* Header */
+
+.app-detail-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.app-detail-modal-avatar.ant-avatar {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  color: #173b5e;
+  background: #eef3f7;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(16, 42, 67, 0.06);
+}
+
+.app-detail-modal-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-detail-modal-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.app-detail-modal-title.ant-typography {
+  margin: 0;
+  color: #173b5e;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.app-detail-modal-tag.ant-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 2px 7px;
+  color: #173b5e;
+  background: #eef3f7;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.app-detail-modal-tag .anticon {
+  color: #d9a441;
+  font-size: 10px;
+}
+
+.app-detail-modal-subtitle.ant-typography {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.app-detail-modal-extra {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  max-width: 40%;
+}
+
+/* Close icon */
+
+.app-detail-modal-close-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: #173b5e;
+  background: #eef3f7;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.navy-gold-detail-modal .ant-modal-close {
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+}
+
+.navy-gold-detail-modal .ant-modal-close:hover .app-detail-modal-close-icon {
+  color: #ffffff;
+  background: #173b5e;
+}
+
+/* Content */
+
+.app-detail-modal-content-wrapper {
+  width: 100%;
+  min-width: 0;
+  color: #243447;
+  overflow-wrap: anywhere;
+}
+
+.app-detail-modal-content-wrapper img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Descriptions */
+
+.app-detail-modal-content-wrapper .ant-descriptions {
+  width: 100%;
+  max-width: 100%;
+}
+
+.app-detail-modal-content-wrapper .ant-descriptions-view {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.app-detail-modal-content-wrapper .ant-descriptions table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.app-detail-modal-content-wrapper .ant-descriptions-item-label,
+.app-detail-modal-content-wrapper .ant-descriptions-item-content {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.6;
+}
+
+.app-detail-modal-content-wrapper .ant-descriptions-item-label {
+  color: #64748b;
+}
+
+.app-detail-modal-content-wrapper .ant-descriptions-item-content {
+  color: #243447;
+}
+
+/* Tables inside modal */
+
+.app-detail-modal-content-wrapper .ant-table-wrapper {
+  max-width: 100%;
+}
+
+/* Footer buttons */
+
+.navy-gold-detail-modal .ant-modal-footer .ant-btn {
+  min-height: 34px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* =====================================================
+   TABLET
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .navy-gold-detail-modal {
+    max-width: calc(100vw - 24px);
+    margin: 12px auto;
+  }
+
+  .navy-gold-detail-modal .ant-modal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .navy-gold-detail-modal .ant-modal-content {
+    border-radius: 14px;
+  }
+
+  .app-detail-modal-header {
+    gap: 10px;
+  }
+
+  .app-detail-modal-avatar.ant-avatar {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .app-detail-modal-title.ant-typography {
+    font-size: 15px;
+  }
+
+  .app-detail-modal-subtitle.ant-typography {
+    font-size: 11px;
+  }
+}
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 575px) {
+  .navy-gold-detail-modal {
+    max-width: calc(100vw - 20px);
+    margin: 10px auto;
+  }
+
+  .navy-gold-detail-modal .ant-modal {
+    max-width: calc(100vw - 20px);
+    margin: 10px auto;
+    padding-bottom: 0;
+  }
+
+  .navy-gold-detail-modal .ant-modal-content {
+    border-radius: 12px;
+  }
+
+  .navy-gold-detail-modal .ant-modal-header {
+    padding: 14px 40px 12px 12px !important;
+  }
+
+  .navy-gold-detail-modal .ant-modal-body {
+    padding: 14px 12px !important;
+    max-height: 65vh;
+  }
+
+  .navy-gold-detail-modal .ant-modal-footer {
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 10px 12px !important;
+  }
+
+  .navy-gold-detail-modal .ant-modal-close {
+    top: 9px;
+    right: 8px;
+  }
+
+  .app-detail-modal-header {
+    align-items: flex-start;
+    gap: 9px;
+  }
+
+  .app-detail-modal-avatar.ant-avatar {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .app-detail-modal-title-row {
+    gap: 4px 6px;
+  }
+
+  .app-detail-modal-title.ant-typography {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .app-detail-modal-tag.ant-tag {
+    padding: 1px 5px;
+    font-size: 9px;
+  }
+
+  .app-detail-modal-subtitle.ant-typography {
+    margin-top: 2px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .app-detail-modal-extra {
+    max-width: 100%;
+  }
+
+  .navy-gold-detail-modal .ant-modal-footer .ant-btn {
+    min-height: 30px;
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+
+  .app-detail-modal-content-wrapper .ant-descriptions-item-label,
+  .app-detail-modal-content-wrapper .ant-descriptions-item-content {
+    padding: 7px 8px !important;
+    font-size: 12px;
+  }
+
+  .app-detail-modal-content-wrapper .ant-descriptions-view table {
+    table-layout: auto;
+  }
+}
+
+/* =====================================================
+   MOBILE RẤT NHỎ
+   ===================================================== */
+
+@media (max-width: 360px) {
+  .navy-gold-detail-modal .ant-modal-header {
+    padding-right: 36px !important;
+  }
+
+  .app-detail-modal-header {
+    gap: 7px;
+  }
+
+  .app-detail-modal-avatar.ant-avatar {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .app-detail-modal-title.ant-typography {
+    font-size: 13px;
+  }
+
+  .app-detail-modal-subtitle.ant-typography {
+    font-size: 10px;
+  }
+
+  .navy-gold-detail-modal .ant-modal-footer .ant-btn {
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+}

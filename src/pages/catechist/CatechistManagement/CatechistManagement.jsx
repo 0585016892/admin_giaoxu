@@ -53,7 +53,6 @@ import AppButton from "../../../components/common/AppButton";
 import AppFormModal from "../../../components/common/AppFormModal";
 import AppDetailModal from "../../../components/common/AppDetailModal";
 import PageHeroHeader from "../../../components/common/PageHeroHeader";
-import StatCard from "../../../components/common/StatCard";
 import AppSearchInput from "../../../components/common/SearchInput";
 import { useNotification } from "../../../components/notification";
 
@@ -1291,7 +1290,6 @@ export default function CatechistManagement() {
         {/* =================================================
             HEADER
         ================================================= */}
-
         <div className="catechist-header-wrapper">
           <PageHeroHeader
             icon={<TeamOutlined />}
@@ -1300,71 +1298,113 @@ export default function CatechistManagement() {
             description="Quản lý hồ sơ, cấp bậc, trạng thái và phân công lớp giảng dạy"
             onRefresh={fetchData}
             refreshLoading={loading}
-            primaryButtonText="Thêm Giáo lý viên"
-            primaryButtonIcon={<PlusOutlined />}
-            onPrimaryClick={handleOpenCreateModal}
-            primaryDisabled={loading || saving}
           />
         </div>
 
-        {/* =================================================
-            STATISTICS
-        ================================================= */}
+        {/* THỐNG KÊ GIÁO LÝ VIÊN */}
+        <Card
+          size="small"
+          className="catechist-statistics"
+          style={{
+            marginBottom: 20,
+            borderRadius: 12,
+            border: "1px solid #E2E8F0",
+            boxShadow: "0 2px 8px rgba(16, 42, 67, 0.04)",
+          }}
+          styles={{
+            body: {
+              padding: "12px 16px",
+            },
+          }}
+        >
+          <Row align="middle" gutter={[16, 12]} wrap={false}>
+            {/* CÁC CHỈ SỐ */}
+            <Col flex="1 1 auto" style={{ minWidth: 0 }}>
+              <Row align="middle" gutter={[20, 12]}>
+                {[
+                  {
+                    title: "Tổng số GLV",
+                    value: statistics.total,
+                    icon: <TeamOutlined />,
+                    color: "#173B5E",
+                  },
+                  {
+                    title: "Đang hoạt động",
+                    value: statistics.active,
+                    icon: <CheckCircleOutlined />,
+                    color: "#2E7D5B",
+                  },
+                  {
+                    title: "Tạm nghỉ",
+                    value: statistics.paused,
+                    icon: <PauseCircleOutlined />,
+                    color: "#B7791F",
+                  },
+                  {
+                    title: "Huấn luyện viên",
+                    value: statistics.trainer,
+                    icon: <CrownOutlined />,
+                    color: "#244F78",
+                  },
+                ].map((item) => (
+                  <Col key={item.title}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 7,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          fontSize: 15,
+                          color: item.color,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {item.icon}
+                      </span>
 
-        <Row gutter={[18, 18]} className="catechist-statistics">
-          <Col xs={24} sm={12} lg={6}>
-            <div className="catechist-stat-wrapper">
-              <StatCard
-                title="Tổng số GLV"
-                value={statistics.total}
-                loading={loading}
-                icon={<TeamOutlined />}
-                iconColor="#173B5E"
-                description="Toàn bộ Giáo lý viên"
-              />
-            </div>
-          </Col>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "#64748B",
+                        }}
+                      >
+                        {item.title}
+                      </span>
 
-          <Col xs={24} sm={12} lg={6}>
-            <div className="catechist-stat-wrapper">
-              <StatCard
-                title="Đang hoạt động"
-                value={statistics.active}
-                loading={loading}
-                icon={<CheckCircleOutlined />}
-                iconColor="#2E7D5B"
-                description="GLV đang giảng dạy"
-              />
-            </div>
-          </Col>
+                      <span
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: item.color,
+                        }}
+                      >
+                        {loading ? "..." : item.value}
+                      </span>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            </Col>
 
-          <Col xs={24} sm={12} lg={6}>
-            <div className="catechist-stat-wrapper">
-              <StatCard
-                title="Tạm nghỉ"
-                value={statistics.paused}
-                loading={loading}
-                icon={<PauseCircleOutlined />}
-                iconColor="#D9A441"
-                description="GLV đang tạm nghỉ"
-              />
-            </div>
-          </Col>
-
-          <Col xs={24} sm={12} lg={6}>
-            <div className="catechist-stat-wrapper">
-              <StatCard
-                title="Huấn luyện viên"
-                value={statistics.trainer}
-                loading={loading}
-                icon={<CrownOutlined />}
-                iconColor="#244F78"
-                description="Cấp Huấn luyện viên"
-              />
-            </div>
-          </Col>
-        </Row>
-
+            {/* NÚT THÊM GIÁO LÝ VIÊN */}
+            <Col flex="none">
+              <AppButton
+                size="small"
+                icon={<PlusOutlined />}
+                onClick={handleOpenCreateModal}
+                disabled={loading || saving}
+              >
+                Thêm Giáo lý viên
+              </AppButton>
+            </Col>
+          </Row>
+        </Card>
         {/* =================================================
             FILTER
         ================================================= */}
