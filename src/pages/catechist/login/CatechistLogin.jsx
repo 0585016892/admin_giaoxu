@@ -13,7 +13,7 @@ import {
 } from "@ant-design/icons";
 
 import { motion, AnimatePresence } from "framer-motion";
-
+import SEO from "../../../components/SEO";
 import api from "../../../api/axios";
 
 import { useNavigate } from "react-router-dom";
@@ -360,227 +360,239 @@ export default function Login() {
   \========================================================= */
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: colors.primary,
-          borderRadius: 14,
-          controlHeightLG: 56,
-          fontFamily: "'Be Vietnam Pro', sans-serif",
-        },
-      }}
-    >
-      <AnimatePresence>
-        {loading && <LoadingLogo progress={loadingProgress} />}
-      </AnimatePresence>
+    <>
+      <SEO
+        title="FaithEdu – Giáo Lý Số | Số hóa giáo lý, kết nối đức tin"
+        description="FaithEdu hỗ trợ giáo xứ quản lý hoạt động giáo lý, lớp học, học viên và điểm danh trong một hệ thống."
+        path="/"
+        image="/thumbnail-seo.png"
+      />
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: colors.primary,
+            borderRadius: 14,
+            controlHeightLG: 56,
+            fontFamily: "'Be Vietnam Pro', sans-serif",
+          },
+        }}
+      >
+        <AnimatePresence>
+          {loading && <LoadingLogo progress={loadingProgress} />}
+        </AnimatePresence>
 
-      <div className="faith-login">
-        <div className="faith-login__background">
-          <img src={LOGIN_BACKGROUND} alt="" />
-          <div className="faith-login__overlay" />
-          <div className="faith-login__glow faith-login__glow--1" />
-          <div className="faith-login__glow faith-login__glow--2" />
-          <div className="faith-login__grid" />
-        </div>
-
-        <header className="faith-login__header">
-          <div className="brand">
-            <div className="brand__logo">
-              <img src={LOGIN_LOGO} alt="Thiếu Nhi Thánh Thể" />
-            </div>
-            <div className="brand__text">
-              <strong>FaithEdu</strong>
-              <span>Nền tảng giáo lý số</span>
-            </div>
+        <div className="faith-login">
+          <div className="faith-login__background">
+            <img src={LOGIN_BACKGROUND} alt="" />
+            <div className="faith-login__overlay" />
+            <div className="faith-login__glow faith-login__glow--1" />
+            <div className="faith-login__glow faith-login__glow--2" />
+            <div className="faith-login__grid" />
           </div>
 
-          <div className="system-pill">
-            <span className="system-pill__dot" />
-            <span>Hệ thống đang hoạt động</span>
-          </div>
-        </header>
-
-        <main className="faith-login__content">
-          <motion.section
-            className="faith-login__intro"
-            initial={{ opacity: 0, x: -35 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="intro-badge">
-              <ThunderboltOutlined />
-              <span>CỔNG QUẢN TRỊ THIẾU NHI THÁNH THỂ</span>
-            </div>
-
-            <h1>
-              Đồng hành cùng
-              <br />
-              <span>một thế hệ lớn lên</span>
-              <br />
-              trong đức tin.
-            </h1>
-
-            <p>
-              Quản lý lớp học, đoàn sinh, điểm danh và hoạt động giáo lý trên
-              một nền tảng đơn giản, hiện đại và an toàn.
-            </p>
-
-            <div className="intro-features">
-              <div className="intro-feature">
-                <span className="intro-feature__icon">
-                  <CheckCircleOutlined />
-                </span>
-                <div>
-                  <strong>Quản lý tập trung</strong>
-                  <small>Thông tin lớp học & đoàn sinh</small>
-                </div>
+          <header className="faith-login__header">
+            <div className="brand">
+              <div className="brand__logo">
+                <img src={LOGIN_LOGO} alt="Thiếu Nhi Thánh Thể" />
               </div>
-              <div className="intro-feature">
-                <span className="intro-feature__icon">
-                  <SafetyCertificateOutlined />
-                </span>
-                <div>
-                  <strong>An toàn & phân quyền</strong>
-                  <small>Bảo vệ dữ liệu theo từng vai trò</small>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-
-          <motion.section
-            className="login-card"
-            initial={{ opacity: 0, y: 30, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.75, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="login-card__top">
-              <div className="login-card__mini-logo">
-                <img src={LOGIN_LOGO} alt="" />
-              </div>
-              <div>
-                <span>CHÀO MỪNG TRỞ LẠI</span>
-                <h2>Đăng nhập</h2>
+              <div className="brand__text">
+                <strong>FaithEdu</strong>
+                <span>Nền tảng giáo lý số</span>
               </div>
             </div>
 
-            <p className="login-card__desc">
-              Đăng nhập để tiếp tục quản lý và đồng hành cùng các em thiếu nhi.
-            </p>
+            <div className="system-pill">
+              <span className="system-pill__dot" />
+              <span>Hệ thống đang hoạt động</span>
+            </div>
+          </header>
 
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              requiredMark={false}
-              size="large"
-              disabled={loading}
+          <main className="faith-login__content">
+            <motion.section
+              className="faith-login__intro"
+              initial={{ opacity: 0, x: -35 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <Form.Item
-                name="email"
-                label="Tài khoản"
-                rules={[
-                  {
-                    required: true,
-                    message: "Vui lòng nhập Email hoặc Số điện thoại!",
-                  },
-                ]}
-              >
-                <Input
-                  prefix={<UserOutlined />}
-                  placeholder="Email hoặc số điện thoại"
-                  className="faith-input"
-                  autoComplete="username"
-                  allowClear
-                />
-              </Form.Item>
+              <div className="intro-badge">
+                <ThunderboltOutlined />
+                <span>CỔNG QUẢN TRỊ THIẾU NHI THÁNH THỂ</span>
+              </div>
 
-              <Form.Item
-                name="password"
-                label="Mật khẩu"
-                rules={[
-                  {
-                    required: true,
-                    message: "Vui lòng nhập mật khẩu!",
-                  },
-                ]}
-              >
-                <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="Nhập mật khẩu của bạn"
-                  className="faith-input"
-                  autoComplete="current-password"
-                />
-              </Form.Item>
+              <h1>
+                Đồng hành cùng
+                <br />
+                <span>một thế hệ lớn lên</span>
+                <br />
+                trong đức tin.
+              </h1>
 
-              <div className="login-options">
-                <Form.Item name="remember" valuePropName="checked" noStyle>
-                  <Checkbox className="faith-checkbox">
-                    Ghi nhớ tài khoản
-                  </Checkbox>
+              <p>
+                Quản lý lớp học, đoàn sinh, điểm danh và hoạt động giáo lý trên
+                một nền tảng đơn giản, hiện đại và an toàn.
+              </p>
+
+              <div className="intro-features">
+                <div className="intro-feature">
+                  <span className="intro-feature__icon">
+                    <CheckCircleOutlined />
+                  </span>
+                  <div>
+                    <strong>Quản lý tập trung</strong>
+                    <small>Thông tin lớp học & đoàn sinh</small>
+                  </div>
+                </div>
+                <div className="intro-feature">
+                  <span className="intro-feature__icon">
+                    <SafetyCertificateOutlined />
+                  </span>
+                  <div>
+                    <strong>An toàn & phân quyền</strong>
+                    <small>Bảo vệ dữ liệu theo từng vai trò</small>
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            <motion.section
+              className="login-card"
+              initial={{ opacity: 0, y: 30, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.75,
+                delay: 0.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+            >
+              <div className="login-card__top">
+                <div className="login-card__mini-logo">
+                  <img src={LOGIN_LOGO} alt="" />
+                </div>
+                <div>
+                  <span>CHÀO MỪNG TRỞ LẠI</span>
+                  <h2>Đăng nhập</h2>
+                </div>
+              </div>
+
+              <p className="login-card__desc">
+                Đăng nhập để tiếp tục quản lý và đồng hành cùng các em thiếu
+                nhi.
+              </p>
+
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={onFinish}
+                requiredMark={false}
+                size="large"
+                disabled={loading}
+              >
+                <Form.Item
+                  name="email"
+                  label="Tài khoản"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng nhập Email hoặc Số điện thoại!",
+                    },
+                  ]}
+                >
+                  <Input
+                    prefix={<UserOutlined />}
+                    placeholder="Email hoặc số điện thoại"
+                    className="faith-input"
+                    autoComplete="username"
+                    allowClear
+                  />
                 </Form.Item>
 
-                <div className="login-links">
-                  <button
-                    type="button"
-                    className="forgot-link"
-                    onClick={() => setForgotPasswordOpen(true)}
-                  >
-                    Quên mật khẩu?
-                  </button>
+                <Form.Item
+                  name="password"
+                  label="Mật khẩu"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng nhập mật khẩu!",
+                    },
+                  ]}
+                >
+                  <Input.Password
+                    prefix={<LockOutlined />}
+                    placeholder="Nhập mật khẩu của bạn"
+                    className="faith-input"
+                    autoComplete="current-password"
+                  />
+                </Form.Item>
 
-                  <button
-                    type="button"
-                    className="register-link"
-                    onClick={() => navigate("/register")}
+                <div className="login-options">
+                  <Form.Item name="remember" valuePropName="checked" noStyle>
+                    <Checkbox className="faith-checkbox">
+                      Ghi nhớ tài khoản
+                    </Checkbox>
+                  </Form.Item>
+
+                  <div className="login-links">
+                    <button
+                      type="button"
+                      className="forgot-link"
+                      onClick={() => setForgotPasswordOpen(true)}
+                    >
+                      Quên mật khẩu?
+                    </button>
+
+                    <button
+                      type="button"
+                      className="register-link"
+                      onClick={() => navigate("/register")}
+                    >
+                      Tạo tài khoản mới
+                    </button>
+                  </div>
+                </div>
+                <Form.Item className="submit-wrap">
+                  <AppButton
+                    type="primary"
+                    htmlType="submit"
+                    block
+                    icon={<ArrowRightOutlined />}
+                    loading={loading}
                   >
-                    Tạo tài khoản mới
-                  </button>
+                    ĐĂNG NHẬP HỆ THỐNG
+                  </AppButton>
+                </Form.Item>
+              </Form>
+
+              <div className="login-card__trust">
+                <div>
+                  <SafetyCertificateOutlined />
+                  <span>Bảo mật</span>
+                </div>
+                <i />
+                <div>
+                  <CheckCircleOutlined />
+                  <span>Đồng bộ</span>
+                </div>
+                <i />
+                <div>
+                  <HeartFilled />
+                  <span>Phụng sự</span>
                 </div>
               </div>
-              <Form.Item className="submit-wrap">
-                <AppButton
-                  type="primary"
-                  htmlType="submit"
-                  block
-                  icon={<ArrowRightOutlined />}
-                  loading={loading}
-                >
-                  ĐĂNG NHẬP HỆ THỐNG
-                </AppButton>
-              </Form.Item>
-            </Form>
+            </motion.section>
+          </main>
 
-            <div className="login-card__trust">
-              <div>
-                <SafetyCertificateOutlined />
-                <span>Bảo mật</span>
-              </div>
-              <i />
-              <div>
-                <CheckCircleOutlined />
-                <span>Đồng bộ</span>
-              </div>
-              <i />
-              <div>
-                <HeartFilled />
-                <span>Phụng sự</span>
-              </div>
-            </div>
-          </motion.section>
-        </main>
-
-        <footer className="faith-login__footer">
-          <span>© 2026 FaithEdu</span>
-          <span>Quản trị Đoàn sinh & Huynh Trưởng</span>
-        </footer>
-      </div>
-      <ForgotPasswordModal
-        open={forgotPasswordOpen}
-        onClose={() => setForgotPasswordOpen(false)}
-      />
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+          <footer className="faith-login__footer">
+            <span>© 2026 FaithEdu</span>
+            <span>Quản trị Đoàn sinh & Huynh Trưởng</span>
+          </footer>
+        </div>
+        <ForgotPasswordModal
+          open={forgotPasswordOpen}
+          onClose={() => setForgotPasswordOpen(false)}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
       @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 
       * {
@@ -1775,8 +1787,9 @@ export default function Login() {
   }
 }
     `,
-        }}
-      />
-    </ConfigProvider>
+          }}
+        />
+      </ConfigProvider>
+    </>
   );
 }
