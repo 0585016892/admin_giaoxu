@@ -6,2794 +6,1754 @@ import {
   QrcodeOutlined,
   PlaySquareFilled,
   HeartFilled,
-  RocketFilled,
   PhoneFilled,
   MailFilled,
   FacebookFilled,
-  StarFilled,
-  ThunderboltFilled,
   MenuOutlined,
   CrownFilled,
   CheckOutlined,
-  GiftFilled,
-  FireFilled,
-  UpOutlined,
   SafetyCertificateFilled,
   TeamOutlined,
-  CloseOutlined,
+  ThunderboltFilled,
+  CalendarOutlined,
+  CloudOutlined,
+  BarChartOutlined,
+  ReadOutlined,
 } from "@ant-design/icons";
-
 import {
   Button,
-  Card,
   ConfigProvider,
   Grid,
   Space,
-  Tag,
   Typography,
   Modal,
   Divider,
   Drawer,
   Collapse,
-  Avatar,
 } from "antd";
-
 import { motion, AnimatePresence, useScroll, useSpring } from "motion/react";
-
 import logoWeb from "../../assets/images/logoweb.png";
 import dashboard from "../../assets/images/dashboard-mockup.png";
 import qrScanner from "../../assets/images/qr-scanner-ui.png";
 import gameUi from "../../assets/images/game-quiz-ui.png";
 import SEO from "../../components/SEO";
-const { Title, Paragraph, Text } = Typography;
+
+const { Title, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
-/* =========================================================
-   FAITHEDU BRAND COLORS
-========================================================= */
-
-const BRAND = {
-  navy: "#173B5E",
-  navyHover: "#244F78",
-  navyDark: "#102A43",
-
-  gold: "#D9A441",
-  goldDark: "#B8872D",
-  goldLight: "#FBF5E7",
-
-  background: "#F7F9FC",
-  white: "#FFFFFF",
-
-  textMain: "#173B5E",
-  textDark: "#102A43",
-  textMuted: "#64748B",
-  muted: "#94A3B8",
-
-  border: "#E2E8F0",
-  navyLight: "#EEF3F7",
-
-  success: "#2E7D5B",
-  successBg: "#EAF6F0",
-
-  warning: "#B7791F",
-  warningBg: "#FFF7E5",
-
-  danger: "#C0392B",
-  dangerBg: "#FDEDEC",
-
-  darkBg: "#102A43",
-
-  shadow: "rgba(23, 59, 94, 0.10)",
-  navyGlow: "rgba(23, 59, 94, 0.18)",
-  goldGlow: "rgba(217, 164, 65, 0.25)",
+const C = {
+  blue: "#2878B5",
+  cyan: "#43A6C6",
+  gold: "#F4B942",
+  ink: "#183A50",
+  muted: "#698294",
+  paper: "#F7FBFC",
+  line: "#DCEBF0",
+  paleBlue: "#E9F7FC",
+  paleGold: "#FFF5D8",
+  green: "#20977D",
 };
-
-/* =========================================================
-   SCROLL TO SECTION
-========================================================= */
-
-const scrollToSection = (id) => {
-  const element = document.getElementById(id);
-
-  if (!element) return;
-
-  const headerOffset = 90;
-
-  const elementPosition =
-    element.getBoundingClientRect().top + window.pageYOffset;
-
-  window.scrollTo({
-    top: elementPosition - headerOffset,
-    behavior: "smooth",
-  });
-};
-
-/* =========================================================
-   ANIMATION VARIANTS
-========================================================= */
-
-const fadeUpVariants = {
-  hidden: {
-    opacity: 0,
-    y: 35,
-  },
-
-  visible: (i = 0) => ({
+const shell = { width: "min(1180px, calc(100% - 44px))", margin: "0 auto" };
+const enter = {
+  hidden: { opacity: 0, y: 24 },
+  show: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.65,
-      delay: i * 0.1,
-      ease: [0.215, 0.61, 0.355, 1],
-    },
+    transition: { duration: 0.65, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
   }),
 };
+const jump = (id) =>
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-const pulseGlow = {
-  animate: {
-    scale: [1, 1.015, 1],
-
-    boxShadow: [
-      "0 10px 28px rgba(23, 59, 94, 0.18)",
-      "0 16px 38px rgba(23, 59, 94, 0.28)",
-      "0 10px 28px rgba(23, 59, 94, 0.18)",
-    ],
-
-    transition: {
-      duration: 2.5,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  },
-};
-
-const floatAnimation = (duration = 4, delay = 0) => ({
-  animate: {
-    y: [0, -10, 0],
-    rotate: [0, 1.5, 0],
-
-    transition: {
-      duration,
-      delay,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  },
-});
-
-/* =========================================================
-   COUNTDOWN TIMER
-========================================================= */
-
-const CountdownTimer = () => {
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 1,
-    minutes: 24,
-    seconds: 45,
-  });
-
+function PageLoader() {
+  const [visible, setVisible] = useState(true);
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return {
-            ...prev,
-            seconds: prev.seconds - 1,
-          };
-        }
-
-        if (prev.minutes > 0) {
-          return {
-            ...prev,
-            minutes: prev.minutes - 1,
-            seconds: 59,
-          };
-        }
-
-        if (prev.hours > 0) {
-          return {
-            hours: prev.hours - 1,
-            minutes: 59,
-            seconds: 59,
-          };
-        }
-
-        return prev;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
+    const timer = window.setTimeout(() => setVisible(false), 850);
+    return () => window.clearTimeout(timer);
   }, []);
-
-  const format = (number) => String(number).padStart(2, "0");
-
-  const items = [
-    {
-      val: format(timeLeft.hours),
-      label: "Giờ",
-    },
-    {
-      val: format(timeLeft.minutes),
-      label: "Phút",
-    },
-    {
-      val: format(timeLeft.seconds),
-      label: "Giây",
-    },
-  ];
-
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-      }}
-    >
-      {items.map((item, index) => (
-        <React.Fragment key={item.label}>
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10000,
+            display: "grid",
+            placeItems: "center",
+            background:
+              "linear-gradient(135deg,#EAF9FF 0%,#FFFFFF 52%,#FFF3D1 100%)",
+          }}
+        >
           <motion.div
-            key={item.val}
-            initial={{
-              scale: 0.85,
-              opacity: 0.5,
-            }}
-            animate={{
-              scale: 1,
-              opacity: 1,
-            }}
-            transition={{
-              duration: 0.2,
-            }}
-            style={{
-              background: "#0D2135",
-              color: BRAND.gold,
-              padding: "4px 9px",
-              borderRadius: 7,
-              fontWeight: 800,
-              fontSize: 12,
-              border: `1px solid rgba(217,164,65,0.3)`,
-              fontFamily: "monospace",
-            }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            style={{ textAlign: "center" }}
           >
-            {item.val}
-          </motion.div>
-
-          {index < 2 && (
-            <span
+            <div
               style={{
-                color: BRAND.gold,
-                fontWeight: 800,
+                width: 96,
+                height: 96,
+                margin: "0 auto 18px",
+                position: "relative",
+                display: "grid",
+                placeItems: "center",
               }}
             >
-              :
-            </span>
-          )}
-        </React.Fragment>
-      ))}
-    </div>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  border: `3px solid ${C.blue}25`,
+                  borderTopColor: C.gold,
+                  borderRightColor: C.cyan,
+                  borderRadius: "50%",
+                }}
+              />
+              <div
+                style={{
+                  width: 70,
+                  height: 70,
+                  position: "relative",
+                  zIndex: 1,
+                  borderRadius: 23,
+                  background: "#fff",
+                  boxShadow: "0 12px 30px #2878B51C",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <img
+                  src={logoWeb}
+                  alt="FaithEdu"
+                  style={{ width: 49, height: 49, objectFit: "contain" }}
+                />
+              </div>
+            </div>
+            <div
+              style={{
+                color: C.blue,
+                fontSize: 25,
+                fontWeight: 950,
+                letterSpacing: -0.8,
+              }}
+            >
+              FaithEdu
+            </div>
+            <div
+              style={{
+                color: C.muted,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: 2,
+                marginTop: 7,
+              }}
+            >
+              KHÔNG GIAN GIÁO LÝ SỐ
+            </div>
+            <div
+              style={{
+                width: 174,
+                height: 4,
+                background: "#2878B51A",
+                borderRadius: 10,
+                overflow: "hidden",
+                margin: "18px auto 0",
+              }}
+            >
+              <motion.div
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 0.75 }}
+                style={{
+                  height: "100%",
+                  background: `linear-gradient(90deg,${C.cyan},${C.gold})`,
+                  borderRadius: 10,
+                }}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
-};
+}
 
-/* =========================================================
-   MAIN COMPONENT
-========================================================= */
-
-const LandingPage = () => {
+export default function LandingPage() {
   const screens = useBreakpoint();
-  const isMobile = !screens.md;
-
-  const [videoOpen, setVideoOpen] = useState(false);
+  const mobile = !screens.md;
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("qr");
-
+  const [activeTab, setActiveTab] = useState("overview");
+  const [videoOpen, setVideoOpen] = useState(false);
   const { scrollYProgress } = useScroll();
-
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-  });
-
-  /* =======================================================
-     LOGIN
-  ======================================================= */
-
-  const handleLogin = () => {
+  const progress = useSpring(scrollYProgress, { stiffness: 100, damping: 28 });
+  const login = () => {
     window.location.href = "https://giaolyso.site";
   };
 
-  /* =======================================================
-     NAVIGATION
-  ======================================================= */
-
-  const navItems = [
+  const nav = [
+    { label: "Nền tảng", id: "platform" },
+    { label: "Tính năng", id: "features" },
+    { label: "Trải nghiệm", id: "showcase" },
+    { label: "Chi phí", id: "pricing" },
+    { label: "Hỏi đáp", id: "faq" },
+  ];
+  const featureTiles = [
     {
-      label: "Trang chủ",
-      id: "hero",
+      icon: <TeamOutlined />,
+      no: "01",
+      title: "Lớp học & thiếu nhi",
+      desc: "Thông tin lớp, hồ sơ thiếu nhi và dữ liệu gia đình được tổ chức tập trung.",
+      tone: "blue",
+      span: "large",
     },
     {
-      label: "Tính năng",
-      id: "features",
+      icon: <QrcodeOutlined />,
+      no: "02",
+      title: "Điểm danh QR",
+      desc: "Ghi nhận chuyên cần trong buổi học giáo lý hoặc Thánh lễ.",
+      tone: "gold",
     },
     {
-      label: "Gói 299k",
-      id: "pricing",
+      icon: <BarChartOutlined />,
+      no: "03",
+      title: "Báo cáo & sổ điểm",
+      desc: "Theo dõi kết quả và tình hình học tập rõ ràng hơn.",
+      tone: "mint",
     },
     {
-      label: "Đánh giá",
-      id: "reviews",
+      icon: <ReadOutlined />,
+      no: "04",
+      title: "Thư viện bài giảng",
+      desc: "Lưu trữ và trình chiếu tài liệu phục vụ giờ học.",
+      tone: "lavender",
     },
     {
-      label: "Hỏi đáp",
-      id: "faq",
+      icon: <PlaySquareFilled />,
+      no: "05",
+      title: "Trò chơi tương tác",
+      desc: "Làm mới giờ học bằng hoạt động và câu hỏi tương tác.",
+      tone: "peach",
+    },
+    {
+      icon: <SafetyCertificateFilled />,
+      no: "06",
+      title: "Văn bằng & chứng chỉ",
+      desc: "Cấu hình mẫu và xuất văn bằng, chứng chỉ theo nhu cầu.",
+      tone: "blue",
     },
   ];
-
-  /* =======================================================
-     FEATURES
-  ======================================================= */
-
-  const featureTabs = [
+  const screensList = [
     {
-      key: "qr",
-
-      icon: <QrcodeOutlined />,
-
-      title: "Điểm Danh QR Tốc Độ Cao",
-
-      desc: "Chỉ với 0.5 giây quét mã, hệ thống tự động lưu trữ chuyên cần, cập nhật sổ điểm danh trực tuyến và gửi báo cáo về cho Giáo lý viên.",
-
-      img: qrScanner,
-
-      tag: "CÔNG NGHỆ BỨT PHÁ",
-    },
-
-    {
-      key: "game",
-
-      icon: <PlaySquareFilled />,
-
-      title: "Minigame & Quiz Tương Tác",
-
-      desc: "Biến giờ học Kinh Bổn khô khan thành các trận thi đấu trắc nghiệm hấp dẫn. Tăng hứng thú của Thiếu Nhi khi đến lớp Giáo lý.",
-
-      img: gameUi,
-
-      tag: "HỌC MÀ CHƠI",
-    },
-
-    {
-      key: "dash",
-
-      icon: <BookFilled />,
-
-      title: "Quản Lý Lớp & Sổ Giáo Án",
-
-      desc: "Số hóa hoàn toàn sơ đồ lớp, hồ sơ Thiếu Nhi, bảng điểm thi học kỳ và sổ theo dõi tham dự Thánh Lễ dành riêng cho các Ngành.",
-
+      key: "overview",
+      label: "Tổng quan",
+      title: "Mọi thông tin, trong một tầm nhìn",
+      desc: "Theo dõi dữ liệu lớp học, thiếu nhi, giáo lý viên và kết quả trên cùng một nền tảng.",
       img: dashboard,
-
-      tag: "SỐ HÓA TOÀN DIỆN",
+      icon: <BookFilled />,
+    },
+    {
+      key: "attendance",
+      label: "Điểm danh QR",
+      title: "Điểm danh nhanh, bớt thao tác",
+      desc: "Hỗ trợ ghi nhận chuyên cần bằng mã QR và vẫn có thể điểm danh thủ công khi cần.",
+      img: qrScanner,
+      icon: <QrcodeOutlined />,
+    },
+    {
+      key: "learning",
+      label: "Học tập tương tác",
+      title: "Giờ giáo lý sinh động hơn",
+      desc: "Kết hợp câu hỏi và trò chơi để khuyến khích thiếu nhi tham gia tích cực.",
+      img: gameUi,
+      icon: <PlaySquareFilled />,
+    },
+  ];
+  const plans = [
+    {
+      id: "year",
+      name: "FAITHEDU 1 NĂM",
+      price: "599.000đ",
+      unit: "/ năm",
+      desc: "Dành cho giáo xứ muốn triển khai và sử dụng theo từng năm.",
+      icon: <CalendarOutlined />,
+      features: [
+        "Sử dụng hệ thống trong thời hạn 1 năm",
+        "Quản lý công việc giáo lý trên nền tảng",
+        "Phù hợp với kế hoạch ngân sách theo năm",
+      ],
+      style: "light",
+      cta: "Chọn gói 1 năm",
+    },
+    {
+      id: "forever",
+      name: "FAITHEDU VĨNH VIỄN",
+      price: "2.599.000đ",
+      unit: "thanh toán một lần",
+      desc: "Đăng ký một lần, sử dụng lâu dài, không giới hạn thời gian.",
+      icon: <CrownFilled />,
+      features: [
+        "Không giới hạn thời gian sử dụng",
+        "Thanh toán một lần duy nhất",
+        "Phù hợp với kế hoạch dài hạn",
+      ],
+      style: "featured",
+      cta: "Chọn gói vĩnh viễn",
     },
   ];
 
   return (
     <>
       <SEO
-        title="FaithEdu – Phần mềm quản lý giáo lý Công giáo"
-        description="Khám phá FaithEdu – Giáo Lý Số, giải pháp quản lý lớp giáo lý, học viên, giáo lý viên và điểm danh QR dành cho giáo xứ."
+        title="FaithEdu – Nền tảng quản lý giáo lý số"
+        description="FaithEdu hỗ trợ giáo xứ số hóa công tác quản lý lớp giáo lý, thiếu nhi, điểm danh và tài liệu giảng dạy."
         path="/intro"
         image="/thumbnail-seo.png"
-        imageAlt="FaithEdu – Số hóa giáo lý, kết nối đức tin"
+        imageAlt="FaithEdu – Nền tảng quản lý giáo lý số"
       />
       <ConfigProvider
         theme={{
           token: {
-            colorPrimary: BRAND.navy,
-            borderRadius: 10,
-            fontFamily: '"Be Vietnam Pro", "Inter", sans-serif',
-          },
-
-          components: {
-            Button: {
-              controlHeight: 42,
-              fontWeight: 700,
-            },
-
-            Card: {
-              borderRadiusLG: 18,
-            },
-
-            Collapse: {
-              headerBg: BRAND.white,
-              contentBg: BRAND.white,
-            },
+            colorPrimary: C.blue,
+            borderRadius: 16,
+            fontFamily: '"Be Vietnam Pro", Inter, sans-serif',
           },
         }}
       >
-        {/* =====================================================
-          SCROLL PROGRESS
-      ===================================================== */}
-
+        <PageLoader />
         <motion.div
           style={{
-            scaleX,
-
             position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-
+            inset: "0 auto auto 0",
             height: 3,
-
-            background: `
-            linear-gradient(
-              90deg,
-              ${BRAND.navy},
-              ${BRAND.gold}
-            )
-          `,
-
+            width: "100%",
+            scaleX: progress,
             transformOrigin: "0%",
-
+            background: `linear-gradient(90deg,${C.gold},${C.cyan},${C.blue})`,
             zIndex: 9999,
           }}
         />
-
-        {/* =====================================================
-          GLOBAL CONTAINER
-      ===================================================== */}
-
-        <div
-          style={{
-            minHeight: "100vh",
-            background: BRAND.background,
-            color: BRAND.textMain,
-            overflowX: "hidden",
-          }}
-        >
-          {/* ===================================================
-            TOP PROMOTION BAR
-        =================================================== */}
-
-          <div
-            style={{
-              background: BRAND.darkBg,
-              color: BRAND.white,
-
-              padding: "9px 16px",
-
-              textAlign: "center",
-
-              fontSize: 12,
-
-              fontWeight: 700,
-
-              display: "flex",
-
-              justifyContent: "center",
-
-              alignItems: "center",
-
-              gap: 14,
-
-              flexWrap: "wrap",
-
-              borderBottom: "1px solid rgba(217,164,65,0.2)",
-            }}
-          >
-            <motion.span
-              animate={{
-                scale: [1, 1.04, 1],
-              }}
-              transition={{
-                duration: 1.7,
-                repeat: Infinity,
-              }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                color: BRAND.gold,
-              }}
-            >
-              <FireFilled
-                style={{
-                  color: BRAND.gold,
-                }}
-              />
-              SIÊU ƯU ĐÃI KÍCH HOẠT VĨNH VIỄN 299K
-            </motion.span>
-
-            <CountdownTimer />
-
-            <motion.div
-              whileHover={{
-                scale: 1.04,
-              }}
-              whileTap={{
-                scale: 0.96,
-              }}
-            >
-              <Button
-                size="small"
-                onClick={() => scrollToSection("pricing")}
-                style={{
-                  background: BRAND.gold,
-                  color: BRAND.navyDark,
-                  border: 0,
-
-                  fontWeight: 800,
-
-                  borderRadius: 7,
-
-                  fontSize: 11,
-
-                  paddingInline: 15,
-
-                  boxShadow: "0 4px 14px rgba(217,164,65,0.22)",
-                }}
-              >
-                XEM ƯU ĐÃI
-              </Button>
-            </motion.div>
-          </div>
-
-          {/* ===================================================
-            HEADER
-        =================================================== */}
-
+        <style>{`
+          html { scroll-behavior: smooth; }
+          .fe-nav-link { color:${C.muted}; text-decoration:none; font-weight:750; font-size:13px; transition:color .2s; }
+          .fe-nav-link:hover { color:${C.blue}; }
+          .fe-section-label { display:inline-flex; align-items:center; gap:8px; border-radius:100px; padding:8px 13px; background:#E9F7FC; color:${C.blue}; font-size:11px; font-weight:900; letter-spacing:1px; }
+          .fe-tile { transition:transform .25s, box-shadow .25s; }
+          .fe-tile:hover { transform:translateY(-6px) rotate(-.3deg); box-shadow:0 20px 45px #1B597719 !important; }
+          .fe-tab { border:1px solid ${C.line}; border-radius:999px; padding:11px 17px; background:white; color:${C.ink}; font-weight:800; cursor:pointer; transition:all .2s; }
+          .fe-tab.active { background:${C.blue}; color:white; border-color:${C.blue}; box-shadow:0 8px 18px #2878B52A; }
+          .fe-plan-check { display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.6; }
+          @media(max-width:767px) { .fe-hide-mobile { display:none !important; } }
+          @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+        `}</style>
+        <main style={{ overflow: "hidden", background: C.paper, color: C.ink }}>
+          {/* NAVIGATION — floating pill rather than the old full-width bar */}
           <header
             style={{
               position: "sticky",
-              top: 0,
+              top: 12,
               zIndex: 1000,
-
-              background: "rgba(255,255,255,0.96)",
-
-              backdropFilter: "blur(14px)",
-
-              WebkitBackdropFilter: "blur(14px)",
-
-              borderBottom: `1px solid ${BRAND.border}`,
-
-              padding: "10px 0",
+              width: "min(1240px, calc(100% - 28px))",
+              margin: "12px auto -82px",
             }}
           >
             <div
               style={{
-                maxWidth: 1200,
-
-                margin: "auto",
-
-                paddingInline: isMobile ? 16 : 24,
-
                 display: "flex",
-
                 alignItems: "center",
-
                 justifyContent: "space-between",
+                gap: 14,
+                padding: "12px 15px 12px 19px",
+                border: "1px solid #FFFFFF",
+                borderRadius: 22,
+                background: "#FFFFFFE8",
+                backdropFilter: "blur(20px)",
+                boxShadow: "0 12px 45px #174B6610",
               }}
             >
-              {/* LOGO */}
-
-              <motion.div
-                whileHover={{
-                  scale: 1.02,
+              <a
+                href="#top"
+                onClick={(e) => {
+                  e.preventDefault();
+                  jump("top");
                 }}
-                whileTap={{
-                  scale: 0.98,
-                }}
-                onClick={() => scrollToSection("hero")}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
-                  cursor: "pointer",
-                }}
-              >
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-
-                    borderRadius: 10,
-
-                    background: BRAND.navyLight,
-
-                    display: "grid",
-
-                    placeItems: "center",
-
-                    border: `1px solid ${BRAND.border}`,
-                  }}
-                >
-                  <img
-                    src={logoWeb}
-                    alt="FaithEdu"
-                    style={{
-                      width: 31,
-                      height: 31,
-                      objectFit: "contain",
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <div
-                    style={{
-                      fontSize: 21,
-
-                      fontWeight: 900,
-
-                      color: BRAND.navy,
-
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    FaithEdu
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 8,
-
-                      fontWeight: 800,
-
-                      color: BRAND.textMuted,
-
-                      letterSpacing: 0.7,
-                    }}
-                  >
-                    SỐ HÓA GIÁO LÝ
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* DESKTOP NAV */}
-
-              {!isMobile && (
-                <Space size={28}>
-                  {navItems.map((item) => (
-                    <motion.a
-                      key={item.id}
-                      whileHover={{
-                        y: -1,
-                      }}
-                      onClick={() => scrollToSection(item.id)}
-                      style={{
-                        color: BRAND.textMuted,
-
-                        fontWeight: 700,
-
-                        fontSize: 14,
-
-                        cursor: "pointer",
-
-                        transition: "color 0.2s",
-                      }}
-                    >
-                      {item.label}
-                    </motion.a>
-                  ))}
-                </Space>
-              )}
-
-              {/* HEADER CTA */}
-
-              <Space size={8}>
-                <motion.div
-                  whileHover={{
-                    scale: 1.03,
-                  }}
-                  whileTap={{
-                    scale: 0.97,
-                  }}
-                >
-                  <Button
-                    type="primary"
-                    onClick={handleLogin}
-                    style={{
-                      background: BRAND.navy,
-
-                      border: `1px solid ${BRAND.navy}`,
-
-                      color: BRAND.white,
-
-                      fontWeight: 700,
-
-                      boxShadow: "0 6px 18px rgba(23,59,94,0.18)",
-
-                      height: 42,
-
-                      paddingInline: 22,
-
-                      borderRadius: 9,
-                    }}
-                  >
-                    Đăng Nhập
-                  </Button>
-                </motion.div>
-
-                {isMobile && (
-                  <Button
-                    type="text"
-                    icon={
-                      <MenuOutlined
-                        style={{
-                          fontSize: 21,
-                          color: BRAND.navy,
-                        }}
-                      />
-                    }
-                    onClick={() => setDrawerOpen(true)}
-                  />
-                )}
-              </Space>
-            </div>
-          </header>
-
-          {/* ===================================================
-            MOBILE DRAWER
-        =================================================== */}
-
-          <Drawer
-            open={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            width={290}
-            placement="right"
-            closeIcon={
-              <CloseOutlined
-                style={{
-                  color: BRAND.navy,
-                }}
-              />
-            }
-            styles={{
-              header: {
-                borderBottom: `1px solid ${BRAND.border}`,
-              },
-            }}
-          >
-            <div
-              style={{
-                padding: "4px 4px 20px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  marginBottom: 24,
+                  textDecoration: "none",
+                  minWidth: 155,
                 }}
               >
                 <img
                   src={logoWeb}
                   alt="FaithEdu"
-                  style={{
-                    width: 38,
-                    height: 38,
-                  }}
+                  style={{ width: 40, height: 40, objectFit: "contain" }}
                 />
-
-                <div>
-                  <div
-                    style={{
-                      fontSize: 20,
-                      fontWeight: 900,
-                      color: BRAND.navy,
-                    }}
-                  >
-                    FaithEdu
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: BRAND.textMuted,
-                    }}
-                  >
-                    SỐ HÓA GIÁO LÝ
-                  </div>
-                </div>
-              </div>
-
-              <Space
-                direction="vertical"
-                size={8}
-                style={{
-                  width: "100%",
-                }}
-              >
-                {navItems.map((item) => (
-                  <Button
-                    key={item.id}
-                    type="text"
-                    block
-                    style={{
-                      textAlign: "left",
-
-                      fontWeight: 700,
-
-                      height: 46,
-
-                      fontSize: 15,
-
-                      color: BRAND.textMain,
-
-                      borderRadius: 8,
-                    }}
-                    onClick={() => {
-                      setDrawerOpen(false);
-
-                      scrollToSection(item.id);
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-
-                <Divider />
-
-                <Button
-                  type="primary"
-                  block
-                  onClick={handleLogin}
+                <span
                   style={{
-                    height: 46,
-                    background: BRAND.navy,
-                    borderColor: BRAND.navy,
-                    fontWeight: 700,
+                    color: C.blue,
+                    fontSize: 21,
+                    fontWeight: 950,
+                    letterSpacing: -0.8,
                   }}
                 >
-                  Đăng Nhập
+                  FaithEdu
+                </span>
+              </a>
+              {!mobile && (
+                <nav style={{ display: "flex", alignItems: "center", gap: 25 }}>
+                  {nav.map((n) => (
+                    <a
+                      key={n.id}
+                      className="fe-nav-link"
+                      href={`#${n.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        jump(n.id);
+                      }}
+                    >
+                      {n.label}
+                    </a>
+                  ))}
+                </nav>
+              )}
+              <Space size={8}>
+                <Button
+                  onClick={login}
+                  type="primary"
+                  style={{
+                    height: 43,
+                    borderRadius: 14,
+                    fontWeight: 850,
+                    paddingInline: 19,
+                    boxShadow: "0 8px 20px #2878B529",
+                  }}
+                >
+                  Đăng nhập <ArrowRightOutlined />
                 </Button>
+                {mobile && (
+                  <Button
+                    aria-label="Mở menu"
+                    icon={<MenuOutlined />}
+                    onClick={() => setDrawerOpen(true)}
+                    style={{ height: 43, width: 43, borderRadius: 14 }}
+                  />
+                )}
               </Space>
             </div>
-          </Drawer>
-
-          {/* ===================================================
-            HERO
-        =================================================== */}
-
-          <section
-            id="hero"
-            style={{
-              position: "relative",
-
-              padding: isMobile ? "55px 0 75px" : "90px 0 115px",
-
-              background: `
-              radial-gradient(
-                circle at 82% 18%,
-                rgba(217,164,65,0.10),
-                transparent 27%
-              ),
-              ${BRAND.background}
-            `,
-
-              overflow: "hidden",
-            }}
+          </header>
+          <Drawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            placement="right"
+            title="Khám phá FaithEdu"
           >
-            {/* DECORATIVE CIRCLE */}
-
-            <motion.div
-              {...floatAnimation(7)}
-              style={{
-                position: "absolute",
-
-                top: "-10%",
-
-                right: "4%",
-
-                width: 340,
-
-                height: 340,
-
-                borderRadius: "50%",
-
-                background: "rgba(23,59,94,0.07)",
-
-                filter: "blur(55px)",
-
-                pointerEvents: "none",
-              }}
-            />
-
-            <div
-              style={{
-                maxWidth: 1200,
-
-                margin: "auto",
-
-                paddingInline: isMobile ? 16 : 24,
-
-                display: "grid",
-
-                gridTemplateColumns: isMobile ? "1fr" : "1.05fr 0.95fr",
-
-                gap: isMobile ? 55 : 50,
-
-                alignItems: "center",
-              }}
-            >
-              {/* HERO LEFT */}
-
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                custom={0}
-                variants={fadeUpVariants}
-              >
-                <motion.div
-                  whileHover={{
-                    scale: 1.02,
-                  }}
-                  style={{
-                    display: "inline-block",
+            <Space direction="vertical" size={12} style={{ width: "100%" }}>
+              {nav.map((n) => (
+                <Button
+                  block
+                  key={n.id}
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    jump(n.id);
                   }}
                 >
-                  <Tag
+                  {n.label}
+                </Button>
+              ))}
+              <Button block type="primary" onClick={login}>
+                Đăng nhập
+              </Button>
+            </Space>
+          </Drawer>
+
+          {/* HERO — editorial, asymmetrical, with floating app windows */}
+          <section
+            id="top"
+            style={{
+              padding: mobile ? "128px 0 68px" : "150px 0 100px",
+              position: "relative",
+              background:
+                "linear-gradient(125deg,#F7FCFE 0%,#EAF8FD 48%,#FFF5D9 100%)",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                right: "-7%",
+                top: "12%",
+                width: mobile ? 230 : 500,
+                height: mobile ? 230 : 500,
+                borderRadius: "50%",
+                background: "#F4B94230",
+                filter: "blur(1px)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                left: "-110px",
+                bottom: "-110px",
+                width: 300,
+                height: 300,
+                borderRadius: "50%",
+                border: "1px solid #43A6C650",
+              }}
+            />
+            <div
+              style={{
+                ...shell,
+                display: "grid",
+                gridTemplateColumns: mobile ? "1fr" : "0.9fr 1.1fr",
+                alignItems: "center",
+                gap: mobile ? 45 : 50,
+                position: "relative",
+              }}
+            >
+              <motion.div initial="hidden" animate="show" variants={enter}>
+                <div className="fe-section-label">
+                  <span
                     style={{
-                      background: BRAND.navyLight,
-
-                      color: BRAND.navy,
-
-                      border: `1px solid ${BRAND.border}`,
-
-                      padding: "7px 15px",
-
-                      borderRadius: 7,
-
-                      fontWeight: 800,
-
-                      fontSize: 11,
-
-                      marginBottom: 18,
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: C.gold,
                     }}
-                  >
-                    <CrownFilled
-                      style={{
-                        color: BRAND.gold,
-
-                        marginRight: 7,
-                      }}
-                    />
-                    NỀN TẢNG QUẢN LÝ GIÁO LÝ THẾ HỆ MỚI
-                  </Tag>
-                </motion.div>
-
+                  />{" "}
+                  NỀN TẢNG GIÁO LÝ SỐ
+                </div>
                 <Title
                   level={1}
                   style={{
-                    fontSize: isMobile ? 36 : 56,
-
-                    fontWeight: 900,
-
-                    lineHeight: 1.1,
-
-                    letterSpacing: -1.5,
-
-                    margin: "8px 0 22px",
-
-                    color: BRAND.textMain,
+                    color: C.ink,
+                    fontSize: mobile ? 43 : 66,
+                    lineHeight: 1.02,
+                    letterSpacing: -2.8,
+                    fontWeight: 950,
+                    margin: "24px 0 20px",
                   }}
                 >
-                  Dạy Giáo Lý Hiện Đại.
+                  Việc quản lý
                   <br />
-                  <span
-                    style={{
-                      color: BRAND.goldDark,
-                    }}
-                  >
-                    Sở Hữu Vĩnh Viễn 299K.
+                  gọn hơn.
+                  <br />
+                  <span style={{ color: C.blue, position: "relative" }}>
+                    Giờ giáo lý
                   </span>
+                  <br />
+                  <span style={{ color: "#D69A12" }}>trọn vẹn hơn.</span>
                 </Title>
-
                 <Paragraph
                   style={{
+                    maxWidth: 490,
+                    color: C.muted,
                     fontSize: 16,
-
-                    color: BRAND.textMuted,
-
-                    lineHeight: 1.8,
-
-                    maxWidth: 550,
-
-                    marginBottom: 0,
+                    lineHeight: 1.9,
                   }}
                 >
-                  Số hóa toàn diện công tác quản lý Xứ Đoàn: Điểm danh QR siêu
-                  tốc, Trò chơi tương tác Kinh Bổn, Sổ liên lạc điện tử và Báo
-                  cáo tự động chỉ trên một nền tảng duy nhất.
+                  Một không gian số giúp giáo xứ tổ chức lớp học, quản lý thiếu
+                  nhi, điểm danh và tài liệu giảng dạy — để dành nhiều tâm huyết
+                  hơn cho hành trình đức tin.
                 </Paragraph>
-
-                {/* HERO ACTIONS */}
-
-                <Space
-                  wrap
-                  size={14}
-                  style={{
-                    marginTop: 26,
-                  }}
-                >
-                  <motion.div {...pulseGlow}>
-                    <Button
-                      type="primary"
-                      size="large"
-                      onClick={() => scrollToSection("pricing")}
-                      icon={<RocketFilled />}
-                      style={{
-                        height: 54,
-
-                        paddingInline: 30,
-
-                        borderRadius: 9,
-
-                        fontWeight: 800,
-
-                        fontSize: 15,
-
-                        background: BRAND.navy,
-
-                        border: `1px solid ${BRAND.navy}`,
-                      }}
-                    >
-                      MUA NGAY · 299K
-                    </Button>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{
-                      scale: 1.03,
-                    }}
-                    whileTap={{
-                      scale: 0.97,
+                <Space wrap size={12} style={{ marginTop: 14 }}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={() => jump("pricing")}
+                    style={{
+                      height: 54,
+                      borderRadius: 16,
+                      paddingInline: 24,
+                      fontWeight: 900,
                     }}
                   >
-                    <Button
-                      size="large"
-                      onClick={() => setVideoOpen(true)}
-                      icon={
-                        <PlayCircleFilled
-                          style={{
-                            color: BRAND.navy,
-                            fontSize: 20,
-                          }}
-                        />
-                      }
-                      style={{
-                        height: 54,
-
-                        paddingInline: 25,
-
-                        borderRadius: 9,
-
-                        fontWeight: 700,
-
-                        border: `1px solid ${BRAND.border}`,
-
-                        background: BRAND.white,
-
-                        color: BRAND.navy,
-                      }}
-                    >
-                      Xem Demo
-                    </Button>
-                  </motion.div>
+                    Khám phá các gói <ArrowRightOutlined />
+                  </Button>
+                  <Button
+                    size="large"
+                    onClick={() => setVideoOpen(true)}
+                    icon={<PlayCircleFilled />}
+                    style={{
+                      height: 54,
+                      borderRadius: 16,
+                      paddingInline: 20,
+                      fontWeight: 800,
+                      background: "#FFFFFFB8",
+                      borderColor: "#D6E8EF",
+                    }}
+                  >
+                    Xem giới thiệu
+                  </Button>
                 </Space>
-
-                {/* SOCIAL PROOF */}
-
                 <div
                   style={{
-                    marginTop: 34,
-
                     display: "flex",
-
-                    alignItems: "center",
-
-                    gap: 14,
+                    flexWrap: "wrap",
+                    gap: 15,
+                    marginTop: 28,
+                    color: C.muted,
+                    fontSize: 12,
+                    fontWeight: 800,
                   }}
                 >
-                  <Avatar.Group
-                    max={{
-                      count: 4,
-                    }}
-                  >
-                    <Avatar src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-                    <Avatar src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka" />
-                    <Avatar src="https://api.dicebear.com/7.x/avataaars/svg?seed=John" />
-                    <Avatar src="https://api.dicebear.com/7.x/avataaars/svg?seed=Maria" />
-                  </Avatar.Group>
-
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-
-                        gap: 2,
-
-                        color: BRAND.gold,
-
-                        fontSize: 12,
-                      }}
-                    >
-                      {[...Array(5)].map((_, i) => (
-                        <StarFilled key={i} />
-                      ))}
-                    </div>
-
-                    <Text
-                      style={{
-                        fontSize: 12,
-
-                        fontWeight: 600,
-
-                        color: BRAND.textMuted,
-                      }}
-                    >
-                      Được tin dùng bởi{" "}
-                      <strong
-                        style={{
-                          color: BRAND.navy,
-                        }}
-                      >
-                        50+ Giáo Xứ & 1,200+ GLV
-                      </strong>
-                    </Text>
-                  </div>
+                  <span>
+                    <CheckOutlined style={{ color: C.green, marginRight: 6 }} />
+                    Dữ liệu tập trung
+                  </span>
+                  <span>
+                    <CheckOutlined style={{ color: C.green, marginRight: 6 }} />
+                    Điểm danh thuận tiện
+                  </span>
+                  <span>
+                    <CheckOutlined style={{ color: C.green, marginRight: 6 }} />
+                    Giao diện trực quan
+                  </span>
                 </div>
               </motion.div>
-
-              {/* HERO RIGHT */}
-
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  scale: 0.94,
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                }}
-                transition={{
-                  duration: 0.75,
-                }}
+              <div
                 style={{
                   position: "relative",
+                  minWidth: 0,
+                  padding: mobile ? "0 4px 38px" : "10px 0 30px 18px",
                 }}
               >
                 <motion.div
-                  whileHover={{
-                    y: -5,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 200,
-                  }}
+                  initial={{ opacity: 0, scale: 0.94, rotate: 2 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.8, delay: 0.1 }}
                   style={{
-                    padding: 10,
-
-                    borderRadius: 18,
-
-                    background: BRAND.white,
-
-                    boxShadow: "0 24px 60px rgba(23,59,94,0.14)",
-
-                    border: `1px solid ${BRAND.border}`,
+                    background: "#fff",
+                    padding: mobile ? 7 : 12,
+                    borderRadius: mobile ? 22 : 30,
+                    border: "1px solid #FFFFFF",
+                    boxShadow: "0 30px 75px #245E741E",
+                    transform: "rotate(-1deg)",
                   }}
                 >
                   <img
                     src={dashboard}
-                    alt="FaithEdu Dashboard"
+                    alt="Giao diện tổng quan FaithEdu"
                     style={{
                       width: "100%",
-
-                      borderRadius: 12,
-
                       display: "block",
+                      borderRadius: mobile ? 16 : 22,
                     }}
                   />
                 </motion.div>
-
-                {/* BADGE 1 */}
-
                 <motion.div
-                  {...floatAnimation(4)}
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{
+                    duration: 4.2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                   style={{
                     position: "absolute",
-
-                    top: -18,
-
-                    left: isMobile ? -5 : -25,
-
-                    background: BRAND.white,
-
-                    padding: "11px 16px",
-
-                    borderRadius: 10,
-
-                    boxShadow: "0 12px 30px rgba(23,59,94,0.12)",
-
-                    border: `1px solid ${BRAND.border}`,
-
+                    left: mobile ? 0 : -16,
+                    top: mobile ? -20 : 8,
                     display: "flex",
-
-                    alignItems: "center",
-
                     gap: 10,
+                    alignItems: "center",
+                    padding: "12px 15px",
+                    borderRadius: 18,
+                    background: "#fff",
+                    boxShadow: "0 15px 38px #174B6618",
+                    border: "1px solid #FFFFFF",
                   }}
                 >
-                  <div
+                  <span
                     style={{
-                      width: 36,
-
-                      height: 36,
-
-                      borderRadius: 9,
-
-                      background: BRAND.goldLight,
-
+                      width: 39,
+                      height: 39,
+                      borderRadius: 13,
+                      background: C.paleGold,
                       display: "grid",
-
                       placeItems: "center",
-
-                      color: BRAND.goldDark,
-
-                      fontSize: 17,
+                      color: "#D69A12",
+                      fontSize: 19,
                     }}
                   >
-                    <ThunderboltFilled />
-                  </div>
-
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 11,
-
-                        fontWeight: 800,
-
-                        color: BRAND.textMain,
-                      }}
-                    >
-                      Điểm Danh 0.5s
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 9,
-
-                        color: BRAND.success,
-
-                        fontWeight: 700,
-                      }}
-                    >
-                      Tự động 100%
-                    </div>
-                  </div>
+                    <QrcodeOutlined />
+                  </span>
+                  <span>
+                    <b style={{ display: "block", color: C.ink, fontSize: 12 }}>
+                      Điểm danh QR
+                    </b>
+                    <small style={{ color: C.muted }}>
+                      Nhanh và thuận tiện
+                    </small>
+                  </span>
                 </motion.div>
-
-                {/* BADGE 2 */}
-
                 <motion.div
-                  {...floatAnimation(5, 1)}
+                  animate={{ y: [0, 8, 0], rotate: [1, 0, 1] }}
+                  transition={{
+                    duration: 4.8,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                   style={{
                     position: "absolute",
-
-                    bottom: -18,
-
-                    right: isMobile ? -5 : -18,
-
-                    background: BRAND.navy,
-
-                    color: BRAND.white,
-
-                    padding: "11px 16px",
-
-                    borderRadius: 10,
-
-                    boxShadow: "0 12px 30px rgba(23,59,94,0.24)",
-
+                    right: mobile ? 0 : -18,
+                    bottom: 0,
                     display: "flex",
-
-                    alignItems: "center",
-
                     gap: 10,
+                    alignItems: "center",
+                    padding: "12px 15px",
+                    borderRadius: 18,
+                    background: C.blue,
+                    color: "#fff",
+                    boxShadow: "0 15px 38px #174B6630",
                   }}
                 >
-                  <div
+                  <span
                     style={{
-                      width: 36,
-
-                      height: 36,
-
-                      borderRadius: 9,
-
-                      background: "rgba(217,164,65,0.15)",
-
+                      width: 39,
+                      height: 39,
+                      borderRadius: 13,
+                      background: "#FFFFFF22",
                       display: "grid",
-
                       placeItems: "center",
-
-                      color: BRAND.gold,
-
-                      fontSize: 17,
+                      color: C.gold,
+                      fontSize: 19,
                     }}
                   >
-                    <CrownFilled />
-                  </div>
-
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 11,
-
-                        fontWeight: 800,
-
-                        color: BRAND.gold,
-                      }}
-                    >
-                      Gói Vĩnh Viễn
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 9,
-
-                        color: BRAND.white,
-
-                        fontWeight: 600,
-                      }}
-                    >
-                      Chỉ 299k trọn đời
-                    </div>
-                  </div>
+                    <CloudOutlined />
+                  </span>
+                  <span>
+                    <b style={{ display: "block", fontSize: 12 }}>FaithEdu</b>
+                    <small style={{ color: "#D8F1F8" }}>
+                      Một không gian quản lý
+                    </small>
+                  </span>
                 </motion.div>
-              </motion.div>
+              </div>
             </div>
           </section>
 
-          {/* ===================================================
-            FEATURES
-        =================================================== */}
-
+          {/* SHORT VALUE STRIP */}
           <section
-            id="features"
-            style={{
-              padding: isMobile ? "65px 0" : "105px 0",
-
-              background: BRAND.white,
-            }}
+            aria-label="Lợi ích nổi bật"
+            style={{ background: C.blue, color: "#fff", padding: "20px 0" }}
           >
             <div
               style={{
-                maxWidth: 1200,
-
-                margin: "auto",
-
-                paddingInline: isMobile ? 16 : 24,
+                ...shell,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 15,
               }}
             >
+              {[
+                [<CloudOutlined />, "Quản lý tập trung"],
+                [<QrcodeOutlined />, "Điểm danh thuận tiện"],
+                [<BookFilled />, "Tài liệu giảng dạy"],
+                [<ThunderboltFilled />, "Tương tác sinh động"],
+              ].map(([icon, label]) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    fontSize: 12,
+                    fontWeight: 850,
+                  }}
+                >
+                  <span style={{ color: C.gold, fontSize: 19 }}>{icon}</span>
+                  {label}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* FEATURE MOSAIC — not the previous uniform grid */}
+          <section
+            id="features"
+            style={{
+              padding: mobile ? "72px 0" : "110px 0",
+              background: "#fff",
+            }}
+          >
+            <div style={shell}>
               <motion.div
                 initial="hidden"
-                whileInView="visible"
-                viewport={{
-                  once: true,
-                }}
-                custom={0}
-                variants={fadeUpVariants}
-                style={{
-                  textAlign: "center",
-
-                  maxWidth: 750,
-
-                  margin: "0 auto 45px",
-                }}
-              >
-                <Tag
-                  style={{
-                    background: BRAND.navyLight,
-
-                    color: BRAND.navy,
-
-                    border: `1px solid ${BRAND.border}`,
-
-                    fontWeight: 800,
-
-                    padding: "7px 17px",
-
-                    borderRadius: 7,
-                  }}
-                >
-                  <StarFilled
-                    style={{
-                      color: BRAND.gold,
-
-                      marginRight: 6,
-                    }}
-                  />
-                  BỘ CÔNG CỤ ĐỘC BẢN
-                </Tag>
-
-                <Title
-                  level={2}
-                  style={{
-                    fontSize: isMobile ? 29 : 42,
-
-                    fontWeight: 900,
-
-                    marginTop: 14,
-
-                    color: BRAND.navy,
-                  }}
-                >
-                  Trải nghiệm giảng dạy{" "}
-                  <span
-                    style={{
-                      color: BRAND.goldDark,
-                    }}
-                  >
-                    hoàn toàn mới
-                  </span>
-                </Title>
-
-                <Paragraph
-                  style={{
-                    color: BRAND.textMuted,
-
-                    fontSize: 15,
-
-                    marginBottom: 0,
-                  }}
-                >
-                  Loại bỏ hoàn toàn sổ sách thủ công. Tận hưởng sự tiện lợi và
-                  sinh động trong công tác Giáo lý.
-                </Paragraph>
-              </motion.div>
-
-              {/* FEATURE TABS */}
-
-              <div
+                whileInView="show"
+                viewport={{ once: true }}
+                variants={enter}
                 style={{
                   display: "flex",
-
-                  justifyContent: "center",
-
-                  gap: 10,
-
-                  flexWrap: "wrap",
-
-                  marginBottom: 35,
+                  flexDirection: mobile ? "column" : "row",
+                  alignItems: mobile ? "flex-start" : "end",
+                  justifyContent: "space-between",
+                  gap: 22,
+                  marginBottom: 34,
                 }}
               >
-                {featureTabs.map((tab) => {
-                  const isActive = activeTab === tab.key;
-
+                <div style={{ maxWidth: 670 }}>
+                  <div className="fe-section-label">
+                    MỘT NỀN TẢNG · NHIỀU TIỆN ÍCH
+                  </div>
+                  <Title
+                    level={2}
+                    style={{
+                      color: C.ink,
+                      fontWeight: 950,
+                      letterSpacing: -1.5,
+                      fontSize: mobile ? 34 : 49,
+                      lineHeight: 1.08,
+                      margin: "18px 0 0",
+                    }}
+                  >
+                    Ít việc vụn vặt hơn.
+                    <br />
+                    <span style={{ color: C.blue }}>
+                      Thêm thời gian đồng hành.
+                    </span>
+                  </Title>
+                </div>
+                <Paragraph
+                  style={{
+                    maxWidth: 390,
+                    color: C.muted,
+                    lineHeight: 1.9,
+                    marginBottom: 4,
+                  }}
+                >
+                  Các công cụ được gom vào cùng một nơi, giúp công tác giáo lý
+                  được tổ chức rõ ràng và thuận tiện hơn.
+                </Paragraph>
+              </motion.div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: mobile ? "1fr" : "repeat(6, 1fr)",
+                  gap: 15,
+                }}
+              >
+                {featureTiles.map((f, i) => {
+                  const backgrounds = {
+                    blue: "#EAF7FC",
+                    gold: "#FFF5D8",
+                    mint: "#E7F8F1",
+                    lavender: "#F0EDFF",
+                    peach: "#FFF0E8",
+                  };
+                  const iconColors = {
+                    blue: C.blue,
+                    gold: "#D39A13",
+                    mint: "#21866F",
+                    lavender: "#7968D5",
+                    peach: "#D47C48",
+                  };
                   return (
                     <motion.div
-                      key={tab.key}
-                      whileHover={{
-                        y: -2,
-                      }}
-                      whileTap={{
-                        scale: 0.98,
+                      key={f.no}
+                      custom={i}
+                      initial="hidden"
+                      whileInView="show"
+                      viewport={{ once: true }}
+                      variants={enter}
+                      className="fe-tile"
+                      style={{
+                        gridColumn:
+                          !mobile && f.span === "large"
+                            ? "span 4"
+                            : !mobile
+                              ? "span 2"
+                              : "auto",
+                        minHeight: mobile ? 205 : i === 0 ? 250 : 220,
+                        padding: mobile ? 23 : 28,
+                        borderRadius: 26,
+                        background: backgrounds[f.tone],
+                        boxShadow: "0 8px 30px #174B6608",
+                        border: "1px solid #FFFFFF",
+                        position: "relative",
+                        overflow: "hidden",
                       }}
                     >
-                      <Button
-                        size="large"
-                        onClick={() => setActiveTab(tab.key)}
-                        icon={tab.icon}
+                      <div
                         style={{
-                          height: 48,
-
-                          borderRadius: 9,
-
-                          fontWeight: 700,
-
-                          fontSize: 13,
-
-                          border: isActive
-                            ? `1px solid ${BRAND.navy}`
-                            : `1px solid ${BRAND.border}`,
-
-                          background: isActive ? BRAND.navy : BRAND.white,
-
-                          color: isActive ? BRAND.white : BRAND.textMain,
-
-                          boxShadow: isActive
-                            ? "0 7px 18px rgba(23,59,94,0.16)"
-                            : "none",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          position: "relative",
+                          zIndex: 1,
                         }}
                       >
-                        {tab.title}
-                      </Button>
+                        <div
+                          style={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: 17,
+                            background: "#FFFFFFC9",
+                            display: "grid",
+                            placeItems: "center",
+                            color: iconColors[f.tone],
+                            fontSize: 23,
+                            boxShadow: "0 7px 20px #174B6609",
+                          }}
+                        >
+                          {f.icon}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 900,
+                            letterSpacing: 1.5,
+                            color: `${iconColors[f.tone]}9C`,
+                          }}
+                        >
+                          {f.no}
+                        </span>
+                      </div>
+                      <Title
+                        level={4}
+                        style={{
+                          position: "relative",
+                          zIndex: 1,
+                          color: C.ink,
+                          fontWeight: 900,
+                          fontSize: 20,
+                          margin: "25px 0 9px",
+                        }}
+                      >
+                        {f.title}
+                      </Title>
+                      <Paragraph
+                        style={{
+                          position: "relative",
+                          zIndex: 1,
+                          maxWidth: 390,
+                          color: C.muted,
+                          lineHeight: 1.75,
+                          margin: 0,
+                        }}
+                      >
+                        {f.desc}
+                      </Paragraph>
+                      <div
+                        style={{
+                          position: "absolute",
+                          right: -28,
+                          bottom: -48,
+                          width: 145,
+                          height: 145,
+                          borderRadius: "50%",
+                          border: `1px solid ${iconColors[f.tone]}22`,
+                        }}
+                      />
                     </motion.div>
                   );
                 })}
               </div>
-
-              {/* FEATURE CONTENT */}
-
-              <AnimatePresence mode="wait">
-                {featureTabs.map(
-                  (tab) =>
-                    tab.key === activeTab && (
-                      <motion.div
-                        key={tab.key}
-                        initial={{
-                          opacity: 0,
-                          y: 20,
-                        }}
-                        animate={{
-                          opacity: 1,
-                          y: 0,
-                        }}
-                        exit={{
-                          opacity: 0,
-                          y: -20,
-                        }}
-                        transition={{
-                          duration: 0.35,
-                        }}
-                        style={{
-                          background: BRAND.background,
-
-                          borderRadius: 18,
-
-                          padding: isMobile ? 22 : 45,
-
-                          border: `1px solid ${BRAND.border}`,
-
-                          display: "grid",
-
-                          gridTemplateColumns: isMobile ? "1fr" : "1fr 1.15fr",
-
-                          gap: 38,
-
-                          alignItems: "center",
-                        }}
-                      >
-                        <div>
-                          <Tag
-                            style={{
-                              background: BRAND.goldLight,
-
-                              color: BRAND.goldDark,
-
-                              border: "1px solid rgba(217,164,65,0.28)",
-
-                              fontWeight: 800,
-
-                              borderRadius: 6,
-
-                              padding: "4px 10px",
-
-                              marginBottom: 10,
-                            }}
-                          >
-                            {tab.tag}
-                          </Tag>
-
-                          <Title
-                            level={3}
-                            style={{
-                              fontWeight: 900,
-
-                              fontSize: isMobile ? 23 : 31,
-
-                              color: BRAND.navy,
-
-                              margin: "6px 0 0",
-                            }}
-                          >
-                            {tab.title}
-                          </Title>
-
-                          <Paragraph
-                            style={{
-                              fontSize: 15,
-
-                              color: BRAND.textMuted,
-
-                              lineHeight: 1.8,
-
-                              margin: "15px 0 22px",
-                            }}
-                          >
-                            {tab.desc}
-                          </Paragraph>
-
-                          <motion.div
-                            whileHover={{
-                              x: 4,
-                            }}
-                          >
-                            <Button
-                              type="primary"
-                              onClick={() => scrollToSection("pricing")}
-                              style={{
-                                background: BRAND.navy,
-
-                                borderColor: BRAND.navy,
-
-                                borderRadius: 8,
-
-                                fontWeight: 700,
-
-                                height: 44,
-
-                                paddingInline: 20,
-                              }}
-                            >
-                              Kích hoạt ngay
-                              <ArrowRightOutlined
-                                style={{
-                                  marginLeft: 7,
-                                }}
-                              />
-                            </Button>
-                          </motion.div>
-                        </div>
-
-                        <div
-                          style={{
-                            textAlign: "center",
-                          }}
-                        >
-                          <motion.img
-                            whileHover={{
-                              scale: 1.015,
-                            }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 200,
-                            }}
-                            src={tab.img}
-                            alt={tab.title}
-                            style={{
-                              maxWidth: "100%",
-
-                              maxHeight: 400,
-
-                              borderRadius: 12,
-
-                              boxShadow: "0 18px 45px rgba(23,59,94,0.12)",
-
-                              objectFit: "contain",
-                            }}
-                          />
-                        </div>
-                      </motion.div>
-                    ),
-                )}
-              </AnimatePresence>
             </div>
           </section>
 
-          {/* ===================================================
-            PRICING
-        =================================================== */}
-
+          {/* PLATFORM SECTION — editorial split + selectable feature screens */}
           <section
-            id="pricing"
+            id="platform"
             style={{
-              padding: isMobile ? "70px 0" : "110px 0",
-
-              background: BRAND.background,
-
-              position: "relative",
+              padding: mobile ? "68px 0 78px" : "100px 0",
+              background:
+                "linear-gradient(135deg,#F0FAFD 0%,#F9FCFD 60%,#FFF7E4 100%)",
             }}
           >
-            <div
-              style={{
-                maxWidth: 1200,
-
-                margin: "auto",
-
-                paddingInline: isMobile ? 16 : 24,
-              }}
-            >
-              <motion.div
-                initial="hidden"
-                whileInView="visible"
-                viewport={{
-                  once: true,
-                }}
-                custom={0}
-                variants={fadeUpVariants}
-                style={{
-                  textAlign: "center",
-
-                  maxWidth: 750,
-
-                  margin: "0 auto 45px",
-                }}
-              >
-                <Tag
-                  style={{
-                    background: BRAND.navy,
-
-                    color: BRAND.gold,
-
-                    border: 0,
-
-                    fontWeight: 800,
-
-                    padding: "7px 17px",
-
-                    borderRadius: 7,
-                  }}
-                >
-                  GÓI KÍCH HOẠT ƯU ĐÃI
-                </Tag>
-
-                <Title
-                  level={2}
-                  style={{
-                    fontSize: isMobile ? 31 : 44,
-
-                    fontWeight: 900,
-
-                    marginTop: 13,
-
-                    color: BRAND.navy,
-                  }}
-                >
-                  Đầu tư 1 lần ·{" "}
-                  <span
-                    style={{
-                      color: BRAND.goldDark,
-                    }}
-                  >
-                    Sử dụng Vĩnh Viễn
-                  </span>
-                </Title>
-
-                <Paragraph
-                  style={{
-                    color: BRAND.textMuted,
-
-                    fontSize: 15,
-                  }}
-                >
-                  Không tốn phí gia hạn hàng năm. Đầy đủ quyền lợi nâng cấp tính
-                  năng mới trọn đời.
-                </Paragraph>
-              </motion.div>
-
-              {/* PRICING CARD */}
-
-              <motion.div
-                initial="hidden"
-                whileInView="visible"
-                viewport={{
-                  once: true,
-                }}
-                custom={1}
-                variants={fadeUpVariants}
-                style={{
-                  maxWidth: 650,
-
-                  margin: "auto",
-                }}
-              >
-                <Card
-                  bordered={false}
-                  style={{
-                    borderRadius: 18,
-
-                    background: BRAND.white,
-
-                    boxShadow: "0 25px 65px rgba(23,59,94,0.12)",
-
-                    border: `2px solid ${BRAND.gold}`,
-
-                    position: "relative",
-
-                    overflow: "hidden",
-
-                    padding: isMobile ? 8 : 18,
-                  }}
-                >
-                  {/* BEST SELLER */}
-
-                  <div
-                    style={{
-                      position: "absolute",
-
-                      top: 24,
-
-                      right: -43,
-
-                      background: BRAND.gold,
-
-                      color: BRAND.navyDark,
-
-                      padding: "7px 45px",
-
-                      transform: "rotate(45deg)",
-
-                      fontWeight: 900,
-
-                      fontSize: 10,
-
-                      letterSpacing: 0.7,
-                    }}
-                  >
-                    BEST SELLER
-                  </div>
-
-                  <div
-                    style={{
-                      textAlign: "center",
-
-                      paddingTop: 8,
-                    }}
-                  >
-                    <Tag
-                      icon={
-                        <CrownFilled
-                          style={{
-                            color: BRAND.gold,
-                          }}
-                        />
-                      }
-                      style={{
-                        padding: "5px 16px",
-
-                        borderRadius: 7,
-
-                        background: BRAND.navyLight,
-
-                        color: BRAND.navy,
-
-                        fontWeight: 800,
-
-                        fontSize: 12,
-
-                        border: `1px solid ${BRAND.border}`,
-                      }}
-                    >
-                      GÓI KÍCH HOẠT VĨNH VIỄN
-                    </Tag>
-
-                    <div
-                      style={{
-                        marginTop: 22,
-                      }}
-                    >
-                      <Text
-                        delete
-                        style={{
-                          color: BRAND.muted,
-
-                          fontSize: 18,
-
-                          fontWeight: 700,
-                        }}
-                      >
-                        999.000 VNĐ
-                      </Text>
-
-                      <div
-                        style={{
-                          display: "flex",
-
-                          alignItems: "baseline",
-
-                          justifyContent: "center",
-
-                          gap: 5,
-
-                          marginTop: 3,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: isMobile ? 46 : 60,
-
-                            fontWeight: 900,
-
-                            color: BRAND.navy,
-
-                            lineHeight: 1,
-                          }}
-                        >
-                          299.000
-                        </span>
-
-                        <span
-                          style={{
-                            fontSize: 20,
-
-                            fontWeight: 800,
-
-                            color: BRAND.textMain,
-                          }}
-                        >
-                          VNĐ
-                        </span>
-                      </div>
-
-                      <Text
-                        style={{
-                          color: BRAND.goldDark,
-
-                          fontWeight: 700,
-
-                          fontSize: 13,
-
-                          display: "block",
-
-                          marginTop: 5,
-                        }}
-                      >
-                        Thanh toán 1 lần duy nhất · Dùng trọn đời
-                      </Text>
-                    </div>
-                  </div>
-
-                  <Divider
-                    style={{
-                      margin: "25px 0",
-
-                      borderColor: BRAND.border,
-                    }}
-                  />
-
-                  {/* BENEFITS */}
-
-                  <Space
-                    direction="vertical"
-                    size={13}
-                    style={{
-                      width: "100%",
-
-                      paddingInline: isMobile ? 0 : 18,
-                    }}
-                  >
-                    {[
-                      "Sử dụng vĩnh viễn không giới hạn số lượng Thiếu Nhi & Lớp học",
-
-                      "Đầy đủ tính năng: Quét mã QR điểm danh, Game Quiz Kinh Bổn",
-
-                      "Cập nhật miễn phí các tính năng nâng cấp trong tương lai",
-
-                      "Lưu trữ dữ liệu an toàn trên hệ thống Cloud bảo mật",
-
-                      "Đội ngũ kỹ thuật hỗ trợ hướng dẫn sử dụng",
-                    ].map((text, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          display: "flex",
-
-                          alignItems: "center",
-
-                          gap: 11,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 23,
-
-                            height: 23,
-
-                            borderRadius: "50%",
-
-                            background: BRAND.navyLight,
-
-                            color: BRAND.navy,
-
-                            display: "grid",
-
-                            placeItems: "center",
-
-                            fontSize: 11,
-
-                            flexShrink: 0,
-                          }}
-                        >
-                          <CheckOutlined />
-                        </div>
-
-                        <Text
-                          style={{
-                            color: BRAND.textMain,
-
-                            fontSize: 14,
-
-                            fontWeight: 600,
-
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {text}
-                        </Text>
-                      </div>
-                    ))}
-                  </Space>
-
-                  {/* CTA */}
-
-                  <div
-                    style={{
-                      marginTop: 32,
-
-                      textAlign: "center",
-                    }}
-                  >
-                    <motion.div {...pulseGlow}>
-                      <Button
-                        type="primary"
-                        size="large"
-                        block
-                        onClick={handleLogin}
-                        style={{
-                          height: 55,
-
-                          fontSize: 15,
-
-                          fontWeight: 800,
-
-                          border: 0,
-
-                          background: BRAND.navy,
-
-                          borderRadius: 9,
-                        }}
-                      >
-                        KÍCH HOẠT TÀI KHOẢN · 299K
-                      </Button>
-                    </motion.div>
-
-                    <Text
-                      style={{
-                        display: "block",
-
-                        marginTop: 13,
-
-                        fontSize: 11,
-
-                        color: BRAND.textMuted,
-                      }}
-                    >
-                      <GiftFilled
-                        style={{
-                          color: BRAND.gold,
-
-                          marginRight: 5,
-                        }}
-                      />
-                      Tặng kèm bộ tài liệu Giáo Án Số
-                    </Text>
-                  </div>
-                </Card>
-              </motion.div>
-            </div>
-          </section>
-
-          {/* ===================================================
-            REVIEWS
-        =================================================== */}
-
-          <section
-            id="reviews"
-            style={{
-              padding: isMobile ? "65px 0" : "100px 0",
-
-              background: BRAND.white,
-            }}
-          >
-            <div
-              style={{
-                maxWidth: 1100,
-
-                margin: "auto",
-
-                paddingInline: isMobile ? 16 : 24,
-              }}
-            >
-              <div
-                style={{
-                  textAlign: "center",
-
-                  marginBottom: 45,
-                }}
-              >
-                <Tag
-                  style={{
-                    background: BRAND.goldLight,
-
-                    color: BRAND.goldDark,
-
-                    border: "1px solid rgba(217,164,65,0.25)",
-
-                    fontWeight: 800,
-
-                    padding: "6px 15px",
-
-                    borderRadius: 7,
-                  }}
-                >
-                  <StarFilled
-                    style={{
-                      marginRight: 5,
-                    }}
-                  />
-                  ĐÁNH GIÁ
-                </Tag>
-
-                <Title
-                  level={2}
-                  style={{
-                    color: BRAND.navy,
-
-                    fontWeight: 900,
-
-                    fontSize: isMobile ? 29 : 40,
-
-                    marginTop: 12,
-                  }}
-                >
-                  Giáo lý viên nói gì?
-                </Title>
-
-                <Paragraph
-                  style={{
-                    color: BRAND.textMuted,
-
-                    fontSize: 15,
-                  }}
-                >
-                  Trải nghiệm thực tế từ những người đang sử dụng FaithEdu.
-                </Paragraph>
-              </div>
-
+            <div style={shell}>
               <div
                 style={{
                   display: "grid",
-
-                  gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-
-                  gap: 18,
+                  gridTemplateColumns: mobile ? "1fr" : ".68fr 1.32fr",
+                  gap: mobile ? 28 : 65,
+                  alignItems: "start",
                 }}
               >
-                {[
-                  {
-                    name: "Giáo lý viên",
-                    role: "Giáo xứ",
-
-                    content:
-                      "Giao diện rất dễ sử dụng, đặc biệt là phần điểm danh QR giúp tiết kiệm rất nhiều thời gian đầu giờ.",
-
-                    icon: <TeamOutlined />,
-                  },
-
-                  {
-                    name: "Phụ trách Ngành",
-                    role: "Giáo lý",
-
-                    content:
-                      "Phần game tương tác làm các em hào hứng hơn rất nhiều. Giáo lý viên cũng dễ tạo nội dung.",
-
-                    icon: <PlaySquareFilled />,
-                  },
-
-                  {
-                    name: "Ban điều hành",
-                    role: "Xứ Đoàn",
-
-                    content:
-                      "Quản lý lớp và dữ liệu tập trung giúp việc theo dõi Thiếu Nhi thuận tiện hơn trước rất nhiều.",
-
-                    icon: <SafetyCertificateFilled />,
-                  },
-                ].map((review, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{
-                      opacity: 0,
-                      y: 20,
-                    }}
-                    whileInView={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    viewport={{
-                      once: true,
-                    }}
-                    transition={{
-                      delay: index * 0.08,
+                <motion.div
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true }}
+                  variants={enter}
+                >
+                  <div className="fe-section-label">BƯỚC VÀO KHÔNG GIAN SỐ</div>
+                  <Title
+                    level={2}
+                    style={{
+                      color: C.ink,
+                      fontWeight: 950,
+                      fontSize: mobile ? 33 : 43,
+                      lineHeight: 1.1,
+                      letterSpacing: -1.3,
+                      margin: "18px 0",
                     }}
                   >
-                    <Card
-                      bordered
-                      style={{
-                        height: "100%",
-
-                        borderRadius: 14,
-
-                        borderColor: BRAND.border,
-
-                        boxShadow: "0 8px 25px rgba(23,59,94,0.05)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 44,
-
-                          height: 44,
-
-                          borderRadius: 10,
-
-                          background: BRAND.navyLight,
-
-                          color: BRAND.navy,
-
-                          display: "grid",
-
-                          placeItems: "center",
-
-                          fontSize: 19,
-
-                          marginBottom: 15,
-                        }}
-                      >
-                        {review.icon}
-                      </div>
-
-                      <div
-                        style={{
-                          display: "flex",
-
-                          gap: 2,
-
-                          color: BRAND.gold,
-
-                          marginBottom: 12,
-                        }}
-                      >
-                        {[...Array(5)].map((_, i) => (
-                          <StarFilled key={i} />
-                        ))}
-                      </div>
-
-                      <Paragraph
-                        style={{
-                          color: BRAND.textMuted,
-
-                          lineHeight: 1.75,
-
-                          fontSize: 14,
-
-                          minHeight: isMobile ? "auto" : 100,
-                        }}
-                      >
-                        “{review.content}”
-                      </Paragraph>
-
-                      <div
-                        style={{
-                          borderTop: `1px solid ${BRAND.border}`,
-
-                          paddingTop: 13,
-
-                          marginTop: 12,
-                        }}
-                      >
-                        <Text
-                          strong
-                          style={{
-                            display: "block",
-
-                            color: BRAND.navy,
-                          }}
-                        >
-                          {review.name}
-                        </Text>
-
-                        <Text
-                          style={{
-                            color: BRAND.muted,
-
-                            fontSize: 12,
-                          }}
-                        >
-                          {review.role}
-                        </Text>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ===================================================
-            FAQ
-        =================================================== */}
-
-          <section
-            id="faq"
-            style={{
-              padding: isMobile ? "65px 0" : "100px 0",
-
-              background: BRAND.background,
-            }}
-          >
-            <div
-              style={{
-                maxWidth: 850,
-
-                margin: "auto",
-
-                paddingInline: isMobile ? 16 : 24,
-              }}
-            >
-              <div
-                style={{
-                  textAlign: "center",
-
-                  marginBottom: 45,
-                }}
-              >
-                <Tag
-                  style={{
-                    background: BRAND.navyLight,
-
-                    color: BRAND.navy,
-
-                    border: `1px solid ${BRAND.border}`,
-
-                    fontWeight: 800,
-
-                    padding: "6px 16px",
-
-                    borderRadius: 7,
-                  }}
-                >
-                  HỎI ĐÁP NHANH
-                </Tag>
-
-                <Title
-                  level={2}
-                  style={{
-                    fontSize: isMobile ? 28 : 40,
-
-                    fontWeight: 900,
-
-                    marginTop: 10,
-
-                    color: BRAND.navy,
-                  }}
-                >
-                  Các thắc mắc thường gặp
-                </Title>
-              </div>
-
-              <Collapse
-                accordion
-                bordered={false}
-                style={{
-                  background: "transparent",
-                }}
-                expandIcon={({ isActive }) => (
-                  <UpOutlined
-                    rotate={isActive ? 180 : 0}
-                    style={{
-                      color: BRAND.goldDark,
-
-                      fontWeight: 900,
-                    }}
-                  />
-                )}
-                items={[
-                  {
-                    key: "1",
-
-                    label: (
-                      <strong
-                        style={{
-                          fontSize: 15,
-                          color: BRAND.navy,
-                        }}
-                      >
-                        Có đúng là chỉ thanh toán 299.000đ và dùng vĩnh viễn?
-                      </strong>
-                    ),
-
-                    children: (
-                      <p
-                        style={{
-                          color: BRAND.textMuted,
-
-                          fontSize: 14,
-
-                          lineHeight: 1.75,
-
-                          marginBottom: 0,
-                        }}
-                      >
-                        Chính xác! Đây là chương trình ưu đãi đồng hành cùng các
-                        Xứ Đoàn. Bạn mua một lần duy nhất và sở hữu trọn đời tài
-                        khoản mà không cần trả thêm phí duy trì hàng tháng hay
-                        hàng năm.
-                      </p>
-                    ),
-                  },
-
-                  {
-                    key: "2",
-
-                    label: (
-                      <strong
-                        style={{
-                          fontSize: 15,
-                          color: BRAND.navy,
-                        }}
-                      >
-                        Giáo lý viên không giỏi công nghệ có dùng được không?
-                      </strong>
-                    ),
-
-                    children: (
-                      <p
-                        style={{
-                          color: BRAND.textMuted,
-
-                          fontSize: 14,
-
-                          lineHeight: 1.75,
-
-                          marginBottom: 0,
-                        }}
-                      >
-                        FaithEdu được thiết kế trực quan. Giáo lý viên có thể
-                        nhanh chóng làm quen với điểm danh QR, quản lý lớp và
-                        tạo các hoạt động tương tác.
-                      </p>
-                    ),
-                  },
-
-                  {
-                    key: "3",
-
-                    label: (
-                      <strong
-                        style={{
-                          fontSize: 15,
-                          color: BRAND.navy,
-                        }}
-                      >
-                        Dữ liệu điểm danh & học sinh có được an toàn không?
-                      </strong>
-                    ),
-
-                    children: (
-                      <p
-                        style={{
-                          color: BRAND.textMuted,
-
-                          fontSize: 14,
-
-                          lineHeight: 1.75,
-
-                          marginBottom: 0,
-                        }}
-                      >
-                        Hệ thống lưu trữ dữ liệu trên nền tảng Cloud và hỗ trợ
-                        phân quyền tài khoản để kiểm soát việc xem và chỉnh sửa
-                        dữ liệu.
-                      </p>
-                    ),
-                  },
-                ]}
-              />
-            </div>
-          </section>
-
-          {/* ===================================================
-            FOOTER
-        =================================================== */}
-
-          <footer
-            style={{
-              background: BRAND.darkBg,
-
-              color: BRAND.white,
-
-              padding: "65px 0 30px",
-            }}
-          >
-            <div
-              style={{
-                maxWidth: 1200,
-
-                margin: "auto",
-
-                paddingInline: isMobile ? 16 : 24,
-              }}
-            >
-              <div
-                style={{
-                  display: "grid",
-
-                  gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr",
-
-                  gap: 40,
-
-                  marginBottom: 45,
-                }}
-              >
-                {/* FOOTER BRAND */}
-
-                <div>
+                    Dễ quan sát.
+                    <br />
+                    <span style={{ color: C.blue }}>Dễ thao tác.</span>
+                  </Title>
+                  <Paragraph style={{ color: C.muted, lineHeight: 1.9 }}>
+                    Khám phá một số khu vực giao diện minh họa của FaithEdu.
+                  </Paragraph>
                   <div
                     style={{
                       display: "flex",
-
-                      alignItems: "center",
-
-                      gap: 11,
-
-                      marginBottom: 16,
+                      flexDirection: "column",
+                      gap: 9,
+                      marginTop: 23,
                     }}
                   >
-                    <div
+                    {screensList.map((s) => (
+                      <button
+                        key={s.key}
+                        onClick={() => setActiveTab(s.key)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 13,
+                          textAlign: "left",
+                          padding: "14px 15px",
+                          borderRadius: 17,
+                          border:
+                            activeTab === s.key
+                              ? `1px solid ${C.blue}`
+                              : "1px solid transparent",
+                          background:
+                            activeTab === s.key ? "#FFFFFF" : "transparent",
+                          boxShadow:
+                            activeTab === s.key
+                              ? "0 10px 28px #174B660D"
+                              : "none",
+                          cursor: "pointer",
+                          color: C.ink,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 42,
+                            height: 42,
+                            flexShrink: 0,
+                            display: "grid",
+                            placeItems: "center",
+                            borderRadius: 13,
+                            background:
+                              activeTab === s.key ? C.blue : "#FFFFFFB8",
+                            color: activeTab === s.key ? "#fff" : C.blue,
+                            fontSize: 18,
+                          }}
+                        >
+                          {s.icon}
+                        </span>
+                        <span>
+                          <b
+                            style={{
+                              display: "block",
+                              fontSize: 14,
+                              fontWeight: 900,
+                            }}
+                          >
+                            {s.label}
+                          </b>
+                          <small style={{ color: C.muted }}>
+                            Xem giao diện minh họa
+                          </small>
+                        </span>
+                        {activeTab === s.key && (
+                          <ArrowRightOutlined
+                            style={{ marginLeft: "auto", color: C.blue }}
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+                <AnimatePresence mode="wait">
+                  {screensList
+                    .filter((s) => s.key === activeTab)
+                    .map((s) => (
+                      <motion.div
+                        key={s.key}
+                        initial={{ opacity: 0, x: 18, scale: 0.985 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -12 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ minWidth: 0 }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 10,
+                            marginBottom: 12,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 900,
+                              letterSpacing: 1,
+                              color: C.blue,
+                            }}
+                          >
+                            FAITHEDU / {s.label.toUpperCase()}
+                          </div>
+                          <div style={{ display: "flex", gap: 5 }}>
+                            <i
+                              style={{
+                                width: 7,
+                                height: 7,
+                                background: "#FF8178",
+                                borderRadius: "50%",
+                              }}
+                            />
+                            <i
+                              style={{
+                                width: 7,
+                                height: 7,
+                                background: C.gold,
+                                borderRadius: "50%",
+                              }}
+                            />
+                            <i
+                              style={{
+                                width: 7,
+                                height: 7,
+                                background: "#6ACBA7",
+                                borderRadius: "50%",
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            padding: mobile ? 8 : 12,
+                            borderRadius: 25,
+                            background: "#FFFFFF",
+                            border: "1px solid #FFFFFF",
+                            boxShadow: "0 25px 70px #174B6618",
+                          }}
+                        >
+                          <div
+                            style={{
+                              overflow: "hidden",
+                              borderRadius: 16,
+                              background: "#F6FBFD",
+                            }}
+                          >
+                            <img
+                              src={s.img}
+                              alt={s.label}
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                maxHeight: 470,
+                                objectFit: "contain",
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            padding: "19px 4px 0",
+                            display: "flex",
+                            alignItems: mobile ? "flex-start" : "center",
+                            flexDirection: mobile ? "column" : "row",
+                            justifyContent: "space-between",
+                            gap: 14,
+                          }}
+                        >
+                          <div>
+                            <Title
+                              level={4}
+                              style={{
+                                color: C.ink,
+                                fontWeight: 900,
+                                margin: "0 0 6px",
+                              }}
+                            >
+                              {s.title}
+                            </Title>
+                            <Paragraph
+                              style={{
+                                color: C.muted,
+                                lineHeight: 1.75,
+                                margin: 0,
+                                maxWidth: 580,
+                              }}
+                            >
+                              {s.desc}
+                            </Paragraph>
+                          </div>
+                          <Button
+                            type="primary"
+                            onClick={() => jump("pricing")}
+                            style={{
+                              height: 45,
+                              borderRadius: 14,
+                              fontWeight: 850,
+                              flexShrink: 0,
+                            }}
+                          >
+                            Xem bảng giá <ArrowRightOutlined />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          </section>
+
+          {/* PRICING — two editorial plan panels */}
+          <section
+            id="pricing"
+            style={{
+              padding: mobile ? "75px 0" : "112px 0",
+              background: "#fff",
+              position: "relative",
+            }}
+          >
+            <div style={shell}>
+              <motion.div
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                variants={enter}
+                style={{
+                  maxWidth: 730,
+                  margin: "0 auto 45px",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  className="fe-section-label"
+                  style={{ background: C.paleGold, color: "#B47C00" }}
+                >
+                  BẢNG GIÁ RÕ RÀNG
+                </div>
+                <Title
+                  level={2}
+                  style={{
+                    color: C.ink,
+                    fontWeight: 950,
+                    fontSize: mobile ? 35 : 50,
+                    letterSpacing: -1.5,
+                    lineHeight: 1.08,
+                    margin: "18px 0 12px",
+                  }}
+                >
+                  Chọn nhịp đi phù hợp
+                  <br />
+                  <span style={{ color: C.blue }}>với giáo xứ của bạn.</span>
+                </Title>
+                <Paragraph style={{ color: C.muted, lineHeight: 1.8 }}>
+                  Hai lựa chọn đơn giản theo kế hoạch sử dụng của giáo xứ.
+                </Paragraph>
+              </motion.div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: mobile ? "1fr" : "1fr 1fr",
+                  gap: 18,
+                  maxWidth: 1000,
+                  margin: "0 auto",
+                }}
+              >
+                {plans.map((p, i) => {
+                  const featured = p.style === "featured";
+                  return (
+                    <motion.div
+                      key={p.id}
+                      custom={i}
+                      initial="hidden"
+                      whileInView="show"
+                      viewport={{ once: true }}
+                      variants={enter}
+                      whileHover={{ y: -6 }}
                       style={{
-                        width: 42,
-
-                        height: 42,
-
-                        borderRadius: 10,
-
-                        background: BRAND.white,
-
-                        display: "grid",
-
-                        placeItems: "center",
+                        borderRadius: 28,
+                        padding: mobile ? 25 : 34,
+                        position: "relative",
+                        overflow: "hidden",
+                        background: featured
+                          ? "linear-gradient(145deg,#2878B5 0%,#43A6C6 100%)"
+                          : "#F5FBFD",
+                        border: featured
+                          ? `2px solid ${C.gold}`
+                          : `1px solid ${C.line}`,
+                        boxShadow: featured
+                          ? "0 22px 55px #2878B52B"
+                          : "0 15px 40px #174B660A",
                       }}
                     >
-                      <img
-                        src={logoWeb}
-                        alt="FaithEdu"
+                      {featured && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            right: 0,
+                            borderRadius: "0 0 0 18px",
+                            background: C.gold,
+                            color: C.ink,
+                            padding: "10px 15px",
+                            fontSize: 10,
+                            fontWeight: 950,
+                            letterSpacing: 1,
+                          }}
+                        >
+                          DÀI HẠN
+                        </div>
+                      )}
+                      <div
                         style={{
-                          width: 32,
-                          height: 32,
+                          width: 54,
+                          height: 54,
+                          display: "grid",
+                          placeItems: "center",
+                          borderRadius: 17,
+                          background: featured ? "#FFFFFF22" : "#FFFFFF",
+                          color: featured ? C.gold : C.blue,
+                          fontSize: 23,
+                          boxShadow: "0 6px 18px #174B660B",
+                        }}
+                      >
+                        {p.icon}
+                      </div>
+                      <div
+                        style={{
+                          color: featured ? "#D8F2FA" : C.muted,
+                          fontSize: 11,
+                          fontWeight: 950,
+                          letterSpacing: 1.4,
+                          marginTop: 23,
+                        }}
+                      >
+                        {p.name}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "baseline",
+                          flexWrap: "wrap",
+                          gap: 7,
+                          margin: "12px 0 10px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: featured ? "#fff" : C.ink,
+                            fontSize: mobile ? 35 : 43,
+                            lineHeight: 1.12,
+                            fontWeight: 950,
+                            letterSpacing: -1.5,
+                          }}
+                        >
+                          {p.price}
+                        </span>
+                        <span
+                          style={{
+                            color: featured ? "#D8F2FA" : C.muted,
+                            fontSize: 13,
+                            fontWeight: 750,
+                          }}
+                        >
+                          {p.unit}
+                        </span>
+                      </div>
+                      <Paragraph
+                        style={{
+                          color: featured ? "#E5F6FB" : C.muted,
+                          lineHeight: 1.8,
+                          minHeight: 55,
+                        }}
+                      >
+                        {p.desc}
+                      </Paragraph>
+                      <Divider
+                        style={{
+                          borderColor: featured ? "#FFFFFF38" : C.line,
+                          margin: "23px 0",
                         }}
                       />
-                    </div>
+                      <Space
+                        direction="vertical"
+                        size={14}
+                        style={{ width: "100%" }}
+                      >
+                        {p.features.map((f) => (
+                          <div key={f} className="fe-plan-check">
+                            <span
+                              style={{
+                                flexShrink: 0,
+                                display: "grid",
+                                placeItems: "center",
+                                width: 22,
+                                height: 22,
+                                borderRadius: "50%",
+                                background: featured ? "#FFFFFF22" : "#DFF5EC",
+                                color: featured ? C.gold : C.green,
+                                fontSize: 11,
+                              }}
+                            >
+                              <CheckOutlined />
+                            </span>
+                            <span style={{ color: featured ? "#fff" : C.ink }}>
+                              {f}
+                            </span>
+                          </div>
+                        ))}
+                      </Space>
+                      <Button
+                        block
+                        size="large"
+                        onClick={login}
+                        style={{
+                          height: 53,
+                          borderRadius: 15,
+                          marginTop: 30,
+                          fontWeight: 950,
+                          background: featured ? C.gold : C.blue,
+                          color: featured ? C.ink : "#fff",
+                          border: 0,
+                          boxShadow: featured
+                            ? "0 8px 22px #113C5729"
+                            : "0 8px 22px #2878B522",
+                        }}
+                      >
+                        {p.cta} <ArrowRightOutlined />
+                      </Button>
+                      <div
+                        style={{
+                          color: featured ? "#D8F2FA" : C.muted,
+                          textAlign: "center",
+                          marginTop: 13,
+                          fontSize: 11,
+                        }}
+                      >
+                        Đăng nhập để tiếp tục đăng ký
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 9,
+                  color: C.muted,
+                  fontSize: 12,
+                  textAlign: "center",
+                  marginTop: 25,
+                }}
+              >
+                <SafetyCertificateFilled
+                  style={{ color: "#D39A13", fontSize: 17 }}
+                />{" "}
+                Vui lòng kiểm tra thông tin gói trước khi xác nhận đăng ký.
+              </div>
+            </div>
+          </section>
 
-                    <span
+          {/* FAQ */}
+          <section
+            id="faq"
+            style={{
+              padding: mobile ? "65px 0" : "88px 0",
+              background: "#F0F9FC",
+            }}
+          >
+            <div style={{ ...shell, maxWidth: 880 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: mobile ? "1fr" : ".7fr 1.3fr",
+                  gap: 28,
+                  alignItems: "start",
+                }}
+              >
+                <div>
+                  <div className="fe-section-label">HỎI ĐÁP</div>
+                  <Title
+                    level={2}
+                    style={{
+                      color: C.ink,
+                      fontWeight: 950,
+                      fontSize: mobile ? 34 : 43,
+                      lineHeight: 1.1,
+                      letterSpacing: -1.2,
+                      margin: "17px 0 10px",
+                    }}
+                  >
+                    Bạn cần biết thêm điều gì?
+                  </Title>
+                  <Paragraph style={{ color: C.muted, lineHeight: 1.8 }}>
+                    Một vài câu hỏi thường gặp về việc sử dụng FaithEdu.
+                  </Paragraph>
+                </div>
+                <Collapse
+                  accordion
+                  bordered={false}
+                  style={{ background: "transparent" }}
+                  expandIconPosition="end"
+                  items={[
+                    {
+                      key: "1",
+                      label: (
+                        <strong style={{ color: C.ink }}>
+                          Gói 1 năm và gói vĩnh viễn khác nhau thế nào?
+                        </strong>
+                      ),
+                      children: (
+                        <p
+                          style={{ color: C.muted, lineHeight: 1.8, margin: 0 }}
+                        >
+                          Gói 1 năm có giá 599.000đ/năm. Gói vĩnh viễn có giá
+                          2.599.000đ, đăng ký một lần và sử dụng lâu dài, không
+                          giới hạn thời gian.
+                        </p>
+                      ),
+                    },
+                    {
+                      key: "2",
+                      label: (
+                        <strong style={{ color: C.ink }}>
+                          Tôi đăng ký hoặc quản lý tài khoản ở đâu?
+                        </strong>
+                      ),
+                      children: (
+                        <p
+                          style={{ color: C.muted, lineHeight: 1.8, margin: 0 }}
+                        >
+                          Bạn có thể nhấn nút đăng nhập hoặc chọn gói để truy
+                          cập hệ thống FaithEdu tại giaolyso.site.
+                        </p>
+                      ),
+                    },
+                    {
+                      key: "3",
+                      label: (
+                        <strong style={{ color: C.ink }}>
+                          FaithEdu hỗ trợ những công việc nào?
+                        </strong>
+                      ),
+                      children: (
+                        <p
+                          style={{ color: C.muted, lineHeight: 1.8, margin: 0 }}
+                        >
+                          FaithEdu hỗ trợ quản lý lớp, thiếu nhi, giáo lý viên,
+                          điểm danh, thư viện bài giảng, trò chơi tương tác và
+                          theo dõi kết quả.
+                        </p>
+                      ),
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* FOOTER — split bright brand panel */}
+          <footer
+            style={{
+              background: C.ink,
+              color: "#fff",
+              padding: mobile ? "48px 0 20px" : "66px 0 24px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                right: "-60px",
+                top: "-140px",
+                width: 330,
+                height: 330,
+                borderRadius: "50%",
+                border: "1px solid #FFFFFF17",
+              }}
+            />
+            <div style={{ ...shell, position: "relative" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: mobile ? "1fr" : "1.4fr .7fr 1fr",
+                  gap: 35,
+                }}
+              >
+                <div>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 12 }}
+                  >
+                    <img
+                      src={logoWeb}
+                      alt="FaithEdu"
                       style={{
-                        fontSize: 23,
-
-                        fontWeight: 900,
-
-                        color: BRAND.white,
+                        width: 48,
+                        height: 48,
+                        objectFit: "contain",
+                        background: "#fff",
+                        borderRadius: 15,
+                        padding: 4,
                       }}
-                    >
+                    />
+                    <span style={{ fontSize: 25, fontWeight: 950 }}>
                       FaithEdu
                     </span>
                   </div>
-
                   <Paragraph
                     style={{
-                      color: "#B7C3CF",
-
-                      fontSize: 14,
-
-                      maxWidth: 400,
-
-                      lineHeight: 1.8,
-
-                      marginBottom: 0,
+                      color: "#BCD0D9",
+                      lineHeight: 1.85,
+                      marginTop: 16,
+                      maxWidth: 360,
                     }}
                   >
-                    Nền tảng số hóa quản lý Giáo Lý. Đổi mới phương pháp truyền
-                    giảng, hỗ trợ Giáo lý viên và kết nối Đức Tin sống động cho
-                    thế hệ trẻ.
+                    Nền tảng giáo lý số đồng hành cùng giáo xứ trong công tác
+                    quản lý và giảng dạy.
                   </Paragraph>
+                  <div style={{ display: "flex", gap: 7, marginTop: 18 }}>
+                    <span
+                      style={{
+                        background: "#FFFFFF12",
+                        border: "1px solid #FFFFFF20",
+                        padding: "7px 10px",
+                        borderRadius: 10,
+                        fontSize: 10,
+                        fontWeight: 850,
+                        color: "#D5EBF3",
+                      }}
+                    >
+                      QUẢN LÝ
+                    </span>
+                    <span
+                      style={{
+                        background: "#FFFFFF12",
+                        border: "1px solid #FFFFFF20",
+                        padding: "7px 10px",
+                        borderRadius: 10,
+                        fontSize: 10,
+                        fontWeight: 850,
+                        color: "#D5EBF3",
+                      }}
+                    >
+                      KẾT NỐI
+                    </span>
+                  </div>
                 </div>
-
-                {/* LINKS */}
-
                 <div>
-                  <h4
-                    style={{
-                      color: BRAND.white,
-
-                      marginBottom: 17,
-
-                      fontWeight: 800,
-
-                      fontSize: 15,
-                    }}
-                  >
-                    Liên Kết Nhanh
-                  </h4>
-
-                  <Space direction="vertical" size={9}>
-                    {navItems.map((item) => (
+                  <div style={{ fontWeight: 900, marginBottom: 16 }}>
+                    Khám phá
+                  </div>
+                  <Space direction="vertical" size={11}>
+                    {nav.map((n) => (
                       <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => scrollToSection(item.id)}
+                        key={n.id}
+                        onClick={() => jump(n.id)}
                         style={{
-                          color: "#B7C3CF",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: "pointer",
+                          border: 0,
                           background: "transparent",
-                          border: "none",
+                          color: "#BCD0D9",
                           padding: 0,
-                          margin: 0,
-                          fontFamily: "inherit",
+                          cursor: "pointer",
                           textAlign: "left",
                         }}
                       >
-                        {item.label}
+                        {n.label}
                       </button>
                     ))}
                   </Space>
                 </div>
-
-                {/* SUPPORT */}
-
                 <div>
-                  <h4
-                    style={{
-                      color: BRAND.white,
-
-                      marginBottom: 17,
-
-                      fontWeight: 800,
-
-                      fontSize: 15,
-                    }}
-                  >
-                    Thông Tin Hỗ Trợ
-                  </h4>
-
+                  <div style={{ fontWeight: 900, marginBottom: 16 }}>
+                    Liên hệ hỗ trợ
+                  </div>
                   <Space
                     direction="vertical"
-                    size={11}
-                    style={{
-                      color: "#B7C3CF",
-
-                      fontSize: 13,
-                    }}
+                    size={13}
+                    style={{ color: "#BCD0D9", fontSize: 13 }}
                   >
                     <div>
-                      <PhoneFilled
-                        style={{
-                          color: BRAND.gold,
-
-                          marginRight: 8,
-                        }}
-                      />
-                      Hotline: 033.604.1807
+                      <PhoneFilled style={{ color: C.gold, marginRight: 9 }} />
+                      033.604.1807
                     </div>
-
                     <div>
-                      <MailFilled
-                        style={{
-                          color: BRAND.gold,
-
-                          marginRight: 8,
-                        }}
-                      />
-                      Email: tranhung6829@gmail.com
+                      <MailFilled style={{ color: C.gold, marginRight: 9 }} />
+                      tranhung6829@gmail.com
                     </div>
-
                     <div>
                       <FacebookFilled
-                        style={{
-                          color: BRAND.gold,
-
-                          marginRight: 8,
-                        }}
+                        style={{ color: C.gold, marginRight: 9 }}
                       />
-                      Fanpage: FaithEdu Việt Nam
+                      FaithEdu Việt Nam
                     </div>
                   </Space>
                 </div>
               </div>
-
               <Divider
-                style={{
-                  borderColor: "rgba(255,255,255,0.12)",
-                }}
+                style={{ borderColor: "#FFFFFF1F", margin: "35px 0 18px" }}
               />
-
               <div
                 style={{
-                  textAlign: "center",
-
-                  color: "#94A3B8",
-
-                  fontSize: 12,
-
-                  fontWeight: 500,
+                  display: "flex",
+                  flexDirection: mobile ? "column" : "row",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  color: "#94B0BC",
+                  fontSize: 11,
                 }}
               >
-                © {new Date().getFullYear()} FaithEdu. All rights reserved.
-                <span
-                  style={{
-                    marginLeft: 5,
-                  }}
-                >
-                  Designed with
+                <span>
+                  © {new Date().getFullYear()} FaithEdu. Bảo lưu mọi quyền.
                 </span>
-                <HeartFilled
-                  style={{
-                    color: BRAND.gold,
-
-                    margin: "0 5px",
-                  }}
-                />
-                <span>for Faith Education.</span>
+                <span>
+                  Đồng hành cùng hành trình giáo lý{" "}
+                  <HeartFilled style={{ color: C.gold, margin: "0 4px" }} />
+                </span>
               </div>
             </div>
           </footer>
-
-          {/* ===================================================
-            VIDEO MODAL
-        =================================================== */}
-
           <Modal
             open={videoOpen}
             onCancel={() => setVideoOpen(false)}
             footer={null}
             centered
-            width={800}
+            width={760}
             destroyOnClose
-            closeIcon={
-              <CloseOutlined
-                style={{
-                  color: BRAND.navy,
-                }}
-              />
-            }
+            title="Giới thiệu FaithEdu"
           >
             <div
               style={{
-                paddingTop: "56.25%",
-
-                position: "relative",
-
-                marginTop: 18,
+                padding: 20,
+                background: C.paleBlue,
+                borderRadius: 16,
+                color: C.muted,
+                lineHeight: 1.8,
               }}
             >
-              <iframe
-                style={{
-                  position: "absolute",
-
-                  top: 0,
-
-                  left: 0,
-
-                  width: "100%",
-
-                  height: "100%",
-
-                  border: 0,
-
-                  borderRadius: 10,
-                }}
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
-                title="FaithEdu Demo"
-                allowFullScreen
-              />
+              FaithEdu là nền tảng hỗ trợ giáo xứ quản lý lớp giáo lý, thiếu
+              nhi, giáo lý viên, điểm danh và tài liệu giảng dạy. Bạn có thể
+              đăng nhập để khám phá hệ thống.
+              <div style={{ marginTop: 18 }}>
+                <Button type="primary" onClick={login}>
+                  Truy cập FaithEdu <ArrowRightOutlined />
+                </Button>
+              </div>
             </div>
           </Modal>
-        </div>
+        </main>
       </ConfigProvider>
     </>
   );
-};
-
-export default LandingPage;
+}
