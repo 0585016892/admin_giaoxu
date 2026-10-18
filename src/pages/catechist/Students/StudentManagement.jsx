@@ -273,7 +273,7 @@ export default function StudentManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(50);
 
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
@@ -572,122 +572,146 @@ export default function StudentManagement() {
   // 3. TẢI HÀNG LOẠT QR HỌC SINH
   // =========================================================
 
+  // =========================================================
+  // 3. TẢI HÀNG LOẠT QR HỌC SINH ĐÃ CHỌN
+  // =========================================================
+
   const handleDownloadBulkQR = async () => {
-    if (!students || students.length === 0) {
-      notify.warning("Không có học sinh để tải QR!");
+    // =======================================================
+    // 1. LẤY DANH SÁCH HỌC SINH ĐÃ TÍCH CHỌN
+    // =======================================================
+
+    const selectedKeySet = new Set(
+      (selectedRowKeys || []).map((id) => String(id)),
+    );
+
+    const selectedStudents = (students || []).filter((student) =>
+      selectedKeySet.has(String(student.id)),
+    );
+
+    if (selectedStudents.length === 0) {
+      notify.warning("Vui lòng chọn học sinh cần tải mã QR!");
+      return;
+    }
+
+    // Chống nhấn nút nhiều lần
+    if (bulkQRDownloading) {
       return;
     }
 
     setBulkQRDownloading(true);
 
-    const zip = new JSZip();
+    try {
+      const zip = new JSZip();
 
-    // =======================================================
-    // LOAD IMAGE
-    // =======================================================
+      // =====================================================
+      // 2. LOAD ẢNH NỀN THẺ QR
+      // =====================================================
 
-    const loadImage = (src) => {
-      return new Promise((resolve, reject) => {
-        const img = new window.Image();
+      const loadImage = (src) =>
+        new Promise((resolve, reject) => {
+          const img = new window.Image();
 
-        img.onload = () => resolve(img);
+          img.onload = () => resolve(img);
 
-        img.onerror = () => {
-          reject(new Error("Không thể tải background!"));
-        };
+          img.onerror = () => {
+            reject(new Error("Không thể tải ảnh nền thẻ QR!"));
+          };
 
-        img.src = src;
-      });
-    };
-
-    // =======================================================
-    // TẠO QR CANVAS TẠM CHO TỪNG HỌC SINH
-    // =======================================================
-
-    const createTempQRCanvas = async (student) => {
-      if (!student.qr_token) {
-        throw new Error(
-          `Học sinh ${student.name || student.id} chưa có mã QR!`,
-        );
-      }
-
-      const container = document.createElement("div");
-
-      container.style.position = "fixed";
-      container.style.left = "-99999px";
-      container.style.top = "0";
-      container.style.width = "520px";
-      container.style.height = "520px";
-      container.style.visibility = "hidden";
-
-      document.body.appendChild(container);
-
-      const root = createRoot(container);
-
-      try {
-        root.render(
-          <QRCodeCanvas
-            value={student.qr_token}
-            size={520}
-            level="H"
-            includeMargin
-          />,
-        );
-
-        // Chờ React render QR
-        await new Promise((resolve) => {
-          setTimeout(resolve, 150);
+          img.src = src;
         });
 
-        const qrCanvas = container.querySelector("canvas");
+      // =====================================================
+      // 3. TẠO CANVAS QR CHO TỪNG HỌC SINH
+      // =====================================================
 
-        if (!qrCanvas) {
+      const createTempQRCanvas = async (student) => {
+        if (!student.qr_token) {
           throw new Error(
-            `Không tạo được QR cho ${student.name || student.id}!`,
+            `Học sinh ${student.name || student.id} chưa có mã QR!`,
           );
         }
 
-        // Sao chép canvas trước khi gỡ container
-        const copiedCanvas = document.createElement("canvas");
+        const container = document.createElement("div");
 
-        copiedCanvas.width = qrCanvas.width;
-        copiedCanvas.height = qrCanvas.height;
+        container.style.position = "fixed";
+        container.style.left = "-99999px";
+        container.style.top = "0";
+        container.style.width = "520px";
+        container.style.height = "520px";
+        container.style.visibility = "hidden";
 
-        const copiedCtx = copiedCanvas.getContext("2d");
+        document.body.appendChild(container);
 
-        if (!copiedCtx) {
-          throw new Error("Không thể tạo canvas mã QR!");
+        const root = createRoot(container);
+
+        try {
+          root.render(
+            <QRCodeCanvas
+              value={student.qr_token}
+              size={520}
+              level="H"
+              includeMargin
+            />,
+          );
+
+          // Chờ React render QR
+          await new Promise((resolve) => setTimeout(resolve, 150));
+
+          const qrCanvas = container.querySelector("canvas");
+
+          if (!qrCanvas) {
+            throw new Error(
+              `Không tạo được QR cho ${student.name || student.id}!`,
+            );
+          }
+
+          // Sao chép canvas để sử dụng độc lập
+          const copiedCanvas = document.createElement("canvas");
+
+          copiedCanvas.width = qrCanvas.width;
+          copiedCanvas.height = qrCanvas.height;
+
+          const ctx = copiedCanvas.getContext("2d");
+
+          if (!ctx) {
+            throw new Error("Không thể tạo canvas mã QR!");
+          }
+
+          ctx.drawImage(qrCanvas, 0, 0);
+
+          return copiedCanvas;
+        } finally {
+          root.unmount();
+
+          if (container.parentNode) {
+            container.parentNode.removeChild(container);
+          }
         }
+      };
 
-        copiedCtx.drawImage(qrCanvas, 0, 0);
-
-        return copiedCanvas;
-      } finally {
-        root.unmount();
-
-        if (container.parentNode) {
-          container.parentNode.removeChild(container);
-        }
-      }
-    };
-
-    try {
-      // =======================================================
-      // LOAD BACKGROUND MỘT LẦN
-      // =======================================================
+      // =====================================================
+      // 4. LOAD ẢNH NỀN MỘT LẦN
+      // =====================================================
 
       const background = await loadImage(backqr);
 
-      // =======================================================
-      // DUYỆT DANH SÁCH HỌC SINH
-      // =======================================================
+      // =====================================================
+      // 5. CHỈ XỬ LÝ HỌC SINH ĐÃ CHỌN
+      // =====================================================
 
       let successCount = 0;
       let skipCount = 0;
 
-      for (const student of students) {
+      const skippedStudents = [];
+
+      for (const student of selectedStudents) {
+        // Bỏ qua học sinh chưa có QR
         if (!student.qr_token) {
           skipCount++;
+
+          skippedStudents.push(student.name || `ID ${student.id}`);
+
           continue;
         }
 
@@ -695,7 +719,7 @@ export default function StudentManagement() {
           // Tạo QR
           const qrCanvas = await createTempQRCanvas(student);
 
-          // Tạo ảnh thẻ
+          // Tạo ảnh thẻ QR
           const blob = await createQRCardBlob({
             background,
             qrCanvas,
@@ -703,30 +727,45 @@ export default function StudentManagement() {
             className: student.className || "Chưa xếp lớp",
           });
 
-          // Tạo tên file
-          const fileName = `${student.code || student.id}-QR.png`;
+          if (!blob) {
+            throw new Error("Không tạo được ảnh thẻ QR!");
+          }
 
-          // Thêm ảnh vào ZIP
+          // Tạo tên file an toàn
+          const rawFileName = `${student.code || student.id}-QR.png`;
+
+          const fileName = rawFileName.replace(/[<>:"/\\|?*]/g, "_");
+          // Đưa ảnh vào ZIP
           zip.file(fileName, blob);
 
           successCount++;
         } catch (error) {
+          console.error(
+            `[BULK QR] Lỗi tạo QR cho học sinh ${student.name || student.id}:`,
+            error,
+          );
+
           skipCount++;
+
+          skippedStudents.push(student.name || `ID ${student.id}`);
         }
       }
 
-      // =======================================================
-      // KIỂM TRA KẾT QUẢ
-      // =======================================================
+      // =====================================================
+      // 6. KIỂM TRA KẾT QUẢ
+      // =====================================================
 
       if (successCount === 0) {
-        notify.warning("Không có mã QR hợp lệ để tải!");
+        notify.warning(
+          `Không tạo được mã QR cho ${selectedStudents.length} học sinh đã chọn. Vui lòng kiểm tra mã QR của các học sinh.`,
+        );
+
         return;
       }
 
-      // =======================================================
-      // TẠO FILE ZIP
-      // =======================================================
+      // =====================================================
+      // 7. TẠO FILE ZIP
+      // =====================================================
 
       const zipBlob = await zip.generateAsync({
         type: "blob",
@@ -736,40 +775,44 @@ export default function StudentManagement() {
         },
       });
 
-      // =======================================================
-      // DOWNLOAD ZIP
-      // =======================================================
+      // =====================================================
+      // 8. TẢI FILE ZIP
+      // =====================================================
 
       const url = URL.createObjectURL(zipBlob);
-
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = "QR_Hoc_Sinh.zip";
+      link.download = "QR_Hoc_Sinh_Da_Chon.zip";
 
       document.body.appendChild(link);
-
       link.click();
-
       document.body.removeChild(link);
 
+      // Thu hồi URL sau khi trình duyệt xử lý tải xuống
       setTimeout(() => {
         URL.revokeObjectURL(url);
       }, 1000);
 
-      // =======================================================
-      // THÔNG BÁO KẾT QUẢ
-      // =======================================================
+      // =====================================================
+      // 9. THÔNG BÁO KẾT QUẢ
+      // =====================================================
 
       if (skipCount > 0) {
         notify.success(
-          `Đã tải ${successCount} mã QR. Bỏ qua ${skipCount} học sinh.`,
+          `Đã tải ${successCount}/${selectedStudents.length} mã QR. Bỏ qua ${skipCount} học sinh không tạo được QR.`,
         );
+
+        console.warn("[BULK QR] Học sinh bị bỏ qua:", skippedStudents);
       } else {
-        notify.success(`Đã tải ${successCount} mã QR!`);
+        notify.success(
+          `Đã tải thành công ${successCount} mã QR của học sinh đã chọn!`,
+        );
       }
     } catch (error) {
-      notify.error(error?.message || "Có lỗi khi tạo mã QR!");
+      console.error("[BULK QR] Lỗi tải QR hàng loạt:", error);
+
+      notify.error(error?.message || "Có lỗi xảy ra khi tạo file QR!");
     } finally {
       setBulkQRDownloading(false);
     }
@@ -4127,14 +4170,6 @@ export default function StudentManagement() {
                     setCurrentPage(1);
                   }}
                   options={[
-                    {
-                      value: "10",
-                      label: "10 / trang",
-                    },
-                    {
-                      value: "20",
-                      label: "20 / trang",
-                    },
                     {
                       value: "50",
                       label: "50 / trang",
