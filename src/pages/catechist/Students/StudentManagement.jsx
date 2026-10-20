@@ -51,7 +51,7 @@ import {
   DownloadOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-
+import LoadingLogo from "../../../components/LoadingLogo";
 import dayjs from "dayjs";
 import student_defaut from "../../../assets/images/student-default.png";
 
@@ -326,6 +326,32 @@ export default function StudentManagement() {
   //=============Excel=============
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
+  // =====================================================
+  // GLOBAL LOADING - KHÓA TOÀN BỘ GIAO DIỆN KHI THAO TÁC
+  // =====================================================
+
+  const [globalLoading, setGlobalLoading] = useState(false);
+  const [globalLoadingText, setGlobalLoadingText] = useState(
+    "Vui lòng chờ trong giây lát...",
+  );
+
+  const runWithGlobalLoading = useCallback(
+    async (callback, message = "Vui lòng chờ trong giây lát...") => {
+      if (globalLoading) return;
+
+      setGlobalLoadingText(message);
+      setGlobalLoading(true);
+
+      try {
+        return await callback();
+      } finally {
+        setGlobalLoading(false);
+        setGlobalLoadingText("Vui lòng chờ trong giây lát...");
+      }
+    },
+    [globalLoading],
+  );
+
   //===============UPDATE FULL CLASS=========
 
   const handleOpenQR = useCallback(
@@ -495,17 +521,23 @@ export default function StudentManagement() {
   // 2. TẢI QR MỘT HỌC SINH
   // =========================================================
 
+  // =========================================================
+  // TẢI QR CỦA MỘT HỌC SINH
+  // HIỂN THỊ LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleDownloadQR = async () => {
     if (!qrStudent?.qr_token) {
       notify.error("Không có mã QR để tải!");
       return;
     }
 
-    try {
-      // -----------------------------------------------------
-      // LOAD BACKGROUND
-      // -----------------------------------------------------
+    if (globalLoading) return;
 
+    setGlobalLoadingText("Đang tạo mã QR học sinh...");
+    setGlobalLoading(true);
+
+    try {
+      // 1. Tải ảnh nền
       const background = await new Promise((resolve, reject) => {
         const img = new window.Image();
 
@@ -517,21 +549,15 @@ export default function StudentManagement() {
 
         img.src = backqr;
       });
-      // -----------------------------------------------------
-      // LẤY QR CANVAS ĐANG HIỂN THỊ
-      // -----------------------------------------------------
 
+      // 2. Lấy canvas QR đang hiển thị
       const qrCanvas = document.getElementById(`student-qr-${qrStudent.id}`);
 
       if (!qrCanvas) {
-        notify.error("Không tìm thấy mã QR!");
-        return;
+        throw new Error("Không tìm thấy mã QR!");
       }
 
-      // -----------------------------------------------------
-      // TẠO ẢNH THẺ
-      // -----------------------------------------------------
-
+      // 3. Tạo ảnh thẻ QR
       const blob = await createQRCardBlob({
         background,
         qrCanvas,
@@ -539,32 +565,40 @@ export default function StudentManagement() {
         className: qrStudent.className || "Chưa xếp lớp",
       });
 
-      // -----------------------------------------------------
-      // DOWNLOAD PNG
-      // -----------------------------------------------------
+      if (!blob) {
+        throw new Error("Không tạo được ảnh thẻ QR!");
+      }
 
+      // 4. Tải ảnh PNG
       const url = URL.createObjectURL(blob);
-
       const link = document.createElement("a");
 
-      link.href = url;
+      try {
+        link.href = url;
+        link.download = `${qrStudent.code || qrStudent.id}-QR.png`;
 
-      link.download = `${qrStudent.code || qrStudent.id}-QR.png`;
+        document.body.appendChild(link);
+        link.click();
+      } finally {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
 
-      document.body.appendChild(link);
-
-      link.click();
-
-      document.body.removeChild(link);
-
-      // Thu hồi URL sau khi trình duyệt xử lý tải xuống
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 1000);
+        // Đợi trình duyệt xử lý tải xuống rồi thu hồi URL
+        window.setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+      }
 
       notify.success("Đã tải ảnh QR!");
     } catch (error) {
+      console.error("[DOWNLOAD QR] Lỗi:", error);
+
       notify.error(error?.message || "Không thể tạo ảnh QR!");
+    } finally {
+      // Luôn tắt loading, kể cả khi có lỗi hoặc return
+      setGlobalLoading(false);
+      setGlobalLoadingText("Vui lòng chờ trong giây lát...");
     }
   };
 
@@ -575,12 +609,12 @@ export default function StudentManagement() {
   // =========================================================
   // 3. TẢI HÀNG LOẠT QR HỌC SINH ĐÃ CHỌN
   // =========================================================
-
+  // =========================================================
+  // TẢI HÀNG LOẠT QR CỦA HỌC SINH ĐÃ CHỌN
+  // HIỂN THỊ LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleDownloadBulkQR = async () => {
-    // =======================================================
-    // 1. LẤY DANH SÁCH HỌC SINH ĐÃ TÍCH CHỌN
-    // =======================================================
-
+    // 1. Lấy danh sách học sinh đã chọn
     const selectedKeySet = new Set(
       (selectedRowKeys || []).map((id) => String(id)),
     );
@@ -594,20 +628,23 @@ export default function StudentManagement() {
       return;
     }
 
-    // Chống nhấn nút nhiều lần
-    if (bulkQRDownloading) {
+    // 2. Chống chạy nhiều lần
+    if (bulkQRDownloading || globalLoading) {
       return;
     }
 
     setBulkQRDownloading(true);
+    setGlobalLoadingText(
+      `Đang chuẩn bị tạo QR cho ${selectedStudents.length} học sinh...`,
+    );
+    setGlobalLoading(true);
 
     try {
       const zip = new JSZip();
 
-      // =====================================================
-      // 2. LOAD ẢNH NỀN THẺ QR
-      // =====================================================
-
+      // =======================================================
+      // 3. TẢI ẢNH NỀN
+      // =======================================================
       const loadImage = (src) =>
         new Promise((resolve, reject) => {
           const img = new window.Image();
@@ -621,10 +658,11 @@ export default function StudentManagement() {
           img.src = src;
         });
 
-      // =====================================================
-      // 3. TẠO CANVAS QR CHO TỪNG HỌC SINH
-      // =====================================================
+      const background = await loadImage(backqr);
 
+      // =======================================================
+      // 4. TẠO CANVAS QR TẠM
+      // =======================================================
       const createTempQRCanvas = async (student) => {
         if (!student.qr_token) {
           throw new Error(
@@ -690,33 +728,33 @@ export default function StudentManagement() {
         }
       };
 
-      // =====================================================
-      // 4. LOAD ẢNH NỀN MỘT LẦN
-      // =====================================================
-
-      const background = await loadImage(backqr);
-
-      // =====================================================
-      // 5. CHỈ XỬ LÝ HỌC SINH ĐÃ CHỌN
-      // =====================================================
-
+      // =======================================================
+      // 5. TẠO ẢNH QR CHO TỪNG HỌC SINH ĐÃ CHỌN
+      // =======================================================
       let successCount = 0;
       let skipCount = 0;
 
       const skippedStudents = [];
 
-      for (const student of selectedStudents) {
+      for (let index = 0; index < selectedStudents.length; index++) {
+        const student = selectedStudents[index];
+
+        // Cập nhật nội dung loading
+        setGlobalLoadingText(
+          `Đang tạo QR: ${index + 1}/${selectedStudents.length} - ${
+            student.name || `ID ${student.id}`
+          }`,
+        );
+
         // Bỏ qua học sinh chưa có QR
         if (!student.qr_token) {
           skipCount++;
-
           skippedStudents.push(student.name || `ID ${student.id}`);
-
           continue;
         }
 
         try {
-          // Tạo QR
+          // Tạo canvas QR
           const qrCanvas = await createTempQRCanvas(student);
 
           // Tạo ảnh thẻ QR
@@ -734,8 +772,11 @@ export default function StudentManagement() {
           // Tạo tên file an toàn
           const rawFileName = `${student.code || student.id}-QR.png`;
 
-          const fileName = rawFileName.replace(/[<>:"/\\|?*]/g, "_");
-          // Đưa ảnh vào ZIP
+          const fileName = rawFileName
+            .replace(/[<>:"\\|?*]/g, "_")
+            .replace(/\//g, "_");
+
+          // Thêm ảnh vào ZIP
           zip.file(fileName, blob);
 
           successCount++;
@@ -746,15 +787,13 @@ export default function StudentManagement() {
           );
 
           skipCount++;
-
           skippedStudents.push(student.name || `ID ${student.id}`);
         }
       }
 
-      // =====================================================
+      // =======================================================
       // 6. KIỂM TRA KẾT QUẢ
-      // =====================================================
-
+      // =======================================================
       if (successCount === 0) {
         notify.warning(
           `Không tạo được mã QR cho ${selectedStudents.length} học sinh đã chọn. Vui lòng kiểm tra mã QR của các học sinh.`,
@@ -763,41 +802,51 @@ export default function StudentManagement() {
         return;
       }
 
-      // =====================================================
-      // 7. TẠO FILE ZIP
-      // =====================================================
+      // =======================================================
+      // 7. NÉN FILE ZIP
+      // =======================================================
+      setGlobalLoadingText(`Đang nén ${successCount} ảnh QR thành file ZIP...`);
 
-      const zipBlob = await zip.generateAsync({
-        type: "blob",
-        compression: "DEFLATE",
-        compressionOptions: {
-          level: 6,
+      const zipBlob = await zip.generateAsync(
+        {
+          type: "blob",
+          compression: "DEFLATE",
+          compressionOptions: {
+            level: 6,
+          },
         },
-      });
+        (metadata) => {
+          setGlobalLoadingText(
+            `Đang nén file ZIP: ${Math.round(metadata.percent)}%`,
+          );
+        },
+      );
 
-      // =====================================================
+      // =======================================================
       // 8. TẢI FILE ZIP
-      // =====================================================
-
+      // =======================================================
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
 
-      link.href = url;
-      link.download = "QR_Hoc_Sinh_Da_Chon.zip";
+      try {
+        link.href = url;
+        link.download = "QR_Hoc_Sinh_Da_Chon.zip";
 
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        document.body.appendChild(link);
+        link.click();
+      } finally {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
 
-      // Thu hồi URL sau khi trình duyệt xử lý tải xuống
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 1000);
+        window.setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+      }
 
-      // =====================================================
+      // =======================================================
       // 9. THÔNG BÁO KẾT QUẢ
-      // =====================================================
-
+      // =======================================================
       if (skipCount > 0) {
         notify.success(
           `Đã tải ${successCount}/${selectedStudents.length} mã QR. Bỏ qua ${skipCount} học sinh không tạo được QR.`,
@@ -810,11 +859,12 @@ export default function StudentManagement() {
         );
       }
     } catch (error) {
-      console.error("[BULK QR] Lỗi tải QR hàng loạt:", error);
-
       notify.error(error?.message || "Có lỗi xảy ra khi tạo file QR!");
     } finally {
+      // Luôn khôi phục trạng thái sau khi xử lý
       setBulkQRDownloading(false);
+      setGlobalLoading(false);
+      setGlobalLoadingText("Vui lòng chờ trong giây lát...");
     }
   };
   /* ===================================================
@@ -1369,9 +1419,14 @@ export default function StudentManagement() {
      IMPORT EXCEL
   =================================================== */
 
+  // =========================================================
+  // IMPORT EXCEL HỌC SINH
+  // LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleImportExcel = async (file) => {
-    if (!file || importing) return;
+    if (!file || importing || globalLoading) return;
 
+    // 1. Kiểm tra định dạng file
     const fileName = file.name?.toLowerCase() || "";
     const isExcel = /\.(xlsx|xls)$/.test(fileName);
 
@@ -1380,30 +1435,39 @@ export default function StudentManagement() {
       return;
     }
 
+    // 2. Kiểm tra dung lượng
     if (file.size > 10 * 1024 * 1024) {
       notify.error("File Excel không được vượt quá 10MB!");
       return;
     }
 
+    // 3. Bật loading toàn màn hình
     setImporting(true);
+    setGlobalLoadingText("Đang nhập dữ liệu học sinh từ file Excel...");
+    setGlobalLoading(true);
 
     try {
+      // 4. Gọi API import
       const response = await studentApi.importExcel(file);
-
       const result = response?.data;
 
       if (result?.success === false) {
         throw new Error(result?.message || "Import học sinh thất bại!");
       }
 
+      // 5. Thông báo kết quả
       notify.success(
         result?.message ||
           result?.data?.message ||
           "Import học sinh thành công!",
       );
 
+      // 6. Tải lại danh sách học sinh
+      setGlobalLoadingText("Đang cập nhật danh sách học sinh...");
+
       await fetchStudents({ silent: true });
 
+      // 7. Reset lựa chọn và phân trang
       setSelectedRowKeys([]);
       setCurrentPage(1);
     } catch (error) {
@@ -1414,34 +1478,52 @@ export default function StudentManagement() {
           "Không thể import học sinh!",
       );
     } finally {
+      // 8. Luôn tắt loading khi hoàn tất
       setImporting(false);
+      setGlobalLoading(false);
+      setGlobalLoadingText("Vui lòng chờ trong giây lát...");
     }
   };
-
   /* ===================================================
      DOWNLOAD TEMPLATE
   =================================================== */
 
+  // =========================================================
+  // TẢI FILE EXCEL MẪU
+  // LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleDownloadExcelTemplate = useCallback(() => {
+    if (globalLoading) return;
+
+    setGlobalLoadingText("Đang chuẩn bị tải file Excel mẫu...");
+    setGlobalLoading(true);
+
+    let link;
+
     try {
-      const link = document.createElement("a");
-
+      link = document.createElement("a");
       link.href = "/templates/mau_import_hoc_sinh_FaithEdu.xlsx";
-
       link.download = "mau_import_hoc_sinh_FaithEdu.xlsx";
 
       document.body.appendChild(link);
-
       link.click();
 
-      document.body.removeChild(link);
-
-      notify.success("Đã tải file Excel mẫu!");
+      notify.success("Đã gửi yêu cầu tải file Excel mẫu!");
     } catch (error) {
       notify.error("Không thể tải file Excel mẫu!");
-    }
-  }, [notify]);
+    } finally {
+      if (link?.parentNode) {
+        link.parentNode.removeChild(link);
+      }
 
+      // Trình duyệt không cung cấp sự kiện xác nhận tải xong
+      // đối với cách tải file bằng thẻ a này.
+      window.setTimeout(() => {
+        setGlobalLoading(false);
+        setGlobalLoadingText("Vui lòng chờ trong giây lát...");
+      }, 800);
+    }
+  }, [globalLoading, notify, setGlobalLoading, setGlobalLoadingText]);
   /* ===================================================
      CREATE
   =================================================== */
@@ -1685,44 +1767,44 @@ export default function StudentManagement() {
   /* ===================================================
      SAVE
   =================================================== */
-
   const handleSaveStudent = async (values) => {
-    if (saving) return;
+    if (saving || globalLoading) return;
 
-    try {
-      setSaving(true);
+    await runWithGlobalLoading(
+      async () => {
+        try {
+          setSaving(true);
 
-      const formData = buildStudentFormData(values);
+          const formData = buildStudentFormData(values);
 
-      if (!editingStudent) {
-        await studentApi.create(formData);
+          if (!editingStudent) {
+            await studentApi.create(formData);
+            notify.success("Thêm học sinh thành công!");
+          } else {
+            await studentApi.update(editingStudent.id, formData);
+            notify.success("Cập nhật học sinh thành công!");
+          }
 
-        notify.success("Thêm học sinh thành công!");
-      } else {
-        await studentApi.update(editingStudent.id, formData);
+          setIsFormModalOpen(false);
+          setEditingStudent(null);
+          form.resetFields();
 
-        notify.success("Cập nhật học sinh thành công!");
-      }
-
-      setIsFormModalOpen(false);
-
-      setEditingStudent(null);
-
-      form.resetFields();
-
-      await fetchStudents({
-        silent: true,
-      });
-    } catch (error) {
-      notify.error(
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          error?.message ||
-          "Không thể lưu học sinh!",
-      );
-    } finally {
-      setSaving(false);
-    }
+          await fetchStudents({ silent: true });
+        } catch (error) {
+          notify.error(
+            error?.response?.data?.message ||
+              error?.response?.data?.error ||
+              error?.message ||
+              "Không thể lưu học sinh!",
+          );
+        } finally {
+          setSaving(false);
+        }
+      },
+      editingStudent
+        ? "Đang cập nhật thông tin học sinh..."
+        : "Đang thêm học sinh...",
+    );
   };
   /* ===================================================
      DETAIL
@@ -1751,8 +1833,12 @@ export default function StudentManagement() {
     [changeClassForm],
   );
 
+  // =========================================================
+  // CHUYỂN LỚP / XẾP LỚP HỌC SINH
+  // LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleChangeClassSubmit = async (values) => {
-    if (!changeClassStudent || saving) {
+    if (!changeClassStudent || saving || globalLoading) {
       return;
     }
 
@@ -1760,15 +1846,20 @@ export default function StudentManagement() {
 
     try {
       setSaving(true);
-
       setActionLoadingState("changeClass", studentId);
 
+      // Bật loading toàn màn hình
+      setGlobalLoadingText("Đang chuẩn bị chuyển lớp học sinh...");
+      setGlobalLoading(true);
+
+      // 1. Kiểm tra lớp mới
       const newClassId = values.new_class_id;
 
       if (!newClassId) {
         throw new Error("Vui lòng chọn lớp mới");
       }
 
+      // 2. Kiểm tra học sinh đã ở lớp được chọn chưa
       if (
         changeClassStudent.classId &&
         String(changeClassStudent.classId) === String(newClassId)
@@ -1777,13 +1868,18 @@ export default function StudentManagement() {
         return;
       }
 
+      // 3. Gọi API chuyển lớp hoặc xếp lớp
       if (changeClassStudent.classId) {
+        setGlobalLoadingText("Đang chuyển học sinh sang lớp mới...");
+
         await classStudentApi.changeClass(
           changeClassStudent.classId,
           studentId,
           newClassId,
         );
       } else {
+        setGlobalLoadingText("Đang xếp lớp cho học sinh...");
+
         await classStudentApi.add({
           class_id: newClassId,
           student_id: studentId,
@@ -1791,17 +1887,20 @@ export default function StudentManagement() {
         });
       }
 
+      // 4. Thông báo kết quả
       notify.success(
         changeClassStudent.classId
           ? "Chuyển lớp thành công!"
           : "Đã xếp lớp thành công!",
       );
 
+      // 5. Đóng modal và reset form
       setIsChangeClassModalOpen(false);
-
       setChangeClassStudent(null);
-
       changeClassForm.resetFields();
+
+      // 6. Tải lại danh sách học sinh
+      setGlobalLoadingText("Đang cập nhật danh sách học sinh...");
 
       await fetchStudents({
         silent: true,
@@ -1813,9 +1912,11 @@ export default function StudentManagement() {
           "Không thể chuyển lớp!",
       );
     } finally {
+      // 7. Luôn khôi phục trạng thái
       clearActionLoadingState("changeClass");
-
       setSaving(false);
+      setGlobalLoading(false);
+      setGlobalLoadingText("Vui lòng chờ trong giây lát...");
     }
   };
   /* ===================================================
@@ -1845,13 +1946,18 @@ export default function StudentManagement() {
 
     setIsBulkChangeClassModalOpen(true);
   }, [selectedRowKeys, students, bulkChangeClassForm, notify]);
+
+  // =========================================================
+  // CHUYỂN LỚP HÀNG LOẠT
+  // LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleBulkChangeClassSubmit = async (values) => {
     if (!selectedRowKeys.length) {
       notify.warning("Vui lòng chọn ít nhất một học sinh!");
       return;
     }
 
-    if (bulkChangeClassLoading) return;
+    if (bulkChangeClassLoading || globalLoading) return;
 
     // 1. Kiểm tra lớp đích
     const rawNewClassId = values?.new_class_id;
@@ -1872,10 +1978,10 @@ export default function StudentManagement() {
       return;
     }
 
-    // 2. Lấy học sinh được chọn
+    // 2. Lấy danh sách học sinh được chọn
     const selectedKeySet = new Set(selectedRowKeys.map(String));
 
-    const selectedStudents = students.filter((student) =>
+    const selectedStudents = (students || []).filter((student) =>
       selectedKeySet.has(String(student.id)),
     );
 
@@ -1885,7 +1991,7 @@ export default function StudentManagement() {
     }
 
     // 3. Tìm lớp đích
-    const newClass = classes.find(
+    const newClass = (classes || []).find(
       (item) => String(item.id) === String(parsedNewClassId),
     );
 
@@ -1918,10 +2024,18 @@ export default function StudentManagement() {
       return;
     }
 
-    // 6. Gọi API chuyển lớp hàng loạt
+    // 6. Bật loading toàn màn hình
     setBulkChangeClassLoading(true);
+    setGlobalLoadingText(
+      `Đang chuẩn bị chuyển ${studentIds.length} học sinh sang lớp ${newClass.name}...`,
+    );
+    setGlobalLoading(true);
 
     try {
+      setGlobalLoadingText(
+        `Đang chuyển ${studentIds.length} học sinh sang lớp ${newClass.name}...`,
+      );
+
       /*
        * Backend:
        * PUT /class-students/classes/:classId/change-students
@@ -1966,8 +2080,6 @@ export default function StudentManagement() {
           );
         }
       } else {
-        // Không tự khẳng định số lượng thành công nếu backend
-        // không trả về thống kê chi tiết.
         notify.success(responseData?.message || "Đã xử lý yêu cầu chuyển lớp.");
       }
 
@@ -1976,7 +2088,9 @@ export default function StudentManagement() {
       bulkChangeClassForm.resetFields();
       setSelectedRowKeys([]);
 
-      // 9. Tải lại dữ liệu từ backend
+      // 9. Tải lại danh sách học sinh
+      setGlobalLoadingText("Đang cập nhật danh sách học sinh...");
+
       await fetchStudents({ silent: true });
     } catch (error) {
       notify.error(
@@ -1986,7 +2100,10 @@ export default function StudentManagement() {
           "Không thể chuyển lớp!",
       );
     } finally {
+      // 10. Luôn khôi phục trạng thái
       setBulkChangeClassLoading(false);
+      setGlobalLoading(false);
+      setGlobalLoadingText("Vui lòng chờ trong giây lát...");
     }
   };
   /* ===================================================
@@ -2143,37 +2260,59 @@ export default function StudentManagement() {
      DELETE
   =================================================== */
 
+  // =========================================================
+  // XÓA MỘT HỌC SINH - LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleDeleteStudent = useCallback(
     async (id) => {
+      if (saving || globalLoading) return;
+
       try {
         setSaving(true);
-
         setActionLoadingState("delete", id);
+
+        setGlobalLoadingText("Đang xóa thông tin học sinh...");
+        setGlobalLoading(true);
+
+        console.log("[DELETE STUDENT] Bắt đầu xóa học sinh:", id);
 
         await studentApi.delete(id);
 
         notify.success("Đã xóa học sinh!");
 
-        const nextTotal = filteredStudents.length - 1;
-
+        // Tính lại trang sau khi xóa
+        const nextTotal = Math.max(0, filteredStudents.length - 1);
         const maxPage = Math.max(1, Math.ceil(nextTotal / pageSize));
 
         if (currentPage > maxPage) {
           setCurrentPage(maxPage);
         }
 
+        setGlobalLoadingText("Đang cập nhật danh sách học sinh...");
+
         await fetchStudents();
+
+        console.log("[DELETE STUDENT] Xóa thành công:", id);
       } catch (error) {
+        console.error("[DELETE STUDENT] Lỗi:", error);
+
         notify.error(
-          error?.response?.data?.message || "Không thể xóa học sinh!",
+          error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            error?.message ||
+            "Không thể xóa học sinh!",
         );
       } finally {
         clearActionLoadingState("delete");
-
         setSaving(false);
+
+        setGlobalLoading(false);
+        setGlobalLoadingText("Vui lòng chờ trong giây lát...");
       }
     },
     [
+      saving,
+      globalLoading,
       filteredStudents.length,
       pageSize,
       currentPage,
@@ -2181,55 +2320,92 @@ export default function StudentManagement() {
       setActionLoadingState,
       clearActionLoadingState,
       notify,
+      setGlobalLoading,
+      setGlobalLoadingText,
     ],
   );
 
-  /* ===================================================
-     BULK DELETE
-  =================================================== */
-
+  // =========================================================
+  // XÓA HÀNG LOẠT HỌC SINH - LOADING TOÀN MÀN HÌNH
+  // =========================================================
   const handleBulkDelete = async () => {
-    if (!selectedRowKeys.length || bulkDeleting) {
+    if (!selectedRowKeys.length || bulkDeleting || globalLoading) {
       return;
     }
 
-    const deleteCount = selectedRowKeys.length;
+    const selectedIds = [...selectedRowKeys];
+    const deleteCount = selectedIds.length;
 
     try {
       setBulkDeleting(true);
 
-      try {
-        const response = await studentApi.deleteBulk(selectedRowKeys);
+      setGlobalLoadingText(`Đang xóa ${deleteCount} học sinh đã chọn...`);
+      setGlobalLoading(true);
 
-        // Axios response
-        const result = response?.data;
-
-        if (!result?.success) {
-          throw new Error(result?.message || "Không thể xóa học sinh");
-        }
-
-        notify.success(result.message || `Đã xóa ${deleteCount} học sinh!`);
-
-        setSelectedRowKeys([]);
-
-        await fetchStudents({
-          silent: true,
-        });
-      } finally {
-        setBulkChangeClassLoading(false);
-      }
-    } catch (error) {
-      notify.error(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Không thể xóa học sinh!",
+      console.log(
+        "============================================================",
       );
+      console.log("[BULK DELETE] BẮT ĐẦU XÓA HỌC SINH HÀNG LOẠT");
+      console.log("[BULK DELETE] Số lượng:", deleteCount);
+      console.log("[BULK DELETE] Danh sách ID:", selectedIds);
+      console.log(
+        "============================================================",
+      );
+
+      // 1. Gọi API xóa hàng loạt
+      const response = await studentApi.deleteBulk(selectedIds);
+      const result = response?.data;
+
+      console.log("[BULK DELETE] Phản hồi API:", result);
+
+      if (!result?.success) {
+        throw new Error(result?.message || "Không thể xóa học sinh!");
+      }
+
+      // 2. Thông báo kết quả
+      notify.success(result.message || `Đã xóa ${deleteCount} học sinh!`);
+
+      // 3. Xóa lựa chọn
+      setSelectedRowKeys([]);
+
+      // 4. Tải lại danh sách
+      setGlobalLoadingText("Đang cập nhật danh sách học sinh...");
 
       await fetchStudents({
         silent: true,
       });
+
+      console.log("[BULK DELETE] Xóa hàng loạt hoàn tất.");
+    } catch (error) {
+      console.error("[BULK DELETE] Lỗi:", error);
+
+      notify.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Không thể xóa học sinh!",
+      );
+
+      // Đồng bộ lại danh sách sau lỗi để giao diện phản ánh dữ liệu máy chủ
+      try {
+        setGlobalLoadingText("Đang đồng bộ lại danh sách học sinh...");
+
+        await fetchStudents({
+          silent: true,
+        });
+      } catch (refreshError) {
+        console.error(
+          "[BULK DELETE] Không thể tải lại danh sách:",
+          refreshError,
+        );
+      }
     } finally {
       setBulkDeleting(false);
+
+      setGlobalLoading(false);
+      setGlobalLoadingText("Vui lòng chờ trong giây lát...");
+
+      console.log("[BULK DELETE] Đã kết thúc tiến trình.");
     }
   };
 
@@ -3015,6 +3191,45 @@ export default function StudentManagement() {
           /* =====================================================
              PAGE
           ===================================================== */
+          /* =====================================================
+   GLOBAL LOADING - FAITHEDU
+===================================================== */
+
+.faith-global-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(231 231 231 / 92%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  cursor: wait;
+}
+
+.faith-global-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  max-width: 360px;
+  text-align: center;
+}
+
+.faith-global-loading-text {
+  color: #173B5E;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.faith-global-loading-subtext {
+  color: #64748B;
+  font-size: 13px;
+  line-height: 1.6;
+}
 
           .student-management-page {
             min-height: 100vh;
@@ -3698,7 +3913,18 @@ export default function StudentManagement() {
           }
         `}
       </style>
-
+      {globalLoading && (
+        <div
+          className="faith-global-loading"
+          role="status"
+          aria-live="polite"
+          aria-label={globalLoadingText}
+        >
+          <div className="faith-global-loading-content">
+            <LoadingLogo />
+          </div>
+        </div>
+      )}
       <div
         className="student-management-page"
         style={{

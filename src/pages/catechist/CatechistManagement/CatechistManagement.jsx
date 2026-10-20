@@ -65,7 +65,7 @@ import {
   updateCatechistRole,
 } from "../../../api/adminApi";
 import dayjs from "dayjs";
-
+import LoadingLogo from "../../../components/LoadingLogo";
 import avataImg from "../../../assets/images/imgGLV.png";
 
 const { Text } = Typography;
@@ -136,6 +136,30 @@ export default function CatechistManagement() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [globalLoadingCount, setGlobalLoadingCount] = useState(0);
+
+  const startGlobalLoading = useCallback(() => {
+    setGlobalLoadingCount((prev) => prev + 1);
+  }, []);
+
+  const stopGlobalLoading = useCallback(() => {
+    setGlobalLoadingCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const globalLoading = globalLoadingCount > 0;
+
+  const withGlobalLoading = useCallback(
+    async (callback) => {
+      startGlobalLoading();
+
+      try {
+        return await callback();
+      } finally {
+        stopGlobalLoading();
+      }
+    },
+    [startGlobalLoading, stopGlobalLoading],
+  );
   const [searchText, setSearchText] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -238,56 +262,58 @@ export default function CatechistManagement() {
   ======================================================= */
 
   const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
+    return withGlobalLoading(async () => {
+      try {
+        setLoading(true);
 
-      const results = await Promise.allSettled([
-        catechistApi.getAll(),
+        const results = await Promise.allSettled([
+          catechistApi.getAll(),
 
-        classApi?.getAll
-          ? classApi.getAll()
-          : Promise.resolve({
-              data: [],
-            }),
-      ]);
+          classApi?.getAll
+            ? classApi.getAll()
+            : Promise.resolve({
+                data: [],
+              }),
+        ]);
 
-      /* ---------------- CATECHIST ---------------- */
+        /* ---------------- CATECHIST ---------------- */
 
-      if (results[0].status === "fulfilled") {
-        const response = results[0].value;
+        if (results[0].status === "fulfilled") {
+          const response = results[0].value;
 
-        const catechistData = response?.data?.data || response?.data || [];
+          const catechistData = response?.data?.data || response?.data || [];
 
-        const list = Array.isArray(catechistData) ? catechistData : [];
+          const list = Array.isArray(catechistData) ? catechistData : [];
 
-        setCatechists(list.map(formatCatechist));
-      } else {
-        notify.error("Không thể tải danh sách Giáo lý viên!");
+          setCatechists(list.map(formatCatechist));
+        } else {
+          notify.error("Không thể tải danh sách Giáo lý viên!");
+        }
+
+        /* ---------------- CLASS ---------------- */
+
+        if (results[1].status === "fulfilled") {
+          const response = results[1].value;
+
+          const classData = response?.data?.data || response?.data || [];
+
+          const list = Array.isArray(classData) ? classData : [];
+
+          setClasses(
+            list.map((item) => ({
+              id: item.id,
+
+              name: item.name || item.class_name || "Chưa đặt tên",
+            })),
+          );
+        }
+      } catch (error) {
+        notify.error("Có lỗi xảy ra khi tải dữ liệu!");
+      } finally {
+        setLoading(false);
       }
-
-      /* ---------------- CLASS ---------------- */
-
-      if (results[1].status === "fulfilled") {
-        const response = results[1].value;
-
-        const classData = response?.data?.data || response?.data || [];
-
-        const list = Array.isArray(classData) ? classData : [];
-
-        setClasses(
-          list.map((item) => ({
-            id: item.id,
-
-            name: item.name || item.class_name || "Chưa đặt tên",
-          })),
-        );
-      }
-    } catch (error) {
-      notify.error("Có lỗi xảy ra khi tải dữ liệu!");
-    } finally {
-      setLoading(false);
-    }
-  }, [notify]);
+    });
+  }, [notify, withGlobalLoading]);
 
   useEffect(() => {
     fetchData();
@@ -390,55 +416,57 @@ export default function CatechistManagement() {
   const formatDate = (date) => (date ? dayjs(date).format("YYYY-MM-DD") : null);
 
   const handleSave = async (values) => {
-    try {
-      setSaving(true);
+    return withGlobalLoading(async () => {
+      try {
+        setSaving(true);
 
-      const payload = {
-        ...values,
+        const payload = {
+          ...values,
 
-        date_of_birth: formatDate(values.date_of_birth),
+          date_of_birth: formatDate(values.date_of_birth),
 
-        baptism_date: formatDate(values.baptism_date),
+          baptism_date: formatDate(values.baptism_date),
 
-        first_communion_date: formatDate(values.first_communion_date),
+          first_communion_date: formatDate(values.first_communion_date),
 
-        confirmation_date: formatDate(values.confirmation_date),
+          confirmation_date: formatDate(values.confirmation_date),
 
-        oath_date: formatDate(values.oath_date),
-      };
+          oath_date: formatDate(values.oath_date),
+        };
 
-      delete payload.password_confirm;
+        delete payload.password_confirm;
 
-      if (editingCatechist && !payload.password) {
-        delete payload.password;
+        if (editingCatechist && !payload.password) {
+          delete payload.password;
+        }
+
+        if (!editingCatechist && !payload.password) {
+          payload.password = "123456";
+        }
+
+        if (editingCatechist) {
+          await catechistApi.update(editingCatechist.id, payload);
+
+          notify.success("Cập nhật Giáo lý viên thành công!");
+        } else {
+          await catechistApi.create(payload);
+
+          notify.success("Thêm Giáo lý viên mới thành công!");
+        }
+
+        setIsFormModalOpen(false);
+
+        form.resetFields();
+
+        await fetchData();
+      } catch (error) {
+        notify.error(
+          error?.response?.data?.message || "Đã xảy ra lỗi khi lưu thông tin!",
+        );
+      } finally {
+        setSaving(false);
       }
-
-      if (!editingCatechist && !payload.password) {
-        payload.password = "123456";
-      }
-
-      if (editingCatechist) {
-        await catechistApi.update(editingCatechist.id, payload);
-
-        notify.success("Cập nhật Giáo lý viên thành công!");
-      } else {
-        await catechistApi.create(payload);
-
-        notify.success("Thêm Giáo lý viên mới thành công!");
-      }
-
-      setIsFormModalOpen(false);
-
-      form.resetFields();
-
-      await fetchData();
-    } catch (error) {
-      notify.error(
-        error?.response?.data?.message || "Đã xảy ra lỗi khi lưu thông tin!",
-      );
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   /* =======================================================
@@ -466,19 +494,20 @@ export default function CatechistManagement() {
   /* =======================================================
      DELETE
   ======================================================= */
-
   const handleDelete = async (id) => {
-    try {
-      await catechistApi.delete(id);
+    return withGlobalLoading(async () => {
+      try {
+        await catechistApi.delete(id);
 
-      notify.success("Xóa Giáo lý viên thành công!");
+        notify.success("Xóa Giáo lý viên thành công!");
 
-      await fetchData();
-    } catch (error) {
-      notify.error(
-        error?.response?.data?.message || "Không thể xóa Giáo lý viên!",
-      );
-    }
+        await fetchData();
+      } catch (error) {
+        notify.error(
+          error?.response?.data?.message || "Không thể xóa Giáo lý viên!",
+        );
+      }
+    });
   };
 
   /* =======================================================
@@ -1291,6 +1320,26 @@ export default function CatechistManagement() {
         },
       }}
     >
+      {" "}
+      {globalLoading && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            pointerEvents: "all",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            background: "rgb(231 231 231 / 92%)",
+            backdrop: "blur(5px)",
+            cursor: "wait",
+          }}
+        >
+          <LoadingLogo />
+        </div>
+      )}
       <div className="catechist-management-page">
         {/* =================================================
             HEADER
@@ -1533,7 +1582,7 @@ export default function CatechistManagement() {
 
           <div className="catechist-table-wrapper">
             <Table
-              loading={loading}
+              loading={false}
               columns={columns}
               dataSource={filteredData.slice(
                 (currentPage - 1) * pageSize,

@@ -419,13 +419,9 @@ const CertificateToolbar = ({
                 variant="ghost"
                 icon={
                   fullscreenPreview ? (
-                    <FullscreenExitOutlined
-                      style={{ fontSize: 24, color: "#173B5E" }}
-                    />
+                    <FullscreenExitOutlined />
                   ) : (
-                    <FullscreenOutlined
-                      style={{ fontSize: 24, color: "#173B5E" }}
-                    />
+                    <FullscreenOutlined />
                   )
                 }
                 onClick={onFullscreen}
