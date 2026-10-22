@@ -1,1210 +1,500 @@
-import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Select, Rate, Divider } from "antd";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Modal, Form, Input, Rate, Progress } from "antd";
 import {
-  SendOutlined,
-  HeartFilled,
-  MessageOutlined,
-  CloseOutlined,
+  ArrowLeftOutlined,
+  ArrowRightOutlined,
   CheckCircleFilled,
+  CloseOutlined,
+  HeartFilled,
+  SendOutlined,
+  StarFilled,
 } from "@ant-design/icons";
-
+import { AnimatePresence, motion } from "framer-motion";
 import { sendFeedback } from "../api/contactMessageApi";
 import { useUser } from "../context/UserContext";
 import LoadingLogo from "../components/LoadingLogo";
-import AppButton from "../components/common/AppButton";
 import { useNotification } from "./notification";
-const { TextArea } = Input;
 
-const COLORS = {
-  navy: "#173B5E",
-  navyDark: "#102E4A",
-  gold: "#D9A441",
-  text: "#1E293B",
-  muted: "#64748B",
-  border: "#E7ECF2",
-  soft: "#F8FAFC",
-};
+const { TextArea } = Input;
+const SUBJECT = "Đánh giá FaithEdu sau thời gian sử dụng";
+const DURATIONS = ["Dưới 1 tháng", "1–3 tháng", "Trên 3 tháng"];
+const BENEFITS = [
+  "Quản lý lớp học và học sinh",
+  "Điểm danh bằng mã QR",
+  "Quản lý điểm số và kết quả học tập",
+  "Thư viện tài liệu và bài giảng",
+  "Chưa thấy hiệu quả rõ rệt",
+];
+const RATINGS = [
+  "Chưa đánh giá",
+  "Rất chưa hài lòng",
+  "Chưa hài lòng",
+  "Bình thường",
+  "Hài lòng",
+  "Rất hài lòng",
+];
+const initialSurvey = { duration: "", rating: 0, benefits: [], comment: "" };
 
 const FeedbackModal = ({ open, onClose }) => {
+  const { user } = useUser();
   const notify = useNotification();
   const [form] = Form.useForm();
-
+  const [step, setStep] = useState(0);
+  const [survey, setSurvey] = useState(initialSurvey);
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [rating, setRating] = useState(5);
-
-  const { user } = useUser();
+  const [completed, setCompleted] = useState(false);
+  const timerRef = useRef(null);
+  const mountedRef = useRef(true);
 
   const userName = user?.full_name || user?.name || user?.fullName || "";
-
   const userEmail = user?.email || "";
+  const avatarLetter = userName.trim().charAt(0).toUpperCase() || "F";
 
-  /*
-   * =========================================================
-   * OPEN MODAL
-   * =========================================================
-   */
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
-
-    form.setFieldsValue({
-      email: userEmail,
-      rating: 5,
-    });
-
-    setRating(5);
+    setStep(0);
+    setSurvey({ ...initialSurvey, benefits: [] });
     setLoading(false);
     setLoadingProgress(0);
+    setCompleted(false);
+    form.setFieldsValue({ email: userEmail });
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
   }, [open, userEmail, form]);
 
-  /*
-   * =========================================================
-   * SUBMIT
-   * =========================================================
-   */
+  const canContinue = useMemo(() => {
+    if (step === 0) return Boolean(survey.duration);
+    if (step === 1) return survey.rating > 0;
+    // Benefits and comments are optional: do not force positive feedback.
+    return true;
+  }, [step, survey.duration, survey.rating]);
 
-  const handleSubmit = async (values) => {
-    let progressTimer;
+  const update = (key, value) =>
+    setSurvey((prev) => ({ ...prev, [key]: value }));
 
-    try {
-      setLoading(true);
-      setLoadingProgress(0);
-
-      progressTimer = setInterval(() => {
-        setLoadingProgress((prev) => {
-          if (prev >= 90) return 90;
-
-          let increment = 1;
-
-          if (prev < 20) {
-            increment = 2;
-          } else if (prev < 45) {
-            increment = 1.2;
-          } else if (prev < 70) {
-            increment = 0.7;
-          } else {
-            increment = 0.3;
-          }
-
-          return Math.min(prev + increment, 90);
-        });
-      }, 40);
-
-      await sendFeedback({
-        name: userName,
-        email: values.email,
-        subject: values.subject,
-        message: values.message,
-        rating: values.rating,
-      });
-
-      clearInterval(progressTimer);
-
-      setLoadingProgress(100);
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      notify.success("Cảm ơn bạn! Góp ý đã được gửi thành công.");
-
-      form.resetFields();
-
-      setRating(5);
-      setLoadingProgress(0);
-
-      onClose?.();
-    } catch (error) {
-      if (progressTimer) {
-        clearInterval(progressTimer);
+  const toggleBenefit = (benefit) => {
+    setSurvey((prev) => {
+      const isExclusive = benefit === "Chưa thấy hiệu quả rõ rệt";
+      let benefits;
+      if (prev.benefits.includes(benefit)) {
+        benefits = prev.benefits.filter((item) => item !== benefit);
+      } else if (isExclusive) {
+        benefits = [benefit];
+      } else {
+        benefits = [
+          ...prev.benefits.filter(
+            (item) => item !== "Chưa thấy hiệu quả rõ rệt",
+          ),
+          benefit,
+        ];
       }
-
-      setLoadingProgress(0);
-
-      notify.error(
-        error?.response?.data?.message ||
-          "Không thể gửi góp ý. Vui lòng thử lại sau.",
-      );
-    } finally {
-      setLoading(false);
-    }
+      return { ...prev, benefits };
+    });
   };
 
-  /*
-   * =========================================================
-   * CLOSE
-   * =========================================================
-   */
-
-  const handleClose = () => {
+  const close = () => {
     if (loading) return;
-
-    form.resetFields();
-
-    setRating(5);
-    setLoadingProgress(0);
-
     onClose?.();
   };
 
-  /*
-   * =========================================================
-   * AVATAR
-   * =========================================================
-   */
+  const submit = async () => {
+    if (loading || !survey.duration || !survey.rating) return;
+    try {
+      // Validate email even if user jumps to this step.
+      const { email } = await form.validateFields(["email"]);
+      if (!userName.trim()) {
+        notify.error("Không tìm thấy tên tài khoản. Vui lòng đăng nhập lại.");
+        return;
+      }
+      setLoading(true);
+      setLoadingProgress(8);
+      timerRef.current = setInterval(() => {
+        if (mountedRef.current) {
+          setLoadingProgress((value) =>
+            Math.min(90, value + Math.max(0.4, (90 - value) * 0.055)),
+          );
+        }
+      }, 100);
 
-  const avatarLetter = userName?.trim()?.charAt(0)?.toUpperCase() || "U";
+      const message = [
+        "KHẢO SÁT ĐÁNH GIÁ FAITHEDU SAU THỜI GIAN SỬ DỤNG",
+        "",
+        `1. Thời gian sử dụng: ${survey.duration}`,
+        `2. Mức độ hài lòng: ${survey.rating}/5 sao (${RATINGS[survey.rating]})`,
+        "3. Công việc FaithEdu đã hỗ trợ:",
+        ...(survey.benefits.length
+          ? survey.benefits.map((item) => `- ${item}`)
+          : ["- Không lựa chọn"]),
+        "4. Góp ý và đề xuất cải thiện:",
+        survey.comment.trim() || "Không có góp ý thêm.",
+      ].join("\n");
+
+      // contact_messages contains no separate rating column.
+      await sendFeedback({
+        name: userName.trim(),
+        email: email.trim(),
+        subject: SUBJECT,
+        message,
+      });
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+      if (mountedRef.current) {
+        setLoadingProgress(100);
+        setCompleted(true);
+        notify.success("Cảm ơn Quý vị! Đánh giá đã được gửi thành công.");
+      }
+    } catch (error) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+      // Ant Design validation errors are handled by the form itself.
+      if (error?.errorFields) return;
+      notify.error(
+        error?.response?.data?.message ||
+          "Không thể gửi đánh giá. Vui lòng thử lại sau.",
+      );
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  };
+
+  const next = async () => {
+    if (loading || !canContinue) return;
+    if (step === 0) {
+      try {
+        await form.validateFields(["email"]);
+      } catch {
+        return;
+      }
+    }
+    if (step < 3) setStep((current) => current + 1);
+    else await submit();
+  };
 
   return (
     <Modal
       open={open}
-      onCancel={handleClose}
+      onCancel={close}
       footer={null}
-      centered
-      width={640}
-      destroyOnClose
       closable={false}
       maskClosable={!loading}
+      keyboard={!loading}
+      centered
+      width={620}
+      destroyOnClose
       styles={{
-        body: {
-          padding: 0,
-        },
-        mask: {
-          backdropFilter: "blur(6px)",
-          background: "rgba(15, 23, 42, 0.48)",
-        },
+        body: { padding: 0 },
+        mask: { background: "rgba(24,20,55,.52)", backdropFilter: "blur(7px)" },
       }}
     >
-      <div className="faith-feedback-modal">
-        {/* =====================================================
-            TOP HEADER
-        ===================================================== */}
-
-        <div className="faith-feedback-top">
-          <div className="faith-feedback-top-left">
-            <div className="faith-feedback-top-icon">
-              <MessageOutlined />
-            </div>
-
-            <div>
-              <div className="faith-feedback-eyebrow">FAITHEDU</div>
-
-              <div className="faith-feedback-title">Chia sẻ cùng chúng con</div>
-
-              <div className="faith-feedback-subtitle">
-                Mỗi góp ý của bạn giúp FaithEdu hoàn thiện hơn.
-              </div>
-            </div>
+      <div className="fe-survey">
+        <header className="fe-survey-hero">
+          <motion.div
+            className="fe-survey-orb fe-survey-orb-one"
+            animate={{ y: [0, 16, 0], x: [0, -9, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <div className="fe-survey-orb fe-survey-orb-two" />
+          <div className="fe-survey-brand">
+            <span>✦ FaithEdu</span>
+            <span className="fe-survey-tag">KHẢO SÁT TRẢI NGHIỆM</span>
           </div>
-
           <button
+            className="fe-survey-close"
             type="button"
-            className="faith-feedback-close"
-            onClick={handleClose}
+            aria-label="Đóng khảo sát"
             disabled={loading}
-            aria-label="Đóng"
+            onClick={close}
           >
             <CloseOutlined />
           </button>
-        </div>
-
-        {/* =====================================================
-            CONTENT
-        ===================================================== */}
-
-        <div className="faith-feedback-content">
-          {/* ===================================================
-              USER
-          =================================================== */}
-
-          <div className="faith-feedback-user">
-            <div className="faith-feedback-user-avatar">{avatarLetter}</div>
-
-            <div className="faith-feedback-user-info">
-              <strong>{userName || "Người dùng FaithEdu"}</strong>
-
-              <span>Góp ý được gửi từ tài khoản FaithEdu của bạn</span>
-            </div>
-
-            <div className="faith-feedback-user-check">
-              <CheckCircleFilled />
-              Đã đăng nhập
-            </div>
-          </div>
-
-          {/* ===================================================
-              WELCOME
-          =================================================== */}
-
-          <div className="faith-feedback-welcome">
-            <div className="faith-feedback-welcome-icon">
-              <HeartFilled />
-            </div>
-
-            <div className="faith-feedback-welcome-content">
-              <div className="faith-feedback-welcome-title">
-                Cảm ơn bạn đã đồng hành cùng FaithEdu
-              </div>
-
-              <div className="faith-feedback-welcome-text">
-                Chúng con xin Quý Cha, Quý Anh Chị Giáo lý viên dành khoảng 2
-                phút để chia sẻ cảm nhận về hệ thống.
-              </div>
-            </div>
-          </div>
-
-          {/* ===================================================
-              FORM
-          =================================================== */}
-
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSubmit}
-            requiredMark={false}
+          <motion.div
+            className="fe-survey-heart"
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 220 }}
           >
-            {/* NAME + EMAIL */}
+            <HeartFilled />
+          </motion.div>
+          <h2>
+            Một chút cảm nhận,
+            <br />
+            một bước hoàn thiện!
+          </h2>
+          <p>
+            Sau một thời gian đồng hành, FaithEdu mong lắng nghe những chia sẻ
+            chân thành từ Quý Cha và Quý Anh Chị.
+          </p>
+          <span className="fe-survey-time">✦ Chỉ khoảng 2 phút để chia sẻ</span>
+        </header>
 
-            <div className="faith-feedback-grid">
-              <Form.Item label="Họ và tên">
-                <Input
-                  size="large"
-                  value={userName}
-                  disabled
-                  className="faith-input"
-                  placeholder="Họ và tên"
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Email nhận liên hệ"
-                name="email"
-                rules={[
-                  {
-                    required: true,
-                    message: "Vui lòng nhập email",
-                  },
-                  {
-                    type: "email",
-                    message: "Email không hợp lệ",
-                  },
-                ]}
+        <div className="fe-survey-body">
+          <AnimatePresence mode="wait" initial={false}>
+            {completed ? (
+              <motion.div
+                key="completed"
+                className="fe-survey-complete"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
               >
-                <Input
-                  size="large"
-                  className="faith-input"
-                  placeholder="you@example.com"
-                />
-              </Form.Item>
-            </div>
-
-            {/* SUBJECT */}
-
-            <Form.Item
-              label="Bạn muốn góp ý về điều gì?"
-              name="subject"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng chọn nội dung",
-                },
-              ]}
-            >
-              <Select
-                size="large"
-                placeholder="Chọn nội dung góp ý"
-                className="faith-select"
-                options={[
-                  {
-                    value: "Góp ý chung",
-                    label: "Góp ý chung",
-                  },
-                  {
-                    value: "Báo lỗi hệ thống",
-                    label: "Báo lỗi hệ thống",
-                  },
-                  {
-                    value: "Đề xuất tính năng",
-                    label: "Đề xuất tính năng",
-                  },
-                  {
-                    value: "Giao diện",
-                    label: "Giao diện",
-                  },
-                  {
-                    value: "Trải nghiệm sử dụng",
-                    label: "Trải nghiệm sử dụng",
-                  },
-                  {
-                    value: "Khác",
-                    label: "Khác",
-                  },
-                ]}
-              />
-            </Form.Item>
-
-            {/* RATING */}
-
-            <Form.Item
-              name="rating"
-              initialValue={5}
-              style={{
-                marginBottom: 18,
-              }}
-            >
-              <div className="faith-rating-box">
-                <div className="faith-rating-left">
-                  <div className="faith-rating-title">Đánh giá trải nghiệm</div>
-
-                  <div className="faith-rating-description">
-                    Bạn cảm thấy FaithEdu như thế nào?
-                  </div>
-                </div>
-
-                <div className="faith-rating-right">
-                  <Rate
-                    value={rating}
-                    onChange={(value) => {
-                      setRating(value);
-                      form.setFieldValue("rating", value);
-                    }}
-                  />
-
-                  <span className="faith-rating-number">{rating}/5</span>
-                </div>
-              </div>
-            </Form.Item>
-
-            {/* MESSAGE */}
-
-            <Form.Item
-              label="Nội dung góp ý"
-              name="message"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập nội dung góp ý",
-                },
-                {
-                  min: 10,
-                  message: "Nội dung tối thiểu 10 ký tự",
-                },
-              ]}
-            >
-              <TextArea
-                rows={5}
-                maxLength={2000}
-                showCount
-                className="faith-textarea"
-                placeholder="Hãy chia sẻ điều bạn thích, điều chưa thuận tiện hoặc tính năng bạn mong muốn..."
-              />
-            </Form.Item>
-
-            <Divider
-              style={{
-                margin: "2px 0 18px",
-                borderColor: "#EEF2F6",
-              }}
-            />
-
-            {/* =================================================
-                FOOTER
-            ================================================= */}
-
-            <div className="faith-feedback-footer">
-              <div className="faith-feedback-note">
-                Ý kiến của bạn sẽ được đội ngũ FaithEdu tiếp nhận và xem xét để
-                cải thiện hệ thống.
-              </div>
-
-              <div className="faith-feedback-actions">
-                <AppButton
-                  variant="secondary"
-                  onClick={handleClose}
-                  disabled={loading}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 180, delay: 0.1 }}
+                  className="fe-survey-complete-icon"
                 >
-                  Để sau
-                </AppButton>
-
+                  <CheckCircleFilled />
+                </motion.div>
+                <h3>Cảm ơn Quý vị đã chia sẻ!</h3>
+                <p>
+                  Mỗi đánh giá là động lực để FaithEdu tiếp tục hoàn thiện và
+                  phục vụ công tác giáo lý tốt hơn.
+                </p>
                 <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    height: 42,
-                    padding: "0 18px",
-                    border: 0,
-                    borderRadius: 10,
-                    background: "#173B5E",
-                    color: "#fff",
-                    cursor: "pointer",
-                  }}
+                  type="button"
+                  className="fe-survey-primary"
+                  onClick={close}
                 >
-                  <SendOutlined style={{ marginRight: 8 }} />
-                  {loading ? "Đang gửi..." : "Gửi góp ý"}
+                  Hoàn tất
                 </button>
-              </div>
-            </div>
-          </Form>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="questions"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <div className="fe-survey-user">
+                  <div className="fe-survey-avatar">{avatarLetter}</div>
+                  <div className="fe-survey-user-info">
+                    <strong>{userName || "Tài khoản FaithEdu"}</strong>
+                    <span>Đánh giá từ tài khoản của Quý vị</span>
+                  </div>
+                  <CheckCircleFilled className="fe-survey-verified" />
+                </div>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  requiredMark={false}
+                  initialValues={{ email: userEmail }}
+                >
+                  <div className="fe-survey-progress-head">
+                    <span>Câu hỏi {step + 1} / 4</span>
+                    <span>{(step + 1) * 25}%</span>
+                  </div>
+                  <Progress
+                    percent={(step + 1) * 25}
+                    showInfo={false}
+                    strokeColor={{ "0%": "#7161df", "100%": "#d383c9" }}
+                    trailColor="#eeeafa"
+                    size={{ height: 7 }}
+                  />
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.section
+                      key={step}
+                      className="fe-survey-question"
+                      initial={{ opacity: 0, x: 22 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -18 }}
+                      transition={{ duration: 0.24, ease: "easeOut" }}
+                    >
+                      {step === 0 && (
+                        <>
+                          <h3>Quý vị đã sử dụng FaithEdu bao lâu?</h3>
+                          <p>
+                            Chọn thời gian phù hợp với trải nghiệm của Quý vị.
+                          </p>
+                          <Form.Item
+                            name="email"
+                            label="Email liên hệ"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Vui lòng nhập email",
+                              },
+                              { type: "email", message: "Email không hợp lệ" },
+                            ]}
+                          >
+                            <Input
+                              size="large"
+                              placeholder="Email của Quý vị"
+                            />
+                          </Form.Item>
+                          <div className="fe-survey-options">
+                            {DURATIONS.map((item) => (
+                              <button
+                                key={item}
+                                type="button"
+                                className={`fe-survey-option ${survey.duration === item ? "selected" : ""}`}
+                                onClick={() => update("duration", item)}
+                              >
+                                <span className="fe-survey-option-check">
+                                  {survey.duration === item ? "✓" : ""}
+                                </span>
+                                {item}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {step === 1 && (
+                        <>
+                          <h3>Quý vị hài lòng với FaithEdu ở mức độ nào?</h3>
+                          <p>
+                            Đánh giá dựa trên trải nghiệm thực tế của Quý vị.
+                          </p>
+                          <div className="fe-survey-stars">
+                            <Rate
+                              value={survey.rating}
+                              onChange={(value) => update("rating", value)}
+                              character={<StarFilled />}
+                            />
+                          </div>
+                          <div className="fe-survey-rating-label">
+                            {survey.rating
+                              ? `${survey.rating}/5 · ${RATINGS[survey.rating]}`
+                              : "Chạm vào ngôi sao để đánh giá"}
+                          </div>
+                        </>
+                      )}
+                      {step === 2 && (
+                        <>
+                          <h3>
+                            FaithEdu đã hỗ trợ Quý vị trong công việc nào?
+                          </h3>
+                          <p>Có thể chọn nhiều nội dung hoặc bỏ qua.</p>
+                          <div className="fe-survey-options">
+                            {BENEFITS.map((item) => (
+                              <button
+                                key={item}
+                                type="button"
+                                className={`fe-survey-option ${survey.benefits.includes(item) ? "selected" : ""}`}
+                                onClick={() => toggleBenefit(item)}
+                              >
+                                <span className="fe-survey-option-check">
+                                  {survey.benefits.includes(item) ? "✓" : ""}
+                                </span>
+                                {item}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {step === 3 && (
+                        <>
+                          <h3>Quý vị mong muốn FaithEdu cải thiện điều gì?</h3>
+                          <p>
+                            Những góp ý chân thành sẽ giúp FaithEdu phát triển
+                            tốt hơn.
+                          </p>
+                          <TextArea
+                            value={survey.comment}
+                            onChange={(event) =>
+                              update("comment", event.target.value)
+                            }
+                            rows={5}
+                            maxLength={2000}
+                            showCount
+                            placeholder="Điều Quý vị yêu thích, những khó khăn hoặc tính năng mong muốn..."
+                          />
+                          <div className="fe-survey-optional">
+                            Quý vị có thể bỏ qua nếu chưa có góp ý thêm.
+                          </div>
+                        </>
+                      )}
+                    </motion.section>
+                  </AnimatePresence>
+                  <div className="fe-survey-actions">
+                    <button
+                      type="button"
+                      className="fe-survey-secondary"
+                      onClick={() =>
+                        step === 0 ? close() : setStep((s) => s - 1)
+                      }
+                      disabled={loading}
+                    >
+                      {step === 0 ? (
+                        "Để sau"
+                      ) : (
+                        <>
+                          <ArrowLeftOutlined /> Quay lại
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="fe-survey-primary"
+                      disabled={loading || !canContinue}
+                      onClick={next}
+                    >
+                      {step === 3 ? (
+                        <>
+                          <SendOutlined /> Gửi đánh giá
+                        </>
+                      ) : (
+                        <>
+                          Tiếp tục <ArrowRightOutlined />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </Form>
+                <div className="fe-survey-footnote">
+                  Ý kiến của Quý vị được gửi đến đội ngũ FaithEdu để cải thiện
+                  hệ thống.
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        {/* =====================================================
-            LOADING
-        ===================================================== */}
-
         {loading && (
-          <div className="faith-feedback-loading">
-            <div className="faith-feedback-loading-box">
+          <div className="fe-survey-loading">
+            <div className="fe-survey-loading-card">
               <LoadingLogo progress={loadingProgress} />
-
-              <div className="faith-feedback-loading-text">
-                {loadingProgress >= 100 ? "Đã gửi góp ý" : "Đang gửi góp ý..."}
-              </div>
-
-              <div className="faith-feedback-loading-sub">
-                {loadingProgress >= 100
-                  ? "Đang hoàn tất..."
-                  : "Vui lòng chờ một chút"}
-              </div>
             </div>
           </div>
         )}
       </div>
-
       <style>{`
-        /* =====================================================
-           MODAL
-        ===================================================== */
-
-        .faith-feedback-modal {
-          position: relative;
-          overflow: hidden;
-
-          background: #ffffff;
-
-          border-radius: 18px;
-
-          font-family: inherit;
-        }
-
-        /* =====================================================
-           TOP
-        ===================================================== */
-
-        .faith-feedback-top {
-          position: relative;
-
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-
-          padding: 22px 24px;
-
-          background:
-            radial-gradient(
-              circle at 92% 0%,
-              rgba(217, 164, 65, 0.18),
-              transparent 28%
-            ),
-            linear-gradient(
-              135deg,
-              #102e4a 0%,
-              #173b5e 55%,
-              #244d76 100%
-            );
-
-          color: #ffffff;
-        }
-
-        .faith-feedback-top-left {
-          display: flex;
-          align-items: center;
-
-          gap: 14px;
-
-          min-width: 0;
-
-          padding-right: 35px;
-        }
-
-        .faith-feedback-top-icon {
-          flex: 0 0 48px;
-
-          width: 48px;
-          height: 48px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 14px;
-
-          background: rgba(255, 255, 255, 0.11);
-
-          border: 1px solid rgba(255, 255, 255, 0.16);
-
-          color: ${COLORS.gold};
-
-          font-size: 21px;
-        }
-
-        .faith-feedback-eyebrow {
-          margin-bottom: 3px;
-
-          color: ${COLORS.gold};
-
-          font-size: 9px;
-          font-weight: 800;
-
-          letter-spacing: 1.8px;
-        }
-
-        .faith-feedback-title {
-          color: #ffffff;
-
-          font-size: 19px;
-          font-weight: 750;
-
-          line-height: 1.25;
-        }
-
-        .faith-feedback-subtitle {
-          margin-top: 4px;
-
-          color: rgba(255, 255, 255, 0.68);
-
-          font-size: 11px;
-          line-height: 1.45;
-        }
-
-        .faith-feedback-close {
-          position: absolute;
-
-          top: 18px;
-          right: 18px;
-
-          width: 32px;
-          height: 32px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border: 0;
-          border-radius: 9px;
-
-          background: rgba(255, 255, 255, 0.09);
-
-          color: rgba(255, 255, 255, 0.72);
-
-          cursor: pointer;
-
-          transition: all 0.2s ease;
-        }
-
-        .faith-feedback-close:hover {
-          background: rgba(255, 255, 255, 0.17);
-          color: #ffffff;
-        }
-
-        .faith-feedback-close:disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-
-        /* =====================================================
-           CONTENT
-        ===================================================== */
-
-        .faith-feedback-content {
-          padding: 22px 25px 24px;
-        }
-
-        /* =====================================================
-           USER
-        ===================================================== */
-
-        .faith-feedback-user {
-          display: flex;
-          align-items: center;
-
-          gap: 11px;
-
-          padding: 10px 12px;
-
-          margin-bottom: 14px;
-
-          border: 1px solid ${COLORS.border};
-          border-radius: 12px;
-
-          background: #ffffff;
-        }
-
-        .faith-feedback-user-avatar {
-          flex: 0 0 40px;
-
-          width: 40px;
-          height: 40px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 50%;
-
-          background:
-            linear-gradient(
-              145deg,
-              ${COLORS.navy},
-              #28567f
-            );
-
-          color: #ffffff;
-
-          font-size: 14px;
-          font-weight: 750;
-        }
-
-        .faith-feedback-user-info {
-          min-width: 0;
-          flex: 1;
-
-          display: flex;
-          flex-direction: column;
-
-          gap: 2px;
-        }
-
-        .faith-feedback-user-info strong {
-          overflow: hidden;
-
-          color: ${COLORS.text};
-
-          font-size: 12px;
-          font-weight: 700;
-
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .faith-feedback-user-info span {
-          overflow: hidden;
-
-          color: #94a3b8;
-
-          font-size: 10px;
-
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .faith-feedback-user-check {
-          display: flex;
-          align-items: center;
-
-          gap: 4px;
-
-          padding: 5px 8px;
-
-          border-radius: 7px;
-
-          background: #f0fdf4;
-
-          color: #15803d;
-
-          font-size: 9px;
-          font-weight: 700;
-
-          white-space: nowrap;
-        }
-
-        /* =====================================================
-           WELCOME
-        ===================================================== */
-
-        .faith-feedback-welcome {
-          display: flex;
-          align-items: center;
-
-          gap: 12px;
-
-          padding: 13px 14px;
-
-          margin-bottom: 19px;
-
-          border: 1px solid #f0e6c6;
-          border-radius: 12px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #fffdf7,
-              #fff9eb
-            );
-        }
-
-        .faith-feedback-welcome-icon {
-          flex: 0 0 38px;
-
-          width: 38px;
-          height: 38px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 11px;
-
-          background: #fff3c9;
-
-          color: ${COLORS.gold};
-
-          font-size: 16px;
-        }
-
-        .faith-feedback-welcome-content {
-          min-width: 0;
-        }
-
-        .faith-feedback-welcome-title {
-          margin-bottom: 2px;
-
-          color: ${COLORS.text};
-
-          font-size: 12px;
-          font-weight: 750;
-        }
-
-        .faith-feedback-welcome-text {
-          color: #64748b;
-
-          font-size: 11px;
-          line-height: 1.5;
-        }
-
-        /* =====================================================
-           FORM
-        ===================================================== */
-
-        .faith-feedback-grid {
-          display: grid;
-
-          grid-template-columns: 1fr 1fr;
-
-          gap: 14px;
-        }
-
-        .faith-feedback-content
-          .ant-form-item {
-          margin-bottom: 15px;
-        }
-
-        .faith-feedback-content
-          .ant-form-item-label {
-          padding-bottom: 5px;
-        }
-
-        .faith-feedback-content
-          .ant-form-item-label
-          > label {
-          height: auto;
-
-          color: #334155;
-
-          font-size: 11px;
-          font-weight: 700;
-        }
-
-        .faith-input {
-          height: 42px !important;
-
-          padding: 0 12px !important;
-
-          border-color: #e1e7ee !important;
-
-          border-radius: 9px !important;
-
-          box-shadow: none !important;
-
-          color: ${COLORS.text};
-
-          font-size: 12px;
-
-          transition: all 0.2s ease !important;
-        }
-
-        .faith-input:hover {
-          border-color: #bdc9d7 !important;
-        }
-
-        .faith-input:focus,
-        .faith-input.ant-input-focused {
-          border-color: ${COLORS.navy} !important;
-
-          box-shadow:
-            0 0 0 3px
-            rgba(23, 59, 94, 0.07) !important;
-        }
-
-        .faith-input:disabled {
-          color: #475569 !important;
-
-          background: #f8fafc !important;
-
-          cursor: not-allowed;
-        }
-
-        .faith-input::placeholder {
-          color: #a4afbd;
-        }
-
-        /* =====================================================
-           SELECT
-        ===================================================== */
-
-        .faith-select {
-          width: 100%;
-        }
-
-        .faith-select .ant-select-selector {
-          height: 42px !important;
-
-          display: flex;
-          align-items: center;
-
-          padding: 0 11px !important;
-
-          border-color: #e1e7ee !important;
-
-          border-radius: 9px !important;
-
-          box-shadow: none !important;
-
-          font-size: 12px;
-        }
-
-        .faith-select:hover
-          .ant-select-selector {
-          border-color: #bdc9d7 !important;
-        }
-
-        .faith-select.ant-select-focused
-          .ant-select-selector {
-          border-color: ${COLORS.navy} !important;
-
-          box-shadow:
-            0 0 0 3px
-            rgba(23, 59, 94, 0.07) !important;
-        }
-
-        /* =====================================================
-           TEXTAREA
-        ===================================================== */
-
-        .faith-textarea {
-          padding: 10px 12px !important;
-
-          border-color: #e1e7ee !important;
-
-          border-radius: 9px !important;
-
-          box-shadow: none !important;
-
-          color: ${COLORS.text};
-
-          font-size: 12px;
-
-          line-height: 1.55;
-
-          resize: vertical;
-        }
-
-        .faith-textarea:hover {
-          border-color: #bdc9d7 !important;
-        }
-
-        .faith-textarea:focus,
-        .faith-textarea.ant-input-focused {
-          border-color: ${COLORS.navy} !important;
-
-          box-shadow:
-            0 0 0 3px
-            rgba(23, 59, 94, 0.07) !important;
-        }
-
-        /* =====================================================
-           RATING
-        ===================================================== */
-
-        .faith-rating-box {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-
-          gap: 15px;
-
-          padding: 13px 15px;
-
-          border: 1px solid #f0e6c6;
-
-          border-radius: 11px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #fffdf7,
-              #fff9eb
-            );
-        }
-
-        .faith-rating-left {
-          display: flex;
-          flex-direction: column;
-
-          gap: 2px;
-        }
-
-        .faith-rating-title {
-          color: #334155;
-
-          font-size: 12px;
-          font-weight: 700;
-        }
-
-        .faith-rating-description {
-          color: #94a3b8;
-
-          font-size: 10px;
-        }
-
-        .faith-rating-right {
-          display: flex;
-          align-items: center;
-
-          gap: 8px;
-
-          white-space: nowrap;
-        }
-
-        .faith-rating-right
-          .ant-rate {
-          font-size: 19px;
-        }
-
-        .faith-rating-right
-          .ant-rate-star {
-          margin-inline-end: 2px;
-        }
-
-        .faith-rating-number {
-          min-width: 27px;
-
-          color: #b18418;
-
-          font-size: 11px;
-          font-weight: 750;
-        }
-
-        /* =====================================================
-           FOOTER
-        ===================================================== */
-
-        .faith-feedback-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-
-          gap: 18px;
-        }
-
-        .faith-feedback-note {
-          max-width: 280px;
-
-          color: #94a3b8;
-
-          font-size: 10px;
-          line-height: 1.5;
-        }
-
-        .faith-feedback-actions {
-          display: flex;
-          align-items: center;
-
-          gap: 8px;
-
-          flex-shrink: 0;
-        }
-
-        /* =====================================================
-           LOADING
-        ===================================================== */
-
-        .faith-feedback-loading {
-          position: absolute;
-
-          inset: 0;
-
-          z-index: 100;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 18px;
-
-          background: rgba(255, 255, 255, 0.91);
-
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
-        }
-
-        .faith-feedback-loading-box {
-          min-width: 225px;
-
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-
-          padding: 27px 35px;
-
-          border: 1px solid #edf1f5;
-
-          border-radius: 15px;
-
-          background: rgba(255, 255, 255, 0.98);
-
-          box-shadow:
-            0 18px 50px
-            rgba(15, 23, 42, 0.12);
-        }
-
-        .faith-feedback-loading-text {
-          margin-top: 11px;
-
-          color: ${COLORS.navy};
-
-          font-size: 13px;
-          font-weight: 750;
-        }
-
-        .faith-feedback-loading-sub {
-          margin-top: 3px;
-
-          color: #94a3b8;
-
-          font-size: 10px;
-        }
-
-        /* =====================================================
-           MOBILE
-        ===================================================== */
-
-        @media (max-width: 600px) {
-          .faith-feedback-top {
-            padding: 19px 18px;
-          }
-
-          .faith-feedback-top-icon {
-            flex-basis: 42px;
-
-            width: 42px;
-            height: 42px;
-
-            border-radius: 12px;
-
-            font-size: 18px;
-          }
-
-          .faith-feedback-title {
-            font-size: 17px;
-          }
-
-          .faith-feedback-subtitle {
-            font-size: 10px;
-          }
-
-          .faith-feedback-content {
-            padding: 18px;
-          }
-
-          .faith-feedback-grid {
-            grid-template-columns: 1fr;
-
-            gap: 0;
-          }
-
-          .faith-feedback-user-check {
-            display: none;
-          }
-
-          .faith-feedback-welcome {
-            align-items: flex-start;
-
-            padding: 12px;
-          }
-
-          .faith-rating-box {
-            flex-direction: column;
-
-            align-items: flex-start;
-          }
-
-          .faith-rating-right {
-            width: 100%;
-
-            justify-content: space-between;
-          }
-
-          .faith-feedback-footer {
-            flex-direction: column;
-
-            align-items: stretch;
-          }
-
-          .faith-feedback-note {
-            max-width: none;
-          }
-
-          .faith-feedback-actions {
-            width: 100%;
-          }
-
-          .faith-feedback-actions > * {
-            flex: 1;
-          }
-
-          .faith-feedback-loading-box {
-            min-width: 190px;
-
-            padding: 24px 28px;
-          }
-        }
-
-        @media (max-width: 380px) {
-          .faith-feedback-content {
-            padding: 15px;
-          }
-
-          .faith-feedback-top-left {
-            gap: 10px;
-          }
-
-          .faith-feedback-top-icon {
-            display: none;
-          }
-
-          .faith-feedback-title {
-            font-size: 16px;
-          }
-
-          .faith-feedback-welcome-text {
-            font-size: 10px;
-          }
-
-          .faith-rating-right
-            .ant-rate {
-            font-size: 17px;
-          }
-        }
+        .fe-survey{position:relative;overflow:hidden;border-radius:20px;background:#fff;color:#292e4b;font-family:inherit}
+        .fe-survey-hero{position:relative;overflow:hidden;background:linear-gradient(125deg,#4e46a6,#7357d7 62%,#a95fc8);color:#fff;padding:23px 27px 28px}
+        .fe-survey-orb{position:absolute;border:1px solid rgba(255,255,255,.22);border-radius:50%;pointer-events:none}
+        .fe-survey-orb-one{width:220px;height:220px;right:-80px;top:-90px}.fe-survey-orb-two{width:120px;height:120px;right:70px;bottom:-90px;background:rgba(255,255,255,.04)}
+        .fe-survey-brand{display:flex;justify-content:space-between;align-items:center;gap:15px;padding-right:35px;position:relative;font-weight:800;font-size:14px}
+        .fe-survey-tag{color:#e7dcff;font-size:9px;letter-spacing:1.5px;font-weight:800}
+        .fe-survey-close{position:absolute;top:15px;right:16px;border:0;border-radius:9px;width:31px;height:31px;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;z-index:2}
+        .fe-survey-close:disabled{opacity:.5;cursor:not-allowed}.fe-survey-heart{position:relative;margin-top:20px;font-size:29px;color:#ffb8dc}
+        .fe-survey-hero h2{position:relative;color:#fff;font-size:25px;line-height:1.24;font-weight:800;margin:7px 0 9px}
+        .fe-survey-hero p{position:relative;max-width:440px;color:#f0eaff;font-size:12px;line-height:1.7;margin:0}
+        .fe-survey-time{position:relative;display:inline-block;margin-top:14px;padding:6px 12px;border-radius:20px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);font-size:11px;font-weight:700}
+        .fe-survey-body{padding:20px 27px 22px}.fe-survey-user{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#faf9ff;border:1px solid #efecfb;border-radius:12px;margin-bottom:19px}
+        .fe-survey-avatar{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:linear-gradient(145deg,#6656d1,#b274d2);color:#fff;font-weight:800}
+        .fe-survey-user-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}.fe-survey-user-info strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fe-survey-user-info span{font-size:10px;color:#8c8ba1}.fe-survey-verified{color:#29a779}
+        .fe-survey-progress-head{display:flex;justify-content:space-between;color:#7060c6;font-weight:700;font-size:11px;margin-bottom:6px}
+        .fe-survey .ant-progress{margin:0 0 18px;line-height:1}.fe-survey-question{min-height:225px}.fe-survey-question h3{font-size:17px;font-weight:800;color:#292e4b;margin:0 0 7px;line-height:1.45}.fe-survey-question>p{font-size:12px;color:#8989a0;margin:0 0 17px}
+        .fe-survey .ant-form-item{margin-bottom:14px}.fe-survey .ant-form-item-label>label{font-size:11px;font-weight:700;color:#5d607a}.fe-survey .ant-input,.fe-survey .ant-input-affix-wrapper{border-color:#e6e2f3;border-radius:10px;font-size:12px}.fe-survey .ant-input:focus,.fe-survey .ant-input-focused{border-color:#8570e5;box-shadow:0 0 0 3px rgba(117,91,220,.08)}
+        .fe-survey-options{display:flex;flex-direction:column;gap:8px}.fe-survey-option{display:flex;align-items:center;text-align:left;gap:11px;width:100%;min-height:44px;padding:10px 13px;background:#fff;border:1.5px solid #e9e6f5;border-radius:11px;color:#43445f;font-size:12px;cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
+        .fe-survey-option:hover{transform:translateX(3px);border-color:#a699ec;background:#faf8ff}.fe-survey-option.selected{background:#f3f0ff;border-color:#806be2;color:#5b48bf;font-weight:700}
+        .fe-survey-option-check{display:grid;place-items:center;width:18px;height:18px;flex:0 0 18px;border:2px solid #c8c5db;border-radius:50%;font-size:11px}.fe-survey-option.selected .fe-survey-option-check{background:#806be2;border-color:#806be2;color:#fff}
+        .fe-survey-stars{display:flex;justify-content:center;margin:33px 0 15px}.fe-survey-stars .ant-rate{font-size:38px;color:#f3b842}.fe-survey-stars .ant-rate-star{margin-inline-end:10px;transition:transform .18s}.fe-survey-stars .ant-rate-star:hover{transform:scale(1.18)}.fe-survey-rating-label{text-align:center;color:#7762c8;font-size:13px;font-weight:700}
+        .fe-survey-optional{font-size:11px;color:#9a98ae;margin-top:9px}.fe-survey-actions{display:flex;justify-content:space-between;gap:12px;margin-top:22px}.fe-survey-primary,.fe-survey-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:11px;min-height:42px;padding:0 18px;font-size:12px;font-weight:750;cursor:pointer;transition:transform .2s,box-shadow .2s}
+        .fe-survey-primary{background:linear-gradient(110deg,#6555d4,#9665dd);color:#fff;box-shadow:0 5px 15px rgba(118,96,215,.24)}.fe-survey-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 9px 22px rgba(118,96,215,.3)}.fe-survey-primary:disabled{opacity:.5;cursor:not-allowed}.fe-survey-secondary{background:#f2f0f9;color:#675d8e}.fe-survey-secondary:hover:not(:disabled){background:#eae6f7}.fe-survey-footnote{text-align:center;color:#aaa6ba;font-size:10px;margin-top:18px;line-height:1.5}
+        .fe-survey-complete{text-align:center;padding:30px 8px}.fe-survey-complete-icon{color:#52ba9c;font-size:56px}.fe-survey-complete h3{font-size:21px;font-weight:800;margin:15px 0 8px}.fe-survey-complete p{font-size:12px;color:#8c8ba1;line-height:1.7;max-width:360px;margin:0 auto 22px}
+        .fe-survey-loading{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.93);backdrop-filter:blur(6px)}.fe-survey-loading-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px;background:#fff;border:1px solid #eeeafa;border-radius:16px;box-shadow:0 15px 40px rgba(50,35,110,.12)}.fe-survey-loading-card strong{font-size:13px;color:#6352bd}.fe-survey-loading-card span{font-size:11px;color:#9994af}
+        @media(max-width:600px){.fe-survey-hero{padding:19px 19px 22px}.fe-survey-hero h2{font-size:21px}.fe-survey-brand{font-size:12px}.fe-survey-tag{font-size:8px;letter-spacing:.5px}.fe-survey-body{padding:17px 18px 20px}.fe-survey-question h3{font-size:15px}.fe-survey-stars .ant-rate{font-size:31px}.fe-survey-stars .ant-rate-star{margin-inline-end:5px}.fe-survey-actions button{padding:0 13px}.fe-survey-question{min-height:210px}}
+        @media(prefers-reduced-motion:reduce){.fe-survey *{transition:none!important;animation:none!important}}
       `}</style>
     </Modal>
   );
