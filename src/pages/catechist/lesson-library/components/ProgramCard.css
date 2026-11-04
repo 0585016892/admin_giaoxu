@@ -1,0 +1,216 @@
+.ll-program-list-item {
+  --program-navy: #173b5e;
+  --program-gold: #d9a441;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 88px;
+  padding: 15px 18px;
+  background: #ffffff;
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ll-program-list-item:hover {
+  background: #fcfdff;
+  border-color: #cbd8e5;
+  box-shadow: 0 5px 16px rgba(16, 42, 67, 0.06);
+}
+
+.ll-program-list-item:focus-visible {
+  outline: 3px solid rgba(217, 164, 65, 0.35);
+  outline-offset: 2px;
+}
+
+/* Số thứ tự */
+
+.ll-program-list-number {
+  flex-shrink: 0;
+  width: 28px;
+  color: #a0aab5;
+  font-family: Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Icon */
+
+.ll-program-list-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  color: var(--program-navy);
+  background: #eef3f7;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.ll-program-list-item:hover .ll-program-list-icon {
+  color: #ffffff;
+  background: var(--program-navy);
+}
+
+/* Nội dung */
+
+.ll-program-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ll-program-list-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-bottom: 5px;
+}
+
+.ll-program-list-heading h3 {
+  margin: 0;
+  color: #243447;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.ll-program-list-code.ant-tag {
+  margin: 0;
+  padding: 1px 7px;
+  color: #45627d;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 19px;
+  background: #f1f5f9;
+  border: 0;
+  border-radius: 4px;
+}
+
+.ll-program-list-content p {
+  margin: 0;
+  overflow: hidden;
+  color: #84909d;
+  font-size: 12px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hành động */
+
+.ll-program-list-action {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.ll-program-list-open-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64788c;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ll-program-list-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #64788c;
+  background: #f5f7fa;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.ll-program-list-item:hover .ll-program-list-arrow {
+  color: #ffffff;
+  background: var(--program-navy);
+  transform: translateX(2px);
+}
+
+/* Tablet */
+
+@media (max-width: 768px) {
+  .ll-program-list-item {
+    gap: 11px;
+    padding: 13px;
+  }
+
+  .ll-program-list-number {
+    width: 22px;
+    font-size: 15px;
+  }
+
+  .ll-program-list-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ll-program-list-open-text {
+    display: none;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 480px) {
+  .ll-program-list-item {
+    min-height: 76px;
+    gap: 10px;
+    padding: 11px;
+    border-radius: 10px;
+  }
+
+  .ll-program-list-number {
+    width: 19px;
+    font-size: 13px;
+  }
+
+  .ll-program-list-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ll-program-list-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .ll-program-list-heading {
+    gap: 4px 7px;
+    margin-bottom: 3px;
+  }
+
+  .ll-program-list-heading h3 {
+    font-size: 13px;
+  }
+
+  .ll-program-list-content p {
+    font-size: 11px;
+  }
+
+  .ll-program-list-arrow {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ll-program-list-item,
+  .ll-program-list-icon,
+  .ll-program-list-arrow {
+    transition: none;
+  }
+}

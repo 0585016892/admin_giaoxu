@@ -378,6 +378,7 @@ export default function StudentManagement() {
   // Kích thước in: 5,3cm × 8cm
   // Độ phân giải: khoảng 600 DPI
   // =========================================================
+  console.log(students);
 
   const QR_CARD_WIDTH = 1252;
   const QR_CARD_HEIGHT = 1890;
@@ -387,10 +388,17 @@ export default function StudentManagement() {
 
   // =========================================================
   // 1. TẠO ẢNH THẺ QR
+  // - Hàng 1: Tên thánh
+  // - Hàng 2: Họ tên học sinh
+  // - Hàng 3: Tên lớp
+  // - Tự giảm font khi nội dung dài
+  // - Không sử dụng dấu "..." để rút gọn
   // =========================================================
+
   const createQRCardBlob = async ({
     background,
     qrCanvas,
+    saintName = "",
     studentName = "",
     className = "Chưa xếp lớp",
   }) => {
@@ -445,58 +453,101 @@ export default function StudentManagement() {
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    ctx.fillStyle = "#17365D";
+
+    // Chiều rộng tối đa của chữ
+    const maxTextWidth = 760;
 
     // =======================================================
-    // STUDENT NAME
+    // HÀM TỰ ĐỘNG GIẢM FONT, KHÔNG CẮT CHỮ
     // =======================================================
 
-    let studentFontSize = 52;
+    const drawFitText = ({
+      text,
+      x,
+      y,
+      maxWidth = maxTextWidth,
+      initialFontSize = 52,
+      minFontSize = 18,
+      fontWeight = "bold",
+      color = "#17365D",
+      fontFamily = "Arial",
+    }) => {
+      const content = String(text || "").trim();
 
-    const maxTextWidth = 650;
+      if (!content) {
+        return;
+      }
+
+      let fontSize = initialFontSize;
+
+      ctx.fillStyle = color;
+
+      // Giảm cỡ chữ đến khi toàn bộ nội dung vừa khung
+      while (fontSize > minFontSize) {
+        ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+
+        if (ctx.measureText(content).width <= maxWidth) {
+          break;
+        }
+
+        fontSize -= 1;
+      }
+
+      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+
+      // Không truyền maxWidth vào fillText vì không muốn
+      // trình duyệt tự co chữ hoặc xử lý cắt nội dung.
+      ctx.fillText(content, x, y);
+    };
+
+    // =======================================================
+    // HÀNG 1: TÊN THÁNH
+    // =======================================================
+
+    const safeSaintName = String(saintName || "").trim();
+
+    drawFitText({
+      text: safeSaintName,
+      x: QR_CENTER_X,
+      y: qrY + qrSize + 42,
+      maxWidth: maxTextWidth,
+      initialFontSize: 42,
+      minFontSize: 18,
+      color: "#B7791F",
+    });
+
+    // =======================================================
+    // HÀNG 2: HỌ TÊN HỌC SINH
+    // =======================================================
 
     const safeStudentName = String(studentName || "").trim() || "Chưa có tên";
 
-    /**
-     * Tự giảm font nếu tên quá dài
-     */
-
-    ctx.font = `bold ${studentFontSize}px Arial`;
-
-    while (
-      ctx.measureText(safeStudentName).width > maxTextWidth &&
-      studentFontSize > 32
-    ) {
-      studentFontSize -= 2;
-
-      ctx.font = `bold ${studentFontSize}px Arial`;
-    }
-
-    ctx.fillStyle = "#17365D";
-
-    ctx.fillText(safeStudentName, QR_CENTER_X, qrY + qrSize + 70, maxTextWidth);
+    drawFitText({
+      text: safeStudentName,
+      x: QR_CENTER_X,
+      y: qrY + qrSize + 100,
+      maxWidth: maxTextWidth,
+      initialFontSize: 52,
+      minFontSize: 18,
+      color: "#17365D",
+    });
 
     // =======================================================
-    // CLASS
+    // HÀNG 3: TÊN LỚP
     // =======================================================
 
     const safeClassName = String(className || "").trim() || "Chưa xếp lớp";
 
-    let classFontSize = 42;
-
-    ctx.font = `bold ${classFontSize}px Arial`;
-
-    while (
-      ctx.measureText(safeClassName).width > maxTextWidth &&
-      classFontSize > 28
-    ) {
-      classFontSize -= 2;
-
-      ctx.font = `bold ${classFontSize}px Arial`;
-    }
-
-    ctx.fillStyle = "#555555";
-
-    ctx.fillText(safeClassName, QR_CENTER_X, qrY + qrSize + 135, maxTextWidth);
+    drawFitText({
+      text: safeClassName,
+      x: QR_CENTER_X,
+      y: qrY + qrSize + 158,
+      maxWidth: maxTextWidth,
+      initialFontSize: 38,
+      minFontSize: 16,
+      color: "#555555",
+    });
 
     // =======================================================
     // CANVAS → PNG BLOB
@@ -561,10 +612,16 @@ export default function StudentManagement() {
       const blob = await createQRCardBlob({
         background,
         qrCanvas,
+
+        // Hàng 1
+        saintName: qrStudent.saint_name || "",
+
+        // Hàng 2
         studentName: qrStudent.name || "",
+
+        // Hàng 3
         className: qrStudent.className || "Chưa xếp lớp",
       });
-
       if (!blob) {
         throw new Error("Không tạo được ảnh thẻ QR!");
       }
@@ -761,7 +818,14 @@ export default function StudentManagement() {
           const blob = await createQRCardBlob({
             background,
             qrCanvas,
+
+            // Hàng 1: Tên thánh
+            saintName: student.saint_name || "",
+
+            // Hàng 2: Họ tên học sinh
             studentName: student.name || "",
+
+            // Hàng 3: Tên lớp
             className: student.className || "Chưa xếp lớp",
           });
 
@@ -4854,50 +4918,81 @@ export default function StudentManagement() {
           width={480}
           destroyOnClose
           title={
-            <Space>
-              <QrcodeOutlined style={{ color: COLORS.navy, fontSize: 20 }} />
-              <span>Xem trước thẻ QR học sinh</span>
+            <Space size={10}>
+              <QrcodeOutlined
+                style={{
+                  color: COLORS.navy,
+                  fontSize: 22,
+                }}
+              />
+              <span style={{ fontWeight: 800 }}>Xem trước thẻ QR học sinh</span>
             </Space>
           }
         >
           {qrStudent && (
             <div className="student-qr-preview-content">
+              {/* ================= THẺ QR ================= */}
               <div className="student-qr-preview-card">
+                {/* Ảnh nền */}
                 <img
                   className="student-qr-preview-background"
                   src={backqr}
                   alt="Mặt thẻ QR FaithEdu"
                 />
+
+                {/* Mã QR */}
                 <div className="student-qr-preview-code">
                   <QRCodeCanvas
                     id={`student-qr-${qrStudent.id}`}
-                    value={qrStudent.qr_token}
+                    value={qrStudent.qr_token || ""}
                     size={520}
                     level="H"
                     includeMargin
                     className="student-qr-preview-canvas"
                   />
                 </div>
-                <div className="student-qr-preview-student-name">
+
+                {/* Hàng 1: Tên thánh */}
+                <div
+                  className="student-qr-preview-saint-name"
+                  title={qrStudent.saint_name || ""}
+                >
+                  {qrStudent.saint_name || ""}
+                </div>
+
+                {/* Hàng 2: Họ tên học sinh */}
+                <div
+                  className="student-qr-preview-student-name"
+                  title={qrStudent.name || ""}
+                >
                   {qrStudent.name || "Chưa có tên"}
                 </div>
-                <div className="student-qr-preview-class-name">
+
+                {/* Hàng 3: Tên lớp */}
+                <div
+                  className="student-qr-preview-class-name"
+                  title={qrStudent.className || ""}
+                >
                   {qrStudent.className || "Chưa xếp lớp"}
                 </div>
               </div>
 
+              {/* ================= GHI CHÚ ================= */}
               <Typography.Text
                 type="secondary"
                 style={{
                   display: "block",
                   textAlign: "center",
                   fontSize: 12,
-                  margin: "12px 0 18px",
+                  lineHeight: 1.7,
+                  margin: "14px 0 18px",
                 }}
               >
-                Thẻ xem trước sẽ được tải xuống với bố cục như hình bên trên.
+                Kiểm tra tên thánh, họ tên và lớp trước khi tải thẻ QR. Nội dung
+                tên dài sẽ được điều chỉnh cỡ chữ.
               </Typography.Text>
 
+              {/* ================= NÚT THAO TÁC ================= */}
               <div className="student-qr-actions">
                 <AppButton
                   icon={<DownloadOutlined />}
@@ -4905,8 +5000,8 @@ export default function StudentManagement() {
                   onClick={handleDownloadQR}
                   style={{
                     borderRadius: 10,
-                    height: 40,
-                    padding: "0 16px",
+                    height: 42,
+                    padding: "0 20px",
                     fontWeight: 800,
                     background: COLORS.navy,
                     borderColor: COLORS.navy,
@@ -4915,6 +5010,7 @@ export default function StudentManagement() {
                 >
                   Tải thẻ QR
                 </AppButton>
+
                 <AppButton
                   size="small"
                   onClick={() => {
@@ -4923,8 +5019,8 @@ export default function StudentManagement() {
                   }}
                   style={{
                     borderRadius: 10,
-                    height: 40,
-                    padding: "0 16px",
+                    height: 42,
+                    padding: "0 20px",
                     fontWeight: 800,
                   }}
                 >

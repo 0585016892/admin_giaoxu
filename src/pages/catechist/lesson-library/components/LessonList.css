@@ -1,0 +1,50 @@
+.ll-lesson-list-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.ll-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.ll-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px dashed #d8e0e8;
+  border-radius: 14px;
+}
+
+.ll-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+@media (max-width: 1100px) {
+  .ll-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .ll-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .ll-pagination {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .ll-grid {
+    grid-template-columns: 1fr;
+  }
+}

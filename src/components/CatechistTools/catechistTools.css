@@ -952,3 +952,29 @@
     flex-direction: column;
   }
 }
+/* =====================================================
+   KHO CÔNG CỤ - HIỂN THỊ TRÊN RESOURCE VIEWER
+===================================================== */
+
+.catechist-tools-drawer {
+  position: absolute !important;
+  z-index: 2147483647 !important;
+}
+
+.catechist-tools-drawer .ant-drawer-mask {
+  position: absolute !important;
+  z-index: 2147483646 !important;
+}
+
+.catechist-tools-drawer .ant-drawer-content-wrapper {
+  z-index: 2147483647 !important;
+}
+
+.catechist-tools-drawer .ant-drawer-content {
+  height: 100%;
+  overflow: hidden;
+}
+
+.catechist-tools-drawer .ant-drawer-body {
+  overflow-y: auto;
+}

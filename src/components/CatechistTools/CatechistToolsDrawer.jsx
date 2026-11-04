@@ -243,6 +243,14 @@ const CatechistToolsDrawer = ({ open, onClose, students = [] }) => {
       onClose={handleClose}
       destroyOnClose
       closeIcon={<CloseOutlined />}
+      // Quan trọng: render Drawer bên trong ResourceViewerPage
+      getContainer={false}
+      // Đặt Drawer lên trên toàn bộ nội dung
+      zIndex={2147483647}
+      rootStyle={{
+        position: "absolute",
+        zIndex: 2147483647,
+      }}
       title={
         <div className="catechist-tools-header">
           <div className="catechist-tools-header-icon">

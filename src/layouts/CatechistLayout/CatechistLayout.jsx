@@ -10,7 +10,13 @@ const { Content, Footer } = Layout;
 const { Text } = Typography;
 
 export default function CatechistLayout() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("faithEdu_sidebar_collapsed") === "true";
+    } catch (error) {
+      return false;
+    }
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (

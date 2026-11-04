@@ -745,6 +745,7 @@ export default function CatechistHeader({ mobileOpen, setMobileOpen }) {
         break;
     }
   };
+  console.log("setting", settings);
 
   /* =========================================================
      NOTIFICATION DROPDOWN

@@ -2269,7 +2269,7 @@ const Statistics = () => {
                 ) : (
                   <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="API chưa trả về danh sách chuyên cần học viên"
+                    description="Chưa có chuyên cần học viên"
                   />
                 )}
               </Card>

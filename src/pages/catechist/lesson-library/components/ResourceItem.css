@@ -1,0 +1,207 @@
+/* Table row */
+
+.ll-resource-row {
+  background: #ffffff;
+  transition: background 0.18s ease;
+}
+
+.ll-resource-row:hover {
+  background: #f8fafc;
+}
+
+.ll-resource-row.is-disabled {
+  opacity: 0.65;
+}
+
+.ll-resource-cell {
+  padding: 12px 14px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: middle;
+}
+
+/* Tên tài liệu */
+
+.ll-resource-name-cell {
+  min-width: 250px;
+}
+
+.ll-resource-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.ll-resource-table-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 39px;
+  height: 39px;
+  color: #173b5e;
+  background: #eef3f7;
+  border-radius: 9px;
+}
+
+.ll-resource-name-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+}
+
+.ll-resource-table-title {
+  display: block;
+  overflow: hidden;
+  color: #243447;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ll-resource-table-description {
+  display: block;
+  overflow: hidden;
+  max-width: 360px;
+  color: #8a96a3;
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Danh mục */
+
+.ll-resource-category-cell {
+  white-space: nowrap;
+}
+
+.ll-resource-category-tag.ant-tag {
+  margin: 0;
+  padding: 3px 8px;
+  color: #536b82;
+  font-size: 11px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 5px;
+}
+
+/* Loại tài liệu */
+
+.ll-resource-type-cell {
+  white-space: nowrap;
+}
+
+.ll-resource-type-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #3573a5;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ll-resource-file-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 43px;
+  padding: 4px 7px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  background: #f4f6f8;
+  border-radius: 4px;
+}
+
+/* Dung lượng */
+
+.ll-resource-size-cell {
+  color: #718096;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Trạng thái */
+
+.ll-resource-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ll-resource-status > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.ll-resource-status.active {
+  color: #2e7d5b;
+}
+
+.ll-resource-status.active > span {
+  background: #2e9b70;
+}
+
+.ll-resource-status.inactive {
+  color: #9a6b28;
+}
+
+.ll-resource-status.inactive > span {
+  background: #d9a441;
+}
+
+/* Thao tác */
+
+.ll-resource-action-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ll-resource-table-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.ll-resource-table-actions .ant-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 7px;
+  border-radius: 7px;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .ll-resource-cell {
+    padding: 10px;
+  }
+
+  .ll-resource-name-cell {
+    min-width: 210px;
+  }
+
+  .ll-resource-table-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .ll-resource-table-description {
+    max-width: 200px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ll-resource-row {
+    transition: none;
+  }
+}

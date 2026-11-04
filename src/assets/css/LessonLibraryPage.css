@@ -430,6 +430,7 @@
   align-items: center;
   gap: 16px;
   min-width: 0;
+  align-items: start;
 }
 
 .ll-detail-info {
@@ -1535,5 +1536,211 @@
   .lesson-library-page .ll-sort-select {
     flex: 1;
     min-width: 0;
+  }
+}
+
+/* Tổng thể */
+
+.ll-lesson-library {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Header */
+
+.ll-lesson-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid #e9edf2;
+}
+
+.ll-lesson-header-main {
+  min-width: 0;
+}
+
+.ll-back-program-button {
+  margin-bottom: 13px;
+  color: #64788c !important;
+  font-size: 12px !important;
+}
+
+.ll-back-program-button:hover {
+  color: #173b5e !important;
+}
+
+.ll-lesson-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ll-lesson-title-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 43px;
+  height: 43px;
+  color: #173b5e;
+  font-size: 20px;
+  background: #eef3f7;
+  border-radius: 11px;
+}
+
+.ll-lesson-title-content {
+  min-width: 0;
+}
+
+.ll-lesson-title-content h1 {
+  margin: 0 0 5px;
+  overflow-wrap: anywhere;
+  color: #173b5e;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.ll-lesson-subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #84909d;
+  font-size: 12px;
+}
+
+.ll-meta-dot {
+  color: #c1c9d1;
+}
+
+/* Toolbar */
+
+.ll-lesson-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ll-lesson-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.ll-lesson-search .ant-input-affix-wrapper {
+  height: 40px;
+  padding: 0 12px;
+  background: #ffffff;
+  border-color: #e2e8f0;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+.ll-lesson-search .ant-input-affix-wrapper:hover,
+.ll-lesson-search .ant-input-affix-wrapper:focus,
+.ll-lesson-search .ant-input-affix-wrapper-focused {
+  border-color: #9aafc2;
+  box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.05);
+}
+
+.ll-lesson-search .ant-input {
+  font-size: 13px;
+}
+
+.ll-lesson-search .ant-input-prefix {
+  margin-right: 9px;
+  color: #8a98a8;
+}
+
+.ll-lesson-sort {
+  width: 165px;
+  flex-shrink: 0;
+}
+
+.ll-lesson-sort .ant-select-selector {
+  height: 40px !important;
+  align-items: center;
+  border-color: #e2e8f0 !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+}
+
+.ll-lesson-sort .ant-select-selection-item {
+  color: #526579;
+  font-size: 12px;
+  line-height: 38px !important;
+}
+
+/* Nội dung */
+
+.ll-lesson-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.ll-resource-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  background: #ffffff;
+  border: 1px solid #edf0f4;
+  border-radius: 12px;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .ll-lesson-header {
+    align-items: flex-start;
+  }
+
+  .ll-lesson-title-content h1 {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ll-lesson-header {
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 13px;
+  }
+
+  .ll-lesson-header > .ant-btn,
+  .ll-lesson-header > button {
+    flex-shrink: 0;
+  }
+
+  .ll-lesson-title-icon {
+    width: 37px;
+    height: 37px;
+    font-size: 17px;
+  }
+
+  .ll-lesson-title-content h1 {
+    font-size: 15px;
+  }
+
+  .ll-lesson-subtitle {
+    font-size: 11px;
+  }
+
+  .ll-lesson-toolbar {
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .ll-lesson-sort {
+    width: 125px;
+  }
+
+  .ll-lesson-search .ant-input-affix-wrapper,
+  .ll-lesson-sort .ant-select-selector {
+    height: 38px !important;
   }
 }

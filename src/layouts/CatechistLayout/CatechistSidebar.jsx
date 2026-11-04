@@ -165,7 +165,13 @@ export default function CatechistSidebar({
   const location = useLocation();
 
   const { canViewClass, canViewStudents, canViewCatechists } = usePermission();
-
+  useEffect(() => {
+    try {
+      localStorage.setItem("faithEdu_sidebar_collapsed", String(collapsed));
+    } catch (error) {
+      console.error("Không thể lưu trạng thái Sidebar:", error);
+    }
+  }, [collapsed]);
   /* =========================================================
       PERMISSION
     ========================================================= */
@@ -741,7 +747,7 @@ export default function CatechistSidebar({
 
   const handleToggleCollapse = () => {
     if (typeof setCollapsed === "function") {
-      setCollapsed(!collapsed);
+      setCollapsed((prev) => !prev);
     }
   };
 
@@ -909,12 +915,14 @@ export default function CatechistSidebar({
         <Sider
           collapsible
           collapsed={collapsed}
-          onCollapse={setCollapsed}
+          onCollapse={(nextCollapsed) => {
+            setCollapsed?.(nextCollapsed);
+          }}
           trigger={null}
           width={260}
           collapsedWidth={78}
           theme="dark"
-          className="faith-custom-sidebar desktop-sidebar"
+          className="faith-custom-sidebar desktop-sidebar catechist-sidebar"
         >
           <div className="faith-sidebar-inner">
             {/* BRAND */}
@@ -2056,6 +2064,85 @@ export default function CatechistSidebar({
           }
 
         }
+          /* ================================
+   SIDEBAR ANIMATION
+================================ */
+
+.catechist-sidebar {
+  transition:
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden;
+}
+
+/* Nội dung bên trong */
+.catechist-sidebar .ant-layout-sider-children {
+  overflow: hidden;
+}
+
+/* Logo */
+.catechist-sidebar .sidebar-logo {
+  transition:
+    width 0.3s ease,
+    height 0.3s ease,
+    transform 0.3s ease;
+}
+
+/* Menu */
+.catechist-sidebar .ant-menu {
+  transition: all 0.3s ease;
+}
+
+.catechist-sidebar .ant-menu-item,
+.catechist-sidebar .ant-menu-submenu-title {
+  transition:
+    padding 0.3s ease,
+    margin 0.3s ease,
+    background-color 0.2s ease,
+    color 0.2s ease !important;
+}
+
+/* Icon */
+.catechist-sidebar .ant-menu-item .ant-menu-item-icon,
+.catechist-sidebar .ant-menu-submenu-title .ant-menu-item-icon {
+  transition:
+    transform 0.3s ease,
+    margin 0.3s ease;
+}
+
+/* Chữ menu */
+.catechist-sidebar .ant-menu-title-content {
+  transition:
+    opacity 0.2s ease,
+    transform 0.3s ease;
+}
+
+/* Nút thu gọn */
+.catechist-sidebar .sidebar-collapse-btn {
+  transition:
+    transform 0.3s ease,
+    background-color 0.2s ease;
+}
+
+.catechist-sidebar .sidebar-collapse-btn:hover {
+  transform: scale(1.08);
+}
+
+/* Tránh chữ bị xuống dòng khi thu gọn */
+.catechist-sidebar.ant-layout-sider-collapsed {
+  overflow: hidden;
+}
+
+.catechist-sidebar.ant-layout-sider-collapsed .ant-menu-title-content {
+  opacity: 0;
+}
+
+/* Chuyển động mượt cho tooltip/menu */
+.catechist-sidebar .ant-tooltip,
+.catechist-sidebar .ant-menu-submenu-popup {
+  animation-duration: 0.2s !important;
+}
 
       `}</style>
     </>

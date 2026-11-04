@@ -1,0 +1,162 @@
+/* =========================================================
+   UPLOAD RESOURCE MODAL
+========================================================= */
+
+.ll-upload-modal .ant-modal-body {
+  padding-top: 12px;
+}
+
+.ll-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.ll-upload-form .ll-form-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+  color: #243447;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.ll-upload-form .ll-required {
+  color: #c94c4c;
+  font-weight: 700;
+}
+
+.ll-upload-form .ll-form-label-optional {
+  margin-left: auto;
+  color: #8a94a3;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.ll-upload-form .ant-input,
+.ll-upload-form .ant-input-affix-wrapper,
+.ll-upload-form .ant-select-selector {
+  border-radius: 10px !important;
+}
+
+.ll-upload-form .ant-input:focus,
+.ll-upload-form .ant-input-affix-wrapper-focused {
+  border-color: #173b5e;
+  box-shadow: 0 0 0 2px rgba(23, 59, 94, 0.08);
+}
+
+.ll-upload-form textarea.ant-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.ll-upload-form .ll-form-help {
+  margin-top: -5px;
+  color: #7b8794;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   FILE UPLOAD
+========================================================= */
+
+.ll-upload-dragger.ant-upload-wrapper .ant-upload-drag {
+  min-height: 175px;
+  padding: 20px 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.ll-upload-dragger.ant-upload-wrapper .ant-upload-drag:hover {
+  border-color: #173b5e;
+  background: #f4f7fa;
+}
+
+.ll-upload-dragger .ant-upload-drag-icon {
+  margin-bottom: 10px;
+}
+
+.ll-upload-dragger .ant-upload-drag-icon .anticon {
+  color: #173b5e;
+  font-size: 34px;
+}
+
+.ll-upload-dragger .ant-upload-text {
+  color: #243447;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.ll-upload-dragger .ant-upload-hint {
+  color: #8792a2;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.ll-upload-dragger .ll-upload-disabled-note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border: 1px solid #f0dfb6;
+  border-radius: 8px;
+  background: #fff7e0;
+  color: #9a6b13;
+  font-size: 11px;
+}
+
+/* =========================================================
+   PROGRAM / LESSON INFO
+========================================================= */
+
+.ll-upload-note {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 4px;
+  padding: 13px 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f7f9fc;
+  color: #526173;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ll-upload-note strong {
+  color: #173b5e;
+  font-weight: 700;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 576px) {
+  .ll-upload-form {
+    gap: 10px;
+  }
+
+  .ll-upload-form .ll-form-label-optional {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .ll-upload-dragger.ant-upload-wrapper .ant-upload-drag {
+    min-height: 155px;
+    padding: 16px 10px;
+  }
+
+  .ll-upload-note {
+    padding: 11px 12px;
+  }
+}

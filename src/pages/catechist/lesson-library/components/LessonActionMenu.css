@@ -1,0 +1,59 @@
+.ll-action-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  min-width: 190px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(16, 42, 67, 0.14);
+  animation: ll-menu-appear 0.16s ease;
+}
+
+.ll-action-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  color: #243447;
+  font-size: 13px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ll-action-menu button:hover {
+  background: #eef3f7;
+}
+
+.ll-action-menu button.danger {
+  color: #c94c4c;
+}
+
+.ll-action-menu button.danger:hover {
+  background: #fdecec;
+}
+
+.ll-action-divider {
+  height: 1px;
+  margin: 5px 4px;
+  background: #e2e8f0;
+}
+
+@keyframes ll-menu-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
