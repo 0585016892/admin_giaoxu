@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
 import { useLocation } from "react-router-dom";
 
 import axios from "../api/axios";
@@ -6,75 +7,73 @@ import LicenseExpiredPage from "../pages/license/LicenseExpiredPage";
 import LoadingLogo from "./LoadingLogo";
 
 // =========================================================
-// ROUTE ĐƯỢC PHÉP TRUY CẬP KHI LICENSE HẾT HẠN
+// CẤU HÌNH ROUTE
 // =========================================================
 
 const ALLOWED_PATHS = ["/", "/register", "/intro"];
 
-const LicenseGuard = ({ children }) => {
-  const location = useLocation();
+// =========================================================
+// HÀM KIỂM TRA PUBLIC ROUTE
+// =========================================================
 
-  const [checking, setChecking] = useState(true);
-  const [expired, setExpired] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  const pathname = location.pathname.toLowerCase();
-
-  // =========================================================
-  // PUBLIC ROUTES
-  // =========================================================
-
-  const isAllowedPath = ALLOWED_PATHS.some((path) => {
-    // "/" chỉ cho phép đúng trang "/"
+const checkAllowedPath = (pathname) => {
+  return ALLOWED_PATHS.some((path) => {
     if (path === "/") {
       return pathname === "/";
     }
 
     return pathname === path || pathname.startsWith(`${path}/`);
   });
+};
+
+// =========================================================
+// LICENSE GUARD
+// =========================================================
+
+const LicenseGuard = ({ children }) => {
+  const location = useLocation();
+
+  const pathname = location.pathname.toLowerCase();
+
+  const isAllowedPath = checkAllowedPath(pathname);
 
   // =========================================================
-  // CHECK LICENSE
+  // STATE
+  // =========================================================
+
+  // Kết quả API đã hoàn thành chưa?
+  const [checking, setChecking] = useState(true);
+
+  // License hết hạn hay chưa?
+  const [expired, setExpired] = useState(false);
+
+  // Có đang hiển thị loading không?
+  const [showLoading, setShowLoading] = useState(true);
+
+  // Dùng để xác định request hiện tại.
+  const requestIdRef = useRef(0);
+
+  // Lưu route đã kiểm tra.
+  const [checkedPath, setCheckedPath] = useState(null);
+
+  // =========================================================
+  // KIỂM TRA LICENSE
   // =========================================================
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
 
-    let progressTimer = null;
+    const requestId = ++requestIdRef.current;
 
-    const startProgress = () => {
-      let current = 0;
+    let active = true;
 
-      setProgress(0);
-
-      progressTimer = setInterval(() => {
-        if (!mounted) return;
-
-        current += Math.floor(Math.random() * 8) + 3;
-
-        // Không cho vượt quá 90% trước khi API trả kết quả
-        if (current >= 90) {
-          current = 90;
-        }
-
-        setProgress(current);
-
-        if (current >= 90 && progressTimer) {
-          clearInterval(progressTimer);
-          progressTimer = null;
-        }
-      }, 120);
-    };
-
-    const finishProgress = () => {
-      if (!mounted) return;
-
-      if (progressTimer) {
-        clearInterval(progressTimer);
-        progressTimer = null;
-      }
-
-      setProgress(100);
+    // Không cho request cũ thay đổi dữ liệu.
+    const isCurrentRequest = () => {
+      return (
+        active &&
+        requestId === requestIdRef.current &&
+        !controller.signal.aborted
+      );
     };
 
     const checkLicense = async () => {
@@ -83,43 +82,47 @@ const LicenseGuard = ({ children }) => {
       // =====================================================
 
       if (isAllowedPath) {
-        if (!mounted) return;
+        if (!isCurrentRequest()) return;
 
         setExpired(false);
-        setProgress(100);
         setChecking(false);
+        setShowLoading(false);
+        setCheckedPath(pathname);
 
         return;
       }
 
       // =====================================================
-      // CHƯA LOGIN
+      // CHƯA ĐĂNG NHẬP
       // =====================================================
 
       const token = localStorage.getItem("token");
 
       if (!token) {
-        if (!mounted) return;
+        if (!isCurrentRequest()) return;
 
         setExpired(false);
-        setProgress(100);
         setChecking(false);
+        setShowLoading(false);
+        setCheckedPath(pathname);
 
         return;
       }
 
       // =====================================================
-      // BẮT ĐẦU CHECK
+      // BẮT ĐẦU CHECK LICENSE
       // =====================================================
 
+      setChecking(true);
+      setShowLoading(true);
+      setCheckedPath(null);
+
       try {
-        if (mounted) {
-          setChecking(true);
-        }
+        const res = await axios.get("/license/me", {
+          signal: controller.signal,
+        });
 
-        startProgress();
-
-        const res = await axios.get("/license/me");
+        if (!isCurrentRequest()) return;
 
         const license = res?.data?.license;
 
@@ -138,21 +141,9 @@ const LicenseGuard = ({ children }) => {
 
         // ===================================================
         // EXPIRED
-        //
-        // Backend chịu trách nhiệm tính is_expired
         // ===================================================
 
         const isExpired = !isLifetime && license?.is_expired === true;
-
-        // ===================================================
-        // DEBUG
-        // ===================================================
-
-        if (!mounted) return;
-
-        // ===================================================
-        // SET EXPIRED
-        // ===================================================
 
         setExpired(isExpired);
 
@@ -166,17 +157,15 @@ const LicenseGuard = ({ children }) => {
           localStorage.removeItem("faidedu_license_expired");
         }
 
-        // ===================================================
-        // COMPLETE PROGRESS
-        // ===================================================
-
-        finishProgress();
+        // API đã xong, nhưng KHÔNG ẩn loading.
+        setChecking(false);
+        setCheckedPath(pathname);
       } catch (error) {
-        if (!mounted) return;
+        if (!isCurrentRequest()) return;
 
-        // =================================================
+        // ===================================================
         // BACKEND TRẢ 402
-        // =================================================
+        // ===================================================
 
         if (error?.response?.status === 402) {
           setExpired(true);
@@ -185,38 +174,44 @@ const LicenseGuard = ({ children }) => {
         } else {
           // =================================================
           // NETWORK / SERVER ERROR
-          //
-          // Không xác định được license thì không khóa app.
           // =================================================
 
           setExpired(false);
 
           localStorage.removeItem("faidedu_license_expired");
+
+          console.error("[LICENSE_GUARD] Không kiểm tra được license:", error);
         }
 
-        // =================================================
-        // COMPLETE PROGRESS
-        // =================================================
-
-        finishProgress();
-      } finally {
-        if (mounted) {
-          setChecking(false);
-        }
+        setChecking(false);
+        setCheckedPath(pathname);
       }
     };
 
     checkLicense();
 
-    return () => {
-      mounted = false;
+    // =====================================================
+    // CLEANUP
+    // =====================================================
 
-      if (progressTimer) {
-        clearInterval(progressTimer);
-        progressTimer = null;
-      }
+    return () => {
+      active = false;
+      controller.abort();
     };
   }, [pathname, isAllowedPath]);
+
+  // =========================================================
+  // LOADING HOÀN THÀNH
+  // =========================================================
+
+  const handleLoadingComplete = useCallback(() => {
+    // Chỉ ẩn nếu API của route hiện tại đã xong.
+    if (checking || checkedPath !== pathname) {
+      return;
+    }
+
+    setShowLoading(false);
+  }, [checking, checkedPath, pathname]);
 
   // =========================================================
   // PUBLIC ROUTES
@@ -227,15 +222,35 @@ const LicenseGuard = ({ children }) => {
   }
 
   // =========================================================
-  // CHECKING
+  // CHƯA ĐĂNG NHẬP
   // =========================================================
 
-  if (checking) {
-    return <LoadingLogo progress={progress} />;
+  const hasToken = Boolean(localStorage.getItem("token"));
+
+  if (!hasToken) {
+    return children;
   }
 
   // =========================================================
-  // EXPIRED
+  // HIỂN THỊ LOADING
+  // =========================================================
+
+  // checkedPath !== pathname ngăn việc
+  // hiển thị nội dung route mới trước khi kiểm tra.
+  const shouldShowLoading = showLoading || checkedPath !== pathname;
+
+  if (shouldShowLoading) {
+    return (
+      <LoadingLogo
+        key={pathname}
+        loading={checking || checkedPath !== pathname}
+        onComplete={handleLoadingComplete}
+      />
+    );
+  }
+
+  // =========================================================
+  // LICENSE HẾT HẠN
   // =========================================================
 
   if (expired) {
@@ -243,7 +258,7 @@ const LicenseGuard = ({ children }) => {
   }
 
   // =========================================================
-  // NORMAL APP
+  // TRUY CẬP BÌNH THƯỜNG
   // =========================================================
 
   return children;

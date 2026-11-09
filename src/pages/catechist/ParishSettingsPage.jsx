@@ -927,12 +927,7 @@ const ParishSettingsPage = () => {
                         <img
                           src={getImageUrl(imageUrl)}
                           alt="Church Logo"
-                          onError={(e) => {
-                            console.error(
-                              "❌ Không tải được ảnh:",
-                              e.currentTarget.src,
-                            );
-                          }}
+                          onError={(e) => {}}
                         />
                       ) : (
                         <BankOutlined />

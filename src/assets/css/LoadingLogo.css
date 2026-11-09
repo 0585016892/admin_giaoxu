@@ -1,410 +1,275 @@
-/* =========================================
-   FAITHEDU LOADING
-   Transparent - No Overlay - No White Card
-========================================= */
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap");
+
+/* =========================================================
+   FAITHEDU PREMIUM LOADING
+   Navy + Gold | Rounded Typography | Soft Glossy Effect
+   ========================================================= */
+
+/* =========================================================
+   1. FULLSCREEN LOADING
+   ========================================================= */
 
 .faith-loading-wrapper {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 9999;
+
+  width: 100%;
+  min-height: 100vh;
+  height: 100dvh;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  /* Trong suốt hoàn toàn */
-  background: transparent;
-  border: none;
-  outline: none;
-
-  /* Không chặn thao tác trên trang phía sau */
-  pointer-events: none;
-
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  color: #173b5e;
+  background: #f7f9fc;
+  overflow: hidden;
 }
 
-/* Container không nền, không khung */
+/* =========================================================
+   2. LOADING CONTAINER
+   ========================================================= */
+
 .faith-loading-container {
   position: relative;
 
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 
-  width: min(100% - 40px, 320px);
-  padding: 0;
-
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  backdrop-filter: none;
-
-  animation: faithAppear 0.45s ease-out both;
+  gap: 18px;
+  width: 100%;
+  max-width: 600px;
+  padding: 24px;
 }
 
-/* =========================================
-   LOGO LOADER
-========================================= */
+/* =========================================================
+   3. FAITHEDU BRAND TEXT
+   ========================================================= */
 
-.faith-loader {
+.faith-brand-loader {
   position: relative;
-  display: grid;
+
+  display: inline-grid;
   place-items: center;
 
-  width: 184px;
-  height: 184px;
-  margin-bottom: 22px;
+  width: max-content;
+  max-width: 100%;
 
-  isolation: isolate;
+  font-family:
+    "Nunito", "Arial Rounded MT Bold", "Inter", "Segoe UI", sans-serif;
+
+  font-size: clamp(46px, 6vw, 78px);
+  font-weight: 900;
+  letter-spacing: -2.7px;
+  line-height: 1.28;
+
+  white-space: nowrap;
+  user-select: none;
+
+  /* Bóng nhẹ toàn bộ logo */
+  filter: drop-shadow(0 5px 9px rgba(23, 59, 94, 0.1));
 }
 
-/* Quầng sáng nhẹ phía sau logo */
-.faith-loader::before {
-  content: "";
-  position: absolute;
-  inset: 30px;
-  z-index: -1;
+/* =========================================================
+   4. CHỒNG HAI LỚP CHỮ KHÍT NHAU
+   ========================================================= */
 
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.8) 0%,
-    rgba(217, 164, 65, 0.08) 45%,
-    transparent 72%
-  );
-
-  filter: blur(12px);
-}
-
-/* Các vòng tròn */
-.faith-loader-ring {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.faith-ring-outer {
-  inset: 0;
-
-  border: 2px solid rgba(23, 59, 94, 0.15);
-  border-top-color: #173b5e;
-  border-right-color: #173b5e;
-  border-bottom-color: rgba(217, 164, 65, 0.65);
-
-  animation: faithSpin 2.5s linear infinite;
-}
-
-.faith-ring-middle {
-  inset: 10px;
-
-  border: 2px solid rgba(217, 164, 65, 0.18);
-  border-top-color: #d9a441;
-  border-left-color: #d9a441;
-
-  animation: faithSpinReverse 1.8s linear infinite;
-}
-
-.faith-ring-inner {
-  inset: 21px;
-
-  border: 1px dashed rgba(23, 59, 94, 0.3);
-
-  animation: faithSpin 10s linear infinite;
-}
-
-/* Hạt sáng */
-.faith-ring-dot {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-
-  background: #d9a441;
-
-  box-shadow:
-    0 0 8px rgba(217, 164, 65, 0.85),
-    0 0 18px rgba(217, 164, 65, 0.5);
-}
-
-.faith-dot-gold {
-  top: 6px;
-  left: auto;
-  right: 6px;
-
-  width: 6px;
-  height: 6px;
-
-  background: #173b5e;
-
-  box-shadow: 0 0 10px rgba(23, 59, 94, 0.5);
-}
-
-/* =========================================
-   LOGO CHÍNH GIỮA
-========================================= */
-
-.faith-logo-center {
-  position: absolute;
-  inset: 32px;
+.faith-brand-base,
+.faith-brand-reveal {
+  grid-area: 1 / 1;
 
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
 
-  overflow: hidden;
-  border-radius: 50%;
+  width: 100%;
 
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  white-space: nowrap;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
 }
 
-.faith-logo-image {
-  display: block;
+/* =========================================================
+   5. CHỮ XÁM BAN ĐẦU
+   ========================================================= */
 
-  width: 84%;
-  height: 84%;
+.faith-brand-base {
+  color: #d6dae0;
 
-  object-fit: contain;
-
-  animation: faithLogoPulse 3s ease-in-out infinite;
-}
-
-/* =========================================
-   TÊN FAITHEDU
-========================================= */
-
-.faith-brand-name {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -1px;
-
-  color: #173b5e;
-
-  /* Chữ dễ đọc trên nhiều nền */
   text-shadow:
-    0 1px 3px rgba(255, 255, 255, 0.9),
-    0 1px 8px rgba(255, 255, 255, 0.5);
+    0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 3px rgba(100, 116, 139, 0.12),
+    0 5px 9px rgba(100, 116, 139, 0.05);
 }
 
-.faith-brand-gold {
-  color: #d9a441;
+/* =========================================================
+   6. HIỆU ỨNG REVEAL
+   ========================================================= */
+
+.faith-brand-reveal {
+  position: relative;
+
+  overflow: hidden;
+
+  will-change: clip-path;
+
+  transition: clip-path 0.07s linear;
 }
 
-.faith-loading-caption {
-  margin: 8px 0 27px;
+/* =========================================================
+   7. FAITH - NAVY GRADIENT
+   ========================================================= */
 
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-
-  color: #64748b;
-
-  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.9);
-}
-
-/* =========================================
-   THANH TIẾN TRÌNH
-========================================= */
-
-.faith-progress-info {
-  width: 100%;
-}
-
-.faith-progress-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-
-  margin-bottom: 10px;
-}
-
-.faith-status-text {
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748b;
-
-  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.95);
-}
-
-.faith-percentage-text {
-  font-size: 12px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
+.faith-text-navy {
   color: #173b5e;
-
-  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.95);
-}
-
-.faith-progress-bar-track {
-  position: relative;
-
-  width: 100%;
-  height: 5px;
-  overflow: hidden;
-
-  border-radius: 20px;
-
-  background: rgba(226, 232, 240, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-.faith-progress-bar-fill {
-  position: relative;
-
-  height: 100%;
-  overflow: hidden;
-  border-radius: inherit;
-
-  background: linear-gradient(90deg, #173b5e 0%, #244f78 58%, #d9a441 100%);
-
-  transition: width 0.35s ease;
-}
-
-.faith-progress-shine {
-  position: absolute;
-  inset: 0;
 
   background: linear-gradient(
-    100deg,
-    transparent 15%,
-    rgba(255, 255, 255, 0.8) 50%,
-    transparent 85%
+    180deg,
+    #668bab 0%,
+    #3c678b 18%,
+    #244f78 38%,
+    #173b5e 65%,
+    #102c47 100%
   );
 
-  animation: faithShine 1.6s ease-in-out infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+
+  filter: drop-shadow(0 2px 1px rgba(15, 42, 69, 0.16));
 }
 
-/* =========================================
-   FOOTER
-========================================= */
+/* =========================================================
+   8. EDU - GOLD GRADIENT
+   ========================================================= */
 
-.faith-loading-footer {
+.faith-text-gold {
+  color: #d9a441;
+
+  background: linear-gradient(
+    180deg,
+    #ffe6a6 0%,
+    #f4ce7b 18%,
+    #e8ba5d 38%,
+    #d9a441 65%,
+    #ad7626 100%
+  );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+
+  filter: drop-shadow(0 2px 1px rgba(156, 105, 30, 0.18));
+}
+
+/* =========================================================
+   9. LOADING CAPTION
+   ========================================================= */
+
+.faith-loading-caption {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
-  gap: 7px;
 
-  margin-top: 22px;
+  font-family: "Nunito", "Inter", sans-serif;
 
-  color: #64748b;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
 
-  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.9);
+  color: #94a3b8;
 }
 
-.faith-footer-dot {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
+/* =========================================================
+   10. ANIMATED DOTS
+   ========================================================= */
 
-  border-radius: 50%;
-  background: #d9a441;
-
-  box-shadow: 0 0 8px rgba(217, 164, 65, 0.6);
+.faith-loading-dots {
+  display: inline-flex;
+  align-items: baseline;
 }
 
-/* =========================================
-   ANIMATIONS
-========================================= */
-
-@keyframes faithSpin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+.faith-loading-dots span {
+  display: inline-block;
+  animation: faith-dot-pulse 1.4s ease-in-out infinite;
 }
 
-@keyframes faithSpinReverse {
-  from {
-    transform: rotate(360deg);
-  }
-
-  to {
-    transform: rotate(0deg);
-  }
+.faith-loading-dots span:nth-child(1) {
+  animation-delay: 0s;
 }
 
-@keyframes faithLogoPulse {
+.faith-loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.faith-loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes faith-dot-pulse {
   0%,
+  20%,
   100% {
-    transform: scale(1);
+    opacity: 0.2;
+    transform: translateY(0);
   }
 
   50% {
-    transform: scale(1.045);
-  }
-}
-
-@keyframes faithShine {
-  from {
-    transform: translateX(-120%);
-  }
-
-  to {
-    transform: translateX(120%);
-  }
-}
-
-@keyframes faithAppear {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-
-  to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(-2px);
   }
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-  .faith-loader {
-    width: 156px;
-    height: 156px;
-  }
+/* =========================================================
+   11. RESPONSIVE TABLET
+   ========================================================= */
 
-  .faith-brand-name {
-    font-size: 27px;
+@media (max-width: 900px) {
+  .faith-brand-loader {
+    font-size: clamp(44px, 8vw, 66px);
+    letter-spacing: -2px;
   }
+}
 
+/* =========================================================
+   12. RESPONSIVE MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
   .faith-loading-container {
-    width: min(100% - 48px, 300px);
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .faith-brand-loader {
+    font-size: clamp(42px, 10vw, 56px);
+    letter-spacing: -1.7px;
+  }
+
+  .faith-loading-caption {
+    font-size: 11px;
+    letter-spacing: 0.8px;
   }
 }
 
-/* Giảm chuyển động nếu người dùng yêu cầu */
+/* =========================================================
+   13. REDUCED MOTION
+   ========================================================= */
+
 @media (prefers-reduced-motion: reduce) {
-  .faith-loader-ring,
-  .faith-logo-image,
-  .faith-progress-shine,
-  .faith-loading-container {
-    animation: none !important;
+  .faith-brand-reveal {
+    transition: none;
   }
 
-  .faith-progress-bar-fill {
-    transition: none;
+  .faith-loading-dots span {
+    animation: none;
+    opacity: 1;
   }
 }

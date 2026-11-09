@@ -378,7 +378,6 @@ export default function StudentManagement() {
   // Kích thước in: 5,3cm × 8cm
   // Độ phân giải: khoảng 600 DPI
   // =========================================================
-  console.log(students);
 
   const QR_CARD_WIDTH = 1252;
   const QR_CARD_HEIGHT = 1890;
@@ -649,8 +648,6 @@ export default function StudentManagement() {
 
       notify.success("Đã tải ảnh QR!");
     } catch (error) {
-      console.error("[DOWNLOAD QR] Lỗi:", error);
-
       notify.error(error?.message || "Không thể tạo ảnh QR!");
     } finally {
       // Luôn tắt loading, kể cả khi có lỗi hoặc return
@@ -845,11 +842,6 @@ export default function StudentManagement() {
 
           successCount++;
         } catch (error) {
-          console.error(
-            `[BULK QR] Lỗi tạo QR cho học sinh ${student.name || student.id}:`,
-            error,
-          );
-
           skipCount++;
           skippedStudents.push(student.name || `ID ${student.id}`);
         }
@@ -915,8 +907,6 @@ export default function StudentManagement() {
         notify.success(
           `Đã tải ${successCount}/${selectedStudents.length} mã QR. Bỏ qua ${skipCount} học sinh không tạo được QR.`,
         );
-
-        console.warn("[BULK QR] Học sinh bị bỏ qua:", skippedStudents);
       } else {
         notify.success(
           `Đã tải thành công ${successCount} mã QR của học sinh đã chọn!`,
@@ -2338,8 +2328,6 @@ export default function StudentManagement() {
         setGlobalLoadingText("Đang xóa thông tin học sinh...");
         setGlobalLoading(true);
 
-        console.log("[DELETE STUDENT] Bắt đầu xóa học sinh:", id);
-
         await studentApi.delete(id);
 
         notify.success("Đã xóa học sinh!");
@@ -2355,11 +2343,7 @@ export default function StudentManagement() {
         setGlobalLoadingText("Đang cập nhật danh sách học sinh...");
 
         await fetchStudents();
-
-        console.log("[DELETE STUDENT] Xóa thành công:", id);
       } catch (error) {
-        console.error("[DELETE STUDENT] Lỗi:", error);
-
         notify.error(
           error?.response?.data?.message ||
             error?.response?.data?.error ||
@@ -2406,21 +2390,9 @@ export default function StudentManagement() {
       setGlobalLoadingText(`Đang xóa ${deleteCount} học sinh đã chọn...`);
       setGlobalLoading(true);
 
-      console.log(
-        "============================================================",
-      );
-      console.log("[BULK DELETE] BẮT ĐẦU XÓA HỌC SINH HÀNG LOẠT");
-      console.log("[BULK DELETE] Số lượng:", deleteCount);
-      console.log("[BULK DELETE] Danh sách ID:", selectedIds);
-      console.log(
-        "============================================================",
-      );
-
       // 1. Gọi API xóa hàng loạt
       const response = await studentApi.deleteBulk(selectedIds);
       const result = response?.data;
-
-      console.log("[BULK DELETE] Phản hồi API:", result);
 
       if (!result?.success) {
         throw new Error(result?.message || "Không thể xóa học sinh!");
@@ -2438,11 +2410,7 @@ export default function StudentManagement() {
       await fetchStudents({
         silent: true,
       });
-
-      console.log("[BULK DELETE] Xóa hàng loạt hoàn tất.");
     } catch (error) {
-      console.error("[BULK DELETE] Lỗi:", error);
-
       notify.error(
         error?.response?.data?.message ||
           error?.response?.data?.error ||
@@ -2457,19 +2425,12 @@ export default function StudentManagement() {
         await fetchStudents({
           silent: true,
         });
-      } catch (refreshError) {
-        console.error(
-          "[BULK DELETE] Không thể tải lại danh sách:",
-          refreshError,
-        );
-      }
+      } catch (refreshError) {}
     } finally {
       setBulkDeleting(false);
 
       setGlobalLoading(false);
       setGlobalLoadingText("Vui lòng chờ trong giây lát...");
-
-      console.log("[BULK DELETE] Đã kết thúc tiến trình.");
     }
   };
 

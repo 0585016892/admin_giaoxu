@@ -206,9 +206,15 @@ export const getTotalWeight = (items = []) => {
 };
 
 export const getTotalMaxScore = (items = []) => {
-  return items.reduce((total, item) => total + toNumber(item.max_score, 0), 0);
-};
+  console.log("getTotalMaxScore:::", items);
 
+  return items.reduce((total, item) => {
+    const maxScore = toNumber(item.max_score, 0);
+    const weight = toNumber(item.weight, 1);
+
+    return total + maxScore * weight;
+  }, 0);
+};
 export const getAverageMaxScore = (items = []) => {
   if (!items.length) {
     return 0;

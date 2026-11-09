@@ -518,7 +518,16 @@ export const exportResultsExcel = async (classId) => {
 
   return response;
 };
+export const exportStudentResultExcel = async (classId, studentId) => {
+  const response = await axiosClient.get(
+    `/results/export-student-excel/${classId}/${studentId}`,
+    {
+      responseType: "blob",
+    },
+  );
 
+  return response;
+};
 /* ============================================================
  * DEFAULT EXPORT
  * ============================================================ */
@@ -551,6 +560,7 @@ const resultApi = {
   updateResult,
   deleteResult,
   exportResultsExcel,
+  exportStudentResultExcel,
 
   // helpers
   getGradingRuleItems,

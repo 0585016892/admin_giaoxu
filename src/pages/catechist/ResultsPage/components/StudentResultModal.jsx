@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
 import {
   Avatar,
@@ -11,6 +11,7 @@ import {
   Tag,
   Tooltip,
   Typography,
+  Tabs,
 } from "antd";
 
 import {
@@ -35,6 +36,43 @@ import {
 
 const { Text } = Typography;
 
+/* =========================================================
+   HELPER: XÁC ĐỊNH HỌC KỲ TỪ NOTE
+========================================================= */
+
+const getSemester = (note) => {
+  const value = String(note || "")
+    .trim()
+    .toLowerCase();
+
+  if (/học\s*kỳ\s*1/.test(value) || /hk\s*1/.test(value) || /hk1/.test(value)) {
+    return "1";
+  }
+
+  if (/học\s*kỳ\s*2/.test(value) || /hk\s*2/.test(value) || /hk2/.test(value)) {
+    return "2";
+  }
+
+  return null;
+};
+
+/* =========================================================
+   HELPER: KIỂM TRA ĐIỂM HỢP LỆ
+========================================================= */
+
+const hasValidScore = (score) => {
+  return (
+    score !== null &&
+    score !== undefined &&
+    score !== "" &&
+    Number.isFinite(Number(score))
+  );
+};
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 const StudentResultModal = ({
   open,
   onClose,
@@ -46,32 +84,82 @@ const StudentResultModal = ({
   onDelete,
   deletingId,
 }) => {
-  const calculation = useMemo(
-    () => calculateStudentScore(results, rule),
-    [results, rule],
-  );
-
-  const status = getResultStatus(calculation.score, rule);
+  const [activeSemester, setActiveSemester] = useState("1");
 
   const digits = Number(rule?.rounding_digits ?? 1);
-
   const passScore = Number(rule?.pass_score ?? 5);
 
-  /**
-   * =========================================================
-   * RULE ITEMS
-   * =========================================================
-   */
+  /* =========================================================
+     1. CHIA KẾT QUẢ THEO HỌC KỲ
+  ========================================================= */
+
+  const semesterResults = useMemo(() => {
+    const list = Array.isArray(results) ? results : [];
+
+    return {
+      1: list.filter((item) => getSemester(item.note) === "1"),
+      2: list.filter((item) => getSemester(item.note) === "2"),
+      unknown: list.filter((item) => !getSemester(item.note)),
+    };
+  }, [results]);
+
+  /* =========================================================
+     2. TÍNH ĐIỂM HỌC KỲ 1
+  ========================================================= */
+
+  const calculationHK1 = useMemo(() => {
+    return calculateStudentScore(semesterResults["1"], rule);
+  }, [semesterResults, rule]);
+
+  /* =========================================================
+     3. TÍNH ĐIỂM HỌC KỲ 2
+  ========================================================= */
+
+  const calculationHK2 = useMemo(() => {
+    return calculateStudentScore(semesterResults["2"], rule);
+  }, [semesterResults, rule]);
+
+  /* =========================================================
+     4. ĐIỂM TRUNG BÌNH CẢ NĂM
+
+     ĐTB cả năm = (ĐTB HK1 + ĐTB HK2) / 2
+
+     Chỉ tính khi cả hai học kỳ đều có điểm.
+  ========================================================= */
+
+  const annualScore = useMemo(() => {
+    const score1 = calculationHK1?.score;
+    const score2 = calculationHK2?.score;
+
+    if (!hasValidScore(score1) || !hasValidScore(score2)) {
+      return null;
+    }
+
+    const average = (Number(score1) + Number(score2)) / 2;
+
+    return Number(average.toFixed(digits));
+  }, [calculationHK1, calculationHK2, digits]);
+
+  const annualStatus = getResultStatus(annualScore, rule);
+
+  /* =========================================================
+     5. ĐIỂM THEO TAB ĐANG CHỌN
+  ========================================================= */
+
+  const currentResults = semesterResults[activeSemester];
+
+  const currentCalculation =
+    activeSemester === "1" ? calculationHK1 : calculationHK2;
+
+  const currentStatus = getResultStatus(currentCalculation?.score, rule);
+
+  /* =========================================================
+     6. RULE ITEMS
+  ========================================================= */
 
   const ruleItems = useMemo(() => {
     return Array.isArray(rule?.items) ? rule.items : [];
   }, [rule]);
-
-  /**
-   * =========================================================
-   * TOTAL WEIGHT
-   * =========================================================
-   */
 
   const totalWeight = useMemo(() => {
     return ruleItems.reduce((sum, item) => {
@@ -81,18 +169,16 @@ const StudentResultModal = ({
     }, 0);
   }, [ruleItems]);
 
-  /**
-   * =========================================================
-   * FORMULA
-   * =========================================================
-   */
+  /* =========================================================
+     7. CÔNG THỨC THEO HỌC KỲ ĐANG CHỌN
+  ========================================================= */
 
   const formula = useMemo(() => {
-    if (!calculation?.itemScores?.length) {
+    if (!currentCalculation?.itemScores?.length) {
       return "Chưa có dữ liệu điểm";
     }
 
-    const numerator = calculation.itemScores
+    const numerator = currentCalculation.itemScores
       .map((item) => {
         const score =
           item.score === null || item.score === undefined
@@ -107,55 +193,57 @@ const StudentResultModal = ({
       return numerator;
     }
 
-    return `(${numerator}) ÷ ${formatScore(
-      calculation.totalWeight || totalWeight,
-      1,
-    )}`;
-  }, [calculation, rule?.calculation_type, totalWeight]);
+    if (rule?.calculation_type === "average") {
+      return `(${numerator}) ÷ ${currentCalculation.itemScores.length}`;
+    }
 
-  /**
-   * =========================================================
-   * STATUS
-   * =========================================================
-   */
+    if (rule?.calculation_type === "weighted_average") {
+      return `(${numerator}) ÷ ${formatScore(
+        currentCalculation.totalWeight || totalWeight,
+        1,
+      )}`;
+    }
+
+    return numerator;
+  }, [currentCalculation, rule, totalWeight]);
+
+  /* =========================================================
+     8. STATUS CONFIG
+  ========================================================= */
 
   const statusConfig = {
     passed: {
       icon: <CheckCircleOutlined />,
-      label: status.label,
     },
 
     pass: {
       icon: <CheckCircleOutlined />,
-      label: status.label,
     },
 
     failed: {
       icon: <CloseCircleOutlined />,
-      label: status.label,
     },
 
     fail: {
       icon: <CloseCircleOutlined />,
-      label: status.label,
     },
 
     pending: {
       icon: <ClockCircleOutlined />,
-      label: status.label,
     },
   };
 
-  const currentStatus = statusConfig[status.key] || {
+  const annualStatusConfig = statusConfig[annualStatus.key] || {
     icon: <ClockCircleOutlined />,
-    label: status.label,
   };
 
-  /**
-   * =========================================================
-   * TABLE
-   * =========================================================
-   */
+  const currentStatusConfig = statusConfig[currentStatus.key] || {
+    icon: <ClockCircleOutlined />,
+  };
+
+  /* =========================================================
+     9. TABLE COLUMNS
+  ========================================================= */
 
   const detailColumns = [
     {
@@ -173,7 +261,7 @@ const StudentResultModal = ({
       width: 190,
 
       render: (_, record) => {
-        const item = rule?.items?.find(
+        const item = ruleItems.find(
           (value) => Number(value.id) === Number(record.grading_rule_item_id),
         );
 
@@ -181,7 +269,7 @@ const StudentResultModal = ({
           <div className="student-result-item-cell">
             <Text strong>{item?.name || record.item_name || "Đầu điểm"}</Text>
 
-            <span>Hệ số {item?.weight || record.item_weight || 1}</span>
+            <span>Hệ số {item?.weight ?? record.item_weight ?? 1}</span>
           </div>
         );
       },
@@ -234,7 +322,7 @@ const StudentResultModal = ({
     },
 
     {
-      title: "Học Kì",
+      title: "Ghi chú",
       dataIndex: "note",
       ellipsis: true,
 
@@ -256,7 +344,7 @@ const StudentResultModal = ({
               shape="circle"
               className="student-result-action edit"
               icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
+              onClick={() => onEdit?.(record)}
             />
           </Tooltip>
 
@@ -270,7 +358,7 @@ const StudentResultModal = ({
               danger: true,
               loading: deletingId === record.id,
             }}
-            onConfirm={() => onDelete(record.id)}
+            onConfirm={() => onDelete?.(record.id)}
           >
             <Tooltip title="Xóa">
               <Button
@@ -287,68 +375,221 @@ const StudentResultModal = ({
     },
   ];
 
+  /* =========================================================
+     10. TAB ITEMS
+  ========================================================= */
+
+  const tabItems = [
+    {
+      key: "1",
+      label: (
+        <div className="student-result-tab-label">
+          <span>Học kỳ 1</span>
+
+          <span className="student-result-tab-count">
+            {semesterResults["1"].length}
+          </span>
+        </div>
+      ),
+    },
+
+    {
+      key: "2",
+      label: (
+        <div className="student-result-tab-label">
+          <span>Học kỳ 2</span>
+
+          <span className="student-result-tab-count">
+            {semesterResults["2"].length}
+          </span>
+        </div>
+      ),
+    },
+  ];
+
+  /* =========================================================
+     11. RENDER
+  ========================================================= */
+
   return (
-    <>
-      <Modal
-        open={open}
-        onCancel={onClose}
-        footer={null}
-        width={1000}
-        destroyOnClose
-        centered
-        className="student-result-modal"
-        title={null}
-      >
+    <Modal
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={1000}
+      destroyOnClose
+      centered
+      className="student-result-modal"
+      title={null}
+    >
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="student-result-header">
+        <div className="student-result-profile">
+          <Avatar
+            size={58}
+            icon={<UserOutlined />}
+            className="student-result-avatar"
+          />
+
+          <div className="student-result-profile-info">
+            <div className="student-result-name">
+              {student?.name || student?.full_name || "Học viên"}
+            </div>
+
+            <div className="student-result-code">
+              {student?.code || `HS #${student?.id}`}
+            </div>
+          </div>
+        </div>
+
+        {/* ĐIỂM TRUNG BÌNH CẢ NĂM */}
+
+        <div className="student-result-final">
+          <div className="student-result-final-label">
+            ĐIỂM TRUNG BÌNH CẢ NĂM
+          </div>
+
+          <div className="student-result-final-row">
+            {annualScore === null ? (
+              <strong className="student-result-final-score pending">—</strong>
+            ) : (
+              <strong
+                className={`student-result-final-score ${annualStatus.key}`}
+              >
+                {formatScore(annualScore, digits)}
+              </strong>
+            )}
+
+            <Tag
+              bordered={false}
+              icon={annualStatusConfig.icon}
+              className={`student-result-status ${annualStatus.key}`}
+            >
+              {annualScore === null ? "Chưa đủ điểm" : annualStatus.label}
+            </Tag>
+          </div>
+
+          <div className="student-result-pass-info">
+            (Điểm HK1 + Điểm HK2) / 2
+          </div>
+        </div>
+      </div>
+
+      {/* =====================================================
+          ANNUAL SUMMARY
+      ===================================================== */}
+
+      <div className="student-result-annual-summary">
+        <div className="student-result-semester-card">
+          <div className="student-result-semester-card-label">
+            ĐIỂM HỌC KỲ 1
+          </div>
+
+          <div className="student-result-semester-card-score">
+            {hasValidScore(calculationHK1?.score)
+              ? formatScore(calculationHK1.score, digits)
+              : "—"}
+          </div>
+
+          <div className="student-result-semester-card-count">
+            {semesterResults["1"].length} lần nhập điểm
+          </div>
+        </div>
+
+        <div className="student-result-annual-operator">+</div>
+
+        <div className="student-result-semester-card">
+          <div className="student-result-semester-card-label">
+            ĐIỂM HỌC KỲ 2
+          </div>
+
+          <div className="student-result-semester-card-score">
+            {hasValidScore(calculationHK2?.score)
+              ? formatScore(calculationHK2.score, digits)
+              : "—"}
+          </div>
+
+          <div className="student-result-semester-card-count">
+            {semesterResults["2"].length} lần nhập điểm
+          </div>
+        </div>
+
+        <div className="student-result-annual-equals">=</div>
+
+        <div className="student-result-semester-card annual">
+          <div className="student-result-semester-card-label">
+            TRUNG BÌNH CẢ NĂM
+          </div>
+
+          <div className="student-result-semester-card-score">
+            {annualScore === null ? "—" : formatScore(annualScore, digits)}
+          </div>
+
+          <div className="student-result-semester-card-count">
+            {annualScore === null ? "Chưa đủ hai học kỳ" : "Đã hoàn thành"}
+          </div>
+        </div>
+      </div>
+
+      {/* =====================================================
+          SEMESTER TABS
+      ===================================================== */}
+
+      <div className="student-result-semester-section">
+        <div className="student-result-history-header">
+          <div className="student-result-history-title">
+            <div className="student-result-history-icon">
+              <FileTextOutlined />
+            </div>
+
+            <div>
+              <div className="student-result-history-name">
+                Bảng điểm theo học kỳ
+              </div>
+
+              <div className="student-result-history-subtitle">
+                Xem điểm và kết quả từng học kỳ riêng biệt
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Tabs
+          activeKey={activeSemester}
+          onChange={setActiveSemester}
+          items={tabItems}
+          className="student-result-semester-tabs"
+        />
+
         {/* =====================================================
-            HEADER
+            CURRENT SEMESTER SCORE
         ===================================================== */}
 
-        <div className="student-result-header">
-          <div className="student-result-profile">
-            <Avatar
-              size={58}
-              icon={<UserOutlined />}
-              className="student-result-avatar"
-            />
+        <div className="student-result-current-summary">
+          <div className="student-result-current-summary-left">
+            <div className="student-result-current-label">
+              ĐIỂM TỔNG KẾT HỌC KỲ {activeSemester}
+            </div>
 
-            <div className="student-result-profile-info">
-              <div className="student-result-name">
-                {student?.name || student?.full_name || "Học viên"}
-              </div>
-
-              <div className="student-result-code">
-                {student?.code || `HS #${student?.id}`}
-              </div>
+            <div className="student-result-current-score">
+              {hasValidScore(currentCalculation?.score)
+                ? formatScore(currentCalculation.score, digits)
+                : "—"}
             </div>
           </div>
 
-          <div className="student-result-final">
-            <div className="student-result-final-label">ĐIỂM TỔNG KẾT</div>
-
-            <div className="student-result-final-row">
-              {calculation.score === null ? (
-                <strong className="student-result-final-score pending">
-                  —
-                </strong>
-              ) : (
-                <strong className={`student-result-final-score ${status.key}`}>
-                  {formatScore(calculation.score, digits)}
-                </strong>
-              )}
-
-              <Tag
-                bordered={false}
-                icon={currentStatus.icon}
-                className={`student-result-status ${status.key}`}
-              >
-                {currentStatus.label}
-              </Tag>
-            </div>
-
-            <div className="student-result-pass-info">
-              Đạt từ {passScore.toFixed(1)} điểm
-            </div>
-          </div>
+          <Tag
+            bordered={false}
+            icon={currentStatusConfig.icon}
+            className={`student-result-status ${currentStatus.key}`}
+          >
+            {hasValidScore(currentCalculation?.score)
+              ? currentStatus.label
+              : "Chưa có điểm"}
+          </Tag>
         </div>
 
         {/* =====================================================
@@ -365,13 +606,13 @@ const StudentResultModal = ({
 
                 <div>
                   <div className="student-result-section-title">
-                    Cách tính điểm
+                    Cách tính điểm học kỳ {activeSemester}
                   </div>
 
                   <div className="student-result-section-subtitle">
                     {rule.calculation_type === "weighted_average"
                       ? "Trung bình có hệ số"
-                      : "Theo quy tắc của lớp"}
+                      : "Theo quy tắc tính điểm"}
                   </div>
                 </div>
               </div>
@@ -382,19 +623,20 @@ const StudentResultModal = ({
 
               <div className="student-result-formula">{formula}</div>
 
-              {calculation.score !== null && (
+              {hasValidScore(currentCalculation?.score) && (
                 <div className="student-result-formula-result">
-                  = <strong>{formatScore(calculation.score, digits)}</strong>
-                  {" điểm"}
+                  ={" "}
+                  <strong>
+                    {formatScore(currentCalculation.score, digits)}
+                  </strong>{" "}
+                  điểm
                 </div>
               )}
             </div>
 
-            {/* COMPONENTS */}
-
-            {calculation.itemScores?.length > 0 && (
+            {currentCalculation?.itemScores?.length > 0 && (
               <div className="student-result-components">
-                {calculation.itemScores.map((item, index) => (
+                {currentCalculation.itemScores.map((item, index) => (
                   <div
                     className="student-result-component"
                     key={item.ruleItemId || index}
@@ -433,53 +675,26 @@ const StudentResultModal = ({
                 <span>Làm tròn</span>
                 <strong>{digits} chữ số</strong>
               </div>
-
-              {rule?.multiplier && Number(rule.multiplier) !== 1 && (
-                <>
-                  <div className="student-result-rule-divider" />
-
-                  <div>
-                    <span>Hệ số tổng</span>
-                    <strong>× {Number(rule.multiplier).toFixed(1)}</strong>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         )}
 
         {/* =====================================================
-            HISTORY HEADER
+            HISTORY TABLE
         ===================================================== */}
 
-        <div className="student-result-history-header">
-          <div className="student-result-history-title">
-            <div className="student-result-history-icon">
-              <FileTextOutlined />
-            </div>
+        <div className="student-result-table-heading">
+          <span>Chi tiết điểm học kỳ {activeSemester}</span>
 
-            <div>
-              <div className="student-result-history-name">Lịch sử điểm</div>
-
-              <div className="student-result-history-subtitle">
-                Các lần nhập kết quả của học viên
-              </div>
-            </div>
-          </div>
-
-          <div className="student-result-history-count">
-            {results.length} lần nhập
-          </div>
+          <span className="student-result-history-count">
+            {currentResults.length} lần nhập
+          </span>
         </div>
-
-        {/* =====================================================
-            TABLE
-        ===================================================== */}
 
         <div className="student-result-table">
           <Table
             columns={detailColumns}
-            dataSource={results}
+            dataSource={currentResults}
             rowKey="id"
             loading={loading}
             pagination={{
@@ -488,41 +703,50 @@ const StudentResultModal = ({
               showSizeChanger: false,
             }}
             size="middle"
-            scroll={{
-              x: 750,
-            }}
+            scroll={{ x: 750 }}
             locale={{
               emptyText: (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="Chưa có kết quả"
+                  description={`Chưa có điểm học kỳ ${activeSemester}`}
                 />
               ),
             }}
           />
         </div>
-      </Modal>
+      </div>
+
+      {/* =====================================================
+          UNKNOWN NOTES
+      ===================================================== */}
+
+      {semesterResults.unknown.length > 0 && (
+        <div className="student-result-unknown-warning">
+          <ClockCircleOutlined />
+          Có {semesterResults.unknown.length} kết quả chưa xác định được học kỳ
+          vì ghi chú không có thông tin Học kỳ 1 hoặc Học kỳ 2. Những kết quả
+          này chưa được đưa vào điểm trung bình học kỳ.
+        </div>
+      )}
+
+      {/* =====================================================
+          STYLE
+      ===================================================== */}
 
       <style>{`
-        /* =====================================================
-           MODAL
-        ===================================================== */
-
         .student-result-modal .ant-modal-content {
           padding: 0;
           overflow: hidden;
           border-radius: 20px;
-          background: #ffffff;
+          background: #fff;
         }
 
         .student-result-modal .ant-modal-close {
           top: 16px;
           right: 16px;
           z-index: 5;
-
           width: 34px;
           height: 34px;
-
           border-radius: 50%;
           background: #f1f5f9;
           color: #64748b;
@@ -533,29 +757,13 @@ const StudentResultModal = ({
           color: #173b5e;
         }
 
-        .student-result-modal .ant-modal-body {
-          padding: 0;
-        }
-
-        /* =====================================================
-           HEADER
-        ===================================================== */
-
         .student-result-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 30px;
-
+          gap: 25px;
           padding: 24px 28px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #f8fafc 0%,
-              #ffffff 70%
-            );
-
+          background: linear-gradient(135deg, #f8fafc, #fff);
           border-bottom: 1px solid #eef2f6;
         }
 
@@ -568,16 +776,10 @@ const StudentResultModal = ({
 
         .student-result-avatar {
           flex-shrink: 0;
-
           background: #e9eff5;
           color: #173b5e;
-
-          border: 3px solid #ffffff;
-          box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
-        }
-
-        .student-result-profile-info {
-          min-width: 0;
+          border: 3px solid #fff;
+          box-shadow: 0 3px 10px rgba(15,23,42,.08);
         }
 
         .student-result-name {
@@ -585,32 +787,28 @@ const StudentResultModal = ({
           font-size: 19px;
           font-weight: 800;
           line-height: 1.35;
+          overflow-wrap: anywhere;
         }
 
         .student-result-code {
           margin-top: 4px;
-
           color: #94a3b8;
           font-size: 12px;
           font-weight: 600;
         }
-
-        /* =====================================================
-           FINAL SCORE
-        ===================================================== */
 
         .student-result-final {
           padding-right: 35px;
           text-align: right;
         }
 
-        .student-result-final-label {
-          margin-bottom: 2px;
-
+        .student-result-final-label,
+        .student-result-semester-card-label,
+        .student-result-current-label {
           color: #94a3b8;
           font-size: 10px;
           font-weight: 800;
-          letter-spacing: 0.1em;
+          letter-spacing: .08em;
         }
 
         .student-result-final-row {
@@ -623,7 +821,7 @@ const StudentResultModal = ({
         .student-result-final-score {
           font-size: 30px;
           font-weight: 900;
-          line-height: 1.2;
+          line-height: 1.3;
         }
 
         .student-result-final-score.passed,
@@ -642,15 +840,11 @@ const StudentResultModal = ({
 
         .student-result-status {
           margin: 0;
-
           display: inline-flex;
           align-items: center;
           gap: 4px;
-
           padding: 4px 9px;
-
           border-radius: 7px;
-
           font-size: 11px;
           font-weight: 700;
         }
@@ -673,256 +867,75 @@ const StudentResultModal = ({
         }
 
         .student-result-pass-info {
-          margin-top: 3px;
-
+          margin-top: 4px;
           color: #94a3b8;
           font-size: 11px;
-          font-weight: 500;
         }
 
-        /* =====================================================
-           FORMULA SECTION
-        ===================================================== */
+        /* Annual summary */
 
-        .student-result-formula-section {
-          margin: 20px 28px 0;
-          padding: 18px;
-
-          border: 1px solid #e2e8f0;
-          border-radius: 15px;
-
-          background: #ffffff;
-        }
-
-        .student-result-section-heading {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 15px;
-        }
-
-        .student-result-section-heading-left {
-          display: flex;
-          align-items: center;
-          gap: 11px;
-        }
-
-        .student-result-section-icon {
-          width: 36px;
-          height: 36px;
-          flex: 0 0 36px;
-
+        .student-result-annual-summary {
           display: flex;
           align-items: center;
           justify-content: center;
-
-          border-radius: 10px;
-
-          background: #fdf8eb;
-          color: #b88618;
-
-          font-size: 17px;
+          gap: 13px;
+          margin: 20px 28px 0;
+          padding: 15px;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          background: #f8fafc;
         }
 
-        .student-result-section-title {
-          color: #173b5e;
-          font-size: 14px;
-          font-weight: 800;
-        }
-
-        .student-result-section-subtitle {
-          margin-top: 2px;
-
-          color: #94a3b8;
-          font-size: 11px;
-          font-weight: 500;
-        }
-
-        /* =====================================================
-           FORMULA BOX
-        ===================================================== */
-
-        .student-result-formula-box {
-          padding: 17px 15px;
-
-          border: 1px solid #dbe5ef;
-          border-radius: 12px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #f8fafc 0%,
-              #ffffff 100%
-            );
-
+        .student-result-semester-card {
+          flex: 1;
+          min-width: 0;
+          padding: 12px;
+          border: 1px solid #e8edf3;
+          border-radius: 11px;
+          background: #fff;
           text-align: center;
         }
 
-        .student-result-formula-label {
-          margin-bottom: 7px;
-
-          color: #94a3b8;
-          font-size: 9px;
-          font-weight: 800;
-          letter-spacing: 0.12em;
+        .student-result-semester-card.annual {
+          border-color: #ead9a8;
+          background: #fffcf3;
         }
 
-        .student-result-formula {
+        .student-result-semester-card-score {
+          margin: 5px 0;
           color: #173b5e;
-          font-size: 16px;
-          font-weight: 800;
-          line-height: 1.7;
-          word-break: break-word;
-        }
-
-        .student-result-formula-result {
-          margin-top: 5px;
-
-          color: #64748b;
-          font-size: 13px;
-          font-weight: 600;
-        }
-
-        .student-result-formula-result strong {
-          color: #16a34a;
-          font-size: 16px;
+          font-size: 25px;
           font-weight: 900;
         }
 
-        /* =====================================================
-           COMPONENTS
-        ===================================================== */
-
-        .student-result-components {
-          display: grid;
-          grid-template-columns: repeat(
-            auto-fit,
-            minmax(190px, 1fr)
-          );
-
-          gap: 8px;
-
-          margin-top: 13px;
+        .student-result-semester-card.annual
+          .student-result-semester-card-score {
+          color: #b88618;
         }
 
-        .student-result-component {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-
-          padding: 9px 10px;
-
-          border: 1px solid #edf1f5;
-          border-radius: 9px;
-
-          background: #fbfcfd;
-        }
-
-        .student-result-component-number {
-          width: 27px;
-          height: 27px;
-          flex: 0 0 27px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 7px;
-
-          background: #eef3f8;
-          color: #64748b;
-
-          font-size: 9px;
-          font-weight: 800;
-        }
-
-        .student-result-component-info {
-          min-width: 0;
-          flex: 1;
-        }
-
-        .student-result-component-name {
-          display: block;
-
-          overflow: hidden;
-
-          color: #334155;
-          font-size: 12px;
-          font-weight: 700;
-
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .student-result-component-weight {
-          display: block;
-          margin-top: 1px;
-
+        .student-result-semester-card-count {
           color: #94a3b8;
           font-size: 10px;
         }
 
-        .student-result-component-score {
-          flex-shrink: 0;
-
-          color: #173b5e;
-          font-size: 13px;
-          font-weight: 800;
-        }
-
-        /* =====================================================
-           RULE META
-        ===================================================== */
-
-        .student-result-rule-meta {
-          display: flex;
-          align-items: center;
-
-          margin-top: 13px;
-          padding-top: 13px;
-
-          border-top: 1px solid #eef2f6;
-        }
-
-        .student-result-rule-meta > div:not(
-            .student-result-rule-divider
-          ) {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .student-result-rule-meta span {
+        .student-result-annual-operator,
+        .student-result-annual-equals {
           color: #94a3b8;
-          font-size: 11px;
-          font-weight: 600;
-        }
-
-        .student-result-rule-meta strong {
-          color: #334155;
-          font-size: 12px;
+          font-size: 19px;
           font-weight: 800;
         }
 
-        .student-result-rule-divider {
-          width: 1px;
-          height: 18px;
+        /* Semester section */
 
-          margin: 0 16px;
-
-          background: #e2e8f0;
+        .student-result-semester-section {
+          margin: 20px 28px 24px;
         }
-
-        /* =====================================================
-           HISTORY HEADER
-        ===================================================== */
 
         .student-result-history-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-
-          margin: 22px 28px 12px;
+          margin-bottom: 10px;
         }
 
         .student-result-history-title {
@@ -934,16 +947,12 @@ const StudentResultModal = ({
         .student-result-history-icon {
           width: 34px;
           height: 34px;
-
           display: flex;
           align-items: center;
           justify-content: center;
-
           border-radius: 9px;
-
           background: #eef3f8;
           color: #173b5e;
-
           font-size: 15px;
         }
 
@@ -955,30 +964,250 @@ const StudentResultModal = ({
 
         .student-result-history-subtitle {
           margin-top: 2px;
-
           color: #94a3b8;
           font-size: 11px;
         }
 
+        .student-result-semester-tabs .ant-tabs-nav {
+          margin-bottom: 14px;
+        }
+
+        .student-result-semester-tabs .ant-tabs-tab {
+          padding: 10px 15px;
+          font-weight: 700;
+        }
+
+        .student-result-tab-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .student-result-tab-count {
+          min-width: 21px;
+          padding: 2px 6px;
+          border-radius: 20px;
+          background: #eef3f8;
+          color: #64748b;
+          font-size: 10px;
+          text-align: center;
+        }
+
+        .student-result-current-summary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 13px 16px;
+          margin-bottom: 14px;
+          border: 1px solid #e2e8f0;
+          border-radius: 11px;
+          background: #f8fafc;
+        }
+
+        .student-result-current-score {
+          margin-top: 3px;
+          color: #173b5e;
+          font-size: 25px;
+          font-weight: 900;
+        }
+
+        /* Formula */
+
+        .student-result-formula-section {
+          margin-bottom: 17px;
+          padding: 17px;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          background: #fff;
+        }
+
+        .student-result-section-heading {
+          display: flex;
+          align-items: center;
+          margin-bottom: 14px;
+        }
+
+        .student-result-section-heading-left {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+        }
+
+        .student-result-section-icon {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: #fdf8eb;
+          color: #b88618;
+          font-size: 17px;
+        }
+
+        .student-result-section-title {
+          color: #173b5e;
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .student-result-section-subtitle {
+          margin-top: 2px;
+          color: #94a3b8;
+          font-size: 11px;
+        }
+
+        .student-result-formula-box {
+          padding: 16px;
+          border: 1px solid #dbe5ef;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #f8fafc, #fff);
+          text-align: center;
+        }
+
+        .student-result-formula-label {
+          margin-bottom: 7px;
+          color: #94a3b8;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: .12em;
+        }
+
+        .student-result-formula {
+          color: #173b5e;
+          font-size: 15px;
+          font-weight: 800;
+          line-height: 1.8;
+          overflow-wrap: anywhere;
+        }
+
+        .student-result-formula-result {
+          margin-top: 5px;
+          color: #64748b;
+          font-size: 13px;
+        }
+
+        .student-result-formula-result strong {
+          color: #16a34a;
+          font-size: 16px;
+          font-weight: 900;
+        }
+
+        /* Components */
+
+        .student-result-components {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+          gap: 8px;
+          margin-top: 13px;
+        }
+
+        .student-result-component {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 10px;
+          border: 1px solid #edf1f5;
+          border-radius: 9px;
+          background: #fbfcfd;
+        }
+
+        .student-result-component-number {
+          width: 27px;
+          height: 27px;
+          flex: 0 0 27px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 7px;
+          background: #eef3f8;
+          color: #64748b;
+          font-size: 9px;
+          font-weight: 800;
+        }
+
+        .student-result-component-info {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .student-result-component-name {
+          display: block;
+          overflow: hidden;
+          color: #334155;
+          font-size: 12px;
+          font-weight: 700;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .student-result-component-weight {
+          display: block;
+          margin-top: 1px;
+          color: #94a3b8;
+          font-size: 10px;
+        }
+
+        .student-result-component-score {
+          flex-shrink: 0;
+          color: #173b5e;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .student-result-rule-meta {
+          display: flex;
+          align-items: center;
+          margin-top: 13px;
+          padding-top: 13px;
+          border-top: 1px solid #eef2f6;
+        }
+
+        .student-result-rule-meta > div:not(.student-result-rule-divider) {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .student-result-rule-meta span {
+          color: #94a3b8;
+          font-size: 11px;
+        }
+
+        .student-result-rule-meta strong {
+          color: #334155;
+          font-size: 12px;
+        }
+
+        .student-result-rule-divider {
+          width: 1px;
+          height: 18px;
+          margin: 0 16px;
+          background: #e2e8f0;
+        }
+
+        /* Table */
+
+        .student-result-table-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin: 16px 0 10px;
+          color: #173b5e;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
         .student-result-history-count {
           padding: 5px 9px;
-
           border-radius: 7px;
-
           background: #f8fafc;
           color: #64748b;
-
           font-size: 11px;
           font-weight: 700;
         }
 
-        /* =====================================================
-           TABLE
-        ===================================================== */
-
         .student-result-table {
-          margin: 0 28px 24px;
-
           border: 1px solid #e5eaf0;
           border-radius: 13px;
           overflow: hidden;
@@ -990,35 +1219,16 @@ const StudentResultModal = ({
 
         .student-result-table .ant-table-thead > tr > th {
           padding: 11px 12px;
-
           background: #f8fafc;
-
           color: #64748b;
           font-size: 10px;
           font-weight: 800;
-          letter-spacing: 0.02em;
-
           border-bottom: 1px solid #e5eaf0;
         }
 
         .student-result-table .ant-table-tbody > tr > td {
           padding: 10px 12px;
-
           border-bottom-color: #f0f2f5;
-        }
-
-        .student-result-table
-          .ant-table-tbody
-          > tr:hover
-          > td {
-          background: #fafcfe;
-        }
-
-        .student-result-table
-          .ant-table-tbody
-          > tr:last-child
-          > td {
-          border-bottom: none;
         }
 
         .student-result-index {
@@ -1038,22 +1248,17 @@ const StudentResultModal = ({
           font-size: 12px;
         }
 
-        .student-result-item-cell span {
+        .student-result-item-cell span,
+        .student-result-date,
+        .student-result-note {
           color: #94a3b8;
-          font-size: 10px;
-        }
-
-        .student-result-date {
-          color: #64748b;
           font-size: 11px;
         }
 
         .student-result-type-tag {
           margin: 0;
           padding: 3px 7px;
-
           border-radius: 6px;
-
           font-size: 10px;
           font-weight: 700;
         }
@@ -1074,11 +1279,6 @@ const StudentResultModal = ({
           font-weight: 800;
         }
 
-        .student-result-note {
-          color: #64748b;
-          font-size: 11px;
-        }
-
         .student-result-action {
           color: #64748b;
         }
@@ -1092,15 +1292,27 @@ const StudentResultModal = ({
           background: #fef2f2;
         }
 
-        /* =====================================================
-           MOBILE
-        ===================================================== */
+        .student-result-unknown-warning {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          margin: 0 28px 22px;
+          padding: 11px 13px;
+          border: 1px solid #f3dfad;
+          border-radius: 9px;
+          background: #fffcf3;
+          color: #946b13;
+          font-size: 11px;
+          line-height: 1.6;
+        }
+
+        /* Responsive */
 
         @media (max-width: 767px) {
           .student-result-header {
             align-items: flex-start;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
             padding: 20px 16px;
           }
 
@@ -1114,13 +1326,35 @@ const StudentResultModal = ({
             justify-content: flex-start;
           }
 
-          .student-result-formula-section {
-            margin: 16px;
-            padding: 14px;
+          .student-result-annual-summary {
+            gap: 6px;
+            margin: 15px 12px 0;
+            padding: 9px 6px;
           }
 
-          .student-result-formula {
+          .student-result-semester-card {
+            padding: 9px 4px;
+          }
+
+          .student-result-semester-card-label {
+            font-size: 8px;
+          }
+
+          .student-result-semester-card-score {
+            font-size: 19px;
+          }
+
+          .student-result-semester-card-count {
+            font-size: 9px;
+          }
+
+          .student-result-annual-operator,
+          .student-result-annual-equals {
             font-size: 14px;
+          }
+
+          .student-result-semester-section {
+            margin: 18px 14px;
           }
 
           .student-result-components {
@@ -1128,51 +1362,36 @@ const StudentResultModal = ({
           }
 
           .student-result-rule-meta {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 9px;
+            flex-wrap: wrap;
+            gap: 8px;
           }
 
           .student-result-rule-divider {
-            display: none;
+            margin: 0 5px;
           }
 
-          .student-result-history-header {
-            margin: 18px 16px 10px;
-          }
-
-          .student-result-history-subtitle {
-            display: none;
-          }
-
-          .student-result-table {
-            margin: 0 16px 18px;
-          }
-
-          .student-result-final-score {
-            font-size: 27px;
+          .student-result-unknown-warning {
+            margin: 0 14px 18px;
           }
         }
 
-        @media (max-width: 480px) {
-          .student-result-name {
+        @media (max-width: 380px) {
+          .student-result-annual-summary {
+            gap: 3px;
+            margin-left: 8px;
+            margin-right: 8px;
+          }
+
+          .student-result-semester-card-label {
+            font-size: 7px;
+          }
+
+          .student-result-semester-card-score {
             font-size: 17px;
-          }
-
-          .student-result-status {
-            font-size: 10px;
-          }
-
-          .student-result-formula {
-            font-size: 13px;
-          }
-
-          .student-result-history-count {
-            font-size: 10px;
           }
         }
       `}</style>
-    </>
+    </Modal>
   );
 };
 

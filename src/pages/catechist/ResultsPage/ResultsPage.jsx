@@ -641,6 +641,61 @@ const ResultsPage = () => {
   /* ============================================================
    EXPORT EXCEL
 ============================================================ */
+  /* ============================================================
+   EXPORT EXCEL - SINGLE STUDENT
+============================================================ */
+
+  const [exportingStudentId, setExportingStudentId] = useState(null);
+
+  const handleExportStudentExcel = useCallback(
+    async (student) => {
+      const studentId = Number(student?.student_id || student?.id);
+
+      if (!selectedClassId || !studentId) {
+        notify.warning("Không tìm thấy thông tin học sinh");
+        return;
+      }
+
+      try {
+        setExportingStudentId(studentId);
+
+        const response = await resultApi.exportStudentResultExcel(
+          selectedClassId,
+          studentId,
+        );
+
+        const blob = new Blob([response.data], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        const studentName =
+          student.student_name || student.name || `Hoc_sinh_${studentId}`;
+
+        link.href = url;
+        link.download = `Bang_diem_${studentName
+          .trim()
+          .replace(/[\\/:*?"<>|]/g, "_")}.xlsx`;
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        window.URL.revokeObjectURL(url);
+
+        notify.success(`Đã xuất bảng điểm ${studentName}`);
+      } catch (error) {
+        notify.error(
+          error?.response?.data?.message || "Không thể xuất bảng điểm học sinh",
+        );
+      } finally {
+        setExportingStudentId(null);
+      }
+    },
+    [selectedClassId, notify],
+  );
 
   const handleExportExcel = useCallback(async () => {
     if (!selectedClassId) {
@@ -929,6 +984,8 @@ const ResultsPage = () => {
                         currentPage={currentPage}
                         pageSize={pageSize}
                         onView={handleViewDetail}
+                        onExportStudent={handleExportStudentExcel}
+                        exportingStudentId={exportingStudentId}
                       />
 
                       {filteredSummaries.length > 0 && (

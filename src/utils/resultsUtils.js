@@ -374,21 +374,20 @@ export const calculateStudentScore = (studentResults = [], rule) => {
 
   const items = Array.isArray(rule.items) ? rule.items : [];
 
+  // 1. Tính điểm từng đầu điểm
   const itemScores = items.map((ruleItem) => {
     const result = calculateItemScore(studentResults, ruleItem);
 
     return {
-      ruleItemId: ruleItem.id,
-
+      ruleItemId: Number(ruleItem.id),
       code: ruleItem.code,
-
       name: ruleItem.name,
 
-      weight: toNumber(ruleItem.weight, 1),
+      weight: Math.max(0, toNumber(ruleItem.weight, 1)),
 
       maxScore: toNumber(ruleItem.max_score, 10),
 
-      aggregationMethod: ruleItem.aggregation_method,
+      aggregationMethod: ruleItem.aggregation_method || "latest",
 
       allowMultiple: Boolean(ruleItem.allow_multiple),
 
@@ -398,71 +397,92 @@ export const calculateStudentScore = (studentResults = [], rule) => {
     };
   });
 
+  // 2. Chỉ lấy đầu điểm có điểm hợp lệ
   const validItems = itemScores.filter(
-    (item) => item.score !== null && item.score !== undefined,
+    (item) =>
+      item.score !== null &&
+      Number.isFinite(Number(item.score)) &&
+      item.weight > 0,
   );
 
   const completedItems = validItems.length;
 
+  // 3. Tính tổng hệ số
   const totalWeight = validItems.reduce((sum, item) => sum + item.weight, 0);
 
+  // 4. Tính tổng điểm nhân hệ số
   const weightedTotal = validItems.reduce(
-    (sum, item) => sum + item.score * item.weight,
+    (sum, item) => sum + Number(item.score) * item.weight,
     0,
   );
 
   let finalScore = null;
 
   switch (rule.calculation_type) {
-    case "average":
-      if (validItems.length) {
-        finalScore =
-          validItems.reduce((sum, item) => sum + item.score, 0) /
-          validItems.length;
-      }
-      break;
-
-    case "weighted_average":
+    case "weighted_average": {
       if (totalWeight > 0) {
         finalScore = weightedTotal / totalWeight;
       }
       break;
+    }
 
-    case "sum":
-      if (validItems.length) {
-        finalScore = validItems.reduce((sum, item) => sum + item.score, 0);
+    case "average": {
+      if (completedItems > 0) {
+        finalScore =
+          validItems.reduce((sum, item) => sum + Number(item.score), 0) /
+          completedItems;
       }
       break;
+    }
 
-    case "sum_multiplier":
-      if (validItems.length) {
-        finalScore = validItems.reduce((sum, item) => sum + item.score, 0);
+    case "sum": {
+      if (completedItems > 0) {
+        finalScore = validItems.reduce(
+          (sum, item) => sum + Number(item.score),
+          0,
+        );
+      }
+      break;
+    }
 
-        finalScore *= toNumber(rule.multiplier, 1);
+    case "sum_multiplier": {
+      if (completedItems > 0) {
+        const total = validItems.reduce(
+          (sum, item) => sum + Number(item.score),
+          0,
+        );
 
-        if (rule.divisor !== null && Number(rule.divisor) > 0) {
-          finalScore /= Number(rule.divisor);
+        const divisor = toNumber(rule.divisor, 0);
+
+        finalScore = total * toNumber(rule.multiplier, 1);
+
+        if (divisor > 0) {
+          finalScore /= divisor;
         }
       }
       break;
+    }
 
-    case "pass_fail":
-      if (validItems.length) {
+    case "pass_fail": {
+      if (completedItems > 0) {
         finalScore =
-          validItems.reduce((sum, item) => sum + item.score, 0) /
-          validItems.length;
+          validItems.reduce((sum, item) => sum + Number(item.score), 0) /
+          completedItems;
       }
       break;
+    }
 
-    default:
+    default: {
       if (totalWeight > 0) {
         finalScore = weightedTotal / totalWeight;
       }
       break;
+    }
   }
 
+  // 5. Làm tròn kết quả
   if (finalScore !== null) {
-    finalScore = roundNumber(finalScore, rule.rounding_digits);
+    finalScore = roundNumber(finalScore, rule.rounding_digits ?? 1);
   }
 
   const passed =
@@ -471,25 +491,33 @@ export const calculateStudentScore = (studentResults = [], rule) => {
   const maxScore =
     rule.calculation_type === "sum" ||
     rule.calculation_type === "sum_multiplier"
-      ? items.reduce((sum, item) => sum + toNumber(item.max_score, 10), 0)
+      ? validItems.reduce((sum, item) => sum + item.maxScore, 0)
       : 10;
 
   return {
     score: finalScore,
-
     maxScore,
-
     passed,
 
     completedItems,
-
     totalItems: items.length,
 
     itemScores,
 
     weightedTotal,
-
     totalWeight,
+
+    // Thông tin đối chiếu khi kiểm tra lỗi
+    calculationType: rule.calculation_type,
+
+    calculationDetails: {
+      weightedTotal,
+      totalWeight,
+      formula:
+        rule.calculation_type === "weighted_average"
+          ? `${weightedTotal} / ${totalWeight}`
+          : null,
+    },
   };
 };
 
